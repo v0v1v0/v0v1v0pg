@@ -1,0 +1,171 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>eigcv</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute cross-validate eigenvalues</h2>
+
+<h3>Description</h3>
+
+<p>Estimate graph dimension via eigenvalue cross-validation (EigCV).
+A graph has dimension <code>k</code> if the first <code>k</code> eigenvectors of its adjacency
+matrix are correlated with its population eigenspace, and the others are not.
+Edge bootstrapping sub-samples the edges of the graph (without replacement).
+Edge splitting separates the edges into a training part and a testing part.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">eigcv(
+  A,
+  k_max,
+  ...,
+  num_bootstraps = 10,
+  test_portion = 0.1,
+  alpha = 0.05,
+  method = c("none", "holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr"),
+  laplacian = FALSE,
+  regularize = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>A</code></td>
+<td>
+<p>The adjacency matrix of graph. Must be non-negative and
+integer valued.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k_max</code></td>
+<td>
+<p>The maximum dimension of the graph to consider. This many
+eigenvectors are computed. Should be a non-negative integer smallish
+relative the dimensions of <code>A</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_bootstraps</code></td>
+<td>
+<p>The number of times to bootstrap the graph. Since
+cross-validated eigenvalues are based on a random graph split, they
+are themselves random. By repeatedly computing cross-validated eigenvalues
+for different sample splits, the idea is to smooth away some of the
+randomness due to the graph splits. A small number of bootstraps
+(3 to 10) usually suffices. Defaults to <code>10</code>. Test statistics (i.e.
+z-scores for cv eigenvalues) are averaged across bootstraps
+and the p-values will be calculated based on the averaged statistics.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test_portion</code></td>
+<td>
+<p>The portion of the graph to put into the test graph,
+as opposed to the training graph. Defaults to <code>0.1</code>. Must be strictly
+between zero and one.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Significance level for hypothesis tests. Each dimension
+<code style="white-space: pre;">⁠1, ..., k_max⁠</code> is tested when estimating graph dimension, and the
+overall graph dimension is taken to be the smallest number of dimensions
+such that all the tests reject.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Method to adjust p-values for multiple testing. Must be
+one of <code>"none"</code>, <code>"holm"</code>, <code>"hochberg"</code>, <code>"hommel"</code>, <code>"bonferroni"</code>,
+<code>"BH"</code>, <code>"BY"</code>, or <code>"fdr"</code>. Passed to <code>stats::p.adjust()</code>. Defaults to
+<code>"none"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>laplacian</code></td>
+<td>
+<p>Logical value indicating where to compute cross-validated
+eigenvalues for the degree-normalize graph Laplacian rather than the
+graph adjacency matrix. Experimental and should be used with caution.
+Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>regularize</code></td>
+<td>
+<p>Only applicable when <code>laplacian == TRUE</code>, in which case
+this parameter controls whether or not the degree-normalized graph
+Laplacian is regularized. Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>eigcv</code> object, which is a list with the following named
+elements.
+</p>
+
+<ul>
+<li> <p><code>estimated_dimension</code>: inferred graph dimension.
+</p>
+</li>
+<li> <p><code>summary</code>: summary table of the tests.
+</p>
+</li>
+<li> <p><code>num_bootstraps</code>: number of bootstraps performed.
+</p>
+</li>
+<li> <p><code>test_portion</code>: graph splitting probability used.
+</p>
+</li>
+<li> <p><code>alpha</code>: significance level of each test.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(fastRG)
+
+set.seed(27)
+
+B &lt;- matrix(0.1, 5, 5)
+diag(B) &lt;- 0.3
+
+model &lt;- sbm(
+  n = 1000,
+  k = 5,
+  B = B,
+  expected_degree = 40,
+  poisson_edges = FALSE,
+  allow_self_loops = FALSE
+)
+
+A &lt;- sample_sparse(model)
+
+eigs&lt;- eigcv(A, k_max = 10)
+eigs
+
+plot(eigs, type = "z-score")    # default
+plot(eigs, type = "adjacency")
+plot(eigs, type = "laplacian")
+
+
+</code></pre>
+
+
+</div>

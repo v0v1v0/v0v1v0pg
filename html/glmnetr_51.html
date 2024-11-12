@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>xgb.tuned</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get a tuned XGBoost model fit</h2>
+
+<h3>Description</h3>
+
+<p>This fits a gradient boosting machine model using the XGBoost
+platform.  It uses the mlrMBO mlrMBO package to search for a well fitting set of 
+hyperparameters and will generally provide a better fit than xgb.simple(). 
+Both this program and xgb.simple() require data to be provided in a 
+xgb.DMatrix() object.  This object can be constructed with a command like 
+data.full &lt;- xgb.DMatrix( data=myxs, label=mylabel), where myxs object contains the 
+predictors (features) in a numerical matrix format with no missing 
+values, and mylabel is the outcome or dependent variable.  For logistic regression
+this would typically be a vector of 0's and 1's.  For linear regression this would be 
+vector of numerical values. For a Cox proportional hazards model this would be 
+in a format required for XGBoost, which is different than for the survival package 
+or glmnet package.  For the Cox model a vector is used where observations 
+associated with an event are assigned the time of event, and observations 
+associated with censoring are assigned the NEGATIVE of the time of censoring.  In    
+this way information about time and status are communicated in a single vector
+instead of two vectors.  The xgb.tuned() function does not handle (start,stop) 
+time, i.e. interval, data.  To tune the xgboost model we use the mlrMBO package
+which "suggests" the DiceKriging and rgenoud packages, but doe not install 
+these.  Still, for xgb.tuned() to run it seems that one should install the 
+DiceKriging and rgenoud packages.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">xgb.tuned(
+  train.xgb.dat,
+  booster = "gbtree",
+  objective = "survival:cox",
+  eval_metric = NULL,
+  minimize = NULL,
+  seed = NULL,
+  folds = NULL,
+  doxgb = NULL,
+  track = 0
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>train.xgb.dat</code></td>
+<td>
+<p>The data to be used for training the XGBoost model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>booster</code></td>
+<td>
+<p>for now just "gbtree" (default)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>objective</code></td>
+<td>
+<p>one of "survival:cox" (default), "binary:logistic" or "reg:squarederror"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eval_metric</code></td>
+<td>
+<p>one of "cox-nloglik" (default), "auc" or "rmse",</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minimize</code></td>
+<td>
+<p>whether the eval_metric is to be minimized or maximized</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>a seed for set.seed() to assure one can get the same results twice.  If NULL 
+the program will generate a random seed.  Whether specified or NULL, the seed is stored in the output
+object for future reference.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>folds</code></td>
+<td>
+<p>an optional list where each element is a vector of indeces for a 
+test fold.  Default is NULL.  If specified then nfold is ignored a la xgb.cv().</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>doxgb</code></td>
+<td>
+<p>A list specifying how the program is to do the xgb tune and 
+fit.  The list can have elements $nfold, $nrounds,
+and $early_stopping_rounds, each numerical values of length 1, $folds, a list as 
+used by xgb.cv() do identify folds for cross validation, and $eta, $gamma, $max_depth, 
+$min_child_seight, $colsample_bytree, $lambda, $alpha and $subsample, each a numeric 
+of length 2 giving the lower and upper values for the respective tuning 
+parameter.  The meaning of these terms is as in 'xgboost' xgb.train().  If 
+not provided defaults will be used.  Defaults
+can be seen from the output object$doxgb element, again a list. In case not NULL, 
+the seed and folds option values override the $seed and $folds values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>track</code></td>
+<td>
+<p>0 (default) to not track progress, 2 to track progress.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a tuned XGBoost model fit
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Walter K Kremers with contributions from Nicholas B Larson
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>xgb.simple</code> , <code>rederive_xgb</code> , <code>nested.glmnetr</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Simulate some data for a Cox model 
+sim.data=glmnetr.simdata(nrows=1000, ncols=100, beta=NULL)
+Surv.xgb = ifelse( sim.data$event==1, sim.data$yt, -sim.data$yt )
+data.full &lt;- xgboost::xgb.DMatrix(data = sim.data$xs, label = Surv.xgb)
+# for this example we use a small number for folds_n and nrounds to shorten 
+# run time.  This may still take a minute or so.  
+# xgbfit=xgb.tuned(data.full,objective="survival:cox",nfold=5,nrounds=20)
+# preds = predict(xgbfit, sim.data$xs)
+# summary( preds ) 
+
+
+</code></pre>
+
+
+</div>

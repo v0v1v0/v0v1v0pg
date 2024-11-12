@@ -1,0 +1,178 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>stepwise</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Stepwise selection of regressors</h2>
+
+<h3>Description</h3>
+
+<p>Function selects variables that give linear regression with the lowest
+information criteria. The selection is done stepwise (forward) based on
+partial correlations. This should be a simpler and faster implementation
+than step() function from ‘stats’ package.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">stepwise(data, ic = c("AICc", "AIC", "BIC", "BICc"), silent = TRUE,
+  df = NULL, formula = NULL, subset = NULL, method = c("pearson",
+  "kendall", "spearman"), distribution = c("dnorm", "dlaplace", "ds",
+  "dgnorm", "dlogis", "dt", "dalaplace", "dlnorm", "dllaplace", "dls",
+  "dlgnorm", "dbcnorm", "dinvgauss", "dgamma", "dexp", "dfnorm", "drectnorm",
+  "dpois", "dnbinom", "dbeta", "dlogitnorm", "plogis", "pnorm"),
+  occurrence = c("none", "plogis", "pnorm"), ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame containing dependant variable in the first column and
+the others in the rest.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ic</code></td>
+<td>
+<p>Information criterion to use.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>silent</code></td>
+<td>
+<p>If <code>silent=FALSE</code>, then nothing is silent, everything is
+printed out. <code>silent=TRUE</code> means that nothing is produced.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>Number of degrees of freedom to add (should be used if stepwise is
+used on residuals).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>If provided, then the selection will be done from the listed
+variables in the formula after all the necessary transformations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>an optional vector specifying a subset of observations to be
+used in the fitting process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Method of correlations calculation. The default is Pearson's
+correlation, which should be applicable to a wide range of data in different scales.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distribution</code></td>
+<td>
+<p>Distribution to pass to <code>alm()</code>. See alm
+for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>occurrence</code></td>
+<td>
+<p>what distribution to use for occurrence part. See
+alm for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>This is temporary and is needed in order to capture "silent"
+parameter if it is provided.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The algorithm uses alm() to fit different models and cor() to select the next
+regressor in the sequence.
+</p>
+<p>Some details and examples of application are also given in the vignette
+"Greybox": <code>vignette("greybox","greybox")</code>
+</p>
+
+
+<h3>Value</h3>
+
+<p>Function returns <code>model</code> - the final model of the class "alm".
+See alm for details of the output.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Ivan Svetunkov, <a href="mailto:ivan@svetunkov.ru">ivan@svetunkov.ru</a>
+</p>
+
+
+<h3>References</h3>
+
+
+<ul>
+<li>
+<p> Burnham Kenneth P. and Anderson David R. (2002). Model Selection
+and Multimodel Inference. A Practical Information-Theoretic Approach.
+Springer-Verlag New York. DOI: [10.1007/b97636](http://dx.doi.org/10.1007/b97636).
+</p>
+</li>
+<li>
+<p> McQuarrie, A. D. (1999). A small-sample correction for the Schwarz SIC model
+selection criterion. Statistics &amp; Probability Letters, 44(1), 79–86.
+[10.1016/S0167-7152(98)00294-6](https://doi.org/10.1016/S0167-7152(98)00294-6).
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>step, xregExpander,
+lmCombine</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+### Simple example
+xreg &lt;- cbind(rnorm(100,10,3),rnorm(100,50,5))
+xreg &lt;- cbind(100+0.5*xreg[,1]-0.75*xreg[,2]+rnorm(100,0,3),xreg,rnorm(100,300,10))
+colnames(xreg) &lt;- c("y","x1","x2","Noise")
+stepwise(xreg)
+
+### Mixture distribution of Log Normal and Cumulative Logit
+xreg[,1] &lt;- xreg[,1] * round(exp(xreg[,1]-70) / (1 + exp(xreg[,1]-70)),0)
+colnames(xreg) &lt;- c("y","x1","x2","Noise")
+ourModel &lt;- stepwise(xreg, distribution="dlnorm",
+                     occurrence=stepwise(xreg, distribution="plogis"))
+summary(ourModel)
+
+### Fat regression example
+xreg &lt;- matrix(rnorm(20000,10,3),100,200)
+xreg &lt;- cbind(100+0.5*xreg[,1]-0.75*xreg[,2]+rnorm(100,0,3),xreg,rnorm(100,300,10))
+colnames(xreg) &lt;- c("y",paste0("x",c(1:200)),"Noise")
+ourModel &lt;- stepwise(xreg,ic="AICc")
+plot(ourModel$ICs,type="l",ylim=range(min(ourModel$ICs),max(ourModel$ICs)+5))
+points(ourModel$ICs)
+text(c(1:length(ourModel$ICs))+0.1,ourModel$ICs+5,names(ourModel$ICs))
+
+</code></pre>
+
+
+</div>

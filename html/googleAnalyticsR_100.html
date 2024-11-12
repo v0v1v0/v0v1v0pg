@@ -1,0 +1,151 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>metricDimensionSelectUI</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>metricDimensionSelectUI - GA4 Shiny Module</h2>
+
+<h3>Description</h3>
+
+<p>Create a Google Analytics variable selector
+</p>
+<p>Shiny Module for use with GA4 metric and dimension fields fetched via <code>ga_meta("ga4")</code>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">metricDimensionSelectUI(id, label = "Metric", multiple = TRUE, width = NULL)
+
+metricDimensionSelect(
+  id,
+  field_type = c("metric", "dimension"),
+  custom_meta = NULL,
+  default = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>The Shiny id</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>label</code></td>
+<td>
+<p>label</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>multiple</code></td>
+<td>
+<p>multiple select</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>width</code></td>
+<td>
+<p>width of select</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>field_type</code></td>
+<td>
+<p>metric or dimension</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>custom_meta</code></td>
+<td>
+<p>Pass a meta field table from <code>ga_meta("ga4")</code> to get custom fields from GA4 (reactive)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>default</code></td>
+<td>
+<p>The default selected choice. First element if NULL</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Shiny UI
+</p>
+<p>the selected variable
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other Shiny modules: 
+<code>accountPickerUI()</code>,
+<code>authDropdown()</code>,
+<code>authDropdownUI()</code>,
+<code>multi_select()</code>,
+<code>multi_selectUI()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+
+# ui.R
+metricDimensionSelect("mets1")
+metricDimensionSelect("dims1")
+
+#server.R
+metrics &lt;- metricDimensionSelect("mets1", "metric")
+dims &lt;- metricDimensionSelect("dims1", "dimension")
+
+
+
+# use in app with custom fields
+#' ui &lt;- fluidPage(title = "Shiny App",
+                 accountPickerUI("auth_menu", inColumns = TRUE),
+                 metricDimensionSelectUI("mets1"),
+                 metricDimensionSelectUI("dims_custom")
+                 )
+server &lt;- function(input, output, session){
+  token &lt;- gar_shiny_auth(session)
+  
+  accs &lt;- reactive({
+    req(token)
+    ga_account_list("ga4")
+   })
+   
+  # no custom data
+  metrics &lt;- metricDimensionSelect("mets1")
+   
+  # module for authentication
+  property_id &lt;- accountPicker("auth_menu", ga_table = accs, id_only = TRUE)
+  
+  meta &lt;- reactive({
+      req(property_id())
+      ga_meta("data", propertyId = property_id())
+  })
+ 
+  
+  # custom data
+  dims_custom &lt;- metricDimensionSelect("dims_custom", 
+                                       type = "dimension", 
+                                       custom_meta = meta())
+ }
+ 
+ shinyApp(gar_shiny_ui(ui, login_ui = silent_auth), server)
+ 
+
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

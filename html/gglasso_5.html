@@ -1,0 +1,239 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cv.gglasso</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Cross-validation for gglasso</h2>
+
+<h3>Description</h3>
+
+<p>Does k-fold cross-validation for gglasso, produces a plot, and returns a
+value for <code>lambda</code>. This function is modified based on the <code>cv</code>
+function from the <code>glmnet</code> package.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cv.gglasso(
+  x,
+  y,
+  group,
+  lambda = NULL,
+  pred.loss = c("misclass", "loss", "L1", "L2"),
+  nfolds = 5,
+  foldid,
+  delta,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>matrix of predictors, of dimension <code class="reqn">n \times p</code>; each row
+is an observation vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>response variable. This argument should be quantitative for
+regression (least squares), and a two-level factor for classification
+(logistic model, huberized SVM, squared SVM).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>a vector of consecutive integers describing the grouping of the
+coefficients (see example below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>optional user-supplied lambda sequence; default is
+<code>NULL</code>, and <code>gglasso</code> chooses its own sequence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pred.loss</code></td>
+<td>
+<p>loss to use for cross-validation error. Valid options are:
+</p>
+ <ul>
+<li> <p><code>"loss"</code> for classification, margin based loss
+function.  </p>
+</li>
+<li> <p><code>"misclass"</code> for classification, it gives
+misclassification error.  </p>
+</li>
+<li> <p><code>"L1"</code> for regression, mean square
+error used by least squares regression <code>loss="ls"</code>, it measure the
+deviation from the fitted mean to the response.  </p>
+</li>
+<li> <p><code>"L2"</code> for
+regression, mean absolute error used by least squares regression
+<code>loss="ls"</code>, it measure the deviation from the fitted mean to the
+response.  </p>
+</li>
+</ul>
+<p> Default is <code>"loss"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nfolds</code></td>
+<td>
+<p>number of folds - default is 5. Although <code>nfolds</code> can be
+as large as the sample size (leave-one-out CV), it is not recommended for
+large datasets. Smallest value allowable is <code>nfolds=3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>foldid</code></td>
+<td>
+<p>an optional vector of values between 1 and <code>nfold</code>
+identifying what fold each observation is in. If supplied, <code>nfold</code> can
+be missing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>parameter <code class="reqn">\delta</code> only used in huberized SVM for
+computing log-likelihood on validation set, only available with
+<code>pred.loss = "loss"</code>, <code>loss = "hsvm"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>other arguments that can be passed to gglasso.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function runs <code>gglasso</code> <code>nfolds</code>+1 times; the first to
+get the <code>lambda</code> sequence, and then the remainder to compute the fit
+with each of the folds omitted. The average error and standard deviation
+over the folds are computed.
+</p>
+
+
+<h3>Value</h3>
+
+<p>an object of class <code>cv.gglasso</code> is returned, which is a
+list with the ingredients of the cross-validation fit.  </p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>the
+values of <code>lambda</code> used in the fits.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cvm</code></td>
+<td>
+<p>the mean
+cross-validated error - a vector of length <code>length(lambda)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cvsd</code></td>
+<td>
+<p>estimate of standard error of <code>cvm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cvupper</code></td>
+<td>
+<p>upper
+curve = <code>cvm+cvsd</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cvlower</code></td>
+<td>
+<p>lower curve = <code>cvm-cvsd</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name</code></td>
+<td>
+<p>a text string indicating type of measure (for plotting
+purposes).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gglasso.fit</code></td>
+<td>
+<p>a fitted <code>gglasso</code> object for the
+full data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.min</code></td>
+<td>
+<p>The optimal value of <code>lambda</code> that gives
+minimum cross validation error <code>cvm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.1se</code></td>
+<td>
+<p>The largest
+value of <code>lambda</code> such that error is within 1 standard error of the
+minimum.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Yi Yang and Hui Zou<br> Maintainer: Yi Yang &lt;yi.yang6@mcgill.ca&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Yang, Y. and Zou, H. (2015), “A Fast Unified Algorithm for
+Computing Group-Lasso Penalized Learning Problems,” <em>Statistics and
+Computing</em>. 25(6), 1129-1141.<br> BugReport:
+<a href="https://github.com/emeryyi/gglasso">https://github.com/emeryyi/gglasso</a><br></p>
+
+
+<h3>See Also</h3>
+
+<p><code>gglasso</code>, <code>plot.cv.gglasso</code>,
+<code>predict.cv.gglasso</code>, and <code>coef.cv.gglasso</code> methods.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# load gglasso library
+library(gglasso)
+
+# load data set
+data(bardet)
+
+# define group index
+group &lt;- rep(1:20,each=5)
+
+# 5-fold cross validation using group lasso 
+# penalized logisitic regression
+cv &lt;- cv.gglasso(x=bardet$x, y=bardet$y, group=group, loss="ls",
+pred.loss="L2", lambda.factor=0.05, nfolds=5)
+
+</code></pre>
+
+
+</div>

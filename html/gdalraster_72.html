@@ -1,0 +1,251 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ogr_define</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>OGR feature class definition for vector data</h2>
+
+<h3>Description</h3>
+
+<p>This topic contains documentation and helper functions for defining an
+OGR feature class.
+<code>ogr_def_field()</code> creates an attribute field definition, a list
+containing the field data type and potentially other optional field
+properties.
+<code>ogr_def_geom_field()</code> similarly creates a geometry field definition.
+A list containing zero or more attribute field definitions, along with one
+or more geometry field definitions, comprise an OGR feature class definition
+(a.k.a. layer definition). <code>ogr_def_layer()</code> initializes such a list with a
+geometry field. Attribute fields can be added to a feature class definition
+with calls to <code>ogr_def_field()</code> as in the examples.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ogr_def_field(
+  fld_type,
+  fld_subtype = NULL,
+  fld_width = NULL,
+  fld_precision = NULL,
+  is_nullable = NULL,
+  is_unique = NULL,
+  is_ignored = NULL,
+  default_value = NULL
+)
+
+ogr_def_geom_field(
+  geom_type,
+  srs = NULL,
+  is_nullable = NULL,
+  is_ignored = NULL
+)
+
+ogr_def_layer(geom_type, geom_fld_name = "geom", srs = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fld_type</code></td>
+<td>
+<p>Character string containing the name of a field data type
+(e.g., <code>OFTInteger</code>, <code>OFTReal</code>, <code>OFTString</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fld_subtype</code></td>
+<td>
+<p>Character string containing the name of a field subtype.
+One of  <code>OFSTNone</code> (the default), <code>OFSTBoolean</code>, <code>OFSTInt16</code>, <code>OFSTFloat32</code>,
+<code>OFSTJSON</code>, <code>OFSTUUID</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fld_width</code></td>
+<td>
+<p>Optional integer scalar specifying max number of characters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fld_precision</code></td>
+<td>
+<p>Optional integer scalar specifying number of digits
+after the decimal point.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>is_nullable</code></td>
+<td>
+<p>Optional NOT NULL field constraint (logical scalar).
+Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>is_unique</code></td>
+<td>
+<p>Optional UNIQUE constraint on the field (logical scalar).
+Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>is_ignored</code></td>
+<td>
+<p>Whether field is ignored when retrieving features (logical
+scalar). Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>default_value</code></td>
+<td>
+<p>Optional default value for the field as a character
+string.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>geom_type</code></td>
+<td>
+<p>Character string specifying a geometry type (see Details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>srs</code></td>
+<td>
+<p>Character string containing a spatial reference system definition
+as OGC WKT or other well-known format (e.g., the input formats usable with
+<code>srs_to_wkt()</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>geom_fld_name</code></td>
+<td>
+<p>Character string specifying a geometry field name
+Defaults to <code>"geometry"</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>All features in an OGR Layer share a common schema (feature class), modeled
+in GDAL as OGR Feature Definition. The feature class definition includes the
+set of attribute fields and their data types and the geometry field(s).
+In R, a feature class definition is represented as a list, having as names
+the attribute/geometry field names, with each list element holding a field
+definition.
+</p>
+<p>An attribute field definition is a list with named elements:
+</p>
+<div class="sourceCode"><pre>$type       : OGR Field Type ("OFTReal", "OFTString" etc.)
+$subtype    : optional ("OFSTBoolean", ...)
+$width      : optional max number of characters
+$precision  : optional number of digits after the decimal point
+$is_nullable: optional NOT NULL constraint (logical scalar)
+$is_unique  : optional UNIQUE constraint (logical scalar)
+$default    : optional default value as character string
+$is_ignored : optionally ignored when retrieving features (logical scalar)
+$is_geom    : FALSE (the default) for attribute fields
+</pre></div>
+<p>An OGR field type is specified as a character string with possible values:
+<code>OFTInteger</code>, <code>OFTIntegerList</code>, <code>OFTReal</code>, <code>OFTRealList</code>, <code>OFTString</code>,
+<code>OFTStringList</code>, <code>OFTBinary</code>,  <code>OFTDate</code>, <code>OFTTime</code>, <code>OFTDateTime</code>,
+<code>OFTInteger64</code>, <code>OFTInteger64List</code>.
+</p>
+<p>An optional field subtype is specified as a character string with possible
+values:
+<code>OFSTNone</code>, <code>OFSTBoolean</code>, <code>OFSTInt16</code>, <code>OFSTFloat32</code>, <code>OFSTJSON</code>,
+<code>OFSTUUID</code>.
+</p>
+<p>By default, fields are nullable, have no unique constraint, and are not
+ignored (i.e., not omitted when fetching features). Not-null and unique
+constraints are not supported by all format drivers.
+</p>
+<p>A default field value is taken into account by format drivers (generally
+those with a SQL interface) that support it at field creation time.
+If given in the field definition, <code style="white-space: pre;">⁠$default⁠</code> must be a character string.
+The accepted values are <code>"NULL"</code>, a numeric value (e.g., <code>"0"</code>), a literal
+value enclosed between single quote characters (e.g., <code>"'a default value'"</code>,
+with any inner single quote characters escaped by repetition of the single
+quote character), <code>"CURRENT_TIMESTAMP"</code>, <code>"CURRENT_TIME"</code>, <code>"CURRENT_DATE"</code>
+or a driver-specific expression (that might be ignored by other drivers).
+For a datetime literal value, format should be
+<code>"'YYYY/MM/DD HH:MM:SS[.sss]'"</code> (considered as UTC time).
+</p>
+<p>A geometry field definition is a list with named elements:
+</p>
+<div class="sourceCode"><pre>$type       : geom type ("Point", "Polygon", etc.)
+$srs        : optional spatial reference as WKT string
+$is_nullable: optional NOT NULL constraint (logical scalar)
+$is_ignored : optionally ignored when retrieving features (logical scalar)
+$is_geom    : TRUE (required) for geometry fields
+</pre></div>
+<p>Typically, there is one geometry field on a layer, but some formats support
+more than one geometry column per table (e.g., PostGIS).
+</p>
+<p>Geometry types are specified as a character string containing OGC WKT.
+Common types include: <code>Point</code>, <code>LineString</code>, <code>Polygon</code>, <code>MultiPoint</code>,
+<code>MultiLineString</code>, <code>MultiPolygon</code>. See the GDAL documentation for a list
+of all supported geometry types:<br><a href="https://gdal.org/api/vector_c_api.html#_CPPv418OGRwkbGeometryType">https://gdal.org/api/vector_c_api.html#_CPPv418OGRwkbGeometryType</a>
+</p>
+<p>Format drivers may or may not support not-null constraints on attribute and
+geometry fields. If they support creating fields with not-null constraints,
+this is generally before creating any features to the layer. In some cases,
+a not-null constraint may be available as a layer creation option. For
+example, GeoPackage format has a layer creation option
+<code style="white-space: pre;">⁠GEOMETRY_NULLABLE=[YES/NO]⁠</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The feature id (FID) is a special property of a feature and not treated as
+an attribute of the feature. Additional information is given in the GDAL
+documentation for the
+<a href="https://gdal.org/user/ogr_sql_dialect.html#feature-id-fid">OGR SQL</a> and
+<a href="https://gdal.org/user/sql_sqlite_dialect.html#feature-id-fid">SQLite</a>
+SQL dialects. Implications for SQL statements and result sets may depend
+on the dialect used.
+</p>
+<p>Some vector formats do not support schema definition prior to creating
+features. For example, with GeoJSON only the <em>Feature</em> object has a member
+with name <em>properties</em>. The specification does not require all <em>Feature</em>
+objects in a collection to have the same schema of properties, nor does
+it require all <em>Feature</em> objects in a collection to have geometry of the
+same type (<a href="https://geojson.org/">https://geojson.org/</a>).
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>ogr_ds_create()</code>, <code>ogr_layer_create()</code>, <code>ogr_field_create()</code>, <code>ogrinfo()</code>
+</p>
+<p>WKT representation of geometry:<br><a href="https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry">https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">dsn &lt;- file.path(tempdir(), "test.sqlite")
+opt &lt;- NULL
+if (has_spatialite())
+  opt &lt;- "SPATIALITE=YES"
+ogr_ds_create("SQLite", dsn, dsco = opt)
+
+# define a layer
+defn &lt;- ogr_def_layer("Point", srs = epsg_to_wkt(4326))
+defn$fld1_int64 &lt;- ogr_def_field("OFTInteger64")
+defn$fld2_string &lt;- ogr_def_field("OFTString")
+
+if (ogr_ds_test_cap(dsn)$CreateLayer)
+  ogr_layer_create(dsn, "layer1", layer_defn = defn)
+
+ogr_ds_layer_names(dsn)
+ogr_layer_field_names(dsn, "layer1")
+
+deleteDataset(dsn)
+</code></pre>
+
+
+</div>

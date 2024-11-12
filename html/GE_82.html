@@ -1,0 +1,142 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemLand_Labor_Capital_4_3</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some Examples of Spot Market Clearing Paths Involving Land, Labor and Capital</h2>
+
+<h3>Description</h3>
+
+<p>Some examples of spot market clearing paths (alias instantaneous equilibrium paths) involving land, labor and capital.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemLand_Labor_Capital_4_3(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+depreciation.rate &lt;- 0.05
+
+dst.firm.production &lt;- node_new("prod",
+  type = "CD",
+  alpha = 1, beta = c(0.4, 0.4, 0.2),
+  "lab", "cap", "land"
+)
+
+dst.firm.capital.leasing &lt;- node_new("cap",
+  type = "Leontief", a = 1,
+  "prod"
+)
+
+dst.consumer &lt;- node_new("util",
+  type = "CD",
+  alpha = 1, beta = c(0.5, 0.5),
+  "prod", "lab"
+)
+
+dstl &lt;- list(dst.firm.production, dst.consumer, dst.firm.capital.leasing)
+f &lt;- function(policy = policyMarketClearingPrice,
+              p0 = c(1, 1, 1, 1),
+              z0 = c(10, 10, 10),
+              numberOfPeriods = 100) {
+  sdm2(
+    A = dstl,
+    B = matrix(c(
+      1, 0, 1 - depreciation.rate,
+      0, 0, 0,
+      0, 0, 1,
+      0, 0, 0
+    ), 4, 3, TRUE),
+    S0Exg = {
+      S0Exg &lt;- matrix(NA, 4, 3)
+      S0Exg[2, 2] &lt;- S0Exg[4, 2] &lt;- 1
+      S0Exg
+    },
+    names.commodity = c("prod", "lab", "cap", "land"),
+    names.agent = c("firm.production", "consumer", "firm.capital.leasing"),
+    numeraire = "prod",
+    maxIteration = 1,
+    numberOfPeriods = numberOfPeriods,
+    p0 = p0,
+    z0 = z0,
+    policy = policy,
+    ts = TRUE
+  )
+}
+
+ge1 &lt;- f()
+ge1$p
+ge1$DV
+ge1$SV
+matplot(ge1$ts.z, type = "l")
+
+## a spot market clearing path with population growth
+policy.population.growth &lt;- function(time, state) {
+  if (time &gt;= 5) {
+    state$S[2, 2] &lt;- 1.01^(time - 4)
+  }
+  state
+}
+
+ge2 &lt;- f(
+  policy = list(
+    policy.population.growth,
+    policyMarketClearingPrice
+  ),
+  p0 = ge1$p, z0 = ge1$z,
+  numberOfPeriods = 30
+)
+matplot(ge2$ts.z, type = "o", pch = 40)
+matplot(growth_rate(ge2$ts.z), type = "o", pch = 20)
+
+## a spot market clearing path with technology progress
+policy.technology.progress &lt;- function(time, A) {
+  if (time &gt;= 5) {
+    A[[1]]$alpha &lt;- 1.02^(time - 4)
+  }
+}
+
+ge3 &lt;- f(
+  policy = list(
+    policy.technology.progress,
+    policyMarketClearingPrice
+  ),
+  p0 = ge1$p, z0 = ge1$z,
+  numberOfPeriods = 30
+)
+
+matplot(ge3$ts.z, type = "o", pch = 20)
+matplot(growth_rate(ge3$ts.z), type = "o", pch = 20)
+
+## a spot market clearing path with population growth and technology progress
+ge4 &lt;- f(
+  policy = list(
+    policy.population.growth,
+    policy.technology.progress,
+    policyMarketClearingPrice
+  ),
+  p0 = ge1$p, z0 = ge1$z,
+  numberOfPeriods = 30
+)
+
+matplot(ge4$ts.z, type = "o", pch = 20)
+matplot(growth_rate(ge4$ts.z), type = "o", pch = 20)
+
+</code></pre>
+
+
+</div>

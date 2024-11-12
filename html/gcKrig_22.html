@@ -1,0 +1,356 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predgc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prediction at Unobserved Locations in Gaussian Copula Models for Geostatistical Count Data</h2>
+
+<h3>Description</h3>
+
+<p>Computes the plug-in prediction at unobserved sites. Two methods are implemented. If
+<code>method = 'GHK'</code> then the maximum simulated likelihood estimates are computed and
+the sequential importance sampling method is used in the integral evaluation. If
+<code>method = 'GQT'</code> then the maximum surrogate likelihood estimates are computed and the
+generalized quantile transform method is used in integral approximation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">predgc(obs.y, obs.x = NULL, obs.locs, pred.x = NULL, pred.locs,
+       longlat = FALSE, distscale = 1, marginal, corr, obs.effort = 1,
+       pred.effort = 1, method = "GHK", estpar = NULL, corrpar0 = NULL,
+       pred.interval = NULL, parallel = FALSE,
+       ghkoptions = list(nrep = c(100,1000), reorder = FALSE, seed = 12345),
+       paralleloptions = list(n.cores = 2, cluster.type = "SOCK"))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>obs.y</code></td>
+<td>
+<p>a non-negative integer vector of observed response with its length
+equals to the number of observed locations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obs.x</code></td>
+<td>
+<p>a numeric matrix or data frame of covariates at observed locations,
+with its number of rows equals to the number of observed locations.
+If no covariates then <code>obs.x = NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obs.locs</code></td>
+<td>
+<p>a numeric matrix or data frame of observed locations.obs.effort
+The first column is <em>x</em> or longitude, the second column is <em>y</em> or latitude.
+The number of observed locations is equal to the number of rows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pred.x</code></td>
+<td>
+<p>a numeric matrix or data frame of covariates at prediction locations,
+with its number of rows equals to the number of prediction locations.
+If no covariates then <code>pred.x = NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pred.locs</code></td>
+<td>
+<p>a numeric matrix or data frame of prediction locations.
+First column is <em>x</em> or longitude, second column is <em>y</em> or latitude.
+The number of prediction locations equals to the number of rows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>longlat</code></td>
+<td>
+<p>if FALSE, use Euclidean distance, if TRUE use great circle distance. The default is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distscale</code></td>
+<td>
+<p>a numeric scaling factor for computing distance. If original distance is in kilometers, then
+<code>distscale = 1000</code> will convert it to meters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginal</code></td>
+<td>
+<p>an object of class <code>marginal.gc</code> specifying the marginal distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corr</code></td>
+<td>
+<p>an object of class <code>corr.gc</code> specifying the correlation function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obs.effort</code></td>
+<td>
+<p>sampling effort at observed locations.
+For binomial marginal it is the size parameter (number of trials). See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pred.effort</code></td>
+<td>
+<p>sampling effort at prediction locations.
+For binomial marginal it is the size parameter (number of trials). See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>two methods are implemented. If
+<code>method = 'GHK'</code> then the maximum simulated likelihood estimates are computed, if
+<code>method = 'GQT'</code> then the maximum surrogate likelihood estimates are computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estpar</code></td>
+<td>
+<p>if <code>estpar = NULL</code> then the likelihood estimates
+will be computed first, then plug-in into the predictive density.
+When all estimates are available,
+it is suggested to specify <code>estpar</code> with the parameter estimates so
+re-fitting is not needed. If so, the sequence of the
+input values for <code>estpar</code> is: regression parameters, overdispersion (if any), and correlation parameters (range and nugget, if applicable).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corrpar0</code></td>
+<td>
+<p>the starting value of correlation parameters in optimization procedure.
+If <code>corrpar0 = NULL</code> then
+initial range is set to be half of the median distance in distance matrix, and initial nugget
+(if <code>nugget = TRUE</code>) is 0.2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pred.interval</code></td>
+<td>
+<p>a number between <code>0</code> and <code>1</code> representing confidence level of the prediction
+interval. The program will output two types of the prediction intervals, see detail.
+If <code>pred.interval = NULL</code> then no prediction interval will be computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>if <code>TRUE</code> then parallel computing is used to predict multiple prediction locations
+simultaneously. If <code>FALSE</code> then a serial version will be called.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ghkoptions</code></td>
+<td>
+<p>a list of three elements that only need to be specified if <code>method = 'GHK'</code>.
+</p>
+<p><code>nrep</code> is the Monte Carlo size of the importance sampling algorithm for likelihood approximation.
+It can be a vector with increasing positive integers so that the model is
+fitted with a sequence of different Monte Carlo sizes, and the starting
+values for optimization are taken from the previous fitting.
+The default value is 100 for the first optimization and 1000 for the second and definitive optimization.
+</p>
+<p><code>reorder</code> indicates whether the integral will be reordered every iteration in computation
+according to the algorithm in Gibson, etal (1994), default is FALSE.
+</p>
+<p><code>seed</code> is seed of the pseudorandom generator used in Monte Carlo simulation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>paralleloptions</code></td>
+<td>
+<p>a list of two elements that only need to be specified if <code>parallel = TRUE</code>.
+</p>
+<p><code>n.cores</code> is the number of cores to be used in parallel prediction.
+</p>
+<p><code>cluster.type</code> is type of cluster to be used for parallel computing; can be "SOCK", "MPI", "PVM", or "NWS".</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This program implemented two methods in predicting the response at unobserved sites. See <code>mlegc</code>.
+</p>
+<p>The argument <code>obs.effort</code> and <code>pred.effort</code>
+are the sampling effort (known). It can be used to consider heterogeneity of
+the measurement time or area at different locations. The default is 1 for all locations.
+See Han and De Oliveira (2016) for more details.
+</p>
+<p>The program computes two types of prediction intervals at a given confidence level. The shortest
+prediction interval is obtained from evaluating the highest to lowest prediction densities;
+the equal tail prediction interval has equal tail probabilities.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class "predgc" with the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>obs.locs</code></td>
+<td>
+<p> observed locations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obs.y</code></td>
+<td>
+<p> observed values at observed locations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pred.locs</code></td>
+<td>
+<p> prediction locations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predValue</code></td>
+<td>
+<p>the expectation of the conditional predictive distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predCount</code></td>
+<td>
+<p> predicted counts; the closest integer that <code>predValue</code> rounded to.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predVar</code></td>
+<td>
+<p> estimated variance of the prediction at prediction locations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ConfidenceLevel</code></td>
+<td>
+<p> confidence level (between 0 to 1) if prediction interval is computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predInterval.EqualTail</code></td>
+<td>
+<p> equal-tail prediction interval.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predInterval.Shortest</code></td>
+<td>
+<p> shortest length prediction interval.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Zifei Han <a href="mailto:hanzifei1@gmail.com">hanzifei1@gmail.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Han, Z. and De Oliveira, V. (2016) On the correlation structure of Gaussian
+copula models for geostatistical count data.
+<em>Australian and New Zealand Journal of Statistics, 58:47-69</em>.
+</p>
+<p>Kazianka, H. and Pilz, J. (2010)
+Copula-based geostatistical modeling of continuous and discrete data including covariates.
+<em>Stoch Environ Res Risk Assess 24:661-673</em>.
+</p>
+<p>Kazianka, H. (2013)
+Approximate copula-based estimation and prediction of discrete spatial data.
+<em>Stoch Environ Res Risk Assess 27:2015-2026</em>.
+</p>
+<p>Masarotto, G. and Varin, C. (2012)
+Gaussian copula marginal regression.
+<em>Electronic Journal of Statistics 6:1517-1549</em>.
+<a href="https://projecteuclid.org/euclid.ejs/1346421603">https://projecteuclid.org/euclid.ejs/1346421603</a>.
+</p>
+<p>Masarotto, G. and Varin C. (2017). Gaussian Copula Regression in R. <em>Journal of Statistical Software</em>, <b>77</b>(8), 1–26. doi: <a href="https://doi.org/10.18637/jss.v077.i08">10.18637/jss.v077.i08</a>.
+</p>
+<p>Han, Z. and De Oliveira, V. (2018) gcKrig: An R Package for the Analysis of Geostatistical Count Data Using Gaussian Copulas.
+<em>Journal of Statistical Software</em>, <b>87</b>(13), 1–32. doi: <a href="https://doi.org/10.18637/jss.v087.i13">10.18637/jss.v087.i13</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gcmr</code>;
+<code>mlegc</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## For fast check predict at four locations only
+data(Weed95)
+weedobs &lt;- Weed95[Weed95$dummy==1, ]
+weedpred &lt;- Weed95[Weed95$dummy==0, ]
+predweed1 &lt;- predgc(obs.y = weedobs$weedcount, obs.x = weedobs[,4:5], obs.locs = weedobs[,1:2],
+                     pred.x = weedpred[1:4,4:5], pred.locs = weedpred[1:4,1:2],
+                     marginal = negbin.gc(link = 'log'), pred.interval = 0.9,
+                     corr = matern.gc(kappa = 0.5, nugget = TRUE), method = 'GHK')
+#summary(predweed1)
+#plot(predweed1)
+
+## Time consuming examples
+## Weed prediction at 200 locations using parallel programming
+predweed2 &lt;- predgc(obs.y = weedobs$weedcount, obs.x = weedobs[,4:5], obs.locs = weedobs[,1:2],
+                     pred.x = weedpred[,4:5], pred.locs = weedpred[,1:2],
+                     marginal = negbin.gc(link = 'log'),
+                     corr = matern.gc(kappa = 0.5, nugget = TRUE), method = 'GHK',
+                     pred.interval = 0.95, parallel = TRUE,
+                     paralleloptions = list(n.cores = 4))
+#summary(predweed2)
+#plot(predweed2)
+
+
+## A more time consuming example for generating a prediction map at a fine grid
+data(OilWell)
+gridstep &lt;- seq(0.5, 30.5, length = 40)
+locOilpred &lt;- data.frame(Easting = expand.grid(gridstep, gridstep)[,1],
+                        Northing = expand.grid(gridstep, gridstep)[,2])
+PredOil &lt;- predgc(obs.y = OilWell[,3], obs.locs = OilWell[,1:2],  pred.locs = locOilpred,
+                       marginal = binomial.gc(link = 'logit'),
+                       corr = matern.gc(nugget = FALSE), obs.effort = 1,
+                       pred.effort = 1, method = 'GHK',
+                       parallel = TRUE, paralleloptions = list(n.cores = 4))
+PredMat &lt;- summary(PredOil)
+
+## To generate better prediction maps
+library(colorspace)
+filled.contour(seq(0.5,30.5,length=40), seq(0.5,30.5,length=40),
+               matrix(PredMat$predMean,40,), zlim = c(0, 1), col=rev(heat_hcl(12)),
+               nlevels=12, xlab = "Eastings", ylab = "Northings",
+               plot.axes = {axis(1); axis(2); points(OilWell[,1:2], col = 1,
+               cex = 0.25 + 0.25*OilWell[,3])})
+
+filled.contour(seq(0.5,30.5,length=40), seq(0.5,30.5,length=40),
+               matrix(PredMat$predVar,40,),
+               zlim = c(0, 0.3), col = rev(heat_hcl(12)), nlevels = 10,
+               xlab = "Eastings", ylab = "Northings",
+               plot.axes = {axis(1); axis(2); points(OilWell[,1:2], col = 1,
+               cex = 0.25 + 0.25*OilWell[,3])})
+
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

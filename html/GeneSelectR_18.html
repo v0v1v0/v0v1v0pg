@@ -1,0 +1,247 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GeneSelectR</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gene Selection and Evaluation with GeneSelectR</h2>
+
+<h3>Description</h3>
+
+<p>This function performs gene selection using different methods on a given
+training set and evaluates their performance using cross-validation. Optionally, it
+also calculates permutation feature importances.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GeneSelectR(
+  X,
+  y,
+  pipelines = NULL,
+  custom_fs_methods = NULL,
+  selected_methods = NULL,
+  custom_fs_grids = NULL,
+  classifier = NULL,
+  classifier_grid = NULL,
+  preprocessing_steps = NULL,
+  testsize = 0.2,
+  validsize = 0.2,
+  scoring = "accuracy",
+  njobs = -1,
+  n_splits = 5,
+  search_type = "random",
+  n_iter = 10,
+  max_features = 50,
+  calculate_permutation_importance = FALSE,
+  perform_test_split = FALSE,
+  random_state = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>A matrix or data frame with features as columns and observations as rows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A vector of labels corresponding to the rows of X_train.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pipelines</code></td>
+<td>
+<p>An optional list of pre-defined pipelines to use for fitting and evaluation. If this argument is provided, the feature selection methods and preprocessing steps will be ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>custom_fs_methods</code></td>
+<td>
+<p>An optional list of feature selection methods to use for fitting and evaluation. If this argument is not provided, a default set of feature selection methods will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>selected_methods</code></td>
+<td>
+<p>An optional vector of names of feature selection methods to use from the default set. If this argument is provided, only the specified methods will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>custom_fs_grids</code></td>
+<td>
+<p>An optional list of hyperparameter grids for the feature selection methods. Each element of the list should be a named list of parameters for a specific feature selection method. The names of the elements should match the names of the feature selection methods. If this argument is provided, the function will perform hyperparameter tuning for the specified feature selection methods in addition to the final estimator.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>classifier</code></td>
+<td>
+<p>An optional sklearn classifier. If left NULL then sklearn RandomForestClassifier is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>classifier_grid</code></td>
+<td>
+<p>An optional named list of classifier parameters. If none are provided then default grid is used (check vignette for exact params).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>preprocessing_steps</code></td>
+<td>
+<p>An optional named list of sklearn preprocessing procedures. If none provided defaults are used (check vignette for exact params).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>testsize</code></td>
+<td>
+<p>The size of the test set used in the evaluation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>validsize</code></td>
+<td>
+<p>The size of the validation set used in the evaluation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scoring</code></td>
+<td>
+<p>A string representing what scoring metric to use for hyperparameter adjustment. Default value is 'accuracy'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>njobs</code></td>
+<td>
+<p>Number of jobs to run in parallel.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_splits</code></td>
+<td>
+<p>Number of train/test splits.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>search_type</code></td>
+<td>
+<p>A string indicating the type of search to use. 'grid' for GridSearchCV and 'random' for RandomizedSearchCV. Default is 'random'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_iter</code></td>
+<td>
+<p>An integer indicating the number of parameter settings that are sampled in RandomizedSearchCV. Only applies when search_type is 'random'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_features</code></td>
+<td>
+<p>Maximum number of features to be selected by default feature selection methods. Max features cannot exceed the total number of features in a dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>calculate_permutation_importance</code></td>
+<td>
+<p>A boolean indicating whether to calculate permutation feature importance. Default is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>perform_test_split</code></td>
+<td>
+<p>Whether to perform train and test split, to have an evaluation on unseen test set. The default value is set to FALSE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>random_state</code></td>
+<td>
+<p>An integer value setting the random seed for feature selection algorithms and cross validation procedure. By default set to NULL to use different random seed every time an algorithm is used. For reproducibility could be fixed, otherwise for an unbiased estimation should be left as NULL.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns an object of class <code>PipelineResults</code> with the following elements:
+</p>
+
+<ul>
+<li>
+<p> @field best_pipeline: A list of the best-fitted pipelines for each feature selection method and data split.
+</p>
+</li>
+<li>
+<p> @field cv_results: A list containing cross-validation results for each pipeline, including scores and other metrics.
+</p>
+</li>
+<li>
+<p> @field inbuilt_feature_importance: A list of the inbuilt feature importance scores for each pipeline, aggregated across all data splits.
+</p>
+</li>
+<li>
+<p> @field test_metrics: A data frame summarizing test metrics (precision, recall, F1 score, accuracy) for each pipeline, if a test split was performed.
+</p>
+</li>
+<li>
+<p> @field cv_mean_score: A data frame summarizing the mean cross-validation scores for each pipeline across all data splits.
+</p>
+</li>
+<li>
+<p> @field permutation_importance: A list of permutation importance scores for each pipeline, if permutation importance calculation was enabled.
+This comprehensive return structure allows for in-depth analysis of the feature selection methods and model performance.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+if (GeneSelectR:::check_python_modules_available(c("numpy", "pandas", "sklearn", 'boruta'))) {
+  # Create a mock dataset with 29 feature columns and 1 binary label column
+  set.seed(123) # for reproducibility
+  n_rows &lt;- 10
+  n_features &lt;- 100
+
+  # Randomly generate feature data
+  X &lt;- as.data.frame(matrix(rnorm(n_rows * n_features), nrow = n_rows, ncol = n_features))
+  # Ensure each feature has a variance greater than 0.85
+  for(i in 1:ncol(X)) {
+    while(var(X[[i]]) &lt;= 0.85) {
+      X[[i]] &lt;- X[[i]] * 1.1
+    }
+  }
+  colnames(X) &lt;- paste0("Feature", 1:n_features)
+
+  # Create a mock binary label column
+  y &lt;- factor(sample(c("Class1", "Class2"), n_rows, replace = TRUE))
+
+  # Set up the environment
+  GeneSelectR::configure_environment()
+  GeneSelectR::set_reticulate_python()
+
+  # Run GeneSelectR
+  results &lt;- GeneSelectR(X, y)
+
+  # Perform gene selection and evaluation using user-defined methods
+  fs_methods &lt;- list("Lasso" = select_model(lasso(penalty = 'l1',
+                                                  C = 0.1,
+                                                  solver = 'saga'),
+                                            threshold = 'median'))
+  custom_fs_grids &lt;- list("Lasso" = list('C' = c(0.1, 1, 10)))
+  results &lt;- GeneSelectR(X,
+                         y,
+                         max_features = 15,
+                         custom_fs_methods = fs_methods,
+                         custom_fs_grids = custom_fs_grids)
+} else {
+  message("Skipping example as not all required Python modules are available.")
+}
+
+</code></pre>
+
+
+</div>

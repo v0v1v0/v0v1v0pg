@@ -1,0 +1,103 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>wedderburn</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Wedderburn Quasi-likelihood Family </h2>
+
+<h3>Description</h3>
+
+<p>Creates a <code>family</code> object for use with <code>glm</code>,
+<code>gnm</code>, etc., for the variance function 
+<code class="reqn">[\mu(1-\mu)]^2</code> introduced by Wedderburn (1974) for response values in
+[0,1].
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">wedderburn(link = "logit")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+<p> The name of a link function.  Allowed are "logit", "probit"
+and "cloglog". </p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>An object of class <code>family</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>   The reported deviance involves an arbitrary constant (see McCullagh and
+Nelder, 1989, p330); for estimating dispersion, use the Pearson chi-squared
+statistic instead. </p>
+
+
+<h3>Author(s)</h3>
+
+<p> Modification of <code>binomial</code> by the R Core Team. Adapted
+for the Wedderburn quasi-likelihood family by David Firth. </p>
+
+
+<h3>References</h3>
+
+ 
+<p>Gabriel, K R (1998).  Generalised bilinear regression.  <em>Biometrika</em> 
+<b>85</b>, 689–700.
+</p>
+<p>McCullagh, P and Nelder, J A (1989).  <em>Generalized Linear Models</em>
+(2nd ed).  Chapman and Hall.
+</p>
+<p>Wedderburn, R W M (1974).  Quasilikelihood functions, generalized
+linear models and the Gauss-Newton method.  <em>Biometrika</em>
+<b>61</b>, 439–47.
+</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>glm</code>, <code>gnm</code>, <code>family</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1)
+###  Use data from Wedderburn (1974), see ?barley
+
+###  Fit Wedderburn's logit model with variance proportional to the
+###  square of mu(1-mu)
+logitModel &lt;- glm(y ~ site + variety, family = wedderburn, data = barley)
+fit &lt;- fitted(logitModel)
+print(sum((barley$y - fit)^2 / (fit * (1-fit))^2))
+##  Agrees with the chi-squared value reported in McCullagh and Nelder 
+##  (1989, p331), which differs slightly from Wedderburn's reported value.
+
+###  Fit the biplot model as in Gabriel (1998, p694)
+biplotModel &lt;- gnm(y ~ -1 + instances(Mult(site, variety), 2),
+                   family = wedderburn, data = barley)
+barleySVD &lt;- svd(matrix(biplotModel$predictors, 10, 9))
+A &lt;- sweep(barleySVD$v, 2, sqrt(barleySVD$d), "*")[, 1:2]
+B &lt;- sweep(barleySVD$u, 2, sqrt(barleySVD$d), "*")[, 1:2]
+##  These are essentially A and B as in Gabriel (1998, p694), from which
+##  the biplot is made by
+plot(rbind(A, B), pch = c(LETTERS[1:9], as.character(1:9), "X"))
+
+###  Fit the double-additive model as in Gabriel (1998, p697)
+variety.binary &lt;- factor(match(barley$variety, c(2,3,6), nomatch = 0) &gt; 0,
+                         labels = c("Rest", "2,3,6"))
+doubleAdditive &lt;- gnm(y ~ variety + Mult(site, variety.binary),
+                      family = wedderburn, data = barley)
+</code></pre>
+
+
+</div>

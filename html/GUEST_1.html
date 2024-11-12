@@ -1,0 +1,205 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>boost.graph</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimation of precision matrix and detection of graphical structure</h2>
+
+<h3>Description</h3>
+
+<p>This function first applies the regression calibration to deal with measurement error effects. After that, the feature screening technique is employed to screen out independent pairs of random variables and reduce the dimension of random variables. Finally, we adopt the boosting method to detect informative pairs of random variables and estimate the precision matrix. This function can handle various distributions, such as normal, binomial, and Poisson distributions, as well as nonlinear effects among random variables.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">boost.graph(data,ite1,ite2,ite3,thre,select = 0.9,inc = 10^(-3),
+sigma_e = 0.6,q = 0.8,lambda = 1,pi = 0.5,rep = 100,cor = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>An n (observations) times p (variables) matrix of random variables, whose distributions can be continuous, discrete, or mixed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ite1</code></td>
+<td>
+
+<p>The number of iterations for continuous variables.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ite2</code></td>
+<td>
+
+<p>The number of iterations for binary variables.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ite3</code></td>
+<td>
+
+<p>The number of iterations for count variables.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thre</code></td>
+<td>
+
+<p>The treshold value for feature screening, whose value should be between 0 and 1.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>select</code></td>
+<td>
+
+<p>The treshold constant in the boosting algorithm, whose value should be between 0 and 1. The default value is 0.9.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inc</code></td>
+<td>
+
+<p>The learning rate of the increment in the boosting algorithm, which shoud be a small value. The default value is 0.001.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_e</code></td>
+<td>
+
+<p>The common value in the diagonal covariance matrix of the error for the classical measurement error model when <code>data</code> are continuous. The default value is 0.6.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q</code></td>
+<td>
+
+<p>The common value used to characterize misclassification for binary random variables. The default value is 0.8.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+
+<p>The parameter of the Poisson distribution, which is used to characterize error-prone count random variables. The default value is 1.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pi</code></td>
+<td>
+
+<p>The probability in the Binomial distribution, which is used to characterize error-prone count random variables. The default value is 0.5.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rep</code></td>
+<td>
+
+<p>The number of bootstrapping iterations. The default value is 100.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cor</code></td>
+<td>
+
+<p>Measurement error correction when estimating the precision matrix. The default value is TRUE.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+
+<p>The estimator of the precision matrix.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+
+<p>The chosen pairs obtained by the feature screening.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xi</code></td>
+<td>
+
+<p>The weights sorted with pairs in <code>p</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g</code></td>
+<td>
+
+<p>The visualization of the estimated network structure determined by <code>w</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Hui-Shan Tsao and Li-Pang Chen<br>
+Maintainer: Hui-Shan Tsao <a href="mailto:n410412@gmail.com">n410412@gmail.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Hui-Shan Tsao (2024). <em>Estimation of Ultrahigh-Dimensional Graphical Models and Its Application to Dsicriminant Analysis.</em> Master Thesis supervised by Li-Pang Chen, National Chengchi University.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(MedulloblastomaData)
+
+X &lt;- t(MedulloblastomaData[2:656,]) #covariates
+Y &lt;- MedulloblastomaData[1,] #response
+
+X &lt;- matrix(as.numeric(X),nrow=23)
+
+p &lt;- ncol(X)
+n &lt;- nrow(X)
+
+#standarization
+X_new=data.frame()
+for (i in 1:p){
+ X_new[1:n,i]=(X[,i]-rep(mean(X[,i]),n))/sd(X[,i])
+}
+X_new=matrix(unlist(X_new),nrow = n)
+
+
+#estimate graphical model
+result &lt;- boost.graph(data = X_new, thre = 0.2, ite1 = 3, ite2 = 0, ite3 = 0, rep = 1)
+theta.hat &lt;- result$w
+</code></pre>
+
+
+</div>

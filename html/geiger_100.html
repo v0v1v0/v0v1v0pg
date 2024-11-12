@@ -1,0 +1,172 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>nodelabel.phylo</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Blending information from taxonomies and trees</h2>
+
+<h3>Description</h3>
+
+<p>working with systematic reference tables and phylogenies</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">nodelabel.phylo(phy, taxonomy, strict=TRUE, ncores=NULL)
+phylo.lookup(taxonomy, ncores=NULL)
+lookup.phylo(phy, taxonomy = NULL, clades = NULL, ncores=NULL)
+phylo.clades(clades, phy=NULL, unplaced=TRUE, ncores=NULL)
+glomogram.phylo(phy, subtrees)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>phy</code></td>
+<td>
+<p>a phylogenetic tree of class 'phylo' ('multiPhylo' in <code>phylo.clades</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>taxonomy</code></td>
+<td>
+<p>a linkage table (of class <code>matrix</code>) between tips of the phylogeny and clades represented in the tree; rownames of 'taxonomy' should be tips found in the phylogeny</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clades</code></td>
+<td>
+<p>a named list of clade definitions (i.e., spanning taxa; see <b>Examples</b>); spanning taxa may invoke other definitions found within the <code>clades</code> list</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unplaced</code></td>
+<td>
+<p>whether to use 'unplaced' taxa if given as an element in <code>clades</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subtrees</code></td>
+<td>
+<p>a list of trees to be grafted into <code>phy</code>; each <code>subtrees</code> element must either be a 'phylo' or 'multiPhylo' object with branch lengths in the same units as <code>phy</code> (see <b>Examples</b>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strict</code></td>
+<td>
+<p>whether to enforce strict labeling of nodes or allow
+liberal estimates of the best location of a given nodelabel</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>the maximum number of cores to be used</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>nodelabel.phylo</code> provides a function (as part of the <code>phylo</code> object returned) to resolve the hash key and node identifier for a label found in <code>taxonomy</code>. 
+This function is the <code>FUN</code> element of the returned object. If the taxonomic label cannot be properly placed in the tree (i.e., no subtree is found that is absolutely 
+consistent with the supplied <code>taxonomy</code>, the nearest matching node(s) will be returned when invoking <code>FUN</code>).   
+</p>
+<p><code>phylo.lookup</code> converts a <code>taxonomy</code> into a phylogenetic tree. 
+</p>
+<p><code>lookup.phylo</code> converts a phylogenetic tree (<code>phy</code>) into a linkage table based on nodelabels associated with <code>phy</code>, which can be supplemented with a <code>taxonomy</code> and (or) 
+<code>clades</code> object.   
+</p>
+<p><code>phylo.clades</code> returns a series of phylogenetic subtrees based on clade definitions found in the <code>clades</code> object.  Definitions can be handles that are recursive (see <b>Examples</b>).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>JM Eastman</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+sal=get(data(caudata))
+print(head(sal$tax))
+
+## TREE from TABLE: phylo.lookup()
+tax=cbind(sal$tax[,c("subfamily", "family", "suborder")], order="Caudata")
+tphy=phylo.lookup(tax, ncores=2)
+print(tphy)
+head(tphy$node.label)
+
+## TABLE from TREE: lookup.phylo()
+tax=sal$tax[,c("genus", "family")]
+cld=list(
+	Sirenoidea=c("Siren", "Pseudobranchus"), 
+	Salamandroidea=c("Ambystomatidae", "Plethodontidae"), 
+	Cryptobranchoidea=c("Hynobius_naevius", "Cryptobranchus_alleganiensis"),
+	CAUDATA=c("Sirenoidea","Salamandroidea","Cryptobranchoidea")
+)
+lkp=lookup.phylo(sal$phy, taxonomy=tax, clades=cld, ncores=2)
+print(lkp)
+nphy=nodelabel.phylo(sal$phy, lkp, ncores=2)
+dev.new()
+plot.phylo(ladderize(nphy,right=FALSE), cex=0.35, 
+type="fan", label.offset=2.5, no.margin=TRUE, edge.color="gray", edge.width=0.5)
+
+nodelabels(nphy$node.label, cex=0.45, col="red", frame="n")
+
+## CLADES to TREE: phylo.clades()
+fmrca=geiger:::.mrca
+salamandroidea=extract.clade(nphy, fmrca(c("Ambystomatidae", "Plethodontidae"), nphy))
+cryptobranchoidea=extract.clade(nphy, fmrca(c("Cryptobranchidae", "Hynobiidae"), nphy))
+siren=extract.clade(nphy, fmrca(c("Siren_lacertina", "Siren_intermedia"), nphy))
+
+clades=list(
+			 Sirenoidea=c("Siren", "Pseudobranchus"), 
+			 Caudata=c("Sirenoidea","Salamandroidea","Cryptobranchoidea"),
+			 AMPHIBIA=c("Caudata","Anura","Gymnophiona")
+)
+
+phy=list(Cryptobranchoidea=cryptobranchoidea, Salamandroidea=salamandroidea, Siren=siren)
+class(phy)="multiPhylo"
+
+res=phylo.clades(clades, phy, ncores=2)
+amph=nodelabel.phylo(res$AMPHIBIA, lkp, ncores=2)
+print(amph$FUN("Salamandroidea"))
+dev.new()
+plot(ladderize(amph, right=FALSE), cex=0.2, label.offset=0.05)
+nodelabels(amph$node.label, cex=0.35, col="red", frame="n")
+
+
+## GLOMOGRAM
+sirenidae=extract.clade(nphy, fmrca(c("Siren_lacertina", "Pseudobranchus_axanthus"), nphy))
+ambystomatidae=extract.clade(nphy, fmrca(c("Ambystoma_gracile", "Ambystoma_texanum"), nphy))
+trees=list(
+	Cryptobranchoidea=cryptobranchoidea,
+	Sirenidae=sirenidae,
+	Ambystomatidae=ambystomatidae
+)
+class(trees)="multiPhylo"
+
+fam=sal$fam
+ftax=unique(sal$tax[,c("family", "suborder")])
+rownames(ftax)=unname(ftax[,"family"])
+fam=nodelabel.phylo(fam, ftax, ncores=2)
+fam$FUN("Salamandroidea")
+
+res=glomogram.phylo(fam, trees)
+dev.new()
+zz=match(res$tip.label, fam$tip.label)
+cc=integer(length(zz))
+cc[!is.na(zz)]=1
+
+plot(ladderize(res, right=FALSE), cex=1, label.offset=5, tip.color=ifelse(cc==1, "red", "black"))
+
+## End(Not run)
+</code></pre>
+
+
+</div>

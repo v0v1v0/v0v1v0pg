@@ -1,0 +1,138 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>marginalize_lkjcorr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Turn spec for LKJ distribution into spec for marginal LKJ distribution</h2>
+
+<h3>Description</h3>
+
+<p>Turns specs for an LKJ correlation matrix distribution as returned by
+<code>parse_dist()</code> into specs for the marginal distribution of
+a single cell in an LKJ-distributed correlation matrix (i.e., <code>lkjcorr_marginal()</code>).
+Useful for visualizing prior correlations from LKJ distributions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">marginalize_lkjcorr(
+  data,
+  K,
+  predicate = NULL,
+  dist = ".dist",
+  args = ".args",
+  dist_obj = ".dist_obj"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data frame containing a column with distribution names (<code>".dist"</code> by default)
+and a list column of distribution arguments (<code>".args"</code> by default), such as output by
+<code>parse_dist()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>Dimension of the correlation matrix. Must be greater than or equal to 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predicate</code></td>
+<td>
+<p>a bare expression for selecting the rows of <code>data</code> to modify. This is useful
+if <code>data</code> contains more than one row with an LKJ prior in it and you only want to modify some
+of the distributions; if this is the case, give row a predicate expression that evaluates to
+<code>TRUE</code> on the rows you want to modify.
+If <code>NULL</code> (the default), all <code>lkjcorr</code> distributions in <code>data</code> are modified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist</code></td>
+<td>
+<p>The name of the column containing distribution names. See <code>parse_dist()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>args</code></td>
+<td>
+<p>The name of the column containing distribution arguments. See <code>parse_dist()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist_obj</code></td>
+<td>
+<p>The name of the column to contain a <span class="pkg">distributional</span> object representing the
+distribution. See <code>parse_dist()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The LKJ(eta) prior on a correlation matrix induces a marginal prior on each correlation
+in the matrix that depends on both the value of <code>eta</code> <em>and</em> <code>K</code>, the dimension
+of the <code class="reqn">K \times K</code> correlation matrix. Thus to visualize the marginal prior
+on the correlations, it is necessary to specify the value of <code>K</code>, which depends
+on what your model specification looks like.
+</p>
+<p>Given a data frame representing parsed distribution specifications (such
+as returned by <code>parse_dist()</code>), this function updates any rows with <code>.dist == "lkjcorr"</code>
+so that the first argument to the distribution (stored in <code>.args</code>) is equal to the specified dimension
+of the correlation matrix (<code>K</code>), changes the distribution name in <code>.dist</code> to <code>"lkjcorr_marginal"</code>,
+and assigns a <span class="pkg">distributional</span> object representing this distribution to <code>.dist_obj</code>.
+This allows the distribution to be easily visualized using the <code>stat_slabinterval()</code>
+family of ggplot2 stats.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data frame of the same size and column names as the input, with the <code>dist</code>, and <code>args</code>,
+and <code>dist_obj</code> columns modified on rows where <code>dist == "lkjcorr"</code> such that they represent a
+marginal LKJ correlation distribution with name <code>lkjcorr_marginal</code> and <code>args</code> having
+<code>K</code> equal to the input value of <code>K</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>parse_dist()</code>, <code>lkjcorr_marginal()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(dplyr)
+library(ggplot2)
+
+# Say we have an LKJ(3) prior on a 2x2 correlation matrix. We can visualize
+# its marginal distribution as follows...
+data.frame(prior = "lkjcorr(3)") %&gt;%
+  parse_dist(prior) %&gt;%
+  marginalize_lkjcorr(K = 2) %&gt;%
+  ggplot(aes(y = prior, xdist = .dist_obj)) +
+  stat_halfeye() +
+  xlim(-1, 1) +
+  xlab("Marginal correlation for LKJ(3) prior on 2x2 correlation matrix")
+
+# Say our prior list has multiple LKJ priors on correlation matrices
+# of different sizes, we can supply a predicate expression to select
+# only those rows we want to modify
+data.frame(coef = c("a", "b"), prior = "lkjcorr(3)") %&gt;%
+  parse_dist(prior) %&gt;%
+  marginalize_lkjcorr(K = 2, coef == "a") %&gt;%
+  marginalize_lkjcorr(K = 4, coef == "b")
+
+</code></pre>
+
+
+</div>

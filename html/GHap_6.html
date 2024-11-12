@@ -1,0 +1,249 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ghap.anctest</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Prediction of haplotype ancestry
+</h2>
+
+<h3>Description</h3>
+
+<p>This function uses prototype alleles to predict ancestry of haplotypes in test samples.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R"> ghap.anctest(object, blocks = NULL,
+              prototypes, test = NULL,
+              only.active.samples = TRUE,
+              only.active.markers = TRUE,
+              ncores = 1, verbose = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+
+<p>A GHap.phase object.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>blocks</code></td>
+<td>
+
+<p>A data frame containing block boundaries, such as supplied by the <code>ghap.blockgen</code> function.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prototypes</code></td>
+<td>
+
+<p>A data frame containing prototype alleles, such as supplied by the <code>ghap.anctrain</code> function.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test</code></td>
+<td>
+
+<p>Character vector of individuals to test. All active individuals are used if this vector is not provided.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>only.active.samples</code></td>
+<td>
+
+<p>A logical value specifying whether only active samples should be included in predictions (default = TRUE).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>only.active.markers</code></td>
+<td>
+
+<p>A logical value specifying whether only active markers should be used for predictions (default = TRUE).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+
+<p>A numeric value specifying the number of cores to be used in parallel computing (default = 1).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>A logical value specfying whether log messages should be printed (default = TRUE).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For each interrogated block, tested haplotypes are assigned to their nearest centroids (i.e., the pseudo-lineages with the smallest Euclidean distances). If no blocks are supplied, the function automatically builds blocks compatible with admixture up to 10 generations in the past based on intermarker distances. This has been chosen according to simulation results, where the use of haplotype blocks compatible with recent admixture (~10 generations) retained reasonable accuracy across most scenarios, regardless of the age of admixture.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function returns a dataframe with the following columns:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>BLOCK</code></td>
+<td>
+
+<p>Block alias.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CHR</code></td>
+<td>
+
+<p>Chromosome name.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BP1</code></td>
+<td>
+
+<p>Block start position.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BP2</code></td>
+<td>
+
+<p>Block end position.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>POP</code></td>
+<td>
+
+<p>Original population label.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ID</code></td>
+<td>
+
+<p>Individual name.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>HAP1</code></td>
+<td>
+
+<p>Predicted ancestry of haplotype 1.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>HAP2</code></td>
+<td>
+
+<p>Predicted ancestry of haplotype 2.
+</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Yuri Tani Utsunomiya &lt;ytutsunomiya@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Y.T. Utsunomiya et al. Unsupervised detection of ancestry tracks with the GHap R package. Methods in Ecology and Evolution. 2020. 11:1448–54.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>ghap.anctrain</code>, <code>ghap.ancsmooth</code>, <code>ghap.ancplot</code>, <code>ghap.ancmark</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# #### DO NOT RUN IF NOT NECESSARY ###
+# 
+# # Copy phase data in the current working directory
+# exfiles &lt;- ghap.makefile(dataset = "example",
+#                          format = "phase",
+#                          verbose = TRUE)
+# file.copy(from = exfiles, to = "./")
+# 
+# # Load phase data
+# 
+# phase &lt;- ghap.loadphase("example")
+# 
+# ### RUN ###
+# 
+# # Calculate marker density
+# mrkdist &lt;- diff(phase$bp)
+# mrkdist &lt;- mrkdist[which(mrkdist &gt; 0)]
+# density &lt;- mean(mrkdist)
+# 
+# # Generate blocks for admixture events up to g = 10 generations in the past
+# # Assuming mean block size in Morgans of 1/(2*g)
+# # Approximating 1 Morgan ~ 100 Mbp
+# g &lt;- 10
+# window &lt;- (100e+6)/(2*g)
+# window &lt;- ceiling(window/density)
+# step &lt;- ceiling(window/4)
+# blocks &lt;- ghap.blockgen(phase, windowsize = window,
+#                         slide = step, unit = "marker")
+# 
+# # BestK analysis
+# bestK &lt;- ghap.anctrain(object = phase, K = 5, tune = TRUE)
+# plot(bestK$ssq, type = "b", xlab = "K",
+#      ylab = "Within-cluster sum of squares")
+# 
+# # Unsupervised analysis with best K
+# prototypes &lt;- ghap.anctrain(object = phase, K = 2)
+# hapadmix &lt;- ghap.anctest(object = phase,
+#                          blocks = blocks,
+#                          prototypes = prototypes,
+#                          test = unique(phase$id))
+# anctracks &lt;- ghap.ancsmooth(object = phase, admix = hapadmix)
+# ghap.ancplot(ancsmooth = anctracks)
+# 
+# # Supervised analysis
+# train &lt;- unique(phase$id[which(phase$pop != "Cross")])
+# prototypes &lt;- ghap.anctrain(object = phase, train = train,
+#                             method = "supervised")
+# hapadmix &lt;- ghap.anctest(object = phase,
+#                          blocks = blocks,
+#                          prototypes = prototypes,
+#                          test = unique(phase$id))
+# anctracks &lt;- ghap.ancsmooth(object = phase, admix = hapadmix)
+# ghap.ancplot(ancsmooth = anctracks)
+
+</code></pre>
+
+
+</div>

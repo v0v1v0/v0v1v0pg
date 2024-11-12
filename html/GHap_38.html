@@ -1,0 +1,246 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ghap.roh</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Detection of runs of homozygosity (ROH)
+</h2>
+
+<h3>Description</h3>
+
+<p>Map haplotype segments that are likely identical-by-descent.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R"> ghap.roh(object, minroh = 1e+6, method = "hmm", freq = NULL,
+          genpos = NULL, inbcoef = NULL, error = 0.25/100,
+          only.active.samples = TRUE, only.active.markers = TRUE,
+          ncores = 1, verbose = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<p>The following arguments are used by both the 'hmm' and 'naive' methods:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+
+<p>A valid GHap object (phase or plink).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minroh</code></td>
+<td>
+
+<p>Minimum ROH length to output.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+
+<p>Character value indicating which method to use: 'naive' or 'hmm' (default).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>only.active.samples</code></td>
+<td>
+
+<p>A logical value specifying whether only active samples should be included in the search (default = TRUE).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>only.active.markers</code></td>
+<td>
+
+<p>A logical value specifying whether only active markers should be used in the search (default = TRUE).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+
+<p>A numeric value specifying the number of cores to be used in parallel computing (default = 1).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>A logical value specfying whether log messages should be printed (default = TRUE).
+</p>
+</td>
+</tr>
+</table>
+<p>The following arguments are only used by the 'hmm' method:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>freq</code></td>
+<td>
+
+<p>Named numeric vector of allele frequencies, such as provided by function <code>ghap.freq</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>genpos</code></td>
+<td>
+
+<p>Named numeric vector of genetic positions. If not supplied, 1 cM = 1 Mb is assumed and genetic distances between consecutive markers are set to d/1e+6, where d is the distance in base pairs.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inbcoef</code></td>
+<td>
+
+<p>Named numeric vector of starting values for genomic inbreeding (i.e., guess for the proportion of the genome covered by ROH).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>error</code></td>
+<td>
+
+<p>Numeric value representing the expected genotyping error rate (default = 0.25/100).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function searchs for runs of homozygosity (ROH) via two different methods: <br></p>
+<p>The 'naive' method simply finds streches of homozygous genotypes in the observed haplotypes that are larger then a user-definied minimum size (default is 1 Mbp). The 'hmm' method uses a Hidden Markov Model that takes genotyping error and recombination into account while detecting ROHs. The 'hmm' model in GHap is similar to the ones described by Narasimhan et al (2016) and Druet &amp; Gautier (2017), differing slightly in model fitting and definition of transition and emission probabilities (details are covered in our vignette). <br></p>
+<p>The 'hmm' method requires allele frequencies for each marker, as well as starting values for the expected proportion of the genome covered by ROH (genomic inbreeding) for each individual. Estimates of allele frequencies can be either based on a reference or estimated from the data with the <code>ghap.freq</code> function. Starting values for genomic inbreeding can be obtained by running the function with the 'naive' method first and then computing starting values with <code>ghap.froh</code> (see the examples). A genetic map with positions in cM can be provided by the user via the genpos argument. If genetic positions are not provided, 1 cM = 1 Mb is assumed.<br></p>
+
+
+<h3>Value</h3>
+
+<p>The function returns a dataframe with the following columns:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>POP</code></td>
+<td>
+
+<p>Original population label.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ID</code></td>
+<td>
+
+<p>Individual name.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CHR</code></td>
+<td>
+
+<p>Chromosome name.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BP1</code></td>
+<td>
+
+<p>Segment start position.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BP2</code></td>
+<td>
+
+<p>Segment end position.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LENGTH</code></td>
+<td>
+
+<p>Length of run of homozygosity.
+</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Yuri Tani Utsunomiya &lt;ytutsunomiya@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>V. Narasimhan et al. BCFtools/RoH: a hidden Markov model approach for detecting autozygosity from next-generation sequencing data. Bioinformatics. 2016. 32:1749-1751.
+</p>
+<p>T. Druet &amp; M. Gautier. A model-based approach to characterize individual inbreeding at both global and local genomic scales. Molecular Ecology. 2017. 26:5820-5841.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>ghap.freq</code>, <code>ghap.froh</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# #### DO NOT RUN IF NOT NECESSARY ###
+# 
+# # Copy plink data in the current working directory
+# exfiles &lt;- ghap.makefile(dataset = "example",
+#                          format = "plink",
+#                          verbose = TRUE)
+# file.copy(from = exfiles, to = "./")
+# 
+# # Load plink data
+# plink &lt;- ghap.loadplink("example")
+# 
+# ### RUN ###
+# 
+# # Subset pure1 population
+# pure1 &lt;- plink$id[which(plink$pop == "Pure1")]
+# plink &lt;- ghap.subset(object = plink, ids = pure1, variants = plink$marker)
+# 
+# # ROH via the 'naive' method
+# roh1 &lt;- ghap.roh(plink, method = "naive")
+# froh1 &lt;- ghap.froh(plink, roh1)
+# 
+# # ROH via the 'hmm' method
+# freq &lt;- ghap.freq(plink, type = 'A1')
+# inbcoef &lt;- froh1$FROH1; names(inbcoef) &lt;- froh1$ID
+# roh2 &lt;- ghap.roh(plink, method = "hmm", freq = freq,
+#                 inbcoef = inbcoef)
+# froh2 &lt;- ghap.froh(plink, roh2)
+#
+# # Method 'hmm' using Fhat3 as starting values
+# inbcoef &lt;- ibc$Fhat3; names(inbcoef) &lt;- ibc$ID
+# inbcoef[which(inbcoef &lt; 0)] &lt;- 0.01
+# roh3 &lt;- ghap.roh(plink, method = "hmm", freq = freq,
+#                  inbcoef = inbcoef)
+# froh3 &lt;- ghap.froh(plink, roh3)
+
+</code></pre>
+
+
+</div>

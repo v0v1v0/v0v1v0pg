@@ -1,0 +1,257 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>glmm.score</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Performing GLMM based score tests
+</h2>
+
+<h3>Description</h3>
+
+<p>Use a glmmkin class object from the null GLMM to perform score tests for association with genotypes in a plink .bed file (binary genotypes), a GDS file .gds, or a plain text file (or compressed .gz or .bz2 file).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">glmm.score(obj, infile, outfile, BGEN.samplefile = NULL, center = T, select = NULL, 
+	MAF.range = c(1e-7, 0.5), miss.cutoff = 1, 
+	missing.method = "impute2mean", nperbatch = 100, tol = 1e-5,
+	infile.nrow = NULL, infile.nrow.skip = 0, infile.sep = "\t",
+	infile.na = "NA", infile.ncol.skip = 1, infile.ncol.print = 1,
+	infile.header.print = "SNP", is.dosage = FALSE, ncores = 1, verbose = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>obj</code></td>
+<td>
+
+<p>a class glmmkin or class glmmkin.multi object, returned by fitting the null GLMM using <code>glmmkin</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infile</code></td>
+<td>
+
+<p>the input file name or an object of class SeqVarGDSClass. Note that for plink binary genotype files only the prefix without .bed, .bim or .fam should be used. Only SNP major mode recognized in the binary file. Alternatively, it can be the full name of a BGEN file (including the suffix .bgen), a GDS file (including the suffix .gds), or a plain text file with some delimiters (comma, space, tab or something else), with one row for each SNP and one column for each individual. In that case, SNPs should be coded as numeric values (0/1/2 or dosages allowed, A/C/G/T coding is not recognized). There can be additional rows and columns to skip at the beginning. The order of individuals can be different from <code>obj</code> in the null GLMM (see the argument <code>select</code>). Some compressed files (.gz and .bz2) also allowed. If <code>infile</code> is an object of class SeqVarGDSClass, the .gds file will be closed upon successful completion of the function.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outfile</code></td>
+<td>
+
+<p>the output file name.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BGEN.samplefile</code></td>
+<td>
+
+<p>path to the BGEN sample file. Required when the BGEN file does not contain sample identifiers or the <code>select</code> parameter is NULL (default = NULL).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>center</code></td>
+<td>
+
+<p>a logical switch for centering genotypes before tests. If TRUE, genotypes will be centered to have mean 0 before tests, otherwise raw values will be directly used in tests (default = TRUE).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>select</code></td>
+<td>
+
+<p>an optional vector indicating the order of individuals in <code>infile</code>. If supplied, the length must match the number of individuals in <code>infile</code> (default = NULL). Individuals to be excluded should be coded 0. For example, <code>select = c(2, 3, 1, 0)</code> means the 1st individual in <code>infile</code> corresponds to the 2nd individual in <code>obj</code>, the 2nd individual in <code>infile</code> corresponds to the 3rd individual in <code>obj</code>, the 3rd individual in <code>infile</code> corresponds to the 1st individual in <code>obj</code>, the 4th individual in <code>infile</code> is not included in <code>obj</code>. If there are any duplicated <code>id_include</code> in <code>obj</code> (longitudinal data analysis), indices in <code>select</code> should match the order of individuals with unique <code>id_include</code> in <code>obj</code>. For plink binary genotype files and GDS files, this argument is not required and the sample ID's are automatically matched.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MAF.range</code></td>
+<td>
+
+<p>a numeric vector of length 2 defining the minimum and maximum minor allele frequencies of variants that should be included in the analysis (default = c(1e-7, 0.5)).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>miss.cutoff</code></td>
+<td>
+
+<p>the maximum missing rate allowed for a variant to be included (default = 1, including all variants).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>missing.method</code></td>
+<td>
+
+<p>method of handling missing genotypes. Either "impute2mean" or "omit" (default = "impute2mean").
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nperbatch</code></td>
+<td>
+
+<p>an integer for how many SNPs should be tested in a batch (default = 100). The computational time can increase dramatically if this value is either small or large. The optimal value for best performance depends on the user's system.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+
+<p>the threshold for determining monomorphism. If a SNP has value range less than the tolerance, it will be considered monomorphic and its association test p-value will be NA (default = 1e-5). Only used when <code>infile</code> is a plain text file (or compressed .gz or .bz2 file).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infile.nrow</code></td>
+<td>
+
+<p>number of rows to read in <code>infile</code>, including number of rows to skip at the beginning. If NULL, the program will determine how many rows there are in <code>infile</code> automatically and read all rows (default = NULL). Only used when <code>infile</code> is a plain text file (or compressed .gz or .bz2 file).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infile.nrow.skip</code></td>
+<td>
+
+<p>number of rows to skip at the beginning of <code>infile</code>. Must be nonnegative integers. Useful when header or comment lines are present (default = 0). Only used when <code>infile</code> is a plain text file (or compressed .gz or .bz2 file).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infile.sep</code></td>
+<td>
+
+<p>delimiter in <code>infile</code> (default = "\t"). Only used when <code>infile</code> is a plain text file (or compressed .gz or .bz2 file).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infile.na</code></td>
+<td>
+
+<p>symbol in <code>infile</code> to denote missing genotypes (default = "NA"). Only used when <code>infile</code> is a plain text file (or compressed .gz or .bz2 file).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infile.ncol.skip</code></td>
+<td>
+
+<p>number of columns to skip before genotype data in <code>infile</code>. These columns can be SNP name, alleles and/or quality measures and should be placed at the beginning in each line. After skipping these columns, the program will read in genotype data and perform score tests. Must be nonnegative integers. It is recommended that SNP name should be included as the first column in <code>infile</code> and genotype data should start from the second column or later (default = 1). Only used when <code>infile</code> is a plain text file (or compressed .gz or .bz2 file).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infile.ncol.print</code></td>
+<td>
+
+<p>a vector indicating which column(s) in <code>infile</code> should be printed to the output directly. These columns can be SNP name, alleles and/or quality measures placed at the beginning in each line. Must be nonnegative integers, no greater than <code>infile.ncol.skip</code> and sorted numerically in ascending order. By default, it is assumed that the first column is SNP name and genotype data start from the second column, and SNP name should be carried over to the output (default = 1). Should be set to NULL if <code>infile.ncol.skip</code> is 0. Only used when <code>infile</code> is a plain text file (or compressed .gz or .bz2 file).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infile.header.print</code></td>
+<td>
+
+<p>a character vector indicating column name(s) of column(s) selected to print by <code>infile.ncol.print</code> (default = "SNP"). Should be set to NULL if <code>infile.ncol.skip</code> is 0. Only used when <code>infile</code> is a plain text file (or compressed .gz or .bz2 file).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>is.dosage</code></td>
+<td>
+
+<p>a logical switch for whether imputed dosage should be used from a GDS <code>infile</code> (default = FALSE).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+
+<p>a positive integer indicating the number of cores to be used in parallel computing (default = 1).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>a logical switch for whether a progress bar should be shown for a GDS <code>infile</code> (default = FALSE).
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>NULL if <code>infile</code> is a BGEN file (.bgen) or a GDS file (.gds), otherwise computational time in seconds, excluding I/O time.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Han Chen, Duy T. Pham
+</p>
+
+
+<h3>References</h3>
+
+<p>Chen, H., Wang, C., Conomos, M.P., Stilp, A.M., Li, Z., Sofer, T., Szpiro, A.A., Chen, W., Brehm, J.M., Celedón, J.C., Redline, S., Papanicolaou, G.J., Thornton, T.A., Laurie, C.C., Rice, K. and Lin, X. (2016) Control forpopulation structure and relatedness for binary traits in genetic association studies via logistic mixed models. The American Journal of Human Genetics 98, 653-666.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>glmmkin</code>, <code>glmm.wald</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(example)
+attach(example)
+model0 &lt;- glmmkin(disease ~ age + sex, data = pheno, kins = GRM, id = "id",
+       family = binomial(link = "logit"))
+plinkfiles &lt;- strsplit(system.file("extdata", "geno.bed", package = "GMMAT"), 
+       ".bed", fixed = TRUE)[[1]]
+outfile.bed &lt;- tempfile()
+glmm.score(model0, infile = plinkfiles, outfile = outfile.bed)
+if(requireNamespace("SeqArray", quietly = TRUE) &amp;&amp; requireNamespace("SeqVarTools",
+        quietly = TRUE)) {
+	infile &lt;- system.file("extdata", "geno.gds", package = "GMMAT")
+	outfile.gds &lt;- tempfile()
+	glmm.score(model0, infile = infile, outfile = outfile.gds)
+	unlink(outfile.gds)
+}
+infile &lt;- system.file("extdata", "geno.txt", package = "GMMAT")
+outfile.text &lt;- tempfile()
+glmm.score(model0, infile = infile, outfile = outfile.text, infile.nrow.skip = 5, 
+	infile.ncol.skip = 3, infile.ncol.print = 1:3, 
+	infile.header.print = c("SNP", "Allele1", "Allele2"))
+infile &lt;- system.file("extdata", "geno.bgen", package = "GMMAT")
+samplefile &lt;- system.file("extdata", "geno.sample", package = "GMMAT")
+outfile.bgen &lt;- tempfile()
+glmm.score(model0, infile = infile, BGEN.samplefile = samplefile,
+        outfile = outfile.bgen)
+unlink(c(outfile.bed, outfile.text, outfile.bgen))
+
+</code></pre>
+
+
+</div>

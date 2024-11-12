@@ -1,0 +1,153 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>vcov.gnm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Variance-covariance Matrix for 
+Parameters in a Generalized Nonlinear Model </h2>
+
+<h3>Description</h3>
+
+<p>This method extracts or computes a variance-covariance matrix for
+use in approximate inference on estimable parameter combinations in a
+generalized nonlinear model.  
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'gnm'
+vcov(object, dispersion = NULL, with.eliminate = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p> a model object of class <code>gnm</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dispersion</code></td>
+<td>
+<p>the dispersion parameter for the fitting family. By
+default it is obtained from <code>object</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>with.eliminate</code></td>
+<td>
+<p>logical; should parts of the variance-covariance
+matrix corresponding to eliminated coefficients be computed?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> as for <code>vcov</code>. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The resultant matrix does not itself necessarily
+contain variances and covariances, since <code>gnm</code> typically works
+with over-parameterized model representations in which parameters are
+not all identified.  Rather, the resultant matrix is to be used as
+the kernel of quadratic forms which are the variances or
+covariances for estimable parameter combinations.
+</p>
+<p>The matrix values are scaled by <code>dispersion</code>. If the dispersion
+is not specified, it is taken as <code>1</code> for the <code>binomial</code> and
+<code>Poisson</code> families, and otherwise estimated by the residual
+Chi-squared statistic divided by the residual degrees of freedom. The
+dispersion used is returned as an attribute of the matrix.
+</p>
+<p>The dimensions of the matrix correspond to the non-eliminated
+coefficients of the <code>"gnm"</code> object.  If <code>use.eliminate =
+    TRUE</code>  then setting can sometimes give appreciable
+speed gains; see <code>gnm</code> for details of the <code>eliminate</code>
+mechanism.  The <code>use.eliminate</code> argument is currently ignored if the
+model has full rank.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A matrix with number of rows/columns equal to
+<code>length(coef(object))</code>. If there are eliminated coefficients and
+<code>use.eliminate = TRUE</code>, the matrix will have the following
+attributes:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>covElim </code></td>
+<td>
+<p> a matrix of covariances between the
+eliminated and non-eliminated parameters. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varElim </code></td>
+<td>
+<p> a vector of variances corresponding to the eliminated
+parameters.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p> The <code>gnm</code> class includes generalized linear models, and it
+should be noted that the
+behaviour of <code>vcov.gnm</code> differs from that of
+<code>vcov.glm</code> whenever <code>any(is.na(coef(object)))</code> is
+<code>TRUE</code>.  Whereas <code>vcov.glm</code> drops all rows and columns which
+correspond to <code>NA</code> values in <code>coef(object)</code>, <code>vcov.gnm</code>
+keeps those columns (which are full of zeros, since the <code>NA</code>
+represents a parameter which is fixed either by use of the
+<code>constrain</code> argument to <code>gnm</code> or by a convention to handle
+linear aliasing). 
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> David Firth </p>
+
+
+<h3>References</h3>
+
+<p> Turner, H and Firth, D (2005). Generalized nonlinear models
+in R: An overview of the gnm package.  At <a href="https://cran.r-project.org">https://cran.r-project.org</a></p>
+
+
+<h3>See Also</h3>
+
+ <p><code>getContrasts</code>, <code>se.gnm</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1)
+## Fit the "UNIDIFF" mobility model across education levels
+unidiff &lt;- gnm(Freq ~ educ*orig + educ*dest +
+               Mult(Exp(educ), orig:dest), family = poisson,
+               data = yaish, subset = (dest != 7))
+## Examine the education multipliers (differences on the log scale):
+ind &lt;- pickCoef(unidiff, "[.]educ")
+educMultipliers &lt;- getContrasts(unidiff, rev(ind))
+## Now get the same standard errors using a suitable set of
+## quadratic forms, by calling vcov() directly:
+cmat &lt;- contr.sum(ind)
+sterrs &lt;- sqrt(diag(t(cmat)
+                    %*% vcov(unidiff)[ind, ind]
+                    %*% cmat))
+all(sterrs == (educMultipliers$SE)[-1]) ## TRUE
+</code></pre>
+
+
+</div>

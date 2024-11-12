@@ -1,0 +1,223 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gtfs_route</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>gtfs_route</h2>
+
+<h3>Description</h3>
+
+<p>Calculate single route between a start and end station departing at or after
+a specified time.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gtfs_route(
+  gtfs,
+  from,
+  to,
+  start_time = NULL,
+  day = NULL,
+  route_pattern = NULL,
+  earliest_arrival = TRUE,
+  include_ids = FALSE,
+  grep_fixed = TRUE,
+  max_transfers = NA,
+  from_to_are_ids = FALSE,
+  quiet = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>gtfs</code></td>
+<td>
+<p>A set of GTFS data returned from extract_gtfs or, for more
+efficient queries, pre-processed with gtfs_timetable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>from</code></td>
+<td>
+<p>Names, IDs, or approximate (lon, lat) coordinates of start
+stations (as <code>stop_name</code> or <code>stop_id</code> entry in the <code>stops</code> table, or a vector
+of two numeric values). See Note.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>to</code></td>
+<td>
+<p>Corresponding Names, IDs, or coordinates of end station.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start_time</code></td>
+<td>
+<p>Desired departure time at <code>from</code> station, either in seconds
+after midnight, a vector of two or three integers (hours, minutes) or (hours,
+minutes, seconds), an object of class difftime, <span class="pkg">hms</span>, or
+<span class="pkg">lubridate</span>. If not provided, current time is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>day</code></td>
+<td>
+<p>Day of the week on which to calculate route, either as an
+unambiguous string (so "tu" and "th" for Tuesday and Thursday), or a number
+between 1 = Sunday and 7 = Saturday. If not given, the current day will be
+used. (Not used if <code>gtfs</code> has already been prepared with
+gtfs_timetable.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>route_pattern</code></td>
+<td>
+<p>Using only those routes matching given pattern, for
+example, "^U" for routes starting with "U" (as commonly used for underground
+or subway routes. To negate the <code>route_pattern</code> – that is, to include all
+routes except those matching the pattern – prepend the value with "!"; for
+example "!^U" will include all services except those starting with "U". (This
+parameter is not used at all if <code>gtfs</code> has already been prepared with
+gtfs_timetable.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>earliest_arrival</code></td>
+<td>
+<p>If <code>FALSE</code>, routing will be with the first-departing
+service, which may not provide the earliest arrival at the <code>to</code> station. This
+may nevertheless be useful for bulk queries, as earliest arrival searches
+require two routing queries, while earliest departure searches require just
+one, and so will be generally twice as fast.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include_ids</code></td>
+<td>
+<p>If <code>TRUE</code>, result will include columns containing
+GTFS-specific identifiers for routes, trips, and stops.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grep_fixed</code></td>
+<td>
+<p>If <code>FALSE</code>, match station names (when passed as character
+string) with <code>grep(..., fixed = FALSE)</code>, to allow use of <code>grep</code> expressions.
+This is useful to refine matches in cases where desired stations may match
+multiple entries.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_transfers</code></td>
+<td>
+<p>If not <code>NA</code>, specify a desired maximum number of
+transfers for the route (including but not exceeding this number). This
+parameter may be used to generate alternative routes with fewer transfers,
+although actual numbers of transfers may still exceed this number if the
+value specified is less than the minimal feasible number of transfers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>from_to_are_ids</code></td>
+<td>
+<p>Set to <code>TRUE</code> to enable <code>from</code> and <code>to</code> parameter to
+specify entries in <code>stop_id</code> rather than <code>stop_name</code> column of the <code>stops</code>
+table.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>Set to <code>TRUE</code> to suppress screen messages (currently just
+regarding timetable construction).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>For single (from, to) values, a <code>data.frame</code> describing the route,
+with each row representing one stop. For multiple (from, to) values, a list
+of <code>data.frames</code>, each of which describes one route between the i'th start
+and end stations (<code>from</code> and <code>to</code> values). Origin and destination stations
+for which no route is possible return <code>NULL</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>This function will by default calculate the route that arrives earliest
+at the specified destination, although this may depart later than the
+earliest departing service. Routes which depart at the earliest possible time
+can be calculated by setting <code>earliest_arrival = FALSE</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other main: 
+<code>gtfs_route_headway()</code>,
+<code>gtfs_traveltimes()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Examples must be run on single thread only:
+nthr_dt &lt;- data.table::setDTthreads (1)
+nthr_omp &lt;- Sys.getenv ("OMP_THREAD_LIMIT")
+Sys.setenv ("OMP_THREAD_LIMIT" = 1L)
+
+berlin_gtfs_to_zip () # Write sample feed from Berlin, Germany to tempdir
+f &lt;- file.path (tempdir (), "vbb.zip") # name of feed
+gtfs &lt;- extract_gtfs (f)
+from &lt;- "Innsbrucker Platz" # U-bahn station, not "S"
+to &lt;- "Alexanderplatz"
+start_time &lt;- 12 * 3600 + 120 # 12:02
+
+route &lt;- gtfs_route (gtfs, from = from, to = to, start_time = start_time)
+
+# Specify day of week
+route &lt;- gtfs_route (
+    gtfs,
+    from = from,
+    to = to,
+    start_time = start_time,
+    day = "Sunday"
+)
+
+# specify travel by "U" = underground only
+route &lt;- gtfs_route (
+    gtfs,
+    from = from,
+    to = to,
+    start_time = start_time,
+    day = "Sunday",
+    route_pattern = "^U"
+)
+# specify travel by "S" = street-level only (not underground)
+route &lt;- gtfs_route (
+    gtfs,
+    from = from,
+    to = to,
+    start_time = start_time,
+    day = "Sunday",
+    route_pattern = "^S"
+)
+
+# Route queries are generally faster if the GTFS data are pre-processed with
+# `gtfs_timetable()`:
+gt &lt;- gtfs_timetable (gtfs, day = "Sunday", route_pattern = "^S")
+route &lt;- gtfs_route (gt, from = from, to = to, start_time = start_time)
+
+data.table::setDTthreads (nthr_dt)
+Sys.setenv ("OMP_THREAD_LIMIT" = nthr_omp)
+</code></pre>
+
+
+</div>

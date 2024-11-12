@@ -1,0 +1,114 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.misrepEM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Predict method for 'misrepEM' Model Fits
+</h2>
+
+<h3>Description</h3>
+
+<p>Predicted values based on a fitted 'misrepEM' model object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'misrepEM'
+predict(object, newdata, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>a fit from one of <code>gammaRegMisrepEM</code>, <code>LnRegMisrepEM</code>, <code>NormRegMisrepEM</code>, <code>nbRegMisrepEM</code>, or <code>poisRegMisrepEM</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>a data frame containing predictors that are to be used to make predictions of the response. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>currently not used.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Currently, only predictions made on the scale of the response variable are supported.
+</p>
+<p>Incomplete cases are automatically dropped, and predictions are made only on complete cases.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>predict.misrepEM</code> returns a numeric vector of predictions.
+</p>
+
+
+<h3>References</h3>
+
+<p>Xia, Michelle, Rexford Akakpo, and Matthew Albaugh. "Maximum Likelihood Approaches to Misrepresentation Models in GLM ratemaking: Model Comparisons." <em>Variance</em> 16.1 (2023).
+</p>
+<p>Akakpo, R. M., Xia, M., &amp; Polansky, A. M. (2019). Frequentist inference in insurance ratemaking models adjusting for misrepresentation. <em>ASTIN Bulletin: The Journal of the IAA, 49</em>(1), 117-146.
+</p>
+<p>Xia, M., Hua, L., &amp; Vadnais, G. (2018). Embedded predictive analysis of misrepresentation risk in GLM ratemaking models. <em>Variance, 12</em>(1), 39-58.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Simulate data
+n &lt;- 2000
+p0 &lt;- 0.25
+
+X1 &lt;- rbinom(n, 1, 0.4)
+X2 &lt;- rnorm(n, 0, 1)
+X3 &lt;- rbeta(n, 2, 1)
+
+theta0 &lt;- 0.3
+V &lt;- rbinom(n,1,theta0)
+V_star &lt;- V
+V_star[V==1] &lt;- rbinom(sum(V==1),1,1-p0)
+
+a0 &lt;- 1
+a1 &lt;- 2
+a2 &lt;- 0
+a3 &lt;- 4
+a4 &lt;- 2
+
+mu &lt;- exp(a0 + a1*X1 + a2*X2 + a3*X3 + a4*V)
+
+phi &lt;- 0.2
+alpha0 &lt;- 1/phi
+beta &lt;- 1/mu/phi
+Y &lt;- rgamma(n, alpha0, beta)
+
+data &lt;- data.frame(Y = Y, X1 = X1, X2 = X2, X3 = X3, V_star = V_star)
+
+# Split data into training and testing sets
+train &lt;- data[1:1800,]
+test  &lt;- data[1801:2000,]
+
+gamma_fit &lt;- gammaRegMisrepEM(formula = Y ~ X1 + X2 + X3 + V_star,
+                              v_star = "V_star", data = train)
+
+# Predict on test set;
+preds &lt;- predict(gamma_fit, newdata = test)
+
+</code></pre>
+
+
+</div>

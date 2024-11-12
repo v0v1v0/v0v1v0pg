@@ -1,0 +1,371 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mtc.model</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generate network meta-analysis models</h2>
+
+<h3>Description</h3>
+
+<p>The <code>mtc.model</code> function generates network meta-analysis models from an <code>mtc.network</code> object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mtc.model(network, type = "consistency", factor = 2.5, n.chain = 4,
+  likelihood=NULL, link=NULL, linearModel="random",
+  om.scale=NULL, hy.prior=mtc.hy.prior("std.dev", "dunif", 0, "om.scale"),
+  re.prior.sd=15 * om.scale, dic=TRUE, powerAdjust=NA, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>network</code></td>
+<td>
+<p>An object of S3 class <code>mtc.network</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>A string literal indicating the type of model (allowed values are "consistency", "regression", "nodesplit", "ume", or "use").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>factor</code></td>
+<td>
+<p>Variance scaling factor for the starting values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.chain</code></td>
+<td>
+<p>Number of chains in the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>likelihood</code></td>
+<td>
+<p>The likelihood to be used. If unspecified, a suitable likelihood will be inferred for the given data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+<p>The link function to be used. If unspecified, a suitable link function will be inferred for the given data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linearModel</code></td>
+<td>
+<p>The type of linear model to be generated. Can be "random" for a random effects model, or "fixed" for a fixed effect model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>om.scale</code></td>
+<td>
+<p>Outcome measure scale. Represents a "very large" difference on the analysis' outcome scale. This is used to set vague priors. For the log odds-ratio, values between 2 and 5 are considered reasonable. For continuous outcomes, this depends heavily on the specific outcome. If left unspecified, it is determined from the data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hy.prior</code></td>
+<td>
+<p>Heterogeneity prior. See <code>mtc.hy.prior</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>re.prior.sd</code></td>
+<td>
+<p>Standard deviation for the relative effects prior (normal distribution).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dic</code></td>
+<td>
+<p>When set to TRUE, deviance and fitted values will be monitored to allow computation of the Deviance Information Criterion (DIC) at residual.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>powerAdjust</code></td>
+<td>
+<p>Optional: the name of a column in the studies data frame of the <code>mtc.network</code>. This column must contain values between 0 and 1. The likelihood for each study will be adjusted by inflating the variance, where 0 means the study is excluded and 1 means it receives full weight. See details for more.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to be passed to the type-specific model generation function.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>mtc.model</code> function generates an object of S3 class <code>mtc.model</code>, which can be
+visualized by the generic <code>plot</code> function or summarized by the generic <code>summary</code> function.
+</p>
+<p>These likelihood/links are supported:
+</p>
+
+<ul>
+<li>
+<p>normal/identity: for continuous (mean difference) data.
+</p>
+<p>Required columns: <code>[mean, std.err]</code> or <code>[mean, std.dev, sampleSize]</code>.
+</p>
+<p>Result: relative mean difference.
+</p>
+</li>
+<li>
+<p>binom/logit: for dichotomous data.
+</p>
+<p>Required columns <code>[responders, sampleSize]</code>.
+</p>
+<p>Result: (log) odds ratio.
+</p>
+</li>
+<li>
+<p>binom/log: for dichotomous data.
+</p>
+<p>Required columns <code>[responders, sampleSize]</code>.
+</p>
+<p>Result: (log) risk ratio.
+</p>
+</li>
+<li>
+<p>binom/cloglog: for rate (survival) data - equal follow-up in each arm.
+</p>
+<p>Required columns <code>[responders, sampleSize]</code>.
+</p>
+<p>Result: (log) hazard ratio.
+</p>
+</li>
+<li>
+<p>poisson/log: for rate (survival) data.
+</p>
+<p>Required columns <code>[responders, exposure]</code>.
+</p>
+<p>Result: (log) hazard ratio.
+</p>
+</li>
+</ul>
+<p>Most likelihood/links follow [Dias et al. 2013a], and the binom/log model follows [Warn et al. 2002].
+</p>
+<p>The following model types are supported:
+</p>
+
+<ul>
+<li>
+<p><code>consistency</code>: ordinary consistency model. No additional parameters. [Dias et al. 2013a, van Valkenhoef et al. 2012]
+</p>
+</li>
+<li>
+<p><code>nodesplit</code>: node-splitting model. Removes both arms used to estimate the direct evidence from the network of indirect evidence, rather than just one of those arms. This means that three-arm trials do not contribute any evidence in the network of indirect evidence. When relative effect data are present, these are transformed appropriately (using an assumption of normality) to enable this direct/indirect evidence split. Additional parameters: <code>t1</code> and <code>t2</code>, which indicate the comparison to be split. [Dias et al. 2010, van Valkenhoef et al. 2015]
+</p>
+</li>
+<li>
+<p><code>regression</code>: meta-regression model. Additional parameters: <code>regressor</code>, which indicates how to structure the treatment-interaction model for the regression. See below for details.
+</p>
+</li>
+<li>
+<p><code>use</code>: unrelated study effects. Models the effects within each study as if the studies are independent. No additional parameters. [van Valkenhoef et al. (draft)]
+</p>
+</li>
+<li>
+<p><code>ume</code>: unrelated mean effects. Models the effects within each comparison as if they are independent. Does not properly handle multi-arm trials, and warns when they are present in the network. No additional parameters. [Dias et al. 2013b, van Valkenhoef et al. (draft)]
+</p>
+</li>
+</ul>
+<p>Regressor specification: a list with elements: <code>variable</code>, <code>coefficient</code>, and either <code>control</code> or <code>classes</code>.
+The <code>variable</code> is the name of the covariate to include in the regression analysis, and must be a column of the studies data frame in the network.
+The regressor variable is automatically centered and standardized using the method recommended by Gelman et al. (2008).
+The <code>coefficient</code> indicates the type of treatment-interaction model: "shared", "unrelated", or "exchangeable".
+<code>control</code>, if specified, must be the ID of a treatment in the network.
+All other treatments have a coefficient relative to the control, which can be the same for all treatments ("shared"), different for all treatments ("unrelated") or exchangeable between treatments ("exchangeable").
+<code>classes</code> is a named list of treatment classes, the first of which will act as the control class.
+Each class is a vector of treatment IDs from the network.
+Only "shared" coefficients can currently be used, meaning a single coefficient per class (except the control class).
+See also <code>atrialFibrillation</code>, <code>certolizumab</code>, and <code>hfPrevention</code> for examples of meta-regression analyses.
+</p>
+<p>Studies can be downweighted by using the <code>powerAdjust</code> argument, which applies a variance inflation (also known as "power prior") to the likelihood.
+This allows a weight <code class="reqn">\alpha_i \in [0, 1]</code> to be specified for each study <code class="reqn">i</code>.
+The log-likelihood will be multiplied by a factor <code class="reqn">\alpha_i</code>, or equivalently for normal distributions the variance will be multiplied by <code class="reqn">1/\alpha_i</code>.
+Setting <code class="reqn">\alpha_i = 0</code> will completely exclude that study, whereas setting <code class="reqn">\alpha_i = 1</code> will weight it fully.
+Essentially, down-weighted models modify the data and hence model fit statistics such as DIC can not be compared between models with different weightings.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>mtc.model</code>.
+The following elements are descriptive:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>The type of model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>network</code></td>
+<td>
+<p>Network the model was generated from</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tree</code></td>
+<td>
+<p>Spanning tree formed by the basic parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var.scale</code></td>
+<td>
+<p>The scaling factor used to over-disperse starting values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>likelihood</code></td>
+<td>
+<p>The likelihood used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+<p>The link function used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>om.scale</code></td>
+<td>
+<p>The scale for the variance parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>regressor</code></td>
+<td>
+<p>Regressor specification (regression models only): includes additional elements "center" and "scale" describing how the regressor input was standardized</p>
+</td>
+</tr>
+</table>
+<p>These elements determine the model run by JAGS:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>n.chain</code></td>
+<td>
+<p>The number of chains</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>code</code></td>
+<td>
+<p>Model code in JAGS syntax. Use <code>cat()</code> for proper formatting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data in JAGS compatible format</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inits</code></td>
+<td>
+<p>Initial values in JAGS compatible format</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>monitors</code></td>
+<td>
+<p>The nodes of the JAGS model to monitor</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dic</code></td>
+<td>
+<p>Whether to compute the DIC</p>
+</td>
+</tr>
+</table>
+<p>These latter fields can be modified to alter the statistical model, but such changes may break the model or assumptions made elsewhere in the package.
+</p>
+
+
+<h3>Visualization</h3>
+
+<p>Calling the generic plot method on an S3 <code>mtc.model</code> object
+will show a graph with the treatments as vertices and the comparisons as edges.
+The lines with solid arrows represent basic parameters, and the other lines represent comparisons that are not associated with any parameter but do have direct evidence from trials.
+</p>
+
+<p>The example code will generate the following graph:
+</p>
+<p><img src="../help/figures/parkinson.png" alt="Graph showing structure of a consistency model generated from parkison example data">
+
+
+The default layout algorithm is <code>igraph::layout.circle</code>, other layout algorithms can be used by passing them as an optional argument called <code>layout</code> to <code>plot</code>.
+The <code>igraph::layout.fruchterman.reingold</code> algorithm also seems to produce nice results and may be better for large graphs.
+</p>
+
+
+<h3>Reproducible results</h3>
+
+<p>It is possible to get reproducible results, but as JAGS uses its own pseudo-random number generator, this is somewhat more involved.
+</p>
+<p><code>mtc.model</code> generates random numbers using the R functions (for example to generate initial values). Therefore, <code>set.seed</code> must be called before calling <code>mtc.model</code>.
+</p>
+<p>Then, before calling <code>mtc.run</code>, the random number generator type and seed must be set for each of the chains. This can be done as documented in <code>jags.model</code>, by setting the <code>.RNG.name</code> and <code>.RNG.seed</code> for each chain in <code>model$inits</code>. See below for an example.</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Gert van Valkenhoef, Joël Kuiper</p>
+
+
+<h3>See Also</h3>
+
+
+<p><code>mtc.network</code>, <code>mtc.run</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Random effects consistency model for Parkinson network
+model &lt;- mtc.model(parkinson)
+plot(model)
+summary(model)
+
+# Fixed effect meta-regression for heart failure prevention
+regressor &lt;- list(coefficient='shared',
+                  variable='secondary',
+                  control='control')
+
+model &lt;- mtc.model(hfPrevention,
+                   type="regression",
+                   regressor=regressor,
+                   linearModel="fixed")
+
+# Reproducible results
+# Set the R RNG seed
+set.seed(42)
+model &lt;- mtc.model(parkinson, likelihood='normal', link='identity')
+# By default, the model will have 4 chains - generate a seed for each
+seeds &lt;- sample.int(4, n = .Machine$integer.max)
+# Apply JAGS RNG settings to each chain
+model$inits &lt;- mapply(c, model$inits, list(
+  list(.RNG.name="base::Wichmann-Hill", .RNG.seed=seeds[1]),
+  list(.RNG.name="base::Marsaglia-Multicarry", .RNG.seed=seeds[2]),
+  list(.RNG.name="base::Super-Duper", .RNG.seed=seeds[3]),
+  list(.RNG.name="base::Mersenne-Twister", .RNG.seed=seeds[4])), SIMPLIFY=FALSE)
+</code></pre>
+
+
+</div>

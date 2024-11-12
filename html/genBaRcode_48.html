@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>processingRawData</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Data processing</h2>
+
+<h3>Description</h3>
+
+<p>Reads the corresponding fast(a/q) file(s), extracts the defined barcode constructs and counts them. Optionally,
+a Phred-Score based quality filtering will be conducted and the results will be saved within a csv file.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">processingRawData(
+  file_name,
+  source_dir,
+  results_dir = NULL,
+  mismatch = 0,
+  indels = FALSE,
+  label = "",
+  bc_backbone,
+  bc_backbone_label = NULL,
+  min_score = 30,
+  min_reads = 2,
+  save_it = TRUE,
+  seqLogo = FALSE,
+  cpus = 1,
+  strategy = "sequential",
+  full_output = FALSE,
+  wobble_extraction = TRUE,
+  dist_measure = "hamming"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file_name</code></td>
+<td>
+<p>a character string or a character vector, containing the file name(s).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>source_dir</code></td>
+<td>
+<p>a character string which contains the path to the source files.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>results_dir</code></td>
+<td>
+<p>a character string which contains the path to the results directory. If no value is assigned the source_dir will automatically also become the results_dir.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mismatch</code></td>
+<td>
+<p>an positive integer value, default is 0, if greater values are provided they indicate the number of allowed mismtaches when identifying the barcode constructes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>indels</code></td>
+<td>
+<p>a logical value. If TRUE the chosen number of mismatches will be interpreted as edit distance and allow for insertions and deletions as well (currently under construction).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>label</code></td>
+<td>
+<p>a character string which serves as a label for every kind of created output file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bc_backbone</code></td>
+<td>
+<p>a character string describing the barcode design, variable positions have to be marked with the letter 'N'. If only a clustering of the sequenced reads should be applied bc_backbone is expecting the string "none" and the mismatch parameter will then be interpreted as maximum dissimilarity for which two reads will be clustered together.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bc_backbone_label</code></td>
+<td>
+<p>a character vector, an optional list of barcode backbone names serving as additional identifier within file names and BCdat labels. If not provided ordinary numbers will serve as alternative.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_score</code></td>
+<td>
+<p>a positive integer value, all fastq sequence with an average score smaller
+then min_score will be excluded, if min_score = 0 there will be no quality score filtering</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_reads</code></td>
+<td>
+<p>positive integer value, all extracted barcode sequences with a read count smaller than min_reads will be excluded from the results</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_it</code></td>
+<td>
+<p>a logical value. If TRUE, the raw data will be saved as a csv-file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seqLogo</code></td>
+<td>
+<p>a logical value. If TRUE, the sequence logo of the entire NGS file will be generated and saved.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cpus</code></td>
+<td>
+<p>an integer value, indicating the number of available cpus.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strategy</code></td>
+<td>
+<p>since the future package is used for parallelisation a strategy has to be stated, the default is "sequential"  (cpus = 1) and "multisession" (cpus &gt; 1). For further information please read future::plan() R-Documentation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>full_output</code></td>
+<td>
+<p>a logical value. If TRUE, additional output files will be generated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wobble_extraction</code></td>
+<td>
+<p>a logical value. If TRUE, single reads will be stripped of the backbone and only the "wobble" positions will be left.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist_measure</code></td>
+<td>
+<p>a character value. If "bc_backbone = 'none'", single reads will be clustered based on a distance measure.
+Available distance methods are Optimal string aligment ("osa"), Levenshtein ("lv"), Damerau-Levenshtein ("dl"), Hamming ("hamming"), Longest common substring ("lcs"), q-gram ("qgram"), cosine ("cosine"), Jaccard ("jaccard"), Jaro-Winkler ("jw"),
+distance based on soundex encoding ("soundex"). For more detailed information see stringdist function of the stringdist-package for more information)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a BCdat object which will include read counts, barcode sequences, the results directory and the search barcode backbone.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+bc_backbone &lt;- "ACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANNCTTNNCGANNCTTNNGGANNCTANNACTNNCGANN"
+
+source_dir &lt;- system.file("extdata", package = "genBaRcode")
+
+BC_dat &lt;- processingRawData(file_name = "test_data.fastq.gz", source_dir,
+          results_dir = "/my/test/directory/", mismatch = 2, label = "test", bc_backbone,
+          min_score = 30, indels = FALSE, min_reads = 2, save_it = FALSE, seqLogo = FALSE)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

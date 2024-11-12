@@ -1,0 +1,169 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>graph3d-shiny</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Shiny bindings for graph3d</h2>
+
+<h3>Description</h3>
+
+<p>Output and render functions for using graph3d within Shiny
+applications and interactive Rmd documents.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">graph3dOutput(outputId, width = "100%", height = "400px")
+
+renderGraph3d(expr, env = parent.frame(), quoted = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>outputId</code></td>
+<td>
+<p>output variable to read from</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>width, height</code></td>
+<td>
+<p>dimensions, must be valid CSS units (like <code>'100%'</code>,
+<code>'400px'</code>, <code>'auto'</code>) or a number, which will be coerced to a
+string and have <code>'px'</code> appended</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expr</code></td>
+<td>
+<p>an expression that generates a <code>graph3d</code> HTML widget</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>env</code></td>
+<td>
+<p>the environment in which to evaluate <code>expr</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quoted</code></td>
+<td>
+<p>logical, whether <code>expr</code> is a quoted expression (with
+<code>quote()</code>); this is useful if you want to save an expression in a
+variable</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(interactive()) {
+
+# 'surfaceColors' example ####
+
+library(shiny)
+library(viridisLite)
+library(graph3d)
+
+x &lt;- y &lt;- seq(-10, 10, length.out = 100)
+dat &lt;- expand.grid(x = x, y = y)
+f &lt;- function(x, y){
+  r &lt;- sqrt(x^2+y^2)
+  10 * ifelse(r == 0, 1, sin(r)/r)
+}
+dat &lt;- transform(dat, z = f(x, y))
+
+ui &lt;- fluidPage(
+  br(),
+  fluidRow(
+    column(
+      width = 2,
+      radioButtons("colors", "Colors",
+                   c("viridis", "inferno", "magma", "plasma", "cividis"))
+    ),
+    column(
+      width = 10,
+      graph3dOutput("mygraph", height = "550px")
+    )
+  )
+)
+
+server &lt;- function(input, output, session){
+
+  Colors &lt;- reactive({
+    colors &lt;- switch(
+      input$colors,
+      viridis = viridis(5),
+      inferno = inferno(5),
+      magma = magma(5),
+      plasma = plasma(5),
+      cividis = cividis(5)
+    )
+    substring(colors, 1L, 7L)
+  })
+
+  output[["mygraph"]] &lt;- renderGraph3d({
+    graph3d(dat, surfaceColors = Colors(), showLegend = FALSE)
+  })
+
+}
+
+shinyApp(ui, server)
+
+}
+
+if(interactive()) {
+
+# 'onclick' example ####
+
+library(shiny)
+library(graph3d)
+
+dat &lt;- data.frame(x = rnorm(30), y = rnorm(30), z = rnorm(30))
+
+onclick &lt;- c(
+  "function(point){",
+  "  Shiny.setInputValue('point', point);",
+  "}"
+)
+
+ui &lt;- fluidPage(
+  br(),
+  fluidRow(
+    column(
+      width = 4,
+      h4("You clicked:"),
+      verbatimTextOutput("pointClicked")
+    ),
+    column(
+      width = 8,
+      graph3dOutput("mygraph", height = "550px")
+    )
+  )
+)
+
+server &lt;- function(input, output, session){
+
+  output[["mygraph"]] &lt;- renderGraph3d({
+    graph3d(dat, type = "dot", width = "550px", height = "550px",
+            onclick = JS(onclick), tooltip = FALSE)
+  })
+
+  output[["pointClicked"]] &lt;- renderPrint({
+    input[["point"]]
+  })
+
+}
+
+shinyApp(ui, server)
+
+}
+
+</code></pre>
+
+
+</div>

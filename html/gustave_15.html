@@ -1,0 +1,164 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>res_cal</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Linear Regression Residuals Calculation</h2>
+
+<h3>Description</h3>
+
+<p><code>res_cal</code> calculates linear regression residuals in an 
+efficient way : handling several dependent variables at a time, using 
+Matrix::TsparseMatrix capabilities and allowing for pre-calculation of 
+the matrix inverse.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">res_cal(y = NULL, x, w = NULL, by = NULL, precalc = NULL, id = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A (sparse) numerical matrix of dependent variable(s).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A (sparse) numerical matrix of independent variable(s).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>An optional numerical vector of row weights.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by</code></td>
+<td>
+<p>An optional categorical vector (factor or character)
+when residuals calculation is to be conducted within by-groups 
+(see Details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>precalc</code></td>
+<td>
+<p>A list of pre-calculated results (see Details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>A vector of identifiers of the units used in the calculation.
+Useful when <code>precalc = TRUE</code> in order to assess whether the ordering of the
+<code>y</code> data matrix matches the one used at the precalculation step.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In the context of the <code>gustave</code> package, linear 
+regression residual calculation is solely used to take into account 
+the effect of calibration on variance estimation. Independent variables 
+are therefore most likely to be the same from one variance estimation 
+to another, hence the inversion of the matrix 
+<code>t(x) %*% Diagonal(x = w) %*% x</code> can be done once and for all 
+at a pre-calculation step.
+</p>
+<p>The parameters <code>y</code> and <code>precalc</code> determine whether a list of 
+pre-calculated data should be used in order to speed up the regression 
+residuals computation at execution time:
+</p>
+
+<ul>
+<li>
+<p> if <code>y</code> not <code>NULL</code> and <code>precalc</code> <code>NULL</code> : 
+on-the-fly calculation of the matrix inverse and the regression residuals 
+(no pre-calculation).
+</p>
+</li>
+<li>
+<p> if <code>y</code> <code>NULL</code> and <code>precalc</code> <code>NULL</code> : 
+pre-calculation of the matrix inverse which is stored in a list of 
+pre-calculated data.
+</p>
+</li>
+<li>
+<p> if <code>y</code> not <code>NULL</code> and <code>precalc</code> not <code>NULL</code> : 
+calculation of the regression residuals using the list of pre-calculated 
+data.
+</p>
+</li>
+</ul>
+<p>The <code>by</code> parameter allows for calculation within by-groups : all 
+calculation are made separately for each by-group (when calibration was 
+conducted separately on several subsamples), but in an efficient way using 
+Matrix::TsparseMatrix capabilities (especially when the matrix inverse is 
+pre-calculated).
+</p>
+
+
+<h3>Value</h3>
+
+ <ul>
+<li>
+<p> if <code>y</code> is not <code>NULL</code> (calculation step) : a
+numerical matrix with same structure (regular base::matrix or
+Matrix::TsparseMatrix) and dimensions as <code>y</code>. </p>
+</li>
+<li>
+<p> if <code>y</code> is
+<code>NULL</code> (pre-calculation step) : a list containing pre-calculated data.</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Martin Chevalier
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Generating random data
+set.seed(1)
+n &lt;- 100
+H &lt;- 5
+y &lt;- matrix(rnorm(2*n), nrow = n)
+x &lt;- matrix(rnorm(10*n), nrow = n)
+by &lt;- letters[sample(1:H, n, replace = TRUE)]
+
+# Direct calculation
+res_cal(y, x)
+
+# Calculation with pre-calculated data
+precalc &lt;- res_cal(y = NULL, x)
+res_cal(y, precalc = precalc)
+identical(res_cal(y, x), res_cal(y, precalc = precalc))
+
+# Matrix::TsparseMatrix capability
+require(Matrix)
+X &lt;- as(x, "TsparseMatrix")
+Y &lt;- as(y, "TsparseMatrix")
+identical(res_cal(y, x), as.matrix(res_cal(Y, X)))
+
+# by parameter for within by-groups calculation
+res_cal(Y, X, by = by)
+all.equal(
+ res_cal(Y, X, by = by)[by == "a", ],
+  res_cal(Y[by == "a", ], X[by == "a", ])
+)
+
+</code></pre>
+
+
+</div>

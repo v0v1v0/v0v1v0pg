@@ -1,0 +1,153 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>dmanova</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Distance-based Multivariate Analysis of Variance (Analytical P-value Calculation)</h2>
+
+<h3>Description</h3>
+
+<p>Analysis of variance using distance matrices — for
+partitioning distance matrices among sources of variation and fitting
+linear models (e.g., factors, polynomial regression) to distance 
+matrices; calculate the analytical p-value based on pseudo-<code class="reqn">F</code> statistic 
+without permutation.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">dmanova(formula, data = NULL, positify = FALSE,
+		contr.unordered = "contr.sum", contr.ordered = "contr.poly", 
+		returnG = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>model formula. The LHS must be a dissimilarity matrix (either class <code>matrix</code> or class
+<code>dist</code>, e.g., from  <code>vegdist</code> or <code>dist</code>.  The RHS defines the independent 
+variables. These can be continuous variables or factors, they can be transformed
+within the formula, and they can have interactions as in a typical
+<code>formula</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>the data frame for the independent variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>positify</code></td>
+<td>
+<p>a logical value indicating whether to make the Gower's matrix  positive definite
+using the <code>nearPD</code> function in <code>Matrix</code> package. This is equivalent to modifying the distance 
+matrix so that it has an Euclidean embedding. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contr.unordered, contr.ordered</code></td>
+<td>
+<p>contrasts used for the design
+matrix (default in R is dummy or treatment contrasts for unordered
+factors). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>returnG</code></td>
+<td>
+<p>a logical value indicating whether the Gower's matrix should be returned.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>dmanova</code> is a permutation-free method for approximating the p-value from  distance-based permutational multivariate
+analysis of variance (PERMANOVA). PERMANOVA is  slow when the sample size is large. In contrast,
+<code>dmanova</code> provides an analytical solution, which is several orders of magnitude faster for large sample sizes. The covariate of interest
+should be put as the last term in <code>formula</code> while the variables to be adjusted are put before the covariate of interest.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Function <code>dmanova</code> returns a list with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>aov.tab</code></td>
+<td>
+<p>typical AOV table showing sources of variation,
+degrees of freedom,  sums of squares, mean squares,
+<code class="reqn">F</code> statistics, partial <code class="reqn">R^2</code> and <code class="reqn">P</code>
+values. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>degree of freedom for the Chisquared distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+<p> The Gower's matrix if <code>returnG</code> is true.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p> the call made</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Jun Chen and Xianyang Zhang</p>
+
+
+<h3>References</h3>
+
+<p>Chen, J. &amp; Zhang, X. 2021.  D-MANOVA: fast distance-based multivariate analysis of variance for large-scale microbiome association studies.
+Bioinformatics. https://doi.org/10.1093/bioinformatics/btab498
+</p>
+
+
+<h3>See Also</h3>
+
+
+<p><code>adonis3</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+data(throat.otu.tab)
+data(throat.tree)
+data(throat.meta)
+
+groups &lt;- throat.meta$SmokingStatus
+
+# Rarefaction
+otu.tab.rff &lt;- Rarefy(throat.otu.tab)$otu.tab.rff
+
+# Calculate the UniFrac distance
+unifracs &lt;- GUniFrac(otu.tab.rff, throat.tree, alpha=c(0, 0.5, 1))$unifracs
+
+# Test the smoking effect based on unweighted UniFrac distance, adjusting sex
+# 'Sex' should be put before 'SmokingStatus'
+dmanova(as.dist(unifracs[, , 'd_UW']) ~ Sex + SmokingStatus, data = throat.meta)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

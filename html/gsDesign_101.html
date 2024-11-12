@@ -1,0 +1,965 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>print.nSurv</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Advanced time-to-event sample size calculation</h2>
+
+<h3>Description</h3>
+
+<p><code>nSurv()</code> is used to calculate the sample size for a clinical trial
+with a time-to-event endpoint and an assumption of proportional hazards.
+This set of routines is new with version 2.7 and will continue to be
+modified and refined to improve input error checking and output format with
+subsequent versions. It allows both the Lachin and Foulkes (1986) method
+(fixed trial duration) as well as the Kim and Tsiatis(1990) method (fixed
+enrollment rates and either fixed enrollment duration or fixed minimum
+follow-up). Piecewise exponential survival is supported as well as piecewise
+constant enrollment and dropout rates. The methods are for a 2-arm trial
+with treatment groups referred to as experimental and control. A stratified
+population is allowed as in Lachin and Foulkes (1986); this method has been
+extended to derive non-inferiority as well as superiority trials.
+Stratification also allows power calculation for meta-analyses.
+<code>gsSurv()</code> combines <code>nSurv()</code> with <code>gsDesign()</code> to derive a
+group sequential design for a study with a time-to-event endpoint.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'nSurv'
+print(x, digits = 4, ...)
+
+nSurv(
+  lambdaC = log(2)/6,
+  hr = 0.6,
+  hr0 = 1,
+  eta = 0,
+  etaE = NULL,
+  gamma = 1,
+  R = 12,
+  S = NULL,
+  T = 18,
+  minfup = 6,
+  ratio = 1,
+  alpha = 0.025,
+  beta = 0.1,
+  sided = 1,
+  tol = .Machine$double.eps^0.25
+)
+
+tEventsIA(x, timing = 0.25, tol = .Machine$double.eps^0.25)
+
+nEventsIA(tIA = 5, x = NULL, target = 0, simple = TRUE)
+
+gsSurv(
+  k = 3,
+  test.type = 4,
+  alpha = 0.025,
+  sided = 1,
+  beta = 0.1,
+  astar = 0,
+  timing = 1,
+  sfu = sfHSD,
+  sfupar = -4,
+  sfl = sfHSD,
+  sflpar = -2,
+  r = 18,
+  lambdaC = log(2)/6,
+  hr = 0.6,
+  hr0 = 1,
+  eta = 0,
+  etaE = NULL,
+  gamma = 1,
+  R = 12,
+  S = NULL,
+  T = 18,
+  minfup = 6,
+  ratio = 1,
+  tol = .Machine$double.eps^0.25,
+  usTime = NULL,
+  lsTime = NULL
+)
+
+## S3 method for class 'gsSurv'
+print(x, digits = 2, ...)
+
+## S3 method for class 'gsSurv'
+xtable(
+  x,
+  caption = NULL,
+  label = NULL,
+  align = NULL,
+  digits = NULL,
+  display = NULL,
+  auto = FALSE,
+  footnote = NULL,
+  fnwid = "9cm",
+  timename = "months",
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of class <code>nSurv</code> or <code>gsSurv</code>.
+<code>print.nSurv()</code> is used for an object of class <code>nSurv</code> which will
+generally be output from <code>nSurv()</code>. For <code>print.gsSurv()</code> is used
+for an object of class <code>gsSurv</code> which will generally be output from
+<code>gsSurv()</code>. <code>nEventsIA</code> and <code>tEventsIA</code> operate on both the
+<code>nSurv</code> and <code>gsSurv</code> class.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Number of digits past the decimal place to print
+(<code>print.gsSurv.</code>); also a pass through to generic <code>xtable()</code> from
+<code>xtable.gsSurv()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>other arguments that may be passed to generic functions
+underlying the methods here.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambdaC</code></td>
+<td>
+<p>scalar, vector or matrix of event hazard rates for the
+control group; rows represent time periods while columns represent strata; a
+vector implies a single stratum.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hr</code></td>
+<td>
+<p>hazard ratio (experimental/control) under the alternate hypothesis
+(scalar).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hr0</code></td>
+<td>
+<p>hazard ratio (experimental/control) under the null hypothesis
+(scalar).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta</code></td>
+<td>
+<p>scalar, vector or matrix of dropout hazard rates for the control
+group; rows represent time periods while columns represent strata; if
+entered as a scalar, rate is constant across strata and time periods; if
+entered as a vector, rates are constant across strata.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>etaE</code></td>
+<td>
+<p>matrix dropout hazard rates for the experimental group specified
+in like form as <code>eta</code>; if NULL, this is set equal to <code>eta</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>a scalar, vector or matrix of rates of entry by time period
+(rows) and strata (columns); if entered as a scalar, rate is constant
+across strata and time periods; if entered as a vector, rates are constant
+across strata.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>a scalar or vector of durations of time periods for recruitment
+rates specified in rows of <code>gamma</code>. Length is the same as number of
+rows in <code>gamma</code>. Note that when variable enrollment duration is
+specified (input <code>T=NULL</code>), the final enrollment period is extended as
+long as needed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S</code></td>
+<td>
+<p>a scalar or vector of durations of piecewise constant event rates
+specified in rows of <code>lambda</code>, <code>eta</code> and <code>etaE</code>; this is NULL
+if there is a single event rate per stratum (exponential failure) or length
+of the number of rows in <code>lambda</code> minus 1, otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>T</code></td>
+<td>
+<p>study duration; if <code>T</code> is input as <code>NULL</code>, this will be
+computed on output; see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minfup</code></td>
+<td>
+<p>follow-up of last patient enrolled; if <code>minfup</code> is input
+as <code>NULL</code>, this will be computed on output; see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ratio</code></td>
+<td>
+<p>randomization ratio of experimental treatment divided by
+control; normally a scalar, but may be a vector with length equal to number
+of strata.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>type I error rate. Default is 0.025 since 1-sided testing is
+default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>type II error rate. Default is 0.10 (90% power); NULL if power
+is to be computed based on other input values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sided</code></td>
+<td>
+<p>1 for 1-sided testing, 2 for 2-sided testing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>for cases when <code>T</code> or <code>minfup</code> values are derived
+through root finding (<code>T</code> or <code>minfup</code> input as <code>NULL</code>),
+<code>tol</code> provides the level of error input to the <code>uniroot()</code>
+root-finding function. The default is the same as for <code>uniroot</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timing</code></td>
+<td>
+<p>Sets relative timing of interim analyses in <code>gsSurv</code>.
+Default of 1 produces equally spaced analyses.  Otherwise, this is a vector
+of length <code>k</code> or <code>k-1</code>.  The values should satisfy <code>0 &lt;
+timing[1] &lt; timing[2] &lt; ... &lt; timing[k-1] &lt; timing[k]=1</code>. For
+<code>tEventsIA</code>, this is a scalar strictly between 0 and 1 that indicates
+the targeted proportion of final planned events available at an interim
+analysis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tIA</code></td>
+<td>
+<p>Timing of an interim analysis; should be between 0 and
+<code>y$T</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>target</code></td>
+<td>
+<p>The targeted proportion of events at an interim analysis. This
+is used for root-finding will be 0 for normal use.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simple</code></td>
+<td>
+<p>See output specification for <code>nEventsIA()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>Number of analyses planned, including interim and final.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test.type</code></td>
+<td>
+<p><code>1=</code>one-sided <br><code>2=</code>two-sided symmetric <br><code>3=</code>two-sided, asymmetric, beta-spending with binding lower bound <br><code>4=</code>two-sided, asymmetric, beta-spending with non-binding lower bound
+<br><code>5=</code>two-sided, asymmetric, lower bound spending under the null
+hypothesis with binding lower bound <br><code>6=</code>two-sided, asymmetric,
+lower bound spending under the null hypothesis with non-binding lower bound.
+<br> See details, examples and manual.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>astar</code></td>
+<td>
+<p>Normally not specified. If <code>test.type=5</code> or <code>6</code>,
+<code>astar</code> specifies the total probability of crossing a lower bound at
+all analyses combined.  This will be changed to <code class="reqn">1 - </code><code>alpha</code> when
+default value of 0 is used.  Since this is the expected usage, normally
+<code>astar</code> is not specified by the user.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sfu</code></td>
+<td>
+<p>A spending function or a character string indicating a boundary
+type (that is, “WT” for Wang-Tsiatis bounds, “OF” for
+O'Brien-Fleming bounds and “Pocock” for Pocock bounds).  For
+one-sided and symmetric two-sided testing is used to completely specify
+spending (<code>test.type=1, 2</code>), <code>sfu</code>.  The default value is
+<code>sfHSD</code> which is a Hwang-Shih-DeCani spending function.  See details,
+<code>vignette("SpendingFunctionOverview")</code>, manual and examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sfupar</code></td>
+<td>
+<p>Real value, default is <code class="reqn">-4</code> which is an
+O'Brien-Fleming-like conservative bound when used with the default
+Hwang-Shih-DeCani spending function. This is a real-vector for many spending
+functions.  The parameter <code>sfupar</code> specifies any parameters needed for
+the spending function specified by <code>sfu</code>; this will be ignored for
+spending functions (<code>sfLDOF</code>, <code>sfLDPocock</code>) or bound types
+(“OF”, “Pocock”) that do not require parameters.
+Note that <code>sfupar</code> can be specified as a positive scalar for
+<code>sfLDOF</code> for a generalized O'Brien-Fleming spending function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sfl</code></td>
+<td>
+<p>Specifies the spending function for lower boundary crossing
+probabilities when asymmetric, two-sided testing is performed
+(<code>test.type = 3</code>, <code>4</code>, <code>5</code>, or <code>6</code>).  Unlike the upper
+bound, only spending functions are used to specify the lower bound.  The
+default value is <code>sfHSD</code> which is a Hwang-Shih-DeCani spending
+function.  The parameter <code>sfl</code> is ignored for one-sided testing
+(<code>test.type=1</code>) or symmetric 2-sided testing (<code>test.type=2</code>).  See
+details, spending functions, manual and examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sflpar</code></td>
+<td>
+<p>Real value, default is <code class="reqn">-2</code>, which, with the default
+Hwang-Shih-DeCani spending function, specifies a less conservative spending
+rate than the default for the upper bound.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>Integer value controlling grid for numerical integration as in
+Jennison and Turnbull (2000); default is 18, range is 1 to 80. Larger values
+provide larger number of grid points and greater accuracy.  Normally
+<code>r</code> will not be changed by the user.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>usTime</code></td>
+<td>
+<p>Default is NULL in which case upper bound spending time is
+determined by <code>timing</code>. Otherwise, this should be a vector of length
+<code>k</code> with the spending time at each analysis (see Details in help for <code>gsDesign</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lsTime</code></td>
+<td>
+<p>Default is NULL in which case lower bound spending time is
+determined by <code>timing</code>. Otherwise, this should be a vector of length
+<code>k</code> with the spending time at each analysis (see Details in help for <code>gsDesign</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>caption</code></td>
+<td>
+<p>passed through to generic <code>xtable()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>label</code></td>
+<td>
+<p>passed through to generic <code>xtable()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>align</code></td>
+<td>
+<p>passed through to generic <code>xtable()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>display</code></td>
+<td>
+<p>passed through to generic <code>xtable()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>auto</code></td>
+<td>
+<p>passed through to generic <code>xtable()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>footnote</code></td>
+<td>
+<p>footnote for xtable output; may be useful for describing
+some of the design parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fnwid</code></td>
+<td>
+<p>a text string controlling the width of footnote text at the
+bottom of the xtable output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timename</code></td>
+<td>
+<p>character string with plural of time units (e.g., "months")</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>print()</code>, <code>xtable()</code> and <code>summary()</code> methods are provided to
+operate on the returned value from <code>gsSurv()</code>, an object of class
+<code>gsSurv</code>. <code>print()</code> is also extended to <code>nSurv</code> objects. The
+functions <code>gsBoundSummary</code> (data frame for tabular output),
+<code>xprint</code> (application of <code>xtable</code> for tabular output) and
+<code>summary.gsSurv</code> (textual summary of <code>gsDesign</code> or <code>gsSurv</code>
+object) may be preferred summary functions; see example in vignettes. See
+also gsBoundSummary for output
+of tabular summaries of bounds for designs produced by <code>gsSurv()</code>.
+</p>
+<p>Both <code>nEventsIA</code> and <code>tEventsIA</code> require a group sequential design
+for a time-to-event endpoint of class <code>gsSurv</code> as input.
+<code>nEventsIA</code> calculates the expected number of events under the
+alternate hypothesis at a given interim time. <code>tEventsIA</code> calculates
+the time that the expected number of events under the alternate hypothesis
+is a given proportion of the total events planned for the final analysis.
+</p>
+<p><code>nSurv()</code> produces an object of class <code>nSurv</code> with the number of
+subjects and events for a set of pre-specified trial parameters, such as
+accrual duration and follow-up period. The underlying power calculation is
+based on Lachin and Foulkes (1986) method for proportional hazards assuming
+a fixed underlying hazard ratio between 2 treatment groups. The method has
+been extended here to enable designs to test non-inferiority. Piecewise
+constant enrollment and failure rates are assumed and a stratified
+population is allowed. See also <code>nSurvival</code> for other Lachin and
+Foulkes (1986) methods assuming a constant hazard difference or exponential
+enrollment rate.
+</p>
+<p>When study duration (<code>T</code>) and follow-up duration (<code>minfup</code>) are
+fixed, <code>nSurv</code> applies exactly the Lachin and Foulkes (1986) method of
+computing sample size under the proportional hazards assumption when For
+this computation, enrollment rates are altered proportionately to those
+input in <code>gamma</code> to achieve the power of interest.
+</p>
+<p>Given the specified enrollment rate(s) input in <code>gamma</code>, <code>nSurv</code>
+may also be used to derive enrollment duration required for a trial to have
+defined power if <code>T</code> is input as <code>NULL</code>; in this case, both
+<code>R</code> (enrollment duration for each specified enrollment rate) and
+<code>T</code> (study duration) will be computed on output.
+</p>
+<p>Alternatively and also using the fixed enrollment rate(s) in <code>gamma</code>,
+if minimum follow-up <code>minfup</code> is specified as <code>NULL</code>, then the
+enrollment duration(s) specified in <code>R</code> are considered fixed and
+<code>minfup</code> and <code>T</code> are computed to derive the desired power. This
+method will fail if the specified enrollment rates and durations either
+over-powers the trial with no additional follow-up or underpowers the trial
+with infinite follow-up. This method produces a corresponding error message
+in such cases.
+</p>
+<p>The input to <code>gsSurv</code> is a combination of the input to <code>nSurv()</code>
+and <code>gsDesign()</code>.
+</p>
+<p><code>nEventsIA()</code> is provided to compute the expected number of events at a
+given point in time given enrollment, event and censoring rates. The routine
+is used with a root finding routine to approximate the approximate timing of
+an interim analysis. It is also used to extend enrollment or follow-up of a
+fixed design to obtain a sufficient number of events to power a group
+sequential design.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>nSurv()</code> returns an object of type <code>nSurv</code> with the
+following components: </p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sided</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>Type II error; if missing, this is computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>power</code></td>
+<td>
+<p>Power
+corresponding to input <code>beta</code> or computed if output <code>beta</code> is
+computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambdaC</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>etaC</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>etaE</code></td>
+<td>
+<p>As
+input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>As input unless none of the following are <code>NULL</code>:
+<code>T</code>, <code>minfup</code>, <code>beta</code>; otherwise, this is a constant times
+the input value required to power the trial given the other input
+variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ratio</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>As input unless <code>T</code> was
+<code>NULL</code> on input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>T</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minfup</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hr</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hr0</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Total expected sample size corresponding to output accrual rates
+and durations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>Total expected number of events under the alternate
+hypothesis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>As input, except when not used in computations in
+which case this is returned as <code>NULL</code>.  This and the remaining output
+below are not printed by the <code>print()</code> extension for the <code>nSurv</code>
+class.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eDC</code></td>
+<td>
+<p>A vector of expected number of events by stratum in the
+control group under the alternate hypothesis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eDE</code></td>
+<td>
+<p>A vector of
+expected number of events by stratum in the experimental group under the
+alternate hypothesis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eDC0</code></td>
+<td>
+<p>A vector of expected number of events by
+stratum in the control group under the null hypothesis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eDE0</code></td>
+<td>
+<p>A
+vector of expected number of events by stratum in the experimental group
+under the null hypothesis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eNC</code></td>
+<td>
+<p>A vector of the expected accrual in
+each stratum in the control group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eNE</code></td>
+<td>
+<p>A vector of the expected
+accrual in each stratum in the experimental group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variable</code></td>
+<td>
+<p>A text
+string equal to "Accrual rate" if a design was derived by varying the
+accrual rate, "Accrual duration" if a design was derived by varying the
+accrual duration, "Follow-up duration" if a design was derived by varying
+follow-up duration, or "Power" if accrual rates and duration as well as
+follow-up duration was specified and <code>beta=NULL</code> was input.</p>
+</td>
+</tr>
+</table>
+<p><code>gsSurv()</code> returns much of the above plus variables in the class
+<code>gsDesign</code>; see <code>gsDesign</code>
+for general documentation on what is returned in <code>gs</code>.  The value of
+<code>gs$n.I</code> represents the number of endpoints required at each analysis
+to adequately power the trial. Other items returned by <code>gsSurv()</code> are:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>lambdaC</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>etaC</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>etaE</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>As input unless none of the following are <code>NULL</code>:
+<code>T</code>, <code>minfup</code>, <code>beta</code>; otherwise, this is a constant times
+the input value required to power the trial given the other input
+variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ratio</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>As input unless <code>T</code> was
+<code>NULL</code> on input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>T</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minfup</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hr</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hr0</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eNC</code></td>
+<td>
+<p>Total expected sample size corresponding to output accrual rates
+and durations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eNE</code></td>
+<td>
+<p>Total expected sample size corresponding to
+output accrual rates and durations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eDC</code></td>
+<td>
+<p>Total expected number of
+events under the alternate hypothesis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eDE</code></td>
+<td>
+<p>Total expected number of
+events under the alternate hypothesis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>As input, except when not
+used in computations in which case this is returned as <code>NULL</code>.  This
+and the remaining output below are not printed by the <code>print()</code>
+extension for the <code>nSurv</code> class.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eDC</code></td>
+<td>
+<p>A vector of expected
+number of events by stratum in the control group under the alternate
+hypothesis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eDE</code></td>
+<td>
+<p>A vector of expected number of events by stratum in
+the experimental group under the alternate hypothesis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eNC</code></td>
+<td>
+<p>A vector of
+the expected accrual in each stratum in the control group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eNE</code></td>
+<td>
+<p>A
+vector of the expected accrual in each stratum in the experimental group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variable</code></td>
+<td>
+<p>A text string equal to "Accrual rate" if a design was
+derived by varying the accrual rate, "Accrual duration" if a design was
+derived by varying the accrual duration, "Follow-up duration" if a design
+was derived by varying follow-up duration, or "Power" if accrual rates and
+duration as well as follow-up duration was specified and <code>beta=NULL</code>
+was input.</p>
+</td>
+</tr>
+</table>
+<p><code>nEventsIA()</code> returns the expected proportion of the final planned
+events observed at the input analysis time minus <code>target</code> when
+<code>simple=TRUE</code>. When <code>simple=FALSE</code>, <code>nEventsIA</code> returns a
+list with following components: </p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>T</code></td>
+<td>
+<p>The input value <code>tIA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eDC</code></td>
+<td>
+<p>The expected number of events in the control group at time the
+output time <code>T</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eDE</code></td>
+<td>
+<p>The expected number of events in the
+experimental group at the output time <code>T</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eNC</code></td>
+<td>
+<p>The expected
+enrollment in the control group at the output time <code>T</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eNE</code></td>
+<td>
+<p>The
+expected enrollment in the experimental group at the output time <code>T</code>.</p>
+</td>
+</tr>
+</table>
+<p><code>tEventsIA()</code> returns the same structure as <code>nEventsIA(..., simple=TRUE)</code> when
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Keaven Anderson <a href="mailto:keaven_anderson@merck.com">keaven_anderson@merck.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Kim KM and Tsiatis AA (1990), Study duration for clinical trials
+with survival response and early stopping rule. <em>Biometrics</em>, 46, 81-92
+</p>
+<p>Lachin JM and Foulkes MA (1986), Evaluation of Sample Size and Power for
+Analyses of Survival with Allowance for Nonuniform Patient Entry, Losses to
+Follow-Up, Noncompliance, and Stratification. <em>Biometrics</em>, 42,
+507-519.
+</p>
+<p>Schoenfeld D (1981), The Asymptotic Properties of Nonparametric Tests for
+Comparing Survival Distributions. <em>Biometrika</em>, 68, 316-319.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gsBoundSummary</code>, <code>xprint</code>,
+<code>vignette("gsDesignPackageOverview")</code>, plot.gsDesign,
+<code>gsDesign</code>, <code>gsHR</code>, <code>nSurvival</code>
+</p>
+<p><code>uniroot</code>
+</p>
+<p><code>Normal</code>
+<code>xtable</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# vary accrual rate to obtain power
+nSurv(lambdaC = log(2) / 6, hr = .5, eta = log(2) / 40, gamma = 1, T = 36, minfup = 12)
+
+# vary accrual duration to obtain power
+nSurv(lambdaC = log(2) / 6, hr = .5, eta = log(2) / 40, gamma = 6, minfup = 12)
+
+# vary follow-up duration to obtain power
+nSurv(lambdaC = log(2) / 6, hr = .5, eta = log(2) / 40, gamma = 6, R = 25)
+
+# piecewise constant enrollment rates (vary accrual duration)
+nSurv(
+  lambdaC = log(2) / 6, hr = .5, eta = log(2) / 40, gamma = c(1, 3, 6),
+  R = c(3, 6, 9), T = NULL, minfup = 12
+)
+
+# stratified population (vary accrual duration)
+nSurv(
+  lambdaC = matrix(log(2) / c(6, 12), ncol = 2), hr = .5, eta = log(2) / 40,
+  gamma = matrix(c(2, 4), ncol = 2), minfup = 12
+)
+
+# piecewise exponential failure rates (vary accrual duration)
+nSurv(lambdaC = log(2) / c(6, 12), hr = .5, eta = log(2) / 40, S = 3, gamma = 6, minfup = 12)
+
+# combine it all: 2 strata, 2 failure rate periods
+nSurv(
+  lambdaC = matrix(log(2) / c(6, 12, 18, 24), ncol = 2), hr = .5,
+  eta = matrix(log(2) / c(40, 50, 45, 55), ncol = 2), S = 3,
+  gamma = matrix(c(3, 6, 5, 7), ncol = 2), R = c(5, 10), minfup = 12
+)
+
+# example where only 1 month of follow-up is desired
+# set failure rate to 0 after 1 month using lambdaC and S
+nSurv(lambdaC = c(.4, 0), hr = 2 / 3, S = 1, minfup = 1)
+
+# group sequential design (vary accrual rate to obtain power)
+x &lt;- gsSurv(
+  k = 4, sfl = sfPower, sflpar = .5, lambdaC = log(2) / 6, hr = .5,
+  eta = log(2) / 40, gamma = 1, T = 36, minfup = 12
+)
+x
+print(xtable::xtable(x,
+  footnote = "This is a footnote; note that it can be wide.",
+  caption = "Caption example."
+))
+# find expected number of events at time 12 in the above trial
+nEventsIA(x = x, tIA = 10)
+
+# find time at which 1/4 of events are expected
+tEventsIA(x = x, timing = .25)
+</code></pre>
+
+
+</div>

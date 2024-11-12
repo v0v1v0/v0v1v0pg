@@ -1,0 +1,238 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>grpSLOPE</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Group SLOPE (Group Sorted L-One Penalized Estimation)</h2>
+
+<h3>Description</h3>
+
+<p>Performs selection of significant groups of predictors and estimation of the
+corresponding coefficients using the Group SLOPE method (see Brzyski et. al., 2016).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">grpSLOPE(
+  X,
+  y,
+  group,
+  fdr,
+  lambda = "corrected",
+  sigma = NULL,
+  verbose = FALSE,
+  orthogonalize = NULL,
+  normalize = TRUE,
+  max.iter = 10000,
+  dual.gap.tol = 1e-06,
+  infeas.tol = 1e-06,
+  x.init = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>The model matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The response variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>A vector describing the grouping structure. It should 
+contain a group id for each predictor variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fdr</code></td>
+<td>
+<p>Target group false discovery rate (gFDR)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>Method used to obtain the regularizing sequence lambda. Possible
+values are "max", "mean", and "corrected" (default).
+See <code>lambdaGroupSLOPE</code> for detail. Alternatively, any
+non-increasing sequence of the correct length can be passed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>Noise level. If ommited, estimated from the data, using Procedure 2 in Brzyski et. al. (2016).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>A <code>logical</code> specifying whether to print output or not</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>orthogonalize</code></td>
+<td>
+<p>Whether to orthogonalize the model matrix within each group.
+Do not set manually unless you are certain that your data is appropriately pre-processed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normalize</code></td>
+<td>
+<p>Whether to center the input data and re-scale the columns
+of the design matrix to have unit norms. Do not disable this unless you
+are certain that your data are appropriately pre-processed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.iter</code></td>
+<td>
+<p>See <code>proximalGradientSolverGroupSLOPE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dual.gap.tol</code></td>
+<td>
+<p>See <code>proximalGradientSolverGroupSLOPE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infeas.tol</code></td>
+<td>
+<p>See <code>proximalGradientSolverGroupSLOPE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x.init</code></td>
+<td>
+<p>See <code>proximalGradientSolverGroupSLOPE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Options passed to <code>prox_sorted_L1</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Multiple methods are available to generate the regularizing sequence <code>lambda</code>,
+see <code>lambdaGroupSLOPE</code> for detail.
+The model matrix is transformed by orthogonalization within each group (see Section 2.1
+in Brzyski et. al., 2016), and penalization is imposed on <code class="reqn">\| X_{I_i} \beta_{I_i} \|</code>.
+When <code>orthogonalize = TRUE</code>, due to within group orthogonalization,
+the solution vector <code>beta</code> cannot be computed, if a group submatrix does not have full
+column rank (e.g., if there are more predictors in a selected group than there are observations).
+In that case only the solution vector <code>c</code> of the transformed (orthogonalized) model is returned.
+Additionally, in any case the vector <code>group.norms</code> is returned with its <code class="reqn">i</code>th entry
+being <code class="reqn">\| X_{I_i} \beta_{I_i} \|</code>, i.e., the overall effect of each group.
+Note that all of these results are returned on the scale of the normalized versions of <code>X</code> and <code>y</code>.
+However, <code>original.scale</code> contains the regression coefficients transformed to correspond to 
+the original (unaltered) <code>X</code> and <code>y</code>. In that case, an estimate for the intercept term is also
+returned with the other coefficients in <code>original.scale</code> (while on the normalized scale the estimate
+of the intercept is always equal to zero, and is not explicitly provided in the <code>grpSLOPE</code> output).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with members:
+</p>
+
+<dl>
+<dt>beta</dt>
+<dd>
+<p>Solution vector. See Details.</p>
+</dd>
+<dt>c</dt>
+<dd>
+<p>Solution vector of the transformed model. See Details.</p>
+</dd>
+<dt>group.norms</dt>
+<dd>
+<p>Overall effect of each group. See Details.</p>
+</dd>
+<dt>selected</dt>
+<dd>
+<p>Names of selected groups (i.e., groups of predictors with at least one non-zero coefficient estimate)</p>
+</dd>
+<dt>optimal</dt>
+<dd>
+<p>Convergence status</p>
+</dd>
+<dt>iter</dt>
+<dd>
+<p>Iterations of the proximal gradient method</p>
+</dd>
+<dt>lambda</dt>
+<dd>
+<p>Regularizing sequence</p>
+</dd>
+<dt>lambda.method</dt>
+<dd>
+<p>Method used to construct the regularizing sequence</p>
+</dd>
+<dt>sigma</dt>
+<dd>
+<p>(Estimated) noise level</p>
+</dd>
+<dt>group</dt>
+<dd>
+<p>The provided grouping structure (corresponding to <code>beta</code>)</p>
+</dd>
+<dt>group.c</dt>
+<dd>
+<p>Grouping structure of the transformed model (corresponding to <code>c</code>)</p>
+</dd>
+<dt>original.scale</dt>
+<dd>
+<p>A list containing the estimated intercept and regression coefficients on the original scale. See Details.</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>D. Brzyski, A. Gossmann, W. Su, and M. Bogdan (2016) <em>Group SLOPE – adaptive selection of groups of predictors</em>, <a href="https://arxiv.org/abs/1610.04960">https://arxiv.org/abs/1610.04960</a>
+</p>
+<p>D. Brzyski, A. Gossmann, W. Su, and M. Bogdan (2019) <em>Group SLOPE – adaptive selection of groups of predictors</em>. Journal of the American Statistical Association 114 (525): 419–33.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># generate some data
+set.seed(1)
+A   &lt;- matrix(rnorm(100^2), 100, 100)
+grp &lt;- rep(rep(1:20), each=5)
+b   &lt;- c(runif(20), rep(0, 80))
+# (i.e., groups 1, 2, 3, 4, are truly significant)
+y   &lt;- A %*% b + rnorm(10) 
+fdr &lt;- 0.1 # target false discovery rate
+# fit a Group SLOPE model
+result &lt;- grpSLOPE(X=A, y=y, group=grp, fdr=fdr)
+result$selected
+# [1] "1"  "2"  "3"  "4"  "14"
+result$sigma
+# [1] 0.7968632
+head(result$group.norms)
+#         1         2         3         4         5         6 
+#  2.905449  5.516103  8.964201 10.253792  0.000000  0.000000 
+
+</code></pre>
+
+
+</div>

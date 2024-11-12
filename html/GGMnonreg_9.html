@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>enr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Expected Network Replicability</h2>
+
+<h3>Description</h3>
+
+<p>Compute expected network replicability in any number of
+replication attempts. This works for any kind of
+correlation, assuming it is possible to obtain the
+standard error (analytically or with a bootstrap).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">enr(net, n, alpha = 0.05, replications = 2, type = "pearson")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>net</code></td>
+<td>
+<p>True network of dimensions <em>p</em> by <em>p</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Integer. The samples size, assumed equal in the replication
+attempts.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>The desired significance level (defaults to <code>0.05</code>). Note that
+1 - alpha corresponds to specificity.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>replications</code></td>
+<td>
+<p>Integer. The desired number of replications.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Character string. Which type of correlation coefficients
+to be computed. Options include <code>"pearson"</code> (default)
+and <code>"spearman"</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An list of class <code>enr</code>, including a variety of information used
+by other functions (e.g., to plot the results).
+</p>
+
+
+<h3>Note</h3>
+
+<p>This method was introduced in Williams (2020).
+</p>
+
+
+<h3>References</h3>
+
+<p>Williams DR (2020).
+“Learning to live with sampling variability: Expected replicability in partial correlation networks.”
+<em>PsyArXiv</em>.
+doi: <a href="https://doi.org/10.31234/osf.io/fb4sa">10.31234/osf.io/fb4sa</a>, <a href="https://doi.org/10.31234/osf.io/fb4sa">https://doi.org/10.31234/osf.io/fb4sa</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# correlations
+cors &lt;- cor(GGMnonreg::ptsd)
+
+# inverse
+inv &lt;- solve(cors)
+
+# partials
+pcors &lt;-  -cov2cor(inv)
+
+# set values to zero
+pcors &lt;- ifelse(abs(pcors) &lt; 0.05, 0, pcors)
+
+fit_enr &lt;- enr(net = pcors, n = 500, replications = 2)
+
+
+# intuition for the method
+
+# location of edges
+index &lt;- which(pcors[upper.tri(diag(20))] != 0)
+
+# convert network into correlation matrix
+diag(pcors) &lt;- 1
+cors_new &lt;- corpcor::pcor2cor(pcors)
+
+# replicated edges
+R &lt;- NA
+
+# increase 100 to, say, 5,000
+for(i in 1:100){
+
+  # two replications
+  Y1 &lt;- MASS::mvrnorm(500, rep(0, 20), cors_new)
+  Y2 &lt;- MASS::mvrnorm(500, rep(0, 20), cors_new)
+
+  # estimate network 1
+  fit1 &lt;- ggm_inference(Y1, boot = FALSE)
+
+  # estimate network 2
+  fit2 &lt;- ggm_inference(Y2, boot = FALSE)
+
+  # number of replicated edges (detected in both networks)
+  R[i] &lt;- sum(
+    rowSums(
+      cbind(fit1$adj[upper.tri(diag(20))][index],
+            fit2$adj[upper.tri(diag(20))][index])
+    ) == 2)
+}
+
+
+# combine simulation and analytic
+cbind.data.frame(
+  data.frame(simulation = sapply(seq(0, 0.9, 0.1), function(x) {
+    mean(R &gt; round(length(index) * x) )
+  })),
+  data.frame(analytic = round(fit_enr$cdf, 3))
+)
+
+# average replicability (simulation)
+mean(R / length(index))
+
+# average replicability (analytic)
+fit_enr$ave_pwr
+
+
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,179 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>axis_combmatrix</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Convert delimited text labels into a combination matrix axis</h2>
+
+<h3>Description</h3>
+
+<p>The function splits the text based on the <code>sep</code> argument and
+views each occurring element as potential set.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">axis_combmatrix(
+  sep = "[^[:alnum:]]+",
+  levels = NULL,
+  override_plotting_function = NULL,
+  xlim = NULL,
+  ylim = NULL,
+  expand = TRUE,
+  clip = "on",
+  ytrans = "identity"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>sep</code></td>
+<td>
+<p>The separator that is used to split the string labels. Can be a
+regex. Default: <code>"[^[:alnum:]]+"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>levels</code></td>
+<td>
+<p>The selection of string elements that are displayed in the
+combination matrix axis. Default: NULL, which means simply all elements
+in the text labels are used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>override_plotting_function</code></td>
+<td>
+<p>to achieve maximum flexibility, you can
+provide a custom plotting function. For more information, see details.
+Default: <code>NULL</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlim, ylim</code></td>
+<td>
+<p>The limits fort the x and y axes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expand</code></td>
+<td>
+<p>Boolean with the same effect as in
+<code>ggplot2::coord_cartesian()</code>. Default: TRUE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clip</code></td>
+<td>
+<p>String with the same effect as in
+<code>ggplot2::coord_cartesian()</code>. Default: "on"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ytrans</code></td>
+<td>
+<p>transformers for y axis. For more information see
+<code>ggplot2::coord_trans()</code>. Default: "identity"</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Technically the function appends a <code>coord</code> system to the ggplot object.
+To maintain compatibility additional arguments like <code>ytrans</code>,
+<code>ylim</code>, and <code>clip</code> are forwarded to <code>coord_trans()</code>.
+</p>
+<p><em>Note:</em> make sure that the argument to the 'x' aesthetic is
+character vector that contains the <code>sep</code> sequence. The only
+exception is if <code>axis_combmatrix()</code> is combined with a
+<code>scale_x_mergelist()</code>. This pattern works because in the
+first step <code>scale_x_mergelist()</code> turns a list argument
+to 'x' into a character vector that <code>axis_combmatrix()</code>
+can work with.
+</p>
+<p>For maximum flexibility, you can use the 'override_plotting_function' parameter
+which returns a ggplot and is called with a <code>tibble</code>
+with one entry per point of the combination matrix. Specifically, it contains
+</p>
+
+<dl>
+<dt>labels</dt>
+<dd>
+<p>the collapsed label string</p>
+</dd>
+<dt>single_label</dt>
+<dd>
+<p>an ordered factor with the labels on the left of the plot</p>
+</dd>
+<dt>id</dt>
+<dd>
+<p>consecutive numbering of the points</p>
+</dd>
+<dt>labels_split</dt>
+<dd>
+<p>a list column that contains the splitted labels</p>
+</dd>
+<dt>at</dt>
+<dd>
+<p>the x-position of the point</p>
+</dd>
+<dt>observed</dt>
+<dd>
+<p>boolean to indicate if this element is active in the intersection</p>
+</dd>
+<dt>index</dt>
+<dd>
+<p>the row of the point</p>
+</dd>
+</dl>
+<p>See the examples how the <code>override_plotting_function</code> looks that recreates
+the default combination matrix
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">  library(ggplot2)
+  mtcars$combined &lt;- paste0("Cyl: ", mtcars$cyl, "_Gears: ", mtcars$gear)
+  head(mtcars)
+  ggplot(mtcars, aes(x=combined)) +
+    geom_bar() +
+    axis_combmatrix(sep = "_")
+
+# Example of 'override_plotting_function'
+
+ggplot(mtcars, aes(x=combined)) +
+  geom_bar() +
+    axis_combmatrix(sep = "_", override_plotting_function = function(df){
+      ggplot(df, aes(x= at, y= single_label)) +
+        geom_rect(aes(fill= index %% 2 == 0), ymin=df$index-0.5,
+                  ymax=df$index+0.5, xmin=0, xmax=1) +
+        geom_point(aes(color= observed), size = 3) +
+        geom_line(data= function(dat) dat[dat$observed, ,drop=FALSE],
+                  aes(group = labels), size= 1.2) +
+        ylab("") + xlab("") +
+        scale_x_continuous(limits = c(0, 1), expand = c(0, 0)) +
+        scale_fill_manual(values= c(`TRUE` = "white", `FALSE` = "#F7F7F7")) +
+        scale_color_manual(values= c(`TRUE` = "black", `FALSE` = "#E0E0E0")) +
+        guides(color="none", fill="none") +
+        theme(
+          panel.background = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.ticks.length = unit(0, "pt"),
+          axis.title.y = element_blank(),
+          axis.title.x = element_blank(),
+          axis.line = element_blank(),
+          panel.border = element_blank()
+        )
+    })
+
+</code></pre>
+
+
+</div>

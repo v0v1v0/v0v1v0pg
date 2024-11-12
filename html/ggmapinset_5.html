@@ -1,0 +1,199 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>geom_sf_inset</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Visualise sf objects with insets</h2>
+
+<h3>Description</h3>
+
+<p>These geoms are wrappers around <code>ggplot2::geom_sf()</code> and its relatives that
+assist with creating map insets.
+In many cases all that is needed is to use <code>coord_sf_inset()</code> with <code>configure_inset()</code>
+to configure the location and transformation of the inset, and then replace the
+sf-related geoms with their <code style="white-space: pre;">⁠_inset⁠</code> counterparts.
+Use <code>geom_inset_frame()</code> to add a frame around the inset that connects it to the main map.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">geom_sf_inset(
+  mapping = ggplot2::aes(),
+  data = NULL,
+  stat = "sf_inset",
+  position = "identity",
+  ...,
+  inset = NA,
+  map_base = "normal",
+  map_inset = "auto",
+  na.rm = TRUE,
+  show.legend = NA,
+  inherit.aes = TRUE
+)
+
+geom_sf_text_inset(
+  mapping = aes(),
+  data = NULL,
+  stat = "sf_coordinates_inset",
+  position = "identity",
+  ...,
+  where = "inset",
+  parse = FALSE,
+  check_overlap = FALSE,
+  na.rm = FALSE,
+  show.legend = NA,
+  inherit.aes = TRUE,
+  fun.geometry = NULL
+)
+
+geom_sf_label_inset(
+  mapping = aes(),
+  data = NULL,
+  stat = "sf_coordinates_inset",
+  position = "identity",
+  ...,
+  where = "inset",
+  parse = FALSE,
+  na.rm = FALSE,
+  show.legend = NA,
+  inherit.aes = TRUE,
+  fun.geometry = NULL
+)
+
+stat_sf_inset(
+  mapping = ggplot2::aes(),
+  data = NULL,
+  geom = "sf_inset",
+  position = "identity",
+  ...,
+  inset = NA,
+  na.rm = TRUE,
+  show.legend = NA,
+  inherit.aes = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mapping, data, stat, geom, position, na.rm, show.legend, inherit.aes, ...</code></td>
+<td>
+<p>See <code>ggplot2::geom_sf()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inset</code></td>
+<td>
+<p>Inset configuration; see <code>configure_inset()</code>.
+If <code>NA</code> (the default), this is inherited from the coord (see <code>coord_sf_inset()</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>map_base</code></td>
+<td>
+<p>Controls the layer with the base map. Possible values are
+<code>"normal"</code> to create a layer as though the inset were not specified,
+<code>"clip"</code> to create a layer with the inset viewport cut out, and
+<code>"none"</code> to prevent the insertion of a layer for the base map.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>map_inset</code></td>
+<td>
+<p>Controls the layer with the inset map. Possible values are
+<code>"auto"</code> to choose the behaviour based on whether <code>inset</code> is specified,
+<code>"normal"</code> to create a layer with the viewport cut out and transformed, and
+<code>"none"</code> to prevent the insertion of a layer for the viewport map.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>where</code></td>
+<td>
+<p>Specifies how the text position interacts with the inset.
+<code>"inset"</code> means that any points in the inset area are drawn on the inset map,
+<code>"base"</code> puts them on the base map. This setting is merely a shorthand for
+setting the position aesthetics to <code>after_stat(x_inset)</code> or <code>after_stat(x)</code>
+respectively, so will have no effect if these are specified in the mapping.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parse</code></td>
+<td>
+<p>If <code>TRUE</code>, the labels will be parsed into expressions and
+displayed as described in <code>?plotmath</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check_overlap</code></td>
+<td>
+<p>If <code>TRUE</code>, text that overlaps previous text in the
+same layer will not be plotted. <code>check_overlap</code> happens at draw time and in
+the order of the data. Therefore data should be arranged by the label
+column before calling <code>geom_text()</code>. Note that this argument is not
+supported by <code>geom_label()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fun.geometry</code></td>
+<td>
+<p>A function that takes a <code>sfc</code> object and returns a <code>sfc_POINT</code> with the
+same length as the input. If <code>NULL</code>, <code>function(x) sf::st_point_on_surface(sf::st_zm(x))</code>
+will be used. Note that the function may warn about the incorrectness of
+the result if the data is not projected, but you can ignore this except
+when you really care about the exact locations.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Internally this works by creating two layers: one for the base map, and one
+for the inset. These can be separately controlled by the <code>map_base</code> and
+<code>map_inset</code> parameters. If <code>inset</code> is not specified, this geom will instead
+behave like <code>ggplot2::geom_sf()</code>.
+</p>
+<p>When an inset is configured, the default creates both base and inset layers
+using the same aesthetic mapping and params:
+</p>
+<div class="sourceCode"><pre>geom_sf_inset(...)
+</pre></div>
+<p>You can alternatively specify the two layers separately:
+</p>
+<div class="sourceCode"><pre># draw the base map only (both versions are equivalent):
+geom_sf(...)
+geom_sf_inset(..., map_inset = "none")
+
+# separately, draw the inset map only:
+geom_sf_inset(..., map_base = "none")
+</pre></div>
+<p><code>stat_sf_inset()</code> works the same <code>ggplot2::stat_sf()</code> except that it also
+expands the axis limits to account for the inset area.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A ggplot layer similar to <code>ggplot2::geom_sf()</code> but transformed according to the
+inset configuration.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(ggplot2)
+
+nc &lt;- sf::st_read(system.file("shape/nc.shp", package = "sf"), quiet = TRUE)
+
+ggplot(nc) +
+  geom_sf_inset(aes(fill = AREA)) +
+  geom_inset_frame() +
+  coord_sf_inset(inset = configure_inset(
+    centre = sf::st_sfc(sf::st_point(c(-80, 35.5)), crs = sf::st_crs(nc)),
+    scale = 1.5, translation = c(-50, -140), radius = 50, units = "mi"))
+</code></pre>
+
+
+</div>

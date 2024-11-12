@@ -1,0 +1,201 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>align_chromatograms</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Aligning peaks based on retention times</h2>
+
+<h3>Description</h3>
+
+<p>This is the core function of <code>GCalignR</code> to align peak data. The input data is a peak list. Read through the documentation below and take a look at the vignettes for a thorough introduction. Three parameters <code>max_linear_shift</code>, <code>max_diff_peak2mean</code> and <code>min_diff_peak2peak</code> are required as well as the column name of the peak retention time variable <code>rt_col_name</code>. Arguments are described among optional parameters below.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">align_chromatograms(
+  data,
+  sep = "\t",
+  rt_col_name = NULL,
+  write_output = NULL,
+  rt_cutoff_low = NULL,
+  rt_cutoff_high = NULL,
+  reference = NULL,
+  max_linear_shift = 0.02,
+  max_diff_peak2mean = 0.02,
+  min_diff_peak2peak = 0.08,
+  blanks = NULL,
+  delete_single_peak = FALSE,
+  remove_empty = FALSE,
+  permute = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Dataset containing peaks that need to be aligned and matched. For every peak a arbitrary number of numerical variables can be included (e.g. peak height, peak area) in addition to the mandatory retention time. The standard format is a tab-delimited text file according to the following layout: (1) The first row contains sample names, the (2) second row column names of the corresponding peak lists. Starting with the third row, peak lists are included for every sample that needs to be incorporated in the dataset. Here, a peak list contains data for individual peaks in rows, whereas columns specify variables in the order given in the second row of the text file. Peak lists of individual samples are concatenated horizontally and need to be of the same width (i.e. the same number of columns in consistent order). Alternatively, the input may be a list of data frames. Each data frame contains the peak data for a single individual. Variables (i.e.columns) are named consistently across data frames. The names of elements in the list are used as sample identifiers. Cells may be filled with numeric or integer values but no factors or characters are allowed. NA and 0 may be used to indicate empty rows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sep</code></td>
+<td>
+<p>The field separator character. The default is tab separated (<code>sep = '\t'</code>).
+See the "sep" argument in <code>read.table</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rt_col_name</code></td>
+<td>
+<p>A character giving the name of the column containing the retention times. The decimal separator needs to be a point.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>write_output</code></td>
+<td>
+<p>A character vector of variable names. For each variable a text file containing the aligned dataset is written to the working directory. Vector elements need to correspond to column names of data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rt_cutoff_low</code></td>
+<td>
+<p>A numeric value giving a retention time threshold. Peaks with retention time below the threshold are removed in a preprocessing step.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rt_cutoff_high</code></td>
+<td>
+<p>A numeric value giving a retention time threshold. Peaks with retention time above the threshold are removed in a preprocessing step.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reference</code></td>
+<td>
+<p>A character giving the name of sample from the dataset. By default, a sample is automatically selected from the dataset using the function <code>choose_optimal_reference</code>. The reference is used for the full alignment of peak lists by linear transformation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_linear_shift</code></td>
+<td>
+<p>Numeric value giving the window size considered in the full alignment. Usually, the amplitude of linear drift is small in typical GC-FID datasets. Therefore, the default value of 0.05 minutes is adequate for most datasets. Increase this value if the drift amplitude is larger.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_diff_peak2mean</code></td>
+<td>
+<p>Numeric value defining the allowed deviation of the retention time of a given peak from the mean of the corresponding row (i.e. scored substance). This parameter reflects the retention time range in which peaks across samples are still matched as homologous peaks (i.e. substance). Peaks with retention times exceeding the threshold are sorted into a different row.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_diff_peak2peak</code></td>
+<td>
+<p>Numeric value defining the expected minimum difference in retention times among homologous peaks (i.e. substance). Rows that differ less in the mean retention time, are therefore merged if every sample contains either one or none of the respective compounds. This parameter is a major determinant in the classification of distinct peaks. Therefore careful consideration is required to adjust this setting to your needs (e.g. the resolution of your gas-chromatography pipeline). Large values may cause to merge truly different substances with similar retention times, if those are not simultaneously occurring within at least one individual, which might occur by chance for small sample sizes. By default set to 0.2 minutes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>blanks</code></td>
+<td>
+<p>Character vector of names of negative controls. Substances found in any of the blanks will be removed from the aligned dataset, before the blanks are deleted from the aligned data as well. This is an optional filtering step.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delete_single_peak</code></td>
+<td>
+<p>Boolean, determining whether substances that occur in just one sample are removed or not.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remove_empty</code></td>
+<td>
+<p>Boolean, allows to remove samples which lack any peak after the alignment finished. By default FALSE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>permute</code></td>
+<td>
+<p>Boolean, by default a random permutation of samples is conducted prior for each row-wise alignment step. Setting this parameter to FALSE causes alignment of the dataset as it is.
+</p>
+<p>order of samples is constantly randomised during the alignment. Allows to prevent this behaviour for maximal repeatability if needed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>optional arguments passed to methods, see <code>barplot</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function aligns and matches homologous peaks across samples using a three-step algorithm based on user-defined parameters that are explained in the next section. In brief: <strong>(1)</strong> A full alignment of peak retention times is conducted to correct for systematic linear drift of retention times among homologous peaks from run to run. Thereby a coarse alignment is achieved that maximises the similarity of retention times across homologous peaks prior to a <strong>(2)</strong> partial alignment and matching of peaks. This and the next step in the alignment is based on a retention time matrix that contains all samples as columns and peak retention times in rows. The goal is to match homologous peaks within the same row that represents a chemical substance. Here, peaks are recognised as homologous when the retention time matches within a user-defined error span (see <code>max_diff_peak2mean</code>) that approximates the expected retention time uncertainty. Here, the position of every peak in the matrix is evaluated in comparison to similar peaks across the complete dataset and homologous peaks are gradually grouped together row by row. After all peaks were matched, a <strong>(3)</strong> adjacent rows of similar retention time are scanned to detect redundancies. A pair of rows is identified as redundant and merged if mean retention times are closer than specified by <code>min_diff_peak2peak</code> and single samples only contain peak in one but not both rows. Therefore, this step allows to match peaks that are associated with higher variance than allowed during the previous step. Several optional processing steps are available, ranging from the removal of peaks representing contaminations (requires to include blanks as a control) to the removal of uninformative peaks that are present in just one sample (so called singletons).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns an object of class "GCalign" that is a a list containing several objects that are listed below. Note, that the objects "heatmap_input" and "Logfile" are best inspected by calling the provided functions <code>gc_heatmap</code> and <code>print</code>.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>aligned</code></td>
+<td>
+<p>Aligned Gas Chromatography peak data subdivided into individual data frames for every variable. Samples are represented by columns, rows specify homologous peaks. The first column of every data frame is comprised of the mean retention time of the respective peak (i.e. row). Retention times of samples resemble the values of the raw data. Internally, linear adjustments are considered where appropriate</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>heatmap_input</code></td>
+<td>
+<p>Used internally to create heatmaps of the aligned data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Logfile</code></td>
+<td>
+<p>A protocol of the alignment process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>input_list</code></td>
+<td>
+<p>Input data in form of a list of data frames.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aligned_list</code></td>
+<td>
+<p>Aligned data in form of a list of data frames.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>input_matrix</code></td>
+<td>
+<p>List of matrices. Each matrix contains the input data for a variable</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Martin Stoffel (martin.adam.stoffel@gmail.com) &amp; Meinolf Ottensmann (meinolf.ottensmann@web.de)
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Load example dataset
+data("peak_data")
+## Subset for faster processing
+peak_data &lt;- peak_data[1:3]
+peak_data &lt;- lapply(peak_data, function(x) x[1:50,])
+## align data with default settings
+out &lt;- align_chromatograms(peak_data, rt_col_name = "time")
+
+</code></pre>
+
+
+</div>

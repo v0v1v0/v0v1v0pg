@@ -1,0 +1,167 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>render_gt</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A <strong>gt</strong> display table render function for use in Shiny</h2>
+
+<h3>Description</h3>
+
+<p>With <code>render_gt()</code> we can create a reactive <strong>gt</strong> table that works
+wonderfully once assigned to an output slot (with <code>gt_output()</code>). This
+function is to be used within <a href="https://shiny.posit.co">Shiny</a>'s <code>server()</code>
+component. We have some options for controlling the size of the container
+holding the <strong>gt</strong> table. The <code>width</code> and <code>height</code> arguments allow for sizing
+the container, and the <code>align</code> argument allows us to align the table within
+the container (some other fine-grained options for positioning are available
+in <code>tab_options()</code>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">render_gt(
+  expr,
+  width = NULL,
+  height = NULL,
+  align = NULL,
+  env = parent.frame(),
+  quoted = FALSE,
+  outputArgs = list()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>expr</code></td>
+<td>
+<p><em>Expression</em>
+</p>
+<p><code style="white-space: pre;">⁠&lt;expression&gt;|obj:&lt;data.frame&gt;|obj:&lt;tbl_df&gt;⁠</code>
+</p>
+<p>An expression that creates a <strong>gt</strong> table object. For sake of convenience,
+a data frame or tibble can be used here (it will be automatically
+introduced to <code>gt()</code> with its default options).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>width, height</code></td>
+<td>
+<p><em>Dimensions of table container</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;numeric|integer|character&gt;⁠</code> // <em>default:</em> <code>NULL</code> (<code>optional</code>)
+</p>
+<p>The width and height of the table's container. Either can be specified as a
+single-length character vector with units of pixels or as a percentage. If
+provided as a single-length numeric vector, it is assumed that the value is
+given in units of pixels. The <code>px()</code> and <code>pct()</code> helper functions can also
+be used to pass in numeric values and obtain values as pixel or percent
+units.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>align</code></td>
+<td>
+<p><em>Table alignment</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <em>default:</em> <code>NULL</code> (<code>optional</code>)
+</p>
+<p>The alignment of the table in its container. If <code>NULL</code>, the table will be
+center-aligned. Valid options for this are: <code>"center"</code>, <code>"left"</code>, and
+<code>"right"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>env</code></td>
+<td>
+<p><em>Evaluation environment</em>
+</p>
+<p><code style="white-space: pre;">⁠&lt;environment&gt;⁠</code> // <em>default:</em> <code>parent.frame()</code>
+</p>
+<p>The environment in which to evaluate the <code>expr</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quoted</code></td>
+<td>
+<p><em>Option to <code>quote()</code> <code>expr</code></em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;logical&gt;⁠</code> // <em>default:</em> <code>FALSE</code>
+</p>
+<p>Is <code>expr</code> a quoted expression (with <code>quote()</code>)? This is useful if you want
+to save an expression in a variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outputArgs</code></td>
+<td>
+<p><em>Output arguments</em>
+</p>
+<p><code>list</code> // <em>default:</em> <code>list()</code>
+</p>
+<p>A list of arguments to be passed through to the implicit call to
+<code>gt_output()</code> when <code>render_gt()</code> is used in an interactive R Markdown
+document.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>shiny.render.function</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<p>Here is a Shiny app (contained within a single file) that (1) prepares a
+<strong>gt</strong> table, (2) sets up the <code>ui</code> with <code>gt_output()</code>, and (3) sets up the
+<code>server</code> with a <code>render_gt()</code> that uses the <code>gt_tbl</code> object as the input
+expression.
+</p>
+<div class="sourceCode r"><pre>library(shiny)
+
+gt_tbl &lt;-
+  gtcars |&gt;
+  gt() |&gt;
+  fmt_currency(columns = msrp, decimals = 0) |&gt;
+  cols_hide(columns = -c(mfr, model, year, mpg_c, msrp)) |&gt;
+  cols_label_with(columns = everything(), fn = toupper) |&gt;
+  data_color(columns = msrp, method = "numeric", palette = "viridis") |&gt;
+  sub_missing() |&gt;
+  opt_interactive(use_compact_mode = TRUE)
+
+ui &lt;- fluidPage(
+  gt_output(outputId = "table")
+)
+
+server &lt;- function(input, output, session) {
+  output$table &lt;- render_gt(expr = gt_tbl)
+}
+
+shinyApp(ui = ui, server = server)
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_render_gt_1.png" alt="This image of a table was generated from the first code example in the `render_gt()` help file." style="width:100%;"><h3>Function ID</h3>
+
+<p>12-1
+</p>
+
+
+<h3>Function Introduced</h3>
+
+<p><code>v0.2.0.5</code> (March 31, 2020)
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other Shiny functions: 
+<code>gt_output()</code>
+</p>
+
+
+</div>

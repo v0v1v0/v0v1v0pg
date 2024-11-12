@@ -1,0 +1,101 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>qualityControl</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Perform Quality Control on GIMMS NDVI3g Data</h2>
+
+<h3>Description</h3>
+
+<p>Perform quality control on GIMMS NDVI3g data based on the companion flag
+information. This is merely a wrapper around <code>overlay</code> and, since
+quality control is readily available through <code>rasterizeGimms</code>, it
+is strongly recommended to use the latter function for this purpose.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S4 method for signature 'RasterStackBrick'
+qualityControl(x, keep = NULL, filename = "", ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A single 2-layered <code>RasterStack</code> object (NDVI and flags).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep</code></td>
+<td>
+<p><code>integer</code>. Accepted flag values (see 'Details').</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filename</code></td>
+<td>
+<p><code>character</code>. Optional output filename.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to <code>writeRaster</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If 'keep' is missing, the function will automatically skip quality control
+and return the input object.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A quality-controlled 'RasterLayer' object.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>rasterizeGimms</code>, <code>overlay</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+tmp &lt;- tempdir()
+
+## Download NDVI3g.v1 sample data
+ecocast &lt;- system.file("extdata", "inventory_ecv1.rds", package = "gimms")
+gimms_files &lt;- downloadGimms(readRDS(ecocast)[1], dsn = tmp)
+
+## Import data as 'Raster*' objects
+ndvi &lt;- raster::raster(gimms_files, varname = "ndvi")
+ndvi[ndvi[] %in% c(-32768, -3000)] &lt;- NA
+ndvi &lt;- ndvi / 1e4
+
+flag &lt;- floor(raster::raster(gimms_files, varname = "percentile") / 2e3)
+
+## Perform quality control and visualize
+to_check &lt;- stack(ndvi[[1]], flag[[1]])
+qcl &lt;- qualityControl(to_check, keep = 0)
+
+plot(qcl)
+
+## End(Not run)
+
+## see also 'Examples' section in ?rasterizeGimms for automated quality check
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,209 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemTwoCountry_Bond_7_4</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>An Example of Two-Country Economy with Bond</h2>
+
+<h3>Description</h3>
+
+<p>A general equilibrium example of two-country economy with bond.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemTwoCountry_Bond_7_4(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>A general equilibrium.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><cite>gemTwoCountry_Tariff_9_5</cite>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+es.DFProd &lt;- 0.8 # the substitution elasticity between domestic and foreign products
+es.CL &lt;- 0.8 # the substitution elasticity between capital and labor
+
+dst.firm.CHN &lt;- node_new("output",
+  type = "SCES", alpha = 1, beta = c(0.78, 0.22), es = es.CL,
+  "lab.CHN", "cap.CHN"
+)
+
+dst.household.CHN &lt;- node_new("util",
+  type = "FIN", rate = c(1,  outbound.investment.rate = 0.028),
+  "cc1", "bond.ROW"
+)
+node_set(dst.household.CHN, "cc1",
+  type = "SCES", alpha = 1, beta = c(0.93, 0.07), es = es.DFProd,
+  "prod.CHN", "prod.ROW"
+)
+
+node_plot(dst.household.CHN)
+
+dst.firm.ROW &lt;- node_new("output",
+  type = "SCES", alpha = 1, beta = c(0.75, 0.25), es = es.CL,
+  "lab.ROW", "cap.ROW"
+)
+
+dst.household.ROW &lt;- node_new("util",
+  type = "SCES", alpha = 1, beta = c(0.02, 0.98), es = es.DFProd,
+  "prod.CHN", "prod.ROW"
+)
+
+dstl &lt;- list(dst.firm.CHN, dst.household.CHN, dst.firm.ROW, dst.household.ROW)
+
+ge &lt;- sdm2(dstl,
+  names.commodity = c(
+    "prod.CHN", "lab.CHN", "cap.CHN",
+    "prod.ROW", "lab.ROW", "cap.ROW", "bond.ROW"
+  ),
+  names.agent = c(
+    "firm.CHN", "household.CHN",
+    "firm.ROW", "household.ROW"
+  ),
+  B = {
+    tmp &lt;- matrix(0, 7, 4, TRUE)
+    tmp[1, 1] &lt;- tmp[4, 3] &lt;- 1
+    tmp
+  },
+  S0Exg = {
+    tmp &lt;- matrix(NA, 7, 4, TRUE)
+    tmp[2, 2] &lt;- 53 # the supply of lab.CHN
+    tmp[3, 2] &lt;- 15 # the supply of cap.CHN
+    tmp[5, 4] &lt;- 240 # the supply of lab.ROW
+    tmp[6, 4] &lt;- 77 # the supply of cap.ROW
+    tmp[7, 4] &lt;- 2 # the supply of bond.ROW
+    tmp
+  },
+  numeraire = "lab.CHN"
+)
+
+ge$p
+ge$z
+
+# Determine the parameters in the
+# example based on an input-output table.
+IT &lt;- matrix(c(
+  0, 61.44, 0, 6.498,
+  53, 0, 0, 0,
+  14.94, 0, 0, 0,
+  0, 4.647, 0, 320,
+  0, 0, 242.9, 0,
+  0, 0, 81.74, 0,
+  0, 1.85, 0, 0
+), 7, 4, TRUE)
+
+OT &lt;- matrix(c(
+  67.94, 0, 0, 0,
+  0, 53, 0, 0,
+  0, 14.94, 0, 0,
+  0, 0, 324.64, 0,
+  0, 0, 0, 242.9,
+  0, 0, 0, 81.74,
+  0, 0, 0, 1.85
+), 7, 4, TRUE)
+
+dimnames(IT) &lt;- dimnames(OT) &lt;- list(
+  c("prod.CHN", "lab.CHN", "cap.CHN", "prod.ROW", "lab.ROW", "cap.ROW", "bond.ROW"),
+  c("firm.CHN", "household.CHN", "firm.ROW", "household.ROW")
+)
+
+es.DFProd &lt;- 0.8 # the substitution elasticity between domestic and foreign products
+es.CL &lt;- 0.8 # the substitution elasticity between capital and labor
+
+dst.firm.CHN &lt;- node_new("output",
+                         type = "SCES",
+                         alpha = OT["prod.CHN", "firm.CHN"] /
+                           sum(IT[c("lab.CHN", "cap.CHN"), "firm.CHN"]),
+                         beta = prop.table(IT[c("lab.CHN", "cap.CHN"), "firm.CHN"]),
+                         es = es.CL,
+                         "lab.CHN", "cap.CHN"
+)
+
+# the amount of outbound investment corresponding to
+# each unit of composite commodity 1 used by household.
+outbound.investment.rate &lt;- IT["bond.ROW", "household.CHN"] /
+  sum(IT[c("prod.CHN", "prod.ROW"), "household.CHN"])
+
+dst.household.CHN &lt;- node_new("util",
+                             type = "FIN",
+                             rate = c(1, outbound.investment.rate),
+                             "cc1", "bond.ROW"
+)
+
+node_set(dst.household.CHN, "cc1",
+         type = "SCES", alpha = 1,
+         beta = prop.table(IT[c("prod.CHN", "prod.ROW"), "household.CHN"]),
+         es = es.DFProd,
+         "prod.CHN", "prod.ROW"
+)
+
+dst.firm.ROW &lt;- node_new("output",
+                         type = "SCES", alpha = 1,
+                         beta = prop.table(IT[c("lab.ROW", "cap.ROW"), "firm.ROW"]),
+                         es = es.CL,
+                         "lab.ROW", "cap.ROW"
+)
+
+dst.household.ROW &lt;- node_new("util",
+                             type = "SCES", alpha = 1,
+                             beta = prop.table(IT[c("prod.CHN", "prod.ROW"), "household.ROW"]),
+                             es = es.DFProd,
+                             "prod.CHN", "prod.ROW"
+)
+
+dstl &lt;- list(dst.firm.CHN, dst.household.CHN, dst.firm.ROW, dst.household.ROW)
+
+ge &lt;- sdm2(dstl,
+  names.commodity = c(
+    "prod.CHN", "lab.CHN", "cap.CHN",
+    "prod.ROW", "lab.ROW", "cap.ROW", "bond.ROW"
+  ),
+  names.agent = c(
+    "firm.CHN", "household.CHN",
+    "firm.ROW", "household.ROW"
+  ),
+  B = {
+    tmp &lt;- matrix(0, 7, 4, TRUE)
+    tmp[1, 1] &lt;- tmp[4, 3] &lt;- 1
+    tmp
+  },
+  S0Exg = {
+    tmp &lt;- matrix(NA, 7, 4, TRUE)
+    tmp[2, 2] &lt;- OT["lab.CHN", "household.CHN"]
+    tmp[3, 2] &lt;- OT["cap.CHN", "household.CHN"]
+    tmp[5, 4] &lt;- OT["lab.ROW", "household.ROW"]
+    tmp[6, 4] &lt;- OT["cap.ROW", "household.ROW"]
+    tmp[7, 4] &lt;- OT["bond.ROW", "household.ROW"]
+    tmp
+  },
+  numeraire = "lab.CHN"
+)
+
+ge$p
+ge$z
+
+</code></pre>
+
+
+</div>

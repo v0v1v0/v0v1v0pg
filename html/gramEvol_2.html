@@ -1,0 +1,152 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GrammarMap</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Sequence to Expression Mapping using Context-free Grammar
+</h2>
+
+<h3>Description</h3>
+
+<p>Converts a sequence of integer numbers to an expression
+using a <code>grammar</code> object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GrammarMap(inputString, grammar, wrappings = 3, verbose = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>inputString</code></td>
+<td>
+
+<p>A vector of integers to define the path of symbol selection in grammar tree. It uses
+zero-based indexing to address production rules in the grammar.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grammar</code></td>
+<td>
+
+<p>A <code>grammar</code> object.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wrappings</code></td>
+<td>
+
+<p>The number of times the function is allowed to wrap around <code>inputString</code>
+if non-terminal symbols are still remaining.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>Prints out each steps of grammar mapping.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+<p><code>GrammarMap</code> starts from the <code>startExpr</code> defined in the 
+<code>grammar</code> object;
+then it iterates through <code>inputString</code>, replacing symbols in the expression
+with associated replacements in the grammar using the current value of
+<code>inputString</code>.
+</p>
+<p>If the function exhausts all non-terminal symbols in the expression, it terminates.
+If the end of <code>inputString</code> is reached and  still non-terminal symbols
+exist, the algorithm will restart from the beginning of the current <code>inputString</code>. 
+To avoid unlimited recursions in case of a cyclic grammar,
+<code>wrappings</code> variable limits the number of this restart.
+</p>
+<p>If <code>verbose = TRUE</code>, step-by-step replacement of symbols with production rules are displayed.
+</p>
+<p><code>GrammarMap</code> returns a <code>GEPhenotype</code> object, which can be converted to
+a character string using <code>as.character</code>, or an R expression with <code>as.expression</code>.
+</p>
+
+
+<h3>Value</h3>
+
+
+
+<p>A <code>GrammarMap</code> returns a <code>GEPhenotype</code> object.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>expr</code></td>
+<td>
+<p>The generated expression as a character string.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parsed</code></td>
+<td>
+<p>The generated expression. NULL if the expression still 
+contains non-terminal symbols.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>"T" if the expression is valid, "NT" if the expression still 
+contains non-terminal symbols. </p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>GrammarIsTerminal</code>
+<code>CreateGrammar</code>,
+<code>GrammarRandomExpression</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Define a simple grammar
+# &lt;expr&gt; ::= &lt;var&gt;&lt;op&gt;&lt;var&gt;
+# &lt;op&gt;   ::= + | - | *
+# &lt;var&gt;  ::= A | B | C
+ruleDef &lt;- list(expr = gsrule("&lt;var&gt;&lt;op&gt;&lt;var&gt;"),
+                op =   gsrule("+", "-", "*"),
+                var =  grule(A, B, C))
+
+# Create a grammar object
+grammarDef &lt;- CreateGrammar(ruleDef)
+
+# this should create the expression "A - C"
+# &lt;expr&gt;         -&gt; 0 -&gt; &lt;var&gt;&lt;op&gt;&lt;var&gt;
+# &lt;var&gt;&lt;op&gt;&lt;var&gt; -&gt; 0 -&gt; A&lt;op&gt;&lt;var&gt;
+# A&lt;op&gt;&lt;var&gt;     -&gt; 1 -&gt; A - &lt;var&gt;
+# A - &lt;var&gt;      -&gt; 2 -&gt; A - C
+sq &lt;- c(0, 0, 1, 2)
+expr &lt;- GrammarMap(sq, grammarDef, verbose = TRUE)
+
+print(expr)
+
+# check the expression as a character string
+stopifnot(as.character(expr) == "A - C")
+
+# evaluate the expression
+A = 5; C = 1
+eval(as.expression(expr))
+</code></pre>
+
+
+</div>

@@ -1,0 +1,176 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>PositionSankey</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Position nodes and edges in a Sankey diagram</h2>
+
+<h3>Description</h3>
+
+<p>Calculates the <code>x</code> and <code>y</code> positions of elements (nodes and edges) in a
+Sankey diagram.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">PositionSankey
+
+position_sankey(
+  width = "auto",
+  align = c("bottom", "top", "center", "justify"),
+  order = c("ascending", "descending", "as_is"),
+  h_space = "auto",
+  v_space = 0,
+  nudge_x = 0,
+  nudge_y = 0,
+  split_nodes = FALSE,
+  split_tol = 0.001,
+  direction = c("forward", "backward"),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>width</code></td>
+<td>
+<p>Width of the node (<code>numeric</code>). When <code>split_nodes</code> is set to <code>TRUE</code>
+each part of the split node will have half this width. Use <code>"auto"</code> to automatically
+determine a suitable width.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>align</code></td>
+<td>
+<p>A <code>character</code> that indicates how the nodes across the stages are aligned.
+It can be any of <code>"top"</code>, <code>"bottom"</code>, <code>"center"</code> or <code>"justify"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order</code></td>
+<td>
+<p>A <code>character</code> indicating the method to be used for the order of stacking
+nodes and edges in a plot.
+Should be one of: <code>ascending</code> (default), sorts nodes and edges from large to small
+(largest on top); <code>descending</code> sorts nodes and edges from small to large (smallest
+on top); <code>as_is</code> will leave the order of nodes and edges as they are in <code>data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h_space</code></td>
+<td>
+<p>Horizontal space between split nodes (<code>numeric</code>). This argument is
+ignored when <code>split_nodes == FALSE</code>. Use <code>"auto"</code> to automatically position split nodes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>v_space</code></td>
+<td>
+<p>Vertical space between nodes (<code>numeric</code>). When set to zero (<code>0</code>),
+the Sankey diagram becomes an alluvial plot. Use <code>"auto"</code> to automatically determine
+a suitable vertical space.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nudge_x, nudge_y</code></td>
+<td>
+<p>Horizontal and vertical adjustment to nudge items by. Can
+be useful for offsetting labels.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>split_nodes</code></td>
+<td>
+<p>A <code>logical</code> value indicating whether the source and destination nodes
+should be depicted as separate boxes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>split_tol</code></td>
+<td>
+<p>When the relative node size (resulting source and destination edges)
+differs more than this fraction, the node will be displayed as two separate bars.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>direction</code></td>
+<td>
+<p>One of <code>"forward"</code> (default) or <code>"backward"</code>. When set to <code>"backward"</code>
+the direction of the edges will be inverted. In most cases this
+parameter won't affect the plot. It can be helpful when you want to decorate the
+end of an edge (instead of the start; see examples).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed on to <code>ggplot2::ggproto()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Format</h3>
+
+<p>An object of class <code>PositionSankey</code> (inherits from <code>Position</code>, <code>ggproto</code>, <code>gg</code>) of length 13.
+</p>
+
+
+<h3>Details</h3>
+
+<p>Based on the <code style="white-space: pre;">⁠stat_*⁠</code> function applied to the parent's (<code>stat_sankeynode()</code>,
+<code>stat_sankeyedge</code>) object either node or edge positions are calculated respectively.
+These positions can be used to add additional layers (e.g., text or labels) to the
+plot.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a <code>ggplot2::Position</code> class object.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Pepijn de Vries
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(ggplot2)
+data("ecosystem_services")
+
+pos  &lt;- position_sankey(v_space = "auto", order = "ascending")
+pos2 &lt;- position_sankey(v_space = "auto", order = "ascending", direction = "backward")
+
+## Let's subset the data, to make the plot less cluttered:
+es_subset &lt;- pivot_stages_longer(
+  subset(ecosystem_services, RCSES &gt; 0.01),
+  c("activity_realm", "biotic_realm", "service_section"),
+  "RCSES",
+  "service_section"
+)
+
+
+plot &lt;-
+  ggplot(es_subset, aes(x = stage, y = RCSES, group = node,
+                                    connector = connector, edge_id = edge_id,
+                                    fill = node)) +
+  geom_sankeynode(position = pos) +
+  geom_sankeyedge(position = pos, aes(fill = service_section))
+
+# position labels at nodes
+plot + geom_text(aes(label = node), stat = "sankeynode", position = pos)
+# position labels at the start of edges
+plot + geom_text(aes(label = sprintf("%0.2f", RCSES)), stat = "sankeyedge", position = pos)
+# position labels at the end of edges
+plot + geom_text(aes(label = sprintf("%0.2f", RCSES)), stat = "sankeyedge", position = pos2)
+</code></pre>
+
+
+</div>

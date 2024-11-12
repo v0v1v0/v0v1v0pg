@@ -1,0 +1,241 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>write_vc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Store a Data.Frame as a Git2rdata Object on Disk</h2>
+
+<h3>Description</h3>
+
+<p>A git2rdata object consists of two files.
+The <code>".tsv"</code> file contains the raw data as a plain text tab separated file.
+The <code>".yml"</code> contains the metadata on the columns in plain text YAML format.
+See <code>vignette("plain text", package = "git2rdata")</code> for more details on the
+implementation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">write_vc(
+  x,
+  file,
+  root = ".",
+  sorting,
+  strict = TRUE,
+  optimize = TRUE,
+  na = "NA",
+  ...,
+  split_by
+)
+
+## S3 method for class 'character'
+write_vc(
+  x,
+  file,
+  root = ".",
+  sorting,
+  strict = TRUE,
+  optimize = TRUE,
+  na = "NA",
+  ...,
+  split_by = character(0)
+)
+
+## S3 method for class 'git_repository'
+write_vc(
+  x,
+  file,
+  root,
+  sorting,
+  strict = TRUE,
+  optimize = TRUE,
+  na = "NA",
+  ...,
+  stage = FALSE,
+  force = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>the <code>data.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>the name of the git2rdata object. Git2rdata objects cannot
+have dots in their name. The name may include a relative path. <code>file</code> is a
+path relative to the <code>root</code>.
+Note that <code>file</code> must point to a location within <code>root</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>root</code></td>
+<td>
+<p>The root of a project. Can be a file path or a <code>git-repository</code>.
+Defaults to the current working directory (<code>"."</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sorting</code></td>
+<td>
+<p>an optional vector of column names defining which columns to
+use for sorting <code>x</code> and in what order to use them.
+The default empty <code>sorting</code> yields a warning.
+Add <code>sorting</code> to avoid this warning.
+Strongly recommended in combination with version control.
+See <code>vignette("efficiency", package = "git2rdata")</code> for an illustration of
+the importance of sorting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strict</code></td>
+<td>
+<p>What to do when the metadata changes. <code>strict = FALSE</code>
+overwrites the data and the metadata with a warning listing the changes,
+<code>strict = TRUE</code> returns an error and leaves the data and metadata as is.
+Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimize</code></td>
+<td>
+<p>If <code>TRUE</code>, recode the data to get smaller text files.
+If <code>FALSE</code>, <code>meta()</code> converts the data to character.
+Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na</code></td>
+<td>
+<p>the string to use for missing values in the data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>parameters used in some methods</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>split_by</code></td>
+<td>
+<p>An optional vector of variables name to split the text files.
+This creates a separate file for every combination.
+We prepend these variables to the vector of <code>sorting</code> variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stage</code></td>
+<td>
+<p>Logical value indicating whether to stage the changes after
+writing the data. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>force</code></td>
+<td>
+<p>Add ignored files. Default is FALSE.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a named vector with the file paths relative to <code>root</code>. The names
+contain the hashes of the files.
+</p>
+
+
+<h3>Note</h3>
+
+<p><code>..generic</code> is a reserved name for the metadata and is a forbidden
+column name in a <code>data.frame</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other storage: 
+<code>display_metadata()</code>,
+<code>list_data()</code>,
+<code>prune_meta()</code>,
+<code>read_vc()</code>,
+<code>relabel()</code>,
+<code>rename_variable()</code>,
+<code>rm_data()</code>,
+<code>update_metadata()</code>,
+<code>verify_vc()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## on file system
+
+# create a directory
+root &lt;- tempfile("git2rdata-")
+dir.create(root)
+
+# write a dataframe to the directory
+write_vc(iris[1:6, ], file = "iris", root = root, sorting = "Sepal.Length")
+# check that a data file (.tsv) and a metadata file (.yml) exist.
+list.files(root, recursive = TRUE)
+# read the git2rdata object from the directory
+read_vc("iris", root)
+
+# store a new version with different observations but the same metadata
+write_vc(iris[1:5, ], "iris", root)
+list.files(root, recursive = TRUE)
+# Removing a column requires version requires new metadata.
+# Add strict = FALSE to override the existing metadata.
+write_vc(
+  iris[1:6, -2], "iris", root, sorting = "Sepal.Length", strict = FALSE
+)
+list.files(root, recursive = TRUE)
+# storing the orignal version again requires another update of the metadata
+write_vc(iris[1:6, ], "iris", root, sorting = "Sepal.Width", strict = FALSE)
+list.files(root, recursive = TRUE)
+# optimize = FALSE stores the data more verbose. This requires larger files.
+write_vc(
+  iris[1:6, ], "iris2", root, sorting = "Sepal.Width", optimize = FALSE
+)
+list.files(root, recursive = TRUE)
+
+
+
+## on git repo using a git2r::git-repository
+
+# initialise a git repo using the git2r package
+repo_path &lt;- tempfile("git2rdata-repo-")
+dir.create(repo_path)
+repo &lt;- git2r::init(repo_path)
+git2r::config(repo, user.name = "Alice", user.email = "alice@example.org")
+
+# store a dataframe in git repo.
+write_vc(iris[1:6, ], file = "iris", root = repo, sorting = "Sepal.Length")
+# This git2rdata object is not staged by default.
+status(repo)
+# read a dataframe from a git repo
+read_vc("iris", repo)
+
+# store a new version in the git repo and stage it in one go
+write_vc(iris[1:5, ], "iris", repo, stage = TRUE)
+status(repo)
+
+# store a verbose version in a different gir2data object
+write_vc(
+  iris[1:6, ], "iris2", repo, sorting = "Sepal.Width", optimize = FALSE
+)
+status(repo)
+</code></pre>
+
+
+</div>

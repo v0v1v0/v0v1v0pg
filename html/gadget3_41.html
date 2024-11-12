@@ -1,0 +1,212 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>action_report</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gadget3 report actions</h2>
+
+<h3>Description</h3>
+
+<p>Add report to a g3 model
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">g3a_report_stock(report_stock, input_stock, report_f,
+    include_adreport = FALSE,
+    run_f = TRUE,
+    run_at = g3_action_order$report)
+
+g3a_report_history(
+        actions,
+        var_re = "__num$|__wgt$",
+        out_prefix = "hist_",
+        run_f = TRUE,
+        run_at = g3_action_order$report)
+
+g3a_report_detail(actions,
+    run_f = quote( g3_param('report_detail', optimise = FALSE, value = 1L) == 1 ),
+    abundance_run_at = g3_action_order$report_early,
+    run_at = g3_action_order$report)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>report_stock</code></td>
+<td>
+
+<p>The <code>g3_stock</code> to aggregate into
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>input_stock</code></td>
+<td>
+
+<p>The <code>g3_stock</code> that will be aggregated
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>report_f</code></td>
+<td>
+
+<p>formula specifying what to collect, for instance <code>g3_formula( stock_ss(input_stock__num) )</code> or <code>g3_formula( stock_ss(input_stock__wgt) )</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>actions</code></td>
+<td>
+
+<p>List of actions that model will consist of.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var_re</code></td>
+<td>
+
+<p>Regular expression specifying variables to log history for.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>out_prefix</code></td>
+<td>
+
+<p>Prefix to add to history report output, e.g. <code>hist_ling_imm__num</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include_adreport</code></td>
+<td>
+
+<p>Should the aggregated value get ADREPORT'ed?
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>abundance_run_at</code></td>
+<td>
+
+<p>Integer order that abundance will be collected within the model. Note that by default it's collected at the start, not the end
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>run_f</code></td>
+<td>
+
+<p>formula specifying a condition for running this action, default always runs.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>run_at</code></td>
+<td>
+
+<p>Integer order that actions will be run within model, see <code>g3_action_order</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The actions will define the following variables in your model:
+</p>
+
+<dl>
+<dt>
+<var>report_stock</var>__<var>instance_name</var>
+</dt>
+<dd>
+<p>Results of collating <var>input_stock</var>__<var>instance_name</var>, where
+<var>instance_name</var> is defined by the first instance variable in <var>report_f</var>.
+For example, if <var>report_f</var> is <code>~input_stock__num</code>, then we will report <code>report_stock__num</code>.
+</p>
+</dd>
+</dl>
+<p>A model can have any number of <code>g3a_report_*</code> actions, so long as the
+calling arguments are different. For instance, <code>run_f = ~age == 5</code> and
+<code>run_f = ~age == 7</code>.
+</p>
+
+
+<h3>Value</h3>
+
+
+
+<h4>g3a_report_stock</h4>
+
+<p>An action (i.e. list of formula objects) that will...</p>
+
+<ol>
+<li>
+<p>Iterate over <var>input_stock</var>, collecting data into <var>report_stock</var>
+</p>
+</li>
+<li>
+<p>Add the contents of <var>report_stock</var>__<var>instance_name</var> to the model report
+</p>
+</li>
+</ol>
+<h4>g3a_report_history</h4>
+
+<p>An action (i.e. list of formula objects) that will store the current state of each variable found matching <var>var_re</var>.
+</p>
+
+
+
+<h4>g3a_report_detailed</h4>
+
+<p>Uses g3a_report_history to generate detailed reports suitable for use in <code>g3_fit</code>.
+</p>
+
+
+
+<h3>See Also</h3>
+
+<p><code>g3_stock</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+ling_imm &lt;- g3_stock('ling_imm', seq(20, 156, 4)) %&gt;% g3s_age(3, 10)
+
+# Report that aggregates ages together
+agg_report &lt;- g3_stock('agg_report', c(1)) %&gt;%
+    g3s_agegroup(list(young = 1:3, old = 4:5)) %&gt;%
+    g3s_time(year = 2000:2002)
+# Generate dissaggregated report by cloning the source stock, adding time
+raw_report &lt;- g3s_clone(ling_imm, 'raw_report') %&gt;%
+    g3s_time(year = 2000:2002)
+
+actions &lt;- list(
+    g3a_age(ling_imm),
+    g3a_report_stock(agg_report, ling_imm, g3_formula( stock_ss(ling_imm__num) ),
+        include_adreport = TRUE),
+    g3a_report_stock(raw_report, ling_imm, g3_formula( stock_ss(ling_imm__num) )))
+# "raw_report__num" and "agg_report__num" will be available in the model report
+# In addition, agg_report__num will be included in TMB::sdreport() output
+
+# Report history of all "__num" and "__wgt" variables
+actions &lt;- c(actions, list(g3a_report_history(actions)))
+
+# Report history of just "ling_imm__num"
+actions &lt;- c(actions, list(g3a_report_history(actions, "^ling_imm__num$")))
+
+# Add a detail report suitable for g3_fit
+actions &lt;- c(actions, list(g3a_report_detail(actions)))
+</code></pre>
+
+
+</div>

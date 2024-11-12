@@ -1,0 +1,196 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>smooth_density</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Smooth dot positions in a dotplot using a kernel density estimator ("density dotplots")</h2>
+
+<h3>Description</h3>
+
+<p>Smooths <code>x</code> values using a density estimator, returning new <code>x</code> of the same
+length. Can be used with a dotplot (e.g. <code>geom_dots</code><code>(smooth = ...)</code>) to create
+"density dotplots".
+</p>
+<p>Supports automatic partial function application.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">smooth_bounded(
+  x,
+  density = "bounded",
+  bounds = c(NA, NA),
+  bounder = "cooke",
+  trim = FALSE,
+  ...
+)
+
+smooth_unbounded(x, density = "unbounded", trim = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a numeric vector</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>density</code></td>
+<td>
+<p>Density estimator to use for smoothing. One of:
+</p>
+
+<ul>
+<li>
+<p> A function which takes a numeric vector and returns a list with elements
+<code>x</code> (giving grid points for the density estimator) and <code>y</code> (the
+corresponding densities). <span class="pkg">ggdist</span> provides a family of functions
+following this format, including <code>density_unbounded()</code> and
+<code>density_bounded()</code>.
+</p>
+</li>
+<li>
+<p> A string giving the suffix of a function name that starts with <code>"density_"</code>;
+e.g. <code>"bounded"</code> for <code style="white-space: pre;">⁠[density_bounded()]⁠</code>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bounds</code></td>
+<td>
+<p>length-2 vector of min and max bounds. If a bound is <code>NA</code>, then
+that bound is estimated from the data using the method specified by <code>bounder</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bounder</code></td>
+<td>
+<p>Method to use to find missing (<code>NA</code>) <code>bounds</code>. A function that
+takes a numeric vector of values and returns a length-2 vector of the estimated
+lower and upper bound of the distribution. Can also be a string giving the
+suffix of the name of such a function that starts with <code>"bounder_"</code>. Useful
+values include:
+</p>
+
+<ul>
+<li> <p><code>"cdf"</code>: Use the CDF of the the minimum and maximum order statistics of the
+sample to estimate the bounds. See <code>bounder_cdf()</code>.
+</p>
+</li>
+<li> <p><code>"cooke"</code>: Use the method from Cooke (1979); i.e. method 2.3 from Loh (1984).
+See <code>bounder_cooke()</code>.
+</p>
+</li>
+<li> <p><code>"range"</code>: Use the range of <code>x</code> (i.e the <code>min</code> or <code>max</code>). See <code>bounder_range()</code>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trim</code></td>
+<td>
+<p>Should the density estimate be trimmed to the bounds of the data?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to the density estimator specified by <code>density</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Applies a kernel density estimator (KDE) to <code>x</code>, then uses weighted quantiles
+of the KDE to generate a new set of <code>x</code> values with smoothed values. Plotted
+using a dotplot (e.g. <code>geom_dots(smooth = "bounded")</code> or
+<code style="white-space: pre;">⁠geom_dots(smooth = smooth_bounded(...)⁠</code>), these values create a variation on
+a "density dotplot" (Zvinca 2018).
+</p>
+<p>Such plots are recommended <strong>only</strong> in very
+large sample sizes where precise positions of individual values are not
+particularly meaningful. In small samples, normal dotplots should generally
+be used.
+</p>
+<p>Two variants are supplied by default:
+</p>
+
+<ul>
+<li> <p><code>smooth_bounded()</code>, which uses <code>density_bounded()</code>.
+Passes the <code>bounds</code> arguments to the estimator.
+</p>
+</li>
+<li> <p><code>smooth_unbounded()</code>, which uses <code>density_unbounded()</code>.
+</p>
+</li>
+</ul>
+<p>It is generally recommended to pick the smooth based on the known bounds of
+your data, e.g. by using <code>smooth_bounded()</code> with the <code>bounds</code> parameter if
+there are finite bounds, or <code>smooth_unbounded()</code> if both bounds are infinite.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A numeric vector of <code>length(x)</code>, where each entry is a smoothed version of
+the corresponding entry in <code>x</code>.
+</p>
+<p>If <code>x</code> is missing, returns a partial application of itself. See automatic-partial-functions.
+</p>
+
+
+<h3>References</h3>
+
+<p>Zvinca, Daniel. "In the pursuit of diversity in data visualization. Jittering data to access details."
+<a href="https://www.linkedin.com/pulse/pursuit-diversity-data-visualization-jittering-access-daniel-zvinca/">https://www.linkedin.com/pulse/pursuit-diversity-data-visualization-jittering-access-daniel-zvinca/</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other dotplot smooths: 
+<code>smooth_discrete()</code>,
+<code>smooth_none()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(ggplot2)
+
+set.seed(1234)
+x = rnorm(1000)
+
+# basic dotplot is noisy
+ggplot(data.frame(x), aes(x)) +
+  geom_dots()
+
+# density dotplot is smoother, but does move points (most noticeable
+# in areas of low density)
+ggplot(data.frame(x), aes(x)) +
+  geom_dots(smooth = "unbounded")
+
+# you can adjust the kernel and bandwidth...
+ggplot(data.frame(x), aes(x)) +
+  geom_dots(smooth = smooth_unbounded(kernel = "triangular", adjust = 0.5))
+
+# for bounded data, you should use the bounded smoother
+x_beta = rbeta(1000, 0.5, 0.5)
+
+ggplot(data.frame(x_beta), aes(x_beta)) +
+  geom_dots(smooth = smooth_bounded(bounds = c(0, 1)))
+
+</code></pre>
+
+
+</div>

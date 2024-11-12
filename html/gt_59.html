@@ -1,0 +1,141 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>extract_summary</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Extract a summary list from a <strong>gt</strong> object</h2>
+
+<h3>Description</h3>
+
+<p>Get a list of summary row data frames from a <code>gt_tbl</code> object where summary
+rows were added via <code>summary_rows()</code>. The output data frames contain the
+<code>group_id</code> and <code>rowname</code> columns, whereby <code>rowname</code> contains descriptive stub
+labels for the summary rows.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">extract_summary(data)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p><em>The gt table data object</em>
+</p>
+<p><code style="white-space: pre;">⁠obj:&lt;gt_tbl&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>This is the <strong>gt</strong> table object that is commonly created through use of the
+<code>gt()</code> function.</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>A list of data frames containing summary data.
+</p>
+
+
+<h3>Examples</h3>
+
+<p>Use a modified version of <code>sp500</code> the dataset to create a <strong>gt</strong> table with
+row groups and row labels. Create summary rows labeled as <code>min</code>, <code>max</code>, and
+<code>avg</code> for every row group with <code>summary_rows()</code>. Then, extract the summary
+rows as a list object.
+</p>
+<div class="sourceCode r"><pre>summary_extracted &lt;-
+  sp500 |&gt;
+  dplyr::filter(date &gt;= "2015-01-05" &amp; date &lt;="2015-01-30") |&gt;
+  dplyr::arrange(date) |&gt;
+  dplyr::mutate(week = paste0("W", strftime(date, format = "%V"))) |&gt;
+  dplyr::select(-adj_close, -volume) |&gt;
+  gt(
+    rowname_col = "date",
+    groupname_col = "week"
+  ) |&gt;
+  summary_rows(
+    groups = everything(),
+    columns = c(open, high, low, close),
+    fns = list(
+      min = ~min(.),
+      max = ~max(.),
+      avg = ~mean(.)
+    ),
+  ) |&gt;
+  extract_summary()
+
+summary_extracted
+#&gt; $summary_df_data_list
+#&gt; $summary_df_data_list$W02
+#&gt; # A tibble: 3 x 9
+#&gt;   group_id row_id rowname  date  open  high   low close  week
+#&gt;   &lt;chr&gt;    &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+#&gt; 1 W02      min    min        NA 2006. 2030. 1992. 2003.    NA
+#&gt; 2 W02      max    max        NA 2063. 2064. 2038. 2062.    NA
+#&gt; 3 W02      avg    avg        NA 2035. 2049. 2017. 2031.    NA
+#&gt; 
+#&gt; $summary_df_data_list$W03
+#&gt; # A tibble: 3 x 9
+#&gt;   group_id row_id rowname  date  open  high   low close  week
+#&gt;   &lt;chr&gt;    &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+#&gt; 1 W03      min    min        NA 1992. 2018. 1988. 1993.    NA
+#&gt; 2 W03      max    max        NA 2046. 2057. 2023. 2028.    NA
+#&gt; 3 W03      avg    avg        NA 2020. 2033. 2000. 2015.    NA
+#&gt; 
+#&gt; $summary_df_data_list$W04
+#&gt; # A tibble: 3 x 9
+#&gt;   group_id row_id rowname  date  open  high   low close  week
+#&gt;   &lt;chr&gt;    &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+#&gt; 1 W04      min    min        NA 2020. 2029. 2004. 2023.    NA
+#&gt; 2 W04      max    max        NA 2063. 2065. 2051. 2063.    NA
+#&gt; 3 W04      avg    avg        NA 2035. 2049. 2023. 2042.    NA
+#&gt; 
+#&gt; $summary_df_data_list$W05
+#&gt; # A tibble: 3 x 9
+#&gt;   group_id row_id rowname  date  open  high   low close  week
+#&gt;   &lt;chr&gt;    &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+#&gt; 1 W05      min    min        NA 2002. 2023. 1989. 1995.    NA
+#&gt; 2 W05      max    max        NA 2050. 2058. 2041. 2057.    NA
+#&gt; 3 W05      avg    avg        NA 2030. 2039. 2009. 2021.    NA
+</pre></div>
+<p>Use the summary list to make a new <strong>gt</strong> table. The key thing is to use
+<code>dplyr::bind_rows()</code> and then pass the tibble to <code>gt()</code>.
+</p>
+<div class="sourceCode r"><pre>summary_extracted |&gt;
+  unlist(recursive = FALSE) |&gt;
+  dplyr::bind_rows() |&gt;
+  gt(groupname_col = "group_id") |&gt;
+  cols_hide(columns = row_id)
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_extract_summary_1.png" alt="This image of a table was generated from the first code example in the `extract_summary()` help file." style="width:100%;"><h3>Function ID</h3>
+
+<p>13-8
+</p>
+
+
+<h3>Function Introduced</h3>
+
+<p><code>v0.2.0.5</code> (March 31, 2020)
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other table export functions: 
+<code>as_gtable()</code>,
+<code>as_latex()</code>,
+<code>as_raw_html()</code>,
+<code>as_rtf()</code>,
+<code>as_word()</code>,
+<code>extract_body()</code>,
+<code>extract_cells()</code>,
+<code>gtsave()</code>
+</p>
+
+
+</div>

@@ -1,0 +1,168 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>udecode</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Uniform decoder</h2>
+
+<h3>Description</h3>
+
+<p>Decode <code class="reqn">2^n</code>-level quantized integer inputs to floating-point outputs.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">udecode(u, n, v = 1, saturate = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>u</code></td>
+<td>
+<p>Input, a multidimensional array of integer numbers (can be complex).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Number of levels used in <code class="reqn">2^{n}</code>-level quantization. <code>n</code>
+must be between 2 and 32</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>v</code></td>
+<td>
+<p>Limit on the range of <code>u</code> to the range from <code>-v</code> to
+<code>v</code> before saturating them. Default 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>saturate</code></td>
+<td>
+<p>Logical indicating to saturate (TRUE, default) or to wrap
+(FALSE) overflows. See Details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>y &lt;- udecode(u, n)</code> inverts the operation of <code>uencode</code> and
+reconstructs quantized floating-point values from an encoded multidimensional
+array of integers <code>u</code>. The input argument <code>n</code> must be an integer
+between 2 and 32. The integer <code>n</code> specifies that there are <code class="reqn">2^{n}</code>
+quantization levels for the inputs, so that entries in <code>u</code> must be
+either:
+</p>
+
+<ul>
+<li>
+<p> Signed integers in the range <code class="reqn">-2^{n}/2</code> to <code class="reqn">(2^{n}/2) - 1</code>
+</p>
+</li>
+<li>
+<p> Unsigned integers in the range 0 to <code class="reqn">2^{n} - 1</code>
+</p>
+</li>
+</ul>
+<p>Inputs can be real or complex values of any integer data type. Overflows
+(entries in u outside of the ranges specified above) are saturated to the
+endpoints of the range interval. The output has the same dimensions as the
+input <code>u</code>. Its entries have values in the range -1 to 1.
+</p>
+<p><code>y &lt;- udecode(u, n, v)</code> decodes <code>u</code> such that the output has values
+in the range <code>-v</code> to <code>v</code>, where the default value for <code>v</code> is
+1.
+</p>
+<p><code>y &lt;- udecode(u, n, v, saturate)</code> decodes <code>u</code> and treats input
+overflows (entries in <code>u</code> outside of the range <code>-v</code> to <code>v</code>
+according to <code>saturate</code>, which can be set to one of the following:
+</p>
+
+<ul>
+<li>
+<p> TRUE (default). Saturate overflows.
+</p>
+
+<ul>
+<li>
+<p> Entries in signed inputs <code>u</code> whose values are outside of the
+range <code class="reqn">-2^{n}/2</code> to <code class="reqn">(2^{n}/2) – 1</code> are assigned the value
+determined by the closest endpoint of this interval.
+</p>
+</li>
+<li>
+<p> Entries in unsigned inputs <code>u</code> whose values are outside of
+the range 0 to <code class="reqn">2^{n}-1</code> are assigned the value determined by the
+closest endpoint of this interval.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> FALSE Wrap all overflows according to the following:
+</p>
+
+<ul>
+<li>
+<p> Entries in signed inputs <code>u</code> whose values are outside of the
+range <code class="reqn">-2^{n}/2</code> to <code class="reqn">(2^{n}/2) – 1</code> are wrapped back into that
+range using modulo <code class="reqn">2^{n}</code> arithmetic (calculated using <code class="reqn">u =
+      mod(u+2^{n}/2, 2^{n})-(2^{n}/2))</code>.
+</p>
+</li>
+<li>
+<p> Entries in unsigned inputs <code>u</code> whose values are outside of
+the range 0 to <code class="reqn">2^{n}-1</code> are wrapped back into the required range
+before decoding using modulo <code class="reqn">2^{n}</code> arithmetic (calculated using
+<code class="reqn">u = mod(u,2^{n}))</code>.
+</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>Multidimensional array of the same size as <code>u</code> containing
+floating point numbers.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The real and imaginary components of complex inputs are decoded
+independently.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Georgios Ouzounis, <a href="mailto:ouzounis_georgios@hotmail.com">ouzounis_georgios@hotmail.com</a>.<br>
+Conversion to R by Geert van Boxtel, <a href="mailto:G.J.M.vanBoxtel@gmail.com">G.J.M.vanBoxtel@gmail.com</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+u &lt;- c(-1, 1, 2, -5)
+ysat &lt;- udecode(u, 3)
+
+# Notice the last entry in u saturates to 1, the default peak input
+# magnitude. Change the peak input magnitude to 6.
+ysatv &lt;- udecode(u, 3, 6)
+
+# The last input entry still saturates. Wrap the overflows.
+ywrap = udecode(u, 3, 6, FALSE)
+
+# Add more quantization levels.
+yprec &lt;- udecode(u, 5)
+
+</code></pre>
+
+
+</div>

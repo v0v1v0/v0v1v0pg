@@ -1,0 +1,96 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemShortTermInvestment_2_3</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some Examples Illustrating Short-Term Investment</h2>
+
+<h3>Description</h3>
+
+<p>Some examples illustrating short-term investment.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemShortTermInvestment_2_3(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### an example with an exogenous investment rate
+investment.rate &lt;- 0.2
+dst.firm &lt;- node_new("output",
+  type = "CD",
+  alpha = 2, beta = c(0.5, 0.5),
+  "prod", "lab"
+)
+
+dst.laborer &lt;- node_new("laborer.util",
+  type = "CD",
+  alpha = 1, beta = c(0.5, 0.5),
+  "prod", "lab"
+)
+
+dst.investor &lt;- node_new("investor.util",
+  type = "Leontief",
+  a = 1,
+  "prod"
+)
+
+dstl &lt;- list(dst.firm, dst.laborer, dst.investor)
+
+ge &lt;- sdm2(
+  A = dstl,
+  B = diag(c(1, 0), 2, 3),
+  S0Exg = matrix(c(
+    NA, NA, NA,
+    NA, 100 * (1 - investment.rate), 100 * investment.rate
+  ), 2, 3, TRUE),
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm", "laborer", "investor"),
+  numeraire = "prod"
+)
+
+addmargins(ge$D, 2)
+
+## an example with an exogenous investment level
+dst.investor$current.investment.rate &lt;- 0.5
+investment.level &lt;- 20
+
+ge &lt;- sdm2(
+  A = list(dst.firm, dst.laborer, dst.investor),
+  B = diag(c(1, 0), 2, 3),
+  S0Exg = matrix(c(
+    NA, NA, NA,
+    NA, 100, 0
+  ), 2, 3, TRUE),
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm", "laborer", "investor"),
+  numeraire = "prod",
+  policy = function(time, A, state) {
+    A[[3]]$current.investment.rate &lt;- A[[3]]$current.investment.rate *
+      (investment.level / state$last.z[3])
+    state$S[2, 2] &lt;- 100 * (1 - A[[3]]$current.investment.rate)
+    state$S[2, 3] &lt;- 100 * A[[3]]$current.investment.rate
+    state
+  }
+)
+
+addmargins(ge$D, 2)
+
+</code></pre>
+
+
+</div>

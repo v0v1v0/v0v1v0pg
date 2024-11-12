@@ -1,0 +1,156 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>run_geoquery</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get a geographic vector from a query</h2>
+
+<h3>Description</h3>
+
+<p>After defining a query and geographic dimensions, run the query and select
+the geographic data associated with it to get a geographic data layer as the
+result.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">run_geoquery(
+  dq,
+  unify_by_grain = TRUE,
+  fact = NULL,
+  dimension = NULL,
+  attribute = NULL,
+  wider = FALSE
+)
+
+## S3 method for class 'dimensional_query'
+run_geoquery(
+  dq,
+  unify_by_grain = TRUE,
+  fact = NULL,
+  dimension = NULL,
+  attribute = NULL,
+  wider = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dq</code></td>
+<td>
+<p>A <code>dimensional_query</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unify_by_grain</code></td>
+<td>
+<p>A boolean, unify facts with the same grain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fact</code></td>
+<td>
+<p>A string, name of the fact.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dimension</code></td>
+<td>
+<p>A string, name of the geographic dimension.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>attribute</code></td>
+<td>
+<p>A string, name of the geographic attribute to consider.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wider</code></td>
+<td>
+<p>A boolean, avoid repeating geographic data.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In the case of having several fact tables, as an option, we can indicate if
+we do not want to unify the facts in the case of having the same grain.
+</p>
+<p>If the result only has one fact table, it is not necessary to provide its
+name. Nor is it necessary to indicate the name of the geographic dimension if
+there is only one available.
+</p>
+<p>If no attribute is specified, the geographic attribute of the result with
+finer granularity is selected.
+</p>
+<p>In geographic layers, geographic objects are not repeated. The tables are
+wide: for each object the rest of the attributes are defined as columns. By
+means of the parameter <code>wider</code> we can indicate that we want a result of this
+type.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>sf</code> object.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other geo functions: 
+<code>define_geoattribute()</code>,
+<code>geomultistar()</code>,
+<code>get_empty_geoinstances()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+gms &lt;- geomultistar(ms = ms_mrs, geodimension = "where") |&gt;
+  define_geoattribute(
+    attribute = "city",
+    from_layer = usa_cities,
+    by = c("city" = "city", "state" = "state")
+  )  |&gt;
+  define_geoattribute(
+    attribute = "state",
+    from_layer = usa_states,
+    by = c("state" = "state")
+  ) |&gt;
+  define_geoattribute(attribute = "region",
+                      from_attribute = "state") |&gt;
+  define_geoattribute(attribute = "all_where",
+                      from_layer = usa_nation)
+
+gdq &lt;- dimensional_query(gms) |&gt;
+  select_dimension(name = "where",
+                   attributes = c("state", "city")) |&gt;
+  select_dimension(name = "when",
+                   attributes = c("when_happened_year", "when_happened_week")) |&gt;
+  select_fact(
+    name = "mrs_age",
+    measures = c("n_deaths")
+  ) |&gt;
+  select_fact(name = "mrs_cause",
+              measures = c("pneumonia_and_influenza_deaths", "other_deaths")) |&gt;
+  filter_dimension(name = "when", when_happened_week &lt;= "03") |&gt;
+  filter_dimension(name = "where", state == "MA")
+
+sf &lt;- gdq |&gt;
+  run_geoquery()
+
+sfw &lt;- gdq |&gt;
+  run_geoquery(wider = TRUE)
+
+</code></pre>
+
+
+</div>

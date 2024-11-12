@@ -1,0 +1,183 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>larch</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate a heterogeneous log-ARCH-X model</h2>
+
+<h3>Description</h3>
+
+<p>The function <code>larch()</code> estimates a heterogeneous log-ARCH-X model, which is a generalisation of the dynamic log-variance model in Pretis, Reade and Sucarrat (2018). Internally, estimation is undertaken by a call to <code>larchEstfun</code>. The log-variance specification can contain log-ARCH terms, log-HARCH terms, asymmetry terms ('leverage'), the log of volatility proxies made up of past returns and other covariates ('X'), for example Realised Volatility (RV), volume or the range.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">larch(e, vc=TRUE, arch = NULL, harch = NULL, asym = NULL, asymind = NULL,
+  log.ewma = NULL, vxreg = NULL, zero.adj = NULL, 
+  vcov.type = c("robust", "hac"), qstat.options = NULL,
+  normality.JarqueB = FALSE, tol = 1e-07, singular.ok = TRUE,  plot = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>e</code></td>
+<td>
+<p><code>numeric</code> vector, time-series or <code>zoo</code> object. Missing values in the beginning and at the end of the series is allowed, as they are removed with the <code>na.trim</code> command </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vc</code></td>
+<td>
+<p><code>logical</code>. <code>TRUE</code> includes an intercept in the log-variance specification. Currently, <code>vc</code> cannot be set to any other value than <code>TRUE</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>arch</code></td>
+<td>
+<p>either <code>NULL</code> (default) or an integer vector, say, <code>c(1,3)</code> or <code>2:5</code>. The log-ARCH lags to include in the log-variance specification </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>harch</code></td>
+<td>
+<p>either <code>NULL</code> (default) or an integer vector, say, <code>c(5,10)</code>. The (log of) heterogeneous ARCH terms (Muller et al. 1997) to include </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>asym</code></td>
+<td>
+<p>either <code>NULL</code> (default) or an integer vector, say, <code>c(1)</code> or <code>1:3</code>. The asymmetry (i.e. 'leverage') terms to include in the log-variance specification</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>asymind</code></td>
+<td>
+<p>either <code>NULL</code> (default or an integer vector. The indicator asymmetry terms to include </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log.ewma</code></td>
+<td>
+<p>either <code>NULL</code> (default) or a vector of the lengths of the volatility proxies, see <code>leqwma</code>. The terms serve as (log of) volatility proxies similar to RVs in the HAR-model of Corsi (2009). Here, the <code>log.ewma</code> terms are made up of past e's </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vxreg</code></td>
+<td>
+<p>either <code>NULL</code> (default) or a numeric vector or matrix, say, a <code>zoo</code> object. If both <code>e</code> and <code>vxreg</code> are <code>zoo</code> objects, then their samples are chosen to match </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zero.adj</code></td>
+<td>
+<p><code>NULL</code> (default) or a strictly positive <code>numeric</code> scalar. If <code>NULL</code>, the zeros in the squared residuals are replaced by the 10 percent quantile of the non-zero squared residuals. If <code>zero.adj</code> is a strictly positive <code>numeric</code> scalar, then this value is used to replace the zeros of the squared e's </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov.type</code></td>
+<td>
+<p><code>character</code>. "robust" (default) or "hac" (partial matching is allowed). If "robust", the robust variance-covariance matrix of the White (1980) type is used. If "hac", the Newey and West (1987) heteroscedasticity and autocorrelation-robust matrix is used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>qstat.options</code></td>
+<td>
+<p><code>NULL</code> (default) or an integer vector of length two, say, <code>c(1,1)</code>. The first value sets the lag-order of the AR diagnostic test of the standardised residuals, whereas the second value sets the lag-order of the ARCH diagnostic test of the standardised residuals. If <code>NULL</code>, then the two values of the vector are set automatically </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normality.JarqueB</code></td>
+<td>
+<p><code>FALSE</code> (default) or <code>TRUE</code>. If <code>TRUE</code>, then the results of the Jarque and Bera (1980) test for non-normality in the residuals are included in the estimation results </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p><code>numeric</code> value. The tolerance (the default is <code>1e-07</code>) for detecting linear dependencies in the columns of the regressors (see <code>ols</code> and <code>qr</code>). Only used if <code>LAPACK</code> is <code>FALSE</code> (default) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>singular.ok</code></td>
+<td>
+<p><code>logical</code>. If <code>TRUE</code> (default), the regressors are checked for singularity, and the ones causing it are automatically removed. If <code>FALSE</code>, then the function returns an error </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p><code>NULL</code> (default) or <code>logical</code>. If <code>TRUE</code>, the fitted values and the residuals are plotted. If <code>NULL</code>, then the value set by <code>options</code> determines whether a plot is produced or not </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>No details for the moment</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class 'larch'</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Genaro Sucarrat: <a href="https://www.sucarrat.net/">https://www.sucarrat.net/</a></p>
+
+
+<h3>References</h3>
+
+<p>G. Ljung and G. Box (1979): 'On a Measure of Lack of Fit in Time Series Models'. Biometrika 66, pp. 265-270
+</p>
+<p>F. Corsi (2009): 'A Simple Approximate Long-Memory Model of Realized Volatility', Journal of Financial Econometrics 7, pp. 174-196
+</p>
+<p>C. Jarque and A. Bera (1980): 'Efficient Tests for Normality, Homoscedasticity and Serial Independence'. Economics Letters 6, pp. 255-259. <a href="https://doi.org/10.1016/0165-1765%2880%2990024-5">doi:10.1016/0165-1765(80)90024-5</a>
+</p>
+<p>U. Muller, M. Dacorogna, R. Dave, R. Olsen, O. Pictet and J. von Weizsacker (1997): 'Volatilities of different time resolutions - analyzing the dynamics of market components'. Journal of Empirical Finance 4, pp. 213-239
+</p>
+<p>F. Pretis, J. Reade and G. Sucarrat (2018): 'Automated General-to-Specific (GETS) Regression Modeling and Indicator Saturation for Outliers and Structural Breaks'. Journal of Statistical Software 86, Number 3, pp. 1-44. <a href="https://doi.org/10.18637/jss.v086.i03">doi:10.18637/jss.v086.i03</a>
+</p>
+<p>H. White (1980): 'A Heteroskedasticity-Consistent Covariance Matrix Estimator and a Direct Test for Heteroskedasticity', Econometrica 48, pp. 817-838.
+</p>
+<p>W.K. Newey and K.D. West (1987): 'A Simple, Positive Semi-Definite, Heteroskedasticity and Autocorrelation Consistent Covariance Matrix', Econometrica 55, pp. 703-708.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Methods and extraction functions (mostly S3 methods): <code>coef.larch</code>, <code>ES</code>, <code>fitted.larch</code>, <code>gets.larch</code>, <br><code>logLik.larch</code>, <code>nobs.larch</code>, <code>plot.larch</code>, <code>predict.larch</code>, <code>print.larch</code>, <br><code>residuals.larch</code>, <code>summary.larch</code>, <code>VaR</code>, <code>toLatex.larch</code> and <code>vcov.arx</code><br></p>
+<p><code>regressorsVariance</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">##Simulate some data:
+set.seed(123)
+e &lt;- rnorm(40)
+x &lt;- matrix(rnorm(40*2), 40, 2)
+
+##estimate a log-variance specification with a log-ARCH(4)
+##structure:
+larch(e, arch=1:4)
+
+##estimate a log-variance specification with a log-ARCH(4)
+##structure, a log-HARCH(5) term and a first-order asymmetry/leverage
+##term:
+larch(e, arch=1:4, harch=5, asym=1)
+
+##estimate a log-variance specification with a log-ARCH(4)
+##structure, an asymmetry/leverage term, a 10-period log(EWMA) as
+##volatility proxy, and the log of the squareds of the conditioning
+##regressors in the log-variance specification:
+larch(e, arch=1:4, asym=1, log.ewma=list(length=10), vxreg=log(x^2))
+
+</code></pre>
+
+
+</div>

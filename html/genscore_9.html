@@ -1,0 +1,113 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cov_cons</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Random generator of inverse covariance matrices.</h2>
+
+<h3>Description</h3>
+
+<p>Random generator of inverse covariance matrices.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cov_cons(mode, p, seed = NULL, spars = 1, eig = 0.1, subgraphs = 1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mode</code></td>
+<td>
+<p>A string, see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>A positive integer &gt;= 2, the dimension.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>A number, the seed for the generator. Ignored if <code>NULL</code> or <code>mode == "band"</code> or <code>mode == "chain"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spars</code></td>
+<td>
+<p>A number, see details. Ignored if <code>mode == "chain"</code>. Default to 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eig</code></td>
+<td>
+<p>A positive number, the minimum eigenvalue of the returned matrix. Default to 0.1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subgraphs</code></td>
+<td>
+<p>A positive integer, the number of subgraphs for the <code>"sub"</code> mode. Note that <code>p</code> must be divisible by <code>subgraphs</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+<p>The function generates an inverse covariance matrix according to the <code>mode</code> argument as follows. The diagonal entries of the matrix are set to the same value such that the minimum eigenvalue of the returned matrix is equal to <code>eig</code>.
+</p>
+<dl>
+<dt>"random"</dt>
+<dd>
+<p>Takes the <code>Q</code> matrix from the <code>QR</code> decomposition of a <code>p</code> by <code>p</code> random matrix with independent <code class="reqn">Normal(0,1)</code> entries, and calculates <code class="reqn">Q' diag(ev) Q</code>. Randomly zeros out its upper triangular entries using independent uniform Bernoulli(<code>spars</code>) variables, and then symmetrizes the matrix using the upper triangular part.</p>
+</dd>
+<dt>"sub"</dt>
+<dd>
+<p>Constructs a block diagonal matrix with <code>subgraphs</code> disconnected subgraphs with equal number of nodes. In each subgraph, takes each entry independently from <code class="reqn">Uniform(0.5,1)</code>, and randomly zeros out its upper triangular entries using independent uniform Bernoulli(<code>spars</code>) variables, and finally symmetrizes the matrix using the upper triangular part. The construction from Section 4.2 of Lin et al. (2016).</p>
+</dd>
+<dt>"er"</dt>
+<dd>
+<p>Constructs an Erd\H{o}s-R\'enyi game with probability <code>spars</code>, and sets the edges to independent <code class="reqn">Uniform(0.5,1)</code> variables, and finally symmetrizes the matrix using the lower triangular entries.</p>
+</dd>
+<dt>"band"</dt>
+<dd>
+<p>Constructs a banded matrix so that the <code>(i,j)</code>-th matrix is nonzero if and only if <code class="reqn">|i-j|&lt;=spars</code>, and is equal to <code class="reqn">1-|i-j|/(spars+1)</code> if <code class="reqn">i!=j</code>.</p>
+</dd>
+<dt>"chain"</dt>
+<dd>
+<p>A chain graph, where the <code>(i,j)</code>-th matrix is nonzero if and only if <code class="reqn">|i-j|&lt;=1</code>, and is equal to 0.5 if <code class="reqn">|i-j|==1</code>. A special case of the <code>"band"</code> construction with <code>spars</code> equal to 1.</p>
+</dd>
+</dl>
+<h3>Value</h3>
+
+<p>A <code>p</code> by <code>p</code> inverse covariance matrix. See details.
+</p>
+
+
+<h3>References</h3>
+
+<p>Lin L, Drton M, Shojaie A (2016).
+“Estimation of high-dimensional graphical models using regularized score matching.”
+<em>Electron. J. Stat.</em>, <b>10</b>(1), 806–854.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">p &lt;- 100
+K1 &lt;- cov_cons("random", p, seed = 1, spars = 0.05, eig = 0.1)
+K2 &lt;- cov_cons("sub", p, seed = 2, spars = 0.5, eig = 0.1, subgraphs=10)
+K3 &lt;- cov_cons("er", p, seed = 3, spars = 0.05, eig = 0.1)
+K4 &lt;- cov_cons("band", p, spars = 2, eig = 0.1)
+K5 &lt;- cov_cons("chain", p, eig = 0.1)
+</code></pre>
+
+
+</div>

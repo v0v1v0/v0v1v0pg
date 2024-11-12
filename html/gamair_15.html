@@ -1,0 +1,242 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ch3.solutions</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Solution code for Chapter 3: Generalized Linear Models</h2>
+
+<h3>Description</h3>
+
+<p>R code for Chapter 3 exercise solutions.</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Simon Wood &lt;simon@r-project.org&gt;
+</p>
+<p>Maintainer: Simon Wood &lt;simon@r-project.org&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Wood, S.N. (2017) <em>Generalized Additive Models: An Introduction with R</em>, CRC
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>mgcv</code>, <code>ch3</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(gamair); library(mgcv)
+
+## Q.2 Residuals
+
+n &lt;- 100; m &lt;- 10
+x &lt;- runif(n)
+lp &lt;- 3*x-1
+mu &lt;- binomial()$linkinv(lp)
+y &lt;- rbinom(1:n,m,mu)
+par(mfrow=c(2,2))
+plot(glm(y/m ~ x,family=binomial,weights=rep(m,n)))
+
+## example glm fit...
+b &lt;- glm(y/m ~ x,family=binomial,weights=rep(m,n))
+reps &lt;- 200;mu &lt;- fitted(b)
+rsd &lt;- matrix(0,reps,n) # array for simulated resids
+runs &lt;- rep(0,reps)  # array for simulated run counts
+for (i in 1:reps) {  # simulation loop
+  ys &lt;- rbinom(1:n,m,mu) # simulate from fitted model
+  ## refit model to simulated data
+  br &lt;- glm(ys/m ~ x,family=binomial,weights=rep(m,n))
+  rs &lt;- residuals(br) # simulated resids (meet assumptions)
+  rsd[i,] &lt;- sort(rs) # store sorted residuals
+  fv.sort &lt;- sort(fitted(br),index.return=TRUE)
+  rs &lt;- rs[fv.sort$ix] # order resids by sorted fit values
+  rs &lt;- rs &gt; 0         # check runs of +ve, -ve resids
+  runs[i] &lt;- sum(rs[1:(n-1)]!=rs[2:n])
+}
+# plot original ordered residuals, and simulation envelope
+for (i in 1:n) rsd[,i] &lt;- sort(rsd[,i])
+par(mfrow=c(1,1))
+plot(sort(residuals(b)),(1:n-.5)/n) # original
+## plot 95% envelope ....
+lines(rsd[5,],(1:n-.5)/n);lines(rsd[reps-5,],(1:n-.5)/n)
+
+# compare original runs to distribution under independence
+rs &lt;- residuals(b)
+fv.sort &lt;- sort(fitted(b),index.return=TRUE)
+rs &lt;- rs[fv.sort$ix]
+rs &lt;- rs &gt; 0
+obs.runs &lt;- sum(rs[1:(n-1)]!=rs[2:n])
+sum(runs&gt;obs.runs)
+
+## Q.3 Death penalty
+
+## read in data...
+count &lt;- c(53,414,11,37,0,16,4,139)
+death &lt;- factor(c(1,0,1,0,1,0,1,0))
+defendant &lt;- factor(c(0,0,1,1,0,0,1,1))
+victim &lt;- factor(c(0,0,0,0,1,1,1,1))
+levels(death) &lt;- c("no","yes")
+levels(defendant) &lt;- c("white","black")
+levels(victim) &lt;- c("white","black")
+
+## a)
+sum(count[death=="yes"&amp;defendant=="black"])/
+    sum(count[defendant=="black"])
+sum(count[death=="yes"&amp;defendant=="white"])/
+    sum(count[defendant=="white"])
+
+## b)
+dm &lt;- glm(count~death*victim+death*defendant+
+          victim*defendant,family=poisson(link=log))
+summary(dm)
+dm0 &lt;- glm(count~death*victim+victim*defendant,
+           family=poisson(link=log))
+anova(dm0,dm,test="Chisq")
+
+## Q.7 IRLS
+y &lt;- c(12,14,33,50,67,74,123,141,165,204,253,246,240)
+t &lt;-1:13
+X &lt;- cbind(rep(1,13),t,t^2) # model matrix
+mu &lt;- y;eta &lt;- log(mu) # initial values
+ok &lt;- TRUE
+while (ok) {
+ ## evaluate pseudodata and weights
+ z &lt;- (y-mu)/mu + eta
+ w &lt;- as.numeric(mu)
+ ## fit weighted working linear model
+ z &lt;- sqrt(w)*z; WX &lt;- sqrt(w)*X
+ beta &lt;- coef(lm(z~WX-1))
+ ## evaluate new eta and mu
+ eta.old &lt;- eta
+ eta &lt;- X%*%beta
+ mu &lt;- exp(eta)
+ ## test for convergence...
+ if (max(abs(eta-eta.old))&lt;1e-7*max(abs(eta))) ok &lt;- FALSE
+}
+plot(t,y);lines(t,mu) # plot fit
+
+## Q.8
+## b)
+data(harrier)
+m &lt;- 1
+b &lt;- glm(Consumption.Rate~I(1/Grouse.Density^m),
+     family=quasi(link=inverse,variance=mu),data=harrier)
+
+## c)
+plot(harrier$Grouse.Density,residuals(b))
+## clear pattern if $m=1$, and the parameter estimates lead to a rather odd curve.
+
+## d)
+## search leads to...
+m &lt;- 3.25
+b &lt;- glm(Consumption.Rate~I(1/Grouse.Density^m),
+     family=quasi(link=inverse,variance=mu),data=harrier)
+
+## e)
+pd &lt;- data.frame(Grouse.Density = seq(0,130,length=200))
+pr &lt;- predict(b,newdata=pd,se=TRUE)
+with(harrier,plot(Grouse.Density,Consumption.Rate))
+lines(pd$Grouse.Density,1/pr$fit,col=2)
+lines(pd$Grouse.Density,1/(pr$fit-pr$se*2),col=3)
+lines(pd$Grouse.Density,1/(pr$fit+pr$se*2),col=3)
+
+## f)
+ll &lt;- function(b,cr,d)
+## evalates -ve quasi-log likelihood of model
+## b is parameters, cr is consumption, d is density
+{ ## get expected consumption...
+  dm &lt;- d^b[3]
+  Ec &lt;- exp(b[1])*dm/(1+exp(b[1])*exp(b[2])*dm)
+  ## appropriate quasi-likelihood...
+  ind &lt;- cr&gt;0    ## have to deal with cr==0 case
+  ql &lt;- cr - Ec
+  ql[ind] &lt;- ql[ind] + cr[ind]*log(Ec[ind]/cr[ind])
+  -sum(ql)
+}
+## Now fit model ...
+fit &lt;- optim(c(log(.4),log(10),3),ll,method="L-BFGS-B",
+             hessian=TRUE,cr=harrier$Consumption.Rate,
+             d=harrier$Grouse.Density)
+## and plot results ...
+b &lt;- fit$par
+d &lt;- seq(0,130,length=200); dm &lt;- d^b[3]
+Ec &lt;- exp(b[1])*dm/(1+exp(b[1])*exp(b[2])*dm)
+with(harrier,plot(Grouse.Density,Consumption.Rate))
+lines(d,Ec,col=2)
+
+## Q.9
+death &lt;- as.numeric(ldeaths)
+month &lt;- rep(1:12,6)
+time &lt;- 1:72
+ldm &lt;- glm(death ~ sin(month/12*2*pi)+cos(month/12*2*pi),
+           family=poisson(link=identity))
+plot(time,death,type="l");lines(time,fitted(ldm),col=2)
+summary(ldm)
+plot(ldm)
+
+## Q.10
+y &lt;- c(12,14,33,50,67,74,123,141,165,204,253,246,240)
+t &lt;- 1:13
+b &lt;- glm(y ~ t + I(t^2),family=poisson)
+log.lik &lt;- b1 &lt;- seq(.4,.7,length=100)
+for (i in 1:100)
+{ log.lik[i] &lt;- logLik(glm(y~offset(b1[i]*t)+I(t^2),
+                           family=poisson))
+}
+plot(b1,log.lik,type="l")
+points(coef(b)[2],logLik(b),pch=19)
+abline(logLik(b)[1]-qchisq(.95,df=1),0,lty=2)
+
+## Q.11 Soybean
+## a)
+library(nlme)
+attach(Soybean)
+lmc &lt;- lmeControl(niterEM=300) ## needed for convergence
+m1&lt;-lme(weight~Variety*Time+Variety*I(Time^2)+
+        Variety*I(Time^3),Soybean,~Time|Plot,control=lmc)
+plot(m1) ## clear increasing variance with mean
+
+## b)
+library(MASS)
+m2&lt;-glmmPQL(weight~Variety*Time+Variety*I(Time^2)+
+    Variety*I(Time^3),data=Soybean,random=~Time|Plot,
+    family=Gamma(link=log),control=lmc)
+plot(m2) ## much better
+
+## c)
+m0&lt;-glmmPQL(weight~Variety*Time+Variety*I(Time^2)+
+    Variety*I(Time^3),data=Soybean,random=~1|Plot,
+    family=Gamma(link=log),control=lmc) # simpler r.e.'s
+m3&lt;-glmmPQL(weight~Variety*Time+Variety*I(Time^2)+
+    Variety*I(Time^3),data=Soybean,random=~Time+
+    I(Time^2)|Plot,family=Gamma(link=log),control=lmc)
+## ... m3 has more complex r.e. structure
+## Following not strictly valid, but gives a rough
+## guide. Suggests m2 is best...
+AIC(m0,m2,m3)
+summary(m2) ## drop Variety:Time
+m4&lt;-glmmPQL(weight~Variety+Time+Variety*I(Time^2)+
+    Variety*I(Time^3),data=Soybean,random=~Time|Plot,
+    family=Gamma(link=log),control=lmc)
+summary(m4) ## perhaps drop Variety:I(Time^3)?
+m5&lt;-glmmPQL(weight~Variety+Time+Variety*I(Time^2)+
+    I(Time^3),data=Soybean,random=~Time|Plot,
+    family=Gamma(link=log),control=lmc)
+summary(m5) ## don't drop any more
+AIC(m2,m4,m5) ## supports m4
+intervals(m5,which="fixed")
+
+## So m4 or m5 are probably the best models to use, and
+## both suggest that variety P has a higher weight on average.
+</code></pre>
+
+
+</div>

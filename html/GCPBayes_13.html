@@ -1,0 +1,112 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>summaryCS</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Summary function of Continuous Spike</h2>
+
+<h3>Description</h3>
+
+<p>summaryCS is a generic function used to produce result summaries of the results of CS function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">summaryCS(object)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>a result of a call to CS</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+
+<ul>
+<li>
+<p> Name of Gene: the component from object.
+</p>
+</li>
+<li>
+<p> Number of SNPs: the component from object.
+</p>
+</li>
+<li>
+<p> Name of SNPs: the component from object.
+</p>
+</li>
+<li>
+<p> log10BF: the component from object.
+</p>
+</li>
+<li>
+<p> lBFDR: the component from object.
+</p>
+</li>
+<li>
+<p> theta: the component from object.
+</p>
+</li>
+<li>
+<p> Significance based on CI: the component from object.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Taban Baghfalaki.
+</p>
+
+
+<h3>References</h3>
+
+<p>Baghfalaki, T., Sugier, P. E., Truong, T., Pettitt, A. N., Mengersen, K., &amp; Liquet, B. (2021). Bayesian meta analysis models for cross cancer genomic investigation of pleiotropic effects using group structure. Statistics in Medicine, 40(6), 1498-1518.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">############################# Gene DNAJC1 ###############################################
+data(DNAJC1)
+Breast &lt;- DNAJC1$Breast
+Thyroid &lt;- DNAJC1$Thyroid
+genename &lt;- "DNAJC1"
+snpnames &lt;- Breast$snp
+Betah &lt;- list(Breast$beta, Thyroid$beta)
+Sigmah &lt;- list(diag(Breast$se^2), diag(Thyroid$se^2))
+K &lt;- 2
+m &lt;- 14
+
+pvalue &lt;- matrix(0, K, m)
+for (k in 1:K) {
+  pvalue[k, ] &lt;- 2 * pnorm(-abs(Betah[[k]] / sqrt(diag(Sigmah[[k]]))))
+}
+
+zinit &lt;- rep(0, K)
+for (j in 1:K) {
+  index &lt;- 1:m
+  PVALUE &lt;- p.adjust(pvalue[j, ])
+  SIGNALS &lt;- index[PVALUE &lt; 0.05]
+  modelf1 &lt;- rep(0, m)
+  modelf1[SIGNALS] &lt;- 1
+  if (max(modelf1) == 1) (zinit[j] &lt;- 1)
+}
+
+
+RES &lt;- CS(Betah, Sigmah,
+  kappa0 = 0.5, tau20 = 1, zeta0 = zinit,
+  m = m, K = K, niter = 2000, burnin = 1000, nthin = 2, nchains = 1, a1 = 0.1, a2 = 0.1,
+  c1 = 0.1, c2 = 0.1, sigma2 = 10^-3, snpnames = snpnames, genename = genename
+)
+summaryCS(RES)
+</code></pre>
+
+
+</div>

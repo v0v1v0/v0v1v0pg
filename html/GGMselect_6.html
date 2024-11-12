@@ -1,0 +1,151 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>selectMyFam</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Select a graph within a given family of graphs in  Gaussian Graphical Modeling.</h2>
+
+<h3>Description</h3>
+
+<p>Select a graph within a given family of graphs.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">selectMyFam(X, MyFamily, K=2.5, min.ev=10**(-8))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+ <p><code>n x p</code> matrix where <code>n</code> is the sample size and
+<code>p</code> the number of variables. <code>n</code> should be greater than
+<code>3</code> and <code>p</code> greater than <code>1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MyFamily </code></td>
+<td>
+<p> list of pxp adjacency matrices corresponding to
+graphs with degree less or equal to <code>n-3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p> scalar or vector with values larger than 1. Tuning
+parameter of the penalty 
+function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min.ev</code></td>
+<td>
+<p> minimum eigenvalue for matrix inversion. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>More details are available on <a href="../doc/Notice.pdf">../doc/Notice.pdf</a>
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Neighb </code></td>
+<td>
+<p>array of dimension  <code>p x dmax x
+       length(K)</code> where <code>dmax</code> is the maximum degree of the graphs
+in <code>MyFamily</code>. When <code>K</code> is of length 1, matrix of
+dimension <code>p x dmax</code>.
+<code>Neighb[a, , k ]</code> contains the indices
+of the nodes connected
+to node <code>a</code> for <code>K[k]</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>crit.min </code></td>
+<td>
+<p>vector of dimension <code>length(K)</code>.
+The minimal values of the selection criterion
+for each value of <code>K</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.min</code></td>
+<td>
+<p>vector of dimension <code>length(K)</code>.
+Indices of the families for which the  criterion is minimum.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+<p>array of dimension <code>p x p x length(K)</code> or,
+when <code>length(K)</code> equals 1, matrix of
+dimension <code>p x p</code>.
+<code>G[,,k]</code> gives the adjacency matrix for <code>K[k]</code>. </p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>Adjacency matrices can be generated from lists of connected nodes
+by using the function <code>convertGraph</code></p>
+
+
+<h3>Author(s)</h3>
+
+<p>Bouvier A, Giraud C, Huet S, Verzelen N.</p>
+
+
+<h3>References</h3>
+
+<p>Please use <code>citation("GGMselect")</code>.</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>selectFast</code>, <code>selectQE</code>,
+<code>simulateGraph</code>, <code>penalty</code>,
+<code>convertGraph</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">p=30
+n=30
+# generate graph
+eta=0.11
+Gr &lt;- simulateGraph(p,eta)
+# generate data
+X &lt;- rmvnorm(n, mean=rep(0,p), sigma=Gr$C)
+# generate a family of candidate graphs with glasso
+library("glasso")
+MyFamily &lt;- NULL
+for (j in 1:3){
+  MyFamily[[j]] &lt;- abs(sign(glasso(cov(X),rho=j/5)$wi))
+  diag(MyFamily[[j]]) &lt;- 0
+}
+# select a graph within MyFamily
+GMF &lt;- selectMyFam(X,MyFamily)
+# plot the result
+library(network)
+par(mfrow=c(1,2))
+gV &lt;- network(Gr$G)
+plot(gV,jitter=TRUE, usearrows = FALSE, label=1:p,displaylabels=TRUE)
+gMyFam &lt;- network(GMF$G)
+plot(gMyFam, jitter=TRUE, usearrows = FALSE,  label=1:p,displaylabels=TRUE)
+</code></pre>
+
+
+</div>

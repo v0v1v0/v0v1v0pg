@@ -1,0 +1,367 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>point_interval</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Point and interval summaries for tidy data frames of draws from distributions</h2>
+
+<h3>Description</h3>
+
+<p>Translates draws from distributions in a (possibly grouped) data frame into point and
+interval summaries (or set of point and interval summaries, if there are
+multiple groups in a grouped data frame).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">point_interval(
+  .data,
+  ...,
+  .width = 0.95,
+  .point = median,
+  .interval = qi,
+  .simple_names = TRUE,
+  na.rm = FALSE,
+  .exclude = c(".chain", ".iteration", ".draw", ".row"),
+  .prob
+)
+
+## Default S3 method:
+point_interval(
+  .data,
+  ...,
+  .width = 0.95,
+  .point = median,
+  .interval = qi,
+  .simple_names = TRUE,
+  na.rm = FALSE,
+  .exclude = c(".chain", ".iteration", ".draw", ".row"),
+  .prob
+)
+
+## S3 method for class 'numeric'
+point_interval(
+  .data,
+  ...,
+  .width = 0.95,
+  .point = median,
+  .interval = qi,
+  .simple_names = FALSE,
+  na.rm = FALSE,
+  .exclude = c(".chain", ".iteration", ".draw", ".row"),
+  .prob
+)
+
+## S3 method for class 'rvar'
+point_interval(
+  .data,
+  ...,
+  .width = 0.95,
+  .point = median,
+  .interval = qi,
+  .simple_names = TRUE,
+  na.rm = FALSE
+)
+
+## S3 method for class 'distribution'
+point_interval(
+  .data,
+  ...,
+  .width = 0.95,
+  .point = median,
+  .interval = qi,
+  .simple_names = TRUE,
+  na.rm = FALSE
+)
+
+qi(x, .width = 0.95, .prob, na.rm = FALSE)
+
+ll(x, .width = 0.95, na.rm = FALSE)
+
+ul(x, .width = 0.95, na.rm = FALSE)
+
+hdi(
+  x,
+  .width = 0.95,
+  na.rm = FALSE,
+  ...,
+  density = density_bounded(trim = TRUE),
+  n = 4096,
+  .prob
+)
+
+Mode(x, na.rm = FALSE, ...)
+
+## Default S3 method:
+Mode(
+  x,
+  na.rm = FALSE,
+  ...,
+  density = density_bounded(trim = TRUE),
+  n = 2001,
+  weights = NULL
+)
+
+## S3 method for class 'rvar'
+Mode(x, na.rm = FALSE, ...)
+
+## S3 method for class 'distribution'
+Mode(x, na.rm = FALSE, ...)
+
+hdci(x, .width = 0.95, na.rm = FALSE)
+
+mean_qi(.data, ..., .width = 0.95)
+
+median_qi(.data, ..., .width = 0.95)
+
+mode_qi(.data, ..., .width = 0.95)
+
+mean_ll(.data, ..., .width = 0.95)
+
+median_ll(.data, ..., .width = 0.95)
+
+mode_ll(.data, ..., .width = 0.95)
+
+mean_ul(.data, ..., .width = 0.95)
+
+median_ul(.data, ..., .width = 0.95)
+
+mode_ul(.data, ..., .width = 0.95)
+
+mean_hdi(.data, ..., .width = 0.95)
+
+median_hdi(.data, ..., .width = 0.95)
+
+mode_hdi(.data, ..., .width = 0.95)
+
+mean_hdci(.data, ..., .width = 0.95)
+
+median_hdci(.data, ..., .width = 0.95)
+
+mode_hdci(.data, ..., .width = 0.95)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>.data</code></td>
+<td>
+<p>Data frame (or grouped data frame as returned by <code>dplyr::group_by()</code>)
+that contains draws to summarize.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Bare column names or expressions that, when evaluated in the context of
+<code>.data</code>, represent draws to summarize. If this is empty, then by default all
+columns that are not group columns and which are not in <code>.exclude</code> (by default
+<code>".chain"</code>, <code>".iteration"</code>, <code>".draw"</code>, and <code>".row"</code>) will be summarized.
+These columns can be numeric, <span class="pkg">distributional</span> objects, <code>posterior::rvar</code>s,
+or list columns of numeric values to summarise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.width</code></td>
+<td>
+<p>vector of probabilities to use that determine the widths of the resulting intervals.
+If multiple probabilities are provided, multiple rows per group are generated, each with
+a different probability interval (and value of the corresponding <code>.width</code> column).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.point</code></td>
+<td>
+<p>Point summary function, which takes a vector and returns a single
+value, e.g. <code>mean()</code>, <code>median()</code>, or <code>Mode()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.interval</code></td>
+<td>
+<p>Interval function, which takes a vector and a probability
+(<code>.width</code>) and returns a two-element vector representing the lower and upper
+bound of an interval; e.g. <code>qi()</code>, <code>hdi()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.simple_names</code></td>
+<td>
+<p>When <code>TRUE</code> and only a single column / vector is to be summarized, use the
+name <code>.lower</code> for the lower end of the interval and <code>.upper</code> for the
+upper end. If <code>.data</code> is a vector and this is <code>TRUE</code>, this will also set the column name
+of the point summary to <code>.value</code>. When <code>FALSE</code> and <code>.data</code> is a data frame,
+names the lower and upper intervals for each column <code>x</code> <code>x.lower</code> and <code>x.upper</code>.
+When <code>FALSE</code> and <code>.data</code> is a vector, uses the naming scheme <code>y</code>, <code>ymin</code>
+and <code>ymax</code> (for use with ggplot).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.rm</code></td>
+<td>
+<p>logical value indicating whether <code>NA</code> values should be stripped before the computation proceeds.
+If <code>FALSE</code> (the default), any vectors to be summarized that contain <code>NA</code> will result in
+point and interval summaries equal to <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.exclude</code></td>
+<td>
+<p>A character vector of names of columns to be excluded from summarization
+if no column names are specified to be summarized. Default ignores several meta-data column
+names used in <span class="pkg">ggdist</span> and <span class="pkg">tidybayes</span>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.prob</code></td>
+<td>
+<p>Deprecated. Use <code>.width</code> instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>vector to summarize (for interval functions: <code>qi</code> and <code>hdi</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>density</code></td>
+<td>
+<p>For <code>hdi()</code> and <code>Mode()</code>, the kernel density estimator to use, either as
+a function (e.g. <code>density_bounded</code>, <code>density_unbounded</code>) or as a string giving the
+suffix to a function that starts with <code>density_</code> (e.g. <code>"bounded"</code> or <code>"unbounded"</code>). The
+default, <code>"bounded"</code>, uses the bounded density estimator of <code>density_bounded()</code>, which
+itself estimates the bounds of the distribution, and tends to work well on both bounded
+and unbounded data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>For <code>hdi()</code> and <code>Mode()</code>, the number of points to use to estimate highest-density
+intervals or modes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>For <code>Mode()</code>, an optional vector, which (if not <code>NULL</code>) is of the same length
+as <code>x</code> and provides weights for each element of <code>x</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If <code>.data</code> is a data frame, then <code>...</code> is a list of bare names of
+columns (or expressions derived from columns) of <code>.data</code>, on which
+the point and interval summaries are derived. Column expressions are processed
+using the tidy evaluation framework (see <code>rlang::eval_tidy()</code>).
+</p>
+<p>For a column named <code>x</code>, the resulting data frame will have a column
+named <code>x</code> containing its point summary. If there is a single
+column to be summarized and <code>.simple_names</code> is <code>TRUE</code>, the output will
+also contain columns <code>.lower</code> (the lower end of the interval),
+<code>.upper</code> (the upper end of the interval).
+Otherwise, for every summarized column <code>x</code>, the output will contain
+<code>x.lower</code> (the lower end of the interval) and <code>x.upper</code> (the upper
+end of the interval). Finally, the output will have a <code>.width</code> column
+containing the' probability for the interval on each output row.
+</p>
+<p>If <code>.data</code> includes groups (see e.g. <code>dplyr::group_by()</code>),
+the points and intervals are calculated within the groups.
+</p>
+<p>If <code>.data</code> is a vector, <code>...</code> is ignored and the result is a
+data frame with one row per value of <code>.width</code> and three columns:
+<code>y</code> (the point summary), <code>ymin</code> (the lower end of the interval),
+<code>ymax</code> (the upper end of the interval), and <code>.width</code>, the probability
+corresponding to the interval. This behavior allows <code>point_interval</code>
+and its derived functions (like <code>median_qi</code>, <code>mean_qi</code>, <code>mode_hdi</code>, etc)
+to be easily used to plot intervals in ggplot stats using methods like
+<code>stat_eye()</code>, <code>stat_halfeye()</code>, or <code>stat_summary()</code>.
+</p>
+<p><code>median_qi</code>, <code>mode_hdi</code>, etc are short forms for
+<code>point_interval(..., .point = median, .interval = qi)</code>, etc.
+</p>
+<p><code>qi</code> yields the quantile interval (also known as the percentile interval or
+equi-tailed interval) as a 1x2 matrix.
+</p>
+<p><code>hdi</code> yields the highest-density interval(s) (also known as the highest posterior
+density interval). <strong>Note:</strong> If the distribution is multimodal, <code>hdi</code> may return multiple
+intervals for each probability level (these will be spread over rows). You may wish to use
+<code>hdci</code> (below) instead if you want a single highest-density interval, with the caveat that when
+the distribution is multimodal <code>hdci</code> is not a highest-density interval.
+</p>
+<p><code>hdci</code> yields the highest-density <em>continuous</em> interval, also known as the shortest
+probability interval. <strong>Note:</strong> If the distribution is multimodal, this may not actually
+be the highest-density interval (there may be a higher-density
+discontinuous interval, which can be found using <code>hdi</code>).
+</p>
+<p><code>ll</code> and <code>ul</code> yield lower limits and upper limits, respectively (where the opposite
+limit is set to either <code>Inf</code> or <code>-Inf</code>).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data frame containing point summaries and intervals, with at least one column corresponding
+to the point summary, one to the lower end of the interval, one to the upper end of the interval, the
+width of the interval (<code>.width</code>), the type of point summary (<code>.point</code>), and the type of interval (<code>.interval</code>).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Matthew Kay
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(dplyr)
+library(ggplot2)
+
+set.seed(123)
+
+rnorm(1000) %&gt;%
+  median_qi()
+
+data.frame(x = rnorm(1000)) %&gt;%
+  median_qi(x, .width = c(.50, .80, .95))
+
+data.frame(
+    x = rnorm(1000),
+    y = rnorm(1000, mean = 2, sd = 2)
+  ) %&gt;%
+  median_qi(x, y)
+
+data.frame(
+    x = rnorm(1000),
+    group = "a"
+  ) %&gt;%
+  rbind(data.frame(
+    x = rnorm(1000, mean = 2, sd = 2),
+    group = "b")
+  ) %&gt;%
+  group_by(group) %&gt;%
+  median_qi(.width = c(.50, .80, .95))
+
+multimodal_draws = data.frame(
+    x = c(rnorm(5000, 0, 1), rnorm(2500, 4, 1))
+  )
+
+multimodal_draws %&gt;%
+  mode_hdi(.width = c(.66, .95))
+
+multimodal_draws %&gt;%
+  ggplot(aes(x = x, y = 0)) +
+  stat_halfeye(point_interval = mode_hdi, .width = c(.66, .95))
+
+</code></pre>
+
+
+</div>

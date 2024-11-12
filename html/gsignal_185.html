@@ -1,0 +1,186 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>kaiserord</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Kaiser filter order and cutoff frequency</h2>
+
+<h3>Description</h3>
+
+<p>Return the parameters needed to produce a FIR filter of the desired
+specification from a Kaiser window.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">kaiserord(f, m, dev, fs = 2)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>f</code></td>
+<td>
+<p>frequency bands, given as pairs, with the first half of the first
+pair assumed to start at 0 and the last half of the last pair assumed to
+end at 1. It is important to separate the band edges, since narrow
+transition regions require large order filters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m</code></td>
+<td>
+<p>magnitude within each band. Should be non-zero for pass band and
+zero for stop band. All passbands must have the same magnitude, or you will
+get the error that pass and stop bands must be strictly alternating.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dev</code></td>
+<td>
+<p>deviation within each band. Since all bands in the resulting
+filter have the same deviation, only the minimum deviation is used. In this
+version, a single scalar will work just as well.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fs</code></td>
+<td>
+<p>sampling rate. Used to convert the frequency specification into the
+c(0, 1) range, where 1 corresponds to the Nyquist frequency, <code>fs / 2</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Given a set of specifications in the frequency domain, <code>kaiserord</code>
+estimates the minimum FIR filter order that will approximately meet the
+specifications. <code>kaiserord</code> converts the given filter specifications
+into passband and stopband ripples and converts cutoff frequencies into the
+form needed for windowed FIR filter design.
+</p>
+<p><code>kaiserord</code> uses empirically derived formulas for estimating the orders
+of lowpass filters, as well as differentiators and Hilbert transformers.
+Estimates for multiband filters (such as band-pass filters) are derived from
+the low-pass design formulas.
+</p>
+<p>The design formulas that underlie the Kaiser window and its application to
+FIR filter design are
+</p>
+<p style="text-align: center;"><code class="reqn">\beta =</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">0.1102(\alpha - 8.7), \alpha &gt; 50</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">0.5842(\alpha -21)^{0.4} + 0.07886(\alpha - 21), 21 \le \alpha \le 50</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">0, \alpha &lt; 21</code>
+</p>
+
+<p>where <code class="reqn">\alpha = -20log_{10}(\delta)</code> is the stopband attenuation
+expressed in decibels, <code class="reqn">n=(\alpha - 8) / 2.285(\Delta\omega)</code>, where
+<code class="reqn">n</code> is the filter order and <code class="reqn">\Delta\omega</code> is the width of the
+smallest transition region.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class <code>FilterSpecs</code> with the following list
+elements:
+</p>
+
+<dl>
+<dt>n</dt>
+<dd>
+<p>filter order</p>
+</dd>
+<dt>Wc</dt>
+<dd>
+<p>cutoff frequency</p>
+</dd>
+<dt>type</dt>
+<dd>
+<p>filter type, one of "low", "high", "stop", "pass", "DC-0", or
+"DC-1".</p>
+</dd>
+<dt>beta</dt>
+<dd>
+<p>shape parameter</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Paul Kienzle.<br>
+Conversion to R by Tom Short,<br>
+adapted by Geert van Boxtel, <a href="mailto:G.J.M.vanBoxtel@gmail.com">G.J.M.vanBoxtel@gmail.com</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>hamming</code>, <code>kaiser</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">fs &lt;- 11025
+op &lt;- par(mfrow = c(2, 2), mar = c(3, 3, 1, 1))
+for (i in 1:4) {
+  if (i == 1) {
+    bands &lt;- c(1200, 1500)
+    mag &lt;- c(1, 0)
+    dev &lt;- c(0.1, 0.1)
+  }
+  if (i == 2) {
+    bands &lt;- c(1000, 1500)
+    mag &lt;- c(0, 1)
+    dev &lt;- c(0.1, 0.1)
+  }
+  if (i == 3) {
+    bands &lt;- c(1000, 1200, 3000, 3500)
+    mag &lt;- c(0, 1, 0)
+    dev &lt;- 0.1
+  }
+  if (i == 4) {
+    bands &lt;- 100 * c(10, 13, 15, 20, 30, 33, 35, 40)
+    mag &lt;- c(1, 0, 1, 0, 1)
+    dev &lt;- 0.05
+  }
+  kaisprm &lt;- kaiserord(bands, mag, dev, fs)
+  d &lt;- max(1, trunc(kaisprm$n / 10))
+  if (mag[length(mag)] == 1 &amp;&amp; (d %% 2) == 1) {
+     d &lt;- d + 1
+  }
+  f1 &lt;- freqz(fir1(kaisprm$n, kaisprm$Wc, kaisprm$type,
+                   kaiser(kaisprm$n + 1, kaisprm$beta),
+                   scale = FALSE),
+              fs = fs)
+  f2 &lt;- freqz(fir1(kaisprm$n - d, kaisprm$Wc, kaisprm$type,
+                   kaiser(kaisprm$n - d + 1, kaisprm$beta),
+                   scale = FALSE),
+              fs = fs)
+  plot(f1$w, abs(f1$h), col = "blue", type = "l",  xlab = "", ylab = "")
+  lines(f2$w, abs(f2$h), col = "red")
+  legend("right", paste("order", c(kaisprm$n-d, kaisprm$n)),
+         col = c("red", "blue"), lty = 1, bty = "n")
+  b &lt;- c(0, bands, fs/2)
+  for (i in seq(2, length(b), by=2)) {
+    hi &lt;- mag[i/2] + dev[1]
+    lo &lt;- max(mag[i/2] - dev[1], 0)
+    lines(c(b[i-1], b[i], b[i], b[i-1], b[i-1]), c(hi, hi, lo, lo, hi))
+  }
+}
+par(op)
+
+</code></pre>
+
+
+</div>

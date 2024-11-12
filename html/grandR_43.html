@@ -1,0 +1,95 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Defer</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Defer calling a function</h2>
+
+<h3>Description</h3>
+
+<p>This generates a function with one mandatory parameter (and additional optional parameters)
+that, when called, (i) also receives the parameters given when calling <code>Defer</code>, and (ii)
+after calling it each element of the <code>add</code> list is appended by <code>+</code>. When no optional parameters
+are given, the result is cached.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">Defer(FUN, ..., add = NULL, cache = TRUE, width.height = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>FUN</code></td>
+<td>
+<p>the function to be deferred</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional parameters to be used when the deferred function is called</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>add</code></td>
+<td>
+<p>list containing additional elements to be added <code>+</code> to the result of the deferred function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cache</code></td>
+<td>
+<p>use caching mechanism</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>width.height</code></td>
+<td>
+<p>a vector containing the desired width and height (not checked!)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The following expressions are very similar: <code>f &lt;- function(d) Heavy.function(d)</code> and <code>f &lt;- Defer(Heavy.function)</code>. In
+both cases, you get a function <code>f</code> that you can call for some <code>d</code>, which in turn calls <code>Heavy.function</code>. The only
+difference is that in the second case, the result is cached: <code>Heavy.function</code> is called only once when first calling <code>f</code>,
+if <code>f</code> is called a second time, the previous result is returned. This makes sense if the parameter <code>d</code> is constant (like a grandR object)
+and if <code>Heavy.function</code> is deterministic.
+</p>
+<p>If additional parameters are provided to <code>f</code>, caching is disabled. If any of these additional parameters has the same name as the parameters
+given to <code>Defer()</code>, the parameters given to <code>Defer()</code> are overwritten. Be careful if <code>Heavy.function</code> is not deterministic (see examples).
+</p>
+<p>Use case scenario: You want to produce a heatmap from a grandR object to be used as <code>plot.static</code> in the shiny web interface.
+<code>PlotHeatmap</code> takes some time, and the resulting object is pretty large in memory. Saving the heatmap object to disk is very
+inefficient (the Rdata file will be huge, especially with many heatmaps). Deferring the call without caching also is bad, because whenever
+the user clicks onto the heatmap, it is regenerated.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a function that can be called
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">Heavy.function &lt;- function(data) rnorm(5,mean=data)
+f1=Defer(Heavy.function)
+f2=function(d) Heavy.function(d)
+f2(4)
+f2(4) # these are not equal, as rnorm is called twice
+f1(4)
+f1(4) # these are equal, as the result of rnorm is cached
+
+</code></pre>
+
+
+</div>

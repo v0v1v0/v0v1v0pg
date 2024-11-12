@@ -1,0 +1,133 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>read_vc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Read a Git2rdata Object from Disk</h2>
+
+<h3>Description</h3>
+
+<p><code>read_vc()</code> handles git2rdata objects stored by <code>write_vc()</code>. It reads and
+verifies the metadata file (<code>.yml</code>). Then it reads and verifies the raw data.
+The last step is back-transforming any transformation done by <code>meta()</code> to
+return the <code>data.frame</code> as stored by <code>write_vc()</code>.
+</p>
+<p><code>read_vc()</code> is an S3 generic on <code>root</code> which currently handles <code>"character"</code>
+(a path) and <code>"git-repository"</code> (from <code>git2r</code>). S3 methods for other version
+control system could be added.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">read_vc(file, root = ".")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>the name of the git2rdata object. Git2rdata objects cannot
+have dots in their name. The name may include a relative path. <code>file</code> is a
+path relative to the <code>root</code>.
+Note that <code>file</code> must point to a location within <code>root</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>root</code></td>
+<td>
+<p>The root of a project. Can be a file path or a <code>git-repository</code>.
+Defaults to the current working directory (<code>"."</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The <code>data.frame</code> with the file names and hashes as attributes.
+It has the additional class <code>"git2rdata"</code> to support extra methods to
+display the descriptions.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other storage: 
+<code>display_metadata()</code>,
+<code>list_data()</code>,
+<code>prune_meta()</code>,
+<code>relabel()</code>,
+<code>rename_variable()</code>,
+<code>rm_data()</code>,
+<code>update_metadata()</code>,
+<code>verify_vc()</code>,
+<code>write_vc()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## on file system
+
+# create a directory
+root &lt;- tempfile("git2rdata-")
+dir.create(root)
+
+# write a dataframe to the directory
+write_vc(iris[1:6, ], file = "iris", root = root, sorting = "Sepal.Length")
+# check that a data file (.tsv) and a metadata file (.yml) exist.
+list.files(root, recursive = TRUE)
+# read the git2rdata object from the directory
+read_vc("iris", root)
+
+# store a new version with different observations but the same metadata
+write_vc(iris[1:5, ], "iris", root)
+list.files(root, recursive = TRUE)
+# Removing a column requires version requires new metadata.
+# Add strict = FALSE to override the existing metadata.
+write_vc(
+  iris[1:6, -2], "iris", root, sorting = "Sepal.Length", strict = FALSE
+)
+list.files(root, recursive = TRUE)
+# storing the orignal version again requires another update of the metadata
+write_vc(iris[1:6, ], "iris", root, sorting = "Sepal.Width", strict = FALSE)
+list.files(root, recursive = TRUE)
+# optimize = FALSE stores the data more verbose. This requires larger files.
+write_vc(
+  iris[1:6, ], "iris2", root, sorting = "Sepal.Width", optimize = FALSE
+)
+list.files(root, recursive = TRUE)
+
+
+
+## on git repo using a git2r::git-repository
+
+# initialise a git repo using the git2r package
+repo_path &lt;- tempfile("git2rdata-repo-")
+dir.create(repo_path)
+repo &lt;- git2r::init(repo_path)
+git2r::config(repo, user.name = "Alice", user.email = "alice@example.org")
+
+# store a dataframe in git repo.
+write_vc(iris[1:6, ], file = "iris", root = repo, sorting = "Sepal.Length")
+# This git2rdata object is not staged by default.
+status(repo)
+# read a dataframe from a git repo
+read_vc("iris", repo)
+
+# store a new version in the git repo and stage it in one go
+write_vc(iris[1:5, ], "iris", repo, stage = TRUE)
+status(repo)
+
+# store a verbose version in a different gir2data object
+write_vc(
+  iris[1:6, ], "iris2", repo, sorting = "Sepal.Width", optimize = FALSE
+)
+status(repo)
+</code></pre>
+
+
+</div>

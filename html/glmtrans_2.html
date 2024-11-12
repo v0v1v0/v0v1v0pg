@@ -1,0 +1,186 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>glmtrans_inf</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate asymptotic confidence intervals based on desparsified Lasso and two-step transfer learning method.</h2>
+
+<h3>Description</h3>
+
+<p>Given the point esimate of the coefficient vector from <code>glmtrans</code>, calculate the asymptotic confidence interval of each component. The detailed inference algorithm can be found as Algorithm 3 in the latest version of Tian, Y. and Feng, Y., 2021. The algorithm is consructed based on a modified version of desparsified Lasso (Van de Geer, S. et al, 2014; Dezeure, R. et al, 2015).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">glmtrans_inf(
+  target,
+  source = NULL,
+  family = c("gaussian", "binomial", "poisson"),
+  beta.hat = NULL,
+  nodewise.transfer.source.id = "all",
+  cores = 1,
+  level = 0.95,
+  intercept = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>target</code></td>
+<td>
+<p>target data. Should be a list with elements x and y, where x indicates a predictor matrix with each row/column as a(n) observation/variable, and y indicates the response vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>source</code></td>
+<td>
+<p>source data. Should be a list with some sublists, where each of the sublist is a source data set, having elements x and y with the same meaning as in target data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>response type. Can be "gaussian", "binomial" or "poisson". Default = "gaussian".
+</p>
+
+<ul>
+<li>
+<p> "gaussian": Gaussian distribution.
+</p>
+</li>
+<li>
+<p> "binomial": logistic distribution. When <code>family = "binomial"</code>, the input response in both <code>target</code> and <code>source</code> should be 0/1.
+</p>
+</li>
+<li>
+<p> "poisson": poisson distribution. When <code>family = "poisson"</code>, the input response in both <code>target</code> and <code>source</code> should be non-negative.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.hat</code></td>
+<td>
+<p>initial estimate of the coefficient vector (the intercept should be the first component). Can be from the output of function <code>glmtrans</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nodewise.transfer.source.id</code></td>
+<td>
+<p>transferable source indices in the infernce (the set A in Algorithm 3 of Tian, Y. and Feng, Y., 2021). Can be either a subset of <code>{1, ..., length(source)}</code>, "all" or <code>NULL</code>. Default = <code>"all"</code>.
+</p>
+
+<ul>
+<li>
+<p> a subset of <code>{1, ..., length(source)}</code>: only transfer sources with the specific indices.
+</p>
+</li>
+<li>
+<p> "all": transfer all sources.
+</p>
+</li>
+<li>
+<p> NULL: don't transfer any sources and only use target data.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>the number of cores used for parallel computing. Default = 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>the level of confidence interval. Default = 0.95. Note that the level here refers to the asymptotic level of confidence interval of a single component rather than the multiple intervals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>whether the model includes the intercept or not. Default = TRUE. Should be set as TRUE if the intercept of <code>beta.hat</code> is not zero.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a list of output. b.hat = b.hat, beta.hat = beta.hat, CI = CI, var.est = var.est
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>b.hat</code></td>
+<td>
+<p>the center of confidence intervals. A <code>p</code>-dimensional vector, where <code>p</code> is the number of predictors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.hat</code></td>
+<td>
+<p>the initial estimate of the coefficient vector (the same as input).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CI</code></td>
+<td>
+<p>confidence intervals (CIs) with the specific level. A <code>p</code> by 3 matrix, where three columns indicate the center, lower limit and upper limit of CIs, respectively. Each row represents a coefficient component.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var.est</code></td>
+<td>
+<p>the estimate of variances in the CLT (Theta transpose times Sigma times Theta, in section 2.5 of Tian, Y. and Feng, Y., 2021). A <code>p</code>-dimensional vector, where <code>p</code> is the number of predictors.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Tian, Y. and Feng, Y., 2021. <em>Transfer Learning under High-dimensional Generalized Linear Models. arXiv preprint arXiv:2105.14328.</em>
+</p>
+<p>Van de Geer, S., Bühlmann, P., Ritov, Y.A. and Dezeure, R., 2014. <em>On asymptotically optimal confidence regions and tests for high-dimensional models. The Annals of Statistics, 42(3), pp.1166-1202.</em>
+</p>
+<p>Dezeure, R., Bühlmann, P., Meier, L. and Meinshausen, N., 2015. <em>High-dimensional inference: confidence intervals, p-values and R-software hdi. Statistical science, pp.533-558.</em>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>glmtrans</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+set.seed(0, kind = "L'Ecuyer-CMRG")
+
+# generate binomial data
+D.training &lt;- models("binomial", type = "all", K = 2, p = 200)
+
+# fit a logistic regression model via two-step transfer learning method
+fit.binomial &lt;- glmtrans(D.training$target, D.training$source, family = "binomial")
+
+# calculate the CI based on the point estimate from two-step transfer learning method
+fit.inf &lt;- glmtrans_inf(target = D.training$target, source = D.training$source,
+family = "binomial", beta.hat = fit.binomial$beta, cores = 2)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,162 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ghap.getHinv</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Compute the inverse of H
+</h2>
+
+<h3>Description</h3>
+
+<p>This function combines an additive genomic relationship matrix with pedigree data to form the inverse of the H relationship matrix used in single-step GBLUP.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ghap.getHinv(K, ped, include = NULL, depth = 3,
+             alpha = 0.95, verbose=TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+
+<p>An additive genomic relationship matrix, as provided for example by type=3 in <code>ghap.kinship</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ped</code></td>
+<td>
+
+<p>A dataframe with columns "id", "sire" and "dam" containing pedigree data.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include</code></td>
+<td>
+
+<p>An optional vector of ids to be forced into the output (default = NULL). See details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>depth</code></td>
+<td>
+
+<p>A numeric value specifying the pedigree depth in number of generations to be used (default = 3). See details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+
+<p>A numeric value between 0 and 1 specifying the weight of the genomic relationship matrix in the blend alpha*K + (1-alpha)*K. Default = 0.95.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>A logical value specifying whether log messages should be printed (default = TRUE).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The pedigree is pruned to include only the number of generations specified by argument "depth". This prunning starts by seeding the genealogy with all individuals included in the genomic relationship matrix plus all individuals listed in the "include" argument. Then, the genealogy is increased by advancing one generation back at a time up to "depth". For example, if depth = 3, the genealogical tree will include all individuals listed in K and "include", plus their parents (depth = 1), grandparents (depth = 2) and great-grandparents (depth = 3). After the pedigree has been pruned, pedigree and genomic relationships are blended to form the inverse of H.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A matrix consisting of the inverse of H.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Yuri Tani Utsunomiya &lt;ytutsunomiya@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>A. I. Vazquez. Technical note: An R package for fitting generalized linear mixed models in animal breeding. J. Anim. Sci. 2010. 88, 497-504.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# #### DO NOT RUN IF NOT NECESSARY ###
+# 
+# # Copy plink data in the current working directory
+# exfiles &lt;- ghap.makefile(dataset = "example",
+#                          format = "plink",
+#                          verbose = TRUE)
+# file.copy(from = exfiles, to = "./")
+# 
+# # Copy metadata in the current working directory
+# exfiles &lt;- ghap.makefile(dataset = "example",
+#                          format = "meta",
+#                          verbose = TRUE)
+# file.copy(from = exfiles, to = "./")
+# 
+# # Load plink data
+# plink &lt;- ghap.loadplink("example")
+# 
+# # Load phenotype and pedigree data
+# df &lt;- read.table(file = "example.phenotypes", header=T)
+# ped &lt;- read.table(file = "example.pedigree", header=T)
+# 
+# ### RUN ###
+# 
+# # This analysis emulates a scenario of
+# # 100 individuals with genotypes and phenotypes
+# # 200 individuals with only phenotypes
+# # 400 individuals from pedigree with no data
+# 
+# # Subset 100 individuals from the pure1 population
+# pure1 &lt;- plink$id[which(plink$pop == "Pure1")]
+# pure1 &lt;- sample(x = pure1, size = 100)
+# plink &lt;- ghap.subset(object = plink, ids = pure1, variants = plink$marker)
+# 
+# # Subset markers with MAF &gt; 0.05
+# freq &lt;- ghap.freq(plink)
+# mkr &lt;- names(freq)[which(freq &gt; 0.05)]
+# plink &lt;- ghap.subset(object = plink, ids = pure1, variants = mkr)
+# 
+# # Compute genomic relationship matrix
+# # Induce sparsity to help with matrix inversion
+# K &lt;- ghap.kinship(plink, sparsity = 0.01)
+# 
+# # Exclude pedigree records with missing sire
+# ped &lt;- ped[which(is.na(ped$sire) == F),]
+# 
+# # Make inverse of blended pedigree/genomic matrix
+# ids &lt;- unique(c(ped$id, ped$sire, ped$dam, colnames(K)))
+# Hinv &lt;- ghap.getHinv(K = K, ped = ped[,-1], include = ids)
+# 
+# # Run single-step GBLUP
+# df$rep &lt;- df$id
+# model &lt;- ghap.lmm(formula = pheno ~ 1 + (1|id) + (1|rep),
+#                   data = df,
+#                   covmat = list(id = Hinv, rep = NULL),
+#                   invcov = T)
+
+</code></pre>
+
+
+</div>

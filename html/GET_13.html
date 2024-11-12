@@ -1,0 +1,211 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>deviation_test</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Deviation test</h2>
+
+<h3>Description</h3>
+
+<p>Crop the curve set to the interval of distances [r_min, r_max],
+calculate residuals, scale the residuals and perform a deviation test
+with a chosen deviation measure.
+The deviation tests are well known in spatial statistics; in <span class="pkg">GET</span> they are
+provided for comparative purposes. Some (maximum type) of the deviation test
+have their corresponding envelope tests available, see Myllymäki et al., 2017
+(and 'unscaled', 'st' and 'qdir' in <code>global_envelope_test</code>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">deviation_test(
+  curve_set,
+  r_min = NULL,
+  r_max = NULL,
+  use_theo = TRUE,
+  scaling = "qdir",
+  measure = "max",
+  savedevs = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>curve_set</code></td>
+<td>
+<p>A residual curve_set object. Can be obtained by using
+residual().</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r_min</code></td>
+<td>
+<p>The minimum radius to include.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r_max</code></td>
+<td>
+<p>The maximum radius to include.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_theo</code></td>
+<td>
+<p>Whether to use the theoretical summary function or the
+mean of the functions in the curve_set.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scaling</code></td>
+<td>
+<p>The name of the scaling to use. Options include 'none',
+'q', 'qdir' and 'st'. 'qdir' is default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>measure</code></td>
+<td>
+<p>The deviation measure to use. Default is 'max'. Must be
+one of the following: 'max', 'int' or 'int2'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>savedevs</code></td>
+<td>
+<p>Logical. Should the global rank values k_i, i=1,...,nsim+1 be returned? Default: FALSE.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The deviation test is based on a test function <code class="reqn">T(r)</code> and it works as follows:
+</p>
+<p>1) The test function estimated for the data, <code class="reqn">T_1(r)</code>, and for nsim simulations
+from the null model, <code class="reqn">T_2(r), ...., T_{nsim+1}(r)</code>, must be saved in 'curve_set'
+and given to the deviation_test function.
+</p>
+<p>2) The deviation_test function then
+</p>
+
+<ul>
+<li>
+<p> Crops the functions to the chosen range of distances <code class="reqn">[r_{\min}, r_{\max}]</code>.
+</p>
+</li>
+<li>
+<p> If the curve_set does not consist of residuals (see <code>residual</code>),
+then the residuals <code class="reqn">d_i(r) = T_i(r) - T_0(r)</code> are calculated, where <code class="reqn">T_0(r)</code> is the
+expectation of <code class="reqn">T(r)</code> under the null hypothesis.
+If use_theo = TRUE, the theoretical value given in the curve_set$theo is used for
+as <code class="reqn">T_0(r)</code>, if it is given. Otherwise, <code class="reqn">T_0(r)</code> is estimated by the mean of <code class="reqn">T_j(r)</code>,
+<code class="reqn">j=2,...,nsim+1</code>.
+</p>
+</li>
+<li>
+<p> Scales the residuals. Options are
+</p>
+
+<ul>
+<li>
+<p> 'none' No scaling. Nothing done.
+</p>
+</li>
+<li>
+<p> 'q' Quantile scaling.
+</p>
+</li>
+<li>
+<p> 'qdir' Directional quantile scaling.
+</p>
+</li>
+<li>
+<p> 'st' Studentised scaling.
+</p>
+</li>
+</ul>
+<p>See for details Myllymäki et al. (2013).
+</p>
+</li>
+<li>
+<p> Calculates the global deviation measure <code class="reqn">u_i</code>, <code class="reqn">i=1,...,nsim+1</code>, see options
+for 'measure'.
+</p>
+
+<ul>
+<li>
+<p> 'max' is the maximum deviation measure
+</p>
+<p style="text-align: center;"><code class="reqn">u_i = \max_{r \in [r_{\min}, r_{\max}]} | w(r)(T_i(r) - T_0(r))|</code>
+</p>
+
+</li>
+<li>
+<p> 'int2' is the integral deviation measure
+</p>
+<p style="text-align: center;"><code class="reqn">u_i = \int_{r_{\min}}^{r_{\max}} ( w(r)(T_i(r) - T_0(r)) )^2 dr</code>
+</p>
+
+</li>
+<li>
+<p> 'int' is the 'absolute' integral deviation measure
+</p>
+<p style="text-align: center;"><code class="reqn">u_i = \int_{r_{\min}}^{r_{\max}} |w(r)(T_i(r) - T_0(r))| dr</code>
+</p>
+
+</li>
+</ul>
+</li>
+<li>
+<p> Calculates the p-value.
+</p>
+</li>
+</ul>
+<p>Currently, there is no special way to take care of the same values of <code class="reqn">T_i(r)</code>
+occuring possibly for small distances. Thus, it is preferable to exclude from
+the test the very small distances r for which ties occur.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If 'savedevs=FALSE' (default), the p-value is returned.
+If 'savedevs=TRUE', then a list containing the p-value and calculated deviation measures
+<code class="reqn">u_i</code>, <code class="reqn">i=1,...,nsim+1</code> (where <code class="reqn">u_1</code> corresponds to the data pattern) is returned.
+</p>
+
+
+<h3>References</h3>
+
+<p>Myllymäki, M., Grabarnik, P., Seijo, H. and Stoyan. D. (2015). Deviation test construction and power comparison for marked spatial point patterns. Spatial Statistics 11: 19-34. doi: 10.1016/j.spasta.2014.11.004
+</p>
+<p>Myllymäki, M., Mrkvička, T., Grabarnik, P., Seijo, H. and Hahn, U. (2017). Global envelope tests for spatial point patterns. Journal of the Royal Statistical Society: Series B (Statistical Methodology), 79: 381–404. doi: 10.1111/rssb.12172
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Testing complete spatial randomness (CSR)
+#-------------------------------------------
+if(require("spatstat.explore", quietly=TRUE)) {
+  pp &lt;- unmark(spruces)
+  nsim &lt;- 999
+  
+  # Generate nsim simulations under CSR, calculate L-function for the data and simulations
+  env &lt;- envelope(pp, fun="Lest", nsim=nsim, savefuns=TRUE, correction="translate")
+  # The deviation test using the integral deviation measure
+  res &lt;- deviation_test(env, measure='int')
+  res
+  # or
+  res &lt;- deviation_test(env, r_min=0, r_max=7, measure='int2')
+}
+
+</code></pre>
+
+
+</div>

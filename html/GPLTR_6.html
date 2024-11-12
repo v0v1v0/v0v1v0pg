@@ -1,0 +1,212 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>best.tree.CV</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Prunning the Maximal tree
+</h2>
+
+<h3>Description</h3>
+
+<p>this function  is set to prune back the maximal tree by using a K-fold <code>cross-validation</code> procedure.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">best.tree.CV(xtree, xdata, Y.name, X.names, G.names, family = "binomial", 
+args.rpart = list(cp = 0, minbucket = 20, maxdepth = 10), epsi = 0.001, 
+iterMax = 5, iterMin = 3, ncv = 10, verbose = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>xtree</code></td>
+<td>
+
+<p>a tree to prune
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xdata</code></td>
+<td>
+
+<p>the dataset used to build the tree
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y.name</code></td>
+<td>
+
+<p>the name  of the dependent variable 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X.names</code></td>
+<td>
+
+<p>the names of independent variables to consider in the linear part of the <code>glm</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>G.names</code></td>
+<td>
+
+<p>the names of independent variables to consider in the tree part of the hybrid <code>glm</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+
+<p>the <code>glm</code> family considered depending on the type of the dependent variable.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>args.rpart</code></td>
+<td>
+
+<p>a list of options that control details of the rpart algorithm. <code>minbucket</code>: the minimum number of observations in any terminal &lt;leaf&gt; node; <code>cp</code>: complexity parameter (Any split that does not decrease the overall lack of fit by a factor of cp is not attempted); <code>maxdepth</code>:  the maximum depth of any node of the final tree, with the root node counted as depth 0. ...
+See <code>rpart.control</code> for further details
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epsi</code></td>
+<td>
+
+<p>a treshold value  to check the convergence of the algorithm
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterMax</code></td>
+<td>
+
+<p>the maximal number of iteration to consider
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterMin</code></td>
+<td>
+
+<p>the minimum number of iteration to consider
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncv</code></td>
+<td>
+
+<p>The number of folds to consider for the <code>cross-validation</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical; TRUE for printing progress during the computation (helpful for debugging)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a list of five elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>best_index </code></td>
+<td>
+<p>The size of the selected tree by the cross-validation procedure</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tree </code></td>
+<td>
+<p>The selected tree by <code>CV</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit_glm</code></td>
+<td>
+<p>The fitted gpltr models selected with  <code>CV</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CV_ERRORS</code></td>
+<td>
+<p>A list of two elements containing the cross-validation error of the selected tree by the <code>CV</code> procedure and a
+vector of cross-validation errors of all the competing models</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Timediff</code></td>
+<td>
+<p>The execution time of the <code>Cross-Validation</code> procedure</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Cyprien Mbogning
+</p>
+
+
+<h3>References</h3>
+
+<p>Mbogning, C., Perdry, H., Toussile, W., Broet, P.: A novel tree-based procedure for deciphering the genomic spectrum of clinical disease entities. Journal of Clinical Bioinformatics 4:6, (2014)
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>best.tree.BIC.AIC</code>, <code>pltr.glm</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+##load the data set
+
+data(data_pltr)
+
+## set the parameters
+
+args.rpart &lt;- list(minbucket = 40, maxdepth = 10, cp = 0)
+family &lt;- "binomial"
+Y.name &lt;- "Y"
+X.names &lt;- "G1"
+G.names &lt;- paste("G", 2:15, sep="")
+
+## build a maximal tree
+
+fit_pltr &lt;- pltr.glm(data_pltr, Y.name, X.names, G.names, args.rpart = args.rpart, 
+                     family = family,iterMax = 5, iterMin = 3)
+                     
+##prunned back the maximal tree by a cross-validation procedure
+
+tree_selected &lt;- best.tree.CV(fit_pltr$tree, data_pltr, Y.name, X.names, G.names, 
+     family = family, args.rpart = args.rpart, epsi = 0.001, iterMax = 5, 
+     iterMin = 3, ncv = 10)
+     
+plot(tree_selected$tree, main = 'CV TREE')
+text(tree_selected$tree, minlength = 0L, xpd = TRUE, cex = .6)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

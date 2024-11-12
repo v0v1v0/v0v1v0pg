@@ -1,0 +1,177 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>PAF_calc_continuous</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculation of attributable fractions with a continuous exposure</h2>
+
+<h3>Description</h3>
+
+<p>Calculation of attributable fractions with a continuous exposure
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">PAF_calc_continuous(
+  model,
+  riskfactor_vec,
+  q_vec = c(0.01),
+  data,
+  calculation_method = "B",
+  prev = NULL,
+  ci = FALSE,
+  boot_rep = 50,
+  t_vector = NULL,
+  ci_level = 0.95,
+  ci_type = c("norm"),
+  S = 1,
+  weight_vec = NULL,
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>Either a clogit, glm or coxph R model object.  Non-linear effects should be specified via ns(x, df=y), where ns is the natural spline function from the splines library.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>riskfactor_vec</code></td>
+<td>
+<p>A character vector of names for continuous exposures/riskfactors that are predictors the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q_vec</code></td>
+<td>
+<p>A vector of 'risk quantiles' for the continuous exposure.  q_vec=c(0.01) (the default) calculates an estimate of the PAF that is in some way analogous to eliminating a categorical risk factor.  Other values in q_vec correspond to interventions on the continuous risk factor that results in a risk level for all individuals thresholded above by the corresponding quantile of pre-intervention population risk.  For survival regressions only single element values of q_vec are allowed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A dataframe containing variables used for fitting the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>calculation_method</code></td>
+<td>
+<p>A character either 'B' (Bruzzi) or 'D' (Direct method).  For case control data, the method described in Bruzzi 1985 is recommended.  Bruzzi's method estimates PAF from relative risks and prevalence of exposure to the risk factor.  The Direct method estimates PAF via summing estimated probabilities of disease in the absence of exposure over differing individuals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prev</code></td>
+<td>
+<p>The estimated prevalence of disease (A number between 0 and 1).  This only needs to be specified if the data source is from a case control study, and the direct calculation method is used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci</code></td>
+<td>
+<p>Logical. If TRUE, a bootstrap confidence interval is computed along with point estimate (default FALSE)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boot_rep</code></td>
+<td>
+<p>Integer.  Number of bootstrap replications (Only necessary to specify if ci=TRUE).  Note that at least 50 replicates are recommended to achieve stable estimates of standard error.  In the examples below, values of boot_rep less than 50 are sometimes used to limit run time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t_vector</code></td>
+<td>
+<p>Numeric.  A vector of times at which to calculate PAF (only specified if model is coxph)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci_level</code></td>
+<td>
+<p>Numeric.  A number between 0 and 1 specifying the confidence level</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci_type</code></td>
+<td>
+<p>Character.  A vector specifying the types of confidence interval desired, as available in the 'Boot' package. The default is c('norm'), which calculates a symmetric confidence interval: (Est-Bias +- 1.96*SE), with the standard error calculated via Bootstrap.  Other choices are 'basic', 'perc' and 'bca'.  Increasing the number of Bootstrap repetitions is recommended for the 'basic', 'perc' and 'bca' methods.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S</code></td>
+<td>
+<p>Integer (default 1).  Only relevant to change if there is an interaction between the continuous exposure and other variables in the model.  In this case, marginal comparisons of disease risk at differing levels of the exposure need to be averaged over many individuals.  S is the number of individuals used in this averaging.  May be slow for large S</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight_vec</code></td>
+<td>
+<p>An optional vector of inverse sampling weights for survey data (note that variance will not be calculated correctly if sampling isn't independent).  Note that this vector will be ignored if prev is specified, and the weights will be calibrated so that the weighted sample prevalence of disease equals prev.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>A logical indicator for whether extended output is produced when ci=TRUE, default TRUE</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A PAF_q object.  When ci=FALSE, this will essentially be a vector of estimated PAF corresponding to the quantiles specified in q_vec.  If ci=TRUE, a data frame with columns corresponding to the raw estimate, estimated bias, bias corrected estimate and lower and upper elements of any confidence procedures requested, and rows corresponding to the quantiles in q_vec.
+</p>
+
+
+<h3>References</h3>
+
+<p>Ferguson, J., Maturo, F., Yusuf, S. and O’Donnell, M., 2020. Population attributable fractions for continuously distributed exposures. Epidemiologic Methods, 9(1).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(splines)
+library(survival)
+library(parallel)
+options(boot.parallel="snow")
+options(boot.ncpus=2)
+# The above could be set to the number of available cores on the machine
+# Example with logistic regression.  PAF_q (as in Ferguson, 2020)
+# estimated at q=0.01, 0.1, 0.3, 0.5, 0.7. 0.9.  PAF_0.01 is roughly
+# analogous to 'eliminating' a discrete risk factor, but its estimation
+# may be unstable for some exposures, and the corresponding intervention
+# may be impractical.  Comparing PAF_q for q &gt;= 0.1 over different risk factors
+# may lead to more sensible comparisons of disease burden.
+# Either method (direct, D, or Bruzzi )
+# reduce dataset to improve run time (not recommended on real data!)
+stroke_small &lt;- stroke_reduced[sample(1:nrow(stroke_reduced),1000),]
+model_continuous &lt;- glm(formula = case ~ region * ns(age, df = 5) +
+sex * ns(age, df = 5) + education +exercise + ns(diet, df = 3) +
+alcohol + stress + ns(lipids,df = 3) + ns(waist_hip_ratio, df = 3) +
+ high_blood_pressure, family = "binomial", data = stroke_small)
+out &lt;- PAF_calc_continuous(model_continuous,riskfactor_vec=
+c("diet","lipids","waist_hip_ratio"),q_vec=c(0.1,0.5,0.9),
+ci=FALSE,calculation_method="D",data=stroke_small, prev=0.0035)
+print(out)
+plot(out)
+
+ # with confidence intervals (via bootstrap) on full dataset.  Slower.
+model_continuous_clogit &lt;- clogit(formula = case ~ region * ns(age, df = 5) +
+sex * ns(age, df = 5) + education +exercise + ns(diet, df = 3)  +
+alcohol + stress + ns(lipids,df = 3) + ns(waist_hip_ratio, df = 3) +
+ high_blood_pressure + strata(strata), data = stroke_reduced)
+out &lt;- PAF_calc_continuous(model_continuous_clogit,riskfactor_vec=c("diet",
+"lipids","waist_hip_ratio"),q_vec=c(0.01, 0.1,0.3,0.5,0.7,0.9),
+ci=TRUE,calculation_method="B",data=stroke_reduced, prev=0.01)
+print(out)
+plot(out)
+
+</code></pre>
+
+
+</div>

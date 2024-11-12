@@ -1,0 +1,390 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>estimate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>The main function for the generalized score-matching estimator for graphical models.</h2>
+
+<h3>Description</h3>
+
+<p>The main function for the generalized score-matching estimator for graphical models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">estimate(
+  x,
+  setting,
+  domain,
+  elts = NULL,
+  centered = TRUE,
+  symmetric = "symmetric",
+  scale = "",
+  lambda1s = NULL,
+  lambda_length = NULL,
+  lambda_ratio = Inf,
+  mode = NULL,
+  param1 = NULL,
+  param2 = NULL,
+  h_hp = NULL,
+  unif_dist = NULL,
+  verbose = TRUE,
+  verbosetext = "",
+  tol = 1e-06,
+  maxit = 1000,
+  BIC_refit = TRUE,
+  warmstart = TRUE,
+  diagonal_multiplier = NULL,
+  eBIC_gammas = c(0, 0.5, 1),
+  cv_fold = NULL,
+  cv_fold_seed = NULL,
+  return_raw = FALSE,
+  return_elts = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An <code>n</code> by <code>p</code> matrix, the data matrix, where <code>n</code> is the sample size and <code>p</code> the dimension.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>setting</code></td>
+<td>
+<p>A string that indicates the distribution type, must be one of <code>"exp"</code>, <code>"gamma"</code>, <code>"gaussian"</code>, <code>"log_log"</code>, <code>"log_log_sum0"</code>, or of the form <code>"ab_NUM1_NUM2"</code>, where <code>NUM1</code> is the <code>a</code> value and <code>NUM2</code> is the <code>b</code> value, and <code>NUM1</code> and <code>NUM2</code> must be integers or two integers separated by "/", e.g. "ab_2_2", "ab_2_5/4" or "ab_2/3_1/2".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>domain</code></td>
+<td>
+<p>A list returned from <code>make_domain()</code> that represents the domain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>elts</code></td>
+<td>
+<p>A list (optional), elements necessary for calculations returned by get_elts().</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centered</code></td>
+<td>
+<p>A boolean, whether in the centered setting (assume <code class="reqn">\boldsymbol{\mu}=\boldsymbol{\eta}=0</code>) or not. Default to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>symmetric</code></td>
+<td>
+<p>A string. If equals <code>"symmetric"</code>, estimates the minimizer <code class="reqn">\mathbf{K}</code> over all symmetric matrices; if <code>"and"</code> or <code>"or"</code>, use the "and"/"or" rule to get the support. Default to <code>"symmetric"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>A string indicating the scaling method. If contains <code>"sd"</code>, columns are scaled by standard deviation; if contains <code>"norm"</code>, columns are scaled by l2 norm; if contains <code>"center"</code> and <code>setting == "gaussian" &amp;&amp; domain$type == "R"</code>, columns are centered to have mean zero. Default to <code>"norm"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda1s</code></td>
+<td>
+<p>A vector of lambdas, the penalty parameter for K.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda_length</code></td>
+<td>
+<p>An integer &gt;= 2, the number of lambda1s. Ignored if <code>lambda1s</code> is provided, otherwise a grid of lambdas is automatically chosen so that the results range from an empty graph to a complete graph. Default to <code>10</code> if neither <code>lambda1s</code> nor <code>lambda_length</code> is provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda_ratio</code></td>
+<td>
+<p>A positive number, the fixed ratio between <code class="reqn">\lambda_{\mathbf{K}}</code> and <code class="reqn">\lambda_{\boldsymbol{\eta}}</code>, if <code class="reqn">\lambda_{\boldsymbol{\eta}}\neq 0</code> (non-profiled) in the non-centered setting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mode</code></td>
+<td>
+<p>A string, the class of the <code>h</code> function. Ignored if <code>elts</code>, or <code>h</code> and <code>hp</code> are provided, or if <code>setting == "gaussian" &amp;&amp; domain$type == "R"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param1</code></td>
+<td>
+<p>A number, the first parameter to the <code>h</code> function. Ignored if <code>elts</code>, or <code>h</code> and <code>hp</code> are provided, or if <code>setting == "gaussian" &amp;&amp; domain$type == "R"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param2</code></td>
+<td>
+<p>A number, the second parameter (may be optional depending on <code>mode</code>) to the <code>h</code> function. Ignored if <code>elts</code>, or <code>h</code> and <code>hp</code> are provided, or if <code>setting == "gaussian" &amp;&amp; domain$type == "R"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h_hp</code></td>
+<td>
+<p>A function that returns a list containing <code>hx=h(x)</code> (element-wise) and <code>hpx=hp(x)</code> (element-wise derivative of <code class="reqn">h</code>) when applied to a vector or a matrix <code>x</code>, both of which has the same shape as <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unif_dist</code></td>
+<td>
+<p>Optional, defaults to <code>NULL</code>. If not <code>NULL</code>, <code>h_hp</code> must be <code>NULL</code> and <code>unif_dist(x)</code> must return a list containing <code>"g0"</code> of length <code>nrow(x)</code> and <code>"g0d"</code> of dimension <code>dim(x)</code>, representing the l2 distance and the gradient of the l2 distance to the boundary: the true l2 distance function to the boundary is used for all coordinates in place of h_of_dist; see "Estimating Density Models with Complex Truncation Boundaries" by Liu et al, 2019. That is, <code class="reqn">(h_j\circ \phi_j)(x_i)</code> in the score-matching loss is replaced by <code class="reqn">g_0(x_i)</code>, the l2 distance of xi to the boundary of the domain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Optional. A boolean, whether to output intermediate results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbosetext</code></td>
+<td>
+<p>Optional. A string, text to be added to the end of each printout if <code>verbose == TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>Optional. A number, the tolerance parameter. Default to <code>1e-6</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>Optional. A positive integer, the maximum number of iterations for each fit. Default to <code>1000</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BIC_refit</code></td>
+<td>
+<p>A boolean, whether to get the BIC scores by refitting an unpenalized model restricted to the estimated edges, with <code>lambda1=lambda2=0</code> and <code>diagonal_multiplier=1</code>. Default to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warmstart</code></td>
+<td>
+<p>Optional. A boolean, whether to use the results from a previous (larger) lambda as a warm start for each new lambda. Default to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>diagonal_multiplier</code></td>
+<td>
+<p>A number &gt;= 1, the diagonal multiplier. Optional and ignored if elts is provided. If <code>ncol(x) &gt; ncol(n)</code>, a value strictly larger than 1 is recommended. Default to <code class="reqn">1+\left(1-\left(1+4e\max\left(6\log p/n, \sqrt{6\log p/n}\right)\right)^{-1}\right)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eBIC_gammas</code></td>
+<td>
+<p>Optional. A number of a vector of numbers. The <code class="reqn">\gamma</code> parameter in eBIC. Default to <code>c(0,0.5,1)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv_fold</code></td>
+<td>
+<p>Optional. An integer larger than 1 if provided. The number of folds used for cross validation. If provided, losses will be calculated on each fold with model fitted on the other folds, and a <code>lambda_length x cv_fold</code> matrix <code>cv_losses</code> will be returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv_fold_seed</code></td>
+<td>
+<p>Optional. Seed for generating folds for cross validation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_raw</code></td>
+<td>
+<p>A boolean, whether to return the raw estimates of <code>K</code>. Default to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_elts</code></td>
+<td>
+<p>A boolean, whether to return the <code>elts</code> used for estimation. Default to <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>edgess</code></td>
+<td>
+<p>A list of vectors of integers: indices of the non-zero edges.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BICs</code></td>
+<td>
+<p>A <code>lambda_length</code> by <code>length(eBIC_gammas)</code> matrix of raw eBIC scores (without refitting). If <code>return_raw == FALSE</code>, may contain <code>Inf</code>s for rows after the first lambda that gives the complete graph.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda1s</code></td>
+<td>
+<p>A vector of numbers of length <code>lambda_length</code>: the grid of <code>lambda1</code>s over which the estimates are obtained.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>converged</code></td>
+<td>
+<p>A vector of booleans of length <code>lambda_length</code>: indicators of convergence for each fit. If <code>return_raw == FALSE</code>, may contain <code>0</code>s for all lambdas after the first lambda that gives the complete graph.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iters</code></td>
+<td>
+<p>A vector of integers of length <code>lambda_length</code>: the number of iterations run for each fit. If <code>return_raw == FALSE</code>, may contain <code>0</code>s for all lambdas after the first lambda that gives the complete graph.</p>
+</td>
+</tr>
+</table>
+<p>In addition,
+if <code>centered == FALSE</code>,
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>etas</code></td>
+<td>
+<p>A <code>lambda_length</code>*<code>p</code> matrix of <code>eta</code> estimates with the <code class="reqn">i</code>-th row corresponding to the <code class="reqn">i</code>-th <code>lambda1</code>. If <code>return_raw == FALSE</code>,  may contain <code>NA</code>s after the first lambda that gives the complete graph.</p>
+</td>
+</tr></table>
+<p>if <code>centered == FALSE</code> and non-profiled,
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>lambda2s</code></td>
+<td>
+<p>A vector of numbers of length <code>lambda_length</code>: the grid of <code>lambda2</code>s over which the estimates are obtained.</p>
+</td>
+</tr></table>
+<p>if <code>return_raw == TRUE</code>,
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>raw_estimate</code></td>
+<td>
+<p>A list that contains <code>lambda_length</code> estimates for <code>K</code> of size <code>ncol(x)</code>*<code>ncol(x)</code>.</p>
+</td>
+</tr></table>
+<p>if <code>BIC_refit == TRUE</code>,
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>BIC_refits</code></td>
+<td>
+<p>A <code>lambda_length</code> by <code>length(eBIC_gammas)</code> matrix of refitted eBIC scores, obtained by refitting unpenalized models restricted to the estimated edges. May contain <code>Inf</code>s for rows after the first lambda that gives the graph restricted to which an unpenalized model does not have a solution (loss unbounded from below).</p>
+</td>
+</tr></table>
+<p>if <code>cv_fold</code> is not <code>NULL</code>,
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>cv_losses</code></td>
+<td>
+<p>A <code>lambda_length x cv_fold</code> matrix of cross validation losses. If <code>return_raw == FALSE</code>, may contain <code>Inf</code>s for all lambdas after the first lambda that gives the complete graph.</p>
+</td>
+</tr></table>
+<p>if <code>return_elts == TRUE</code>,
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>elts</code></td>
+<td>
+<p>A list of elements returned from <code>get_elts()</code>.</p>
+</td>
+</tr></table>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Examples are shown for Gaussian truncated to R+^p only. For other distributions
+#   on other types of domains, please refer to \code{gen()} or \code{get_elts()},
+#   as the way to call this function (\code{estimate()}) is exactly the same in those cases.
+n &lt;- 30
+p &lt;- 20
+domain &lt;- make_domain("R+", p=p)
+mu &lt;- rep(0, p)
+K &lt;- diag(p)
+lambda1s &lt;- c(0.01,0.1,0.2,0.3,0.4,0.5)
+dm &lt;- 1 + (1-1/(1+4*exp(1)*max(6*log(p)/n, sqrt(6*log(p)/n))))
+x &lt;- tmvtnorm::rtmvnorm(n, mean = mu, sigma = solve(K),
+       lower = rep(0, p), upper = rep(Inf, p), algorithm = "gibbs",
+       burn.in.samples = 100, thinning = 10)
+
+## Centered estimates, no elts or h provided, mode and params provided
+est1 &lt;- estimate(x, "gaussian", domain=domain, elts=NULL, centered=TRUE,
+          symmetric="symmetric", lambda1s=lambda1s, mode="min_pow", 
+          param1=1, param2=3, diag=dm, return_raw=TRUE, verbose=FALSE)
+
+h_hp &lt;- get_h_hp("min_pow", 1, 3)
+## Centered estimates, no elts provided, h provided; equivalent to est1
+est2 &lt;- estimate(x, "gaussian", domain=domain, elts=NULL, centered=TRUE,
+          symmetric="symmetric", lambda1s=lambda1s, h_hp=h_hp, diag=dm, 
+          return_raw=TRUE, verbose=FALSE)
+compare_two_results(est1, est2) ## Should be almost all 0
+
+elts_gauss_c &lt;- get_elts(h_hp, x, setting="gaussian", domain=domain,
+            centered=TRUE, diag=dm)
+## Centered estimates, elts provided; equivalent to est1 and est2
+## Here diagonal_multiplier will be set to the default value, equal to dm above
+est3 &lt;- estimate(x, "gaussian", domain=domain, elts=elts_gauss_c,
+          symmetric="symmetric", lambda1s=lambda1s, diag=NULL,
+          return_raw=TRUE, verbose=FALSE)
+compare_two_results(est1, est3) ## Should be almost all 0
+
+## Non-centered estimates with Inf penalty on eta; equivalent to est1~3
+est4 &lt;- estimate(x, "gaussian", domain=domain, elts=NULL, centered=FALSE,
+          lambda_ratio=0, symmetric="symmetric", lambda1s=lambda1s,
+          h=h_hp, diag=dm, return_raw=TRUE, verbose=FALSE)
+sum(abs(est4$etas)) ## Should be 0 since non-centered with lambda ratio 0 is equivalent to centered
+est4$etas &lt;- NULL ## But different from est1 in that the zero etas are returned in est4
+compare_two_results(est1, est4) ## Should be almost all 0
+
+
+## Profiled estimates, no elts or h provided, mode and params provided
+est5 &lt;- estimate(x, "gaussian", domain=domain, elts=NULL, centered=FALSE,
+          lambda_ratio=Inf, symmetric="or", lambda1s=lambda1s, mode="min_pow", 
+          param1=1, param2=3, diag=dm, return_raw=TRUE, verbose=FALSE)
+
+## Profiled estimates, no elts provided, h provided; equivalent to est5
+est6 &lt;- estimate(x, "gaussian", domain=domain, elts=NULL, centered=FALSE,
+          lambda_ratio=Inf, symmetric="or", lambda1s=lambda1s,
+          h_hp=h_hp, diag=dm, return_raw=TRUE, verbose=FALSE)
+compare_two_results(est5, est6) ## Should be almost all 0
+
+elts_gauss_p &lt;- get_elts(h_hp, x, setting="gaussian", domain=domain,
+                centered=FALSE, profiled=TRUE, diag=dm)
+## Profiled estimates, elts provided; equivalent to est5~6
+est7 &lt;- estimate(x, "gaussian", domain=domain, elts=elts_gauss_p, centered=FALSE,
+          lambda_ratio=Inf, symmetric="or", lambda1s=lambda1s,
+          diagonal_multiplier=NULL, return_raw=TRUE, verbose=FALSE)
+compare_two_results(est5, est7) ## Should be almost all 0
+
+
+## Non-centered estimates, no elts or h provided, mode and params provided
+## Using 5-fold cross validation and no BIC refit
+est8 &lt;- estimate(x, "gaussian", domain=domain, elts=NULL, centered=FALSE,
+          lambda_ratio=2, symmetric="and", lambda_length=100,
+          mode="min_pow", param1=1, param2=3, diag=dm, return_raw=TRUE,
+          BIC_refit=FALSE, cv_fold=5, cv_fold_seed=2, verbose=FALSE)
+
+## Non-centered estimates, no elts provided, h provided; equivalent to est5
+## Using 5-fold cross validation and no BIC refit
+est9 &lt;- estimate(x, "gaussian", domain=domain, elts=NULL, centered=FALSE,
+          lambda_ratio=2, symmetric="and", lambda_length=100, h_hp=h_hp, diag=dm, 
+          return_raw=TRUE, BIC_refit=FALSE, cv_fold=5, cv_fold_seed=2, verbose=FALSE)
+compare_two_results(est8, est9) ## Should be almost all 0
+
+elts_gauss_np &lt;- get_elts(h_hp, x, setting="gaussian", domain=domain, centered=FALSE,
+                profiled=FALSE, diag=dm)
+## Non-centered estimates, elts provided; equivalent to est8~9
+## Using 5-fold cross validation and no BIC refit
+est10 &lt;- estimate(x, "gaussian", domain, elts=elts_gauss_np, centered=FALSE,
+           lambda_ratio=2, symmetric="and", lambda_length=100, diag=NULL,
+           return_raw=TRUE, BIC_refit=FALSE, cv_fold=5, cv_fold_seed=2, verbose=FALSE)
+compare_two_results(est8, est10) ## Should be almost all 0
+
+</code></pre>
+
+
+</div>

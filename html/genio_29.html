@@ -1,0 +1,131 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>write_eigenvec</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Write eigenvectors table into a Plink-format file</h2>
+
+<h3>Description</h3>
+
+<p>This function writes eigenvectors in Plink 1 (same as GCTA) format (table with no header, with first two columns being <code>fam</code> and <code>id</code>), which is a subset of Plink 2 format (which optionally allows column names and does not require fam column).
+Main expected case is <code>eigenvec</code> passed as a numeric matrix and <code>fam</code> provided to complete first two missing columns.
+However, input <code>eigenvec</code> may also be a data.frame already containing the <code>fam</code> and <code>id</code> columns, and other reasonable intermediate cases are also handled.
+If both <code>eigenvec</code> and <code>fam</code> are provided and contain overlapping columns, those in <code>eigenvec</code> get overwritten with a warning.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">write_eigenvec(
+  file,
+  eigenvec,
+  fam = NULL,
+  ext = "eigenvec",
+  plink2 = FALSE,
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>The output file name (possibly without extension)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eigenvec</code></td>
+<td>
+<p>A matrix or tibble containing the eigenvectors to include in the file.
+Column names other than <code>fam</code> and <code>id</code> can be anything and are all treated as eigenvectors (not written to file).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fam</code></td>
+<td>
+<p>An optional <code>fam</code> table, which is used to add the <code>fam</code> and <code>id</code> columns to <code>eigenvec</code> (which overwrite columns of the same name in <code>eigenvec</code> if present, after a warning is produced).
+Individuals in <code>fam</code> and <code>eigenvec</code> are assumed to be the same and in the same order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ext</code></td>
+<td>
+<p>Output file extension.
+Since the general "covariates" file format in GCTA and Plink are the same as this, this function may be used to write more general covariates files if desired, in which case users may wish to change this extension for clarity.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plink2</code></td>
+<td>
+<p>If <code>TRUE</code>, prints a header in the style of plink2 (starts with hash, <code>fam</code> -&gt; <code>FID</code>, <code>id</code> -&gt; <code>IID</code>, and the default PCs are named <code>PC1</code>, <code>PC2</code>, etc.
+Returned data.frame will also have these names.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>If <code>TRUE</code> (default), function reports the path of the file being written (after autocompleting the extension).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Invisibly, the final <code>eigenvec</code> data.frame or tibble written to file, starting with columns <code>fam</code> and <code>id</code> (merged from the <code>fam</code> input, if it was passed) followed by the rest of columns in the input <code>eigenvec</code>.
+Column names are instead <code style="white-space: pre;">⁠#FID⁠</code>, <code>IID</code>, etc if <code>plink2 = TRUE</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>read_eigenvec()</code> for reading an eigenvec file.
+</p>
+<p>Plink 1 eigenvec format reference:
+<a href="https://www.cog-genomics.org/plink/1.9/formats#eigenvec">https://www.cog-genomics.org/plink/1.9/formats#eigenvec</a>
+</p>
+<p>Plink 2 eigenvec format reference:
+<a href="https://www.cog-genomics.org/plink/2.0/formats#eigenvec">https://www.cog-genomics.org/plink/2.0/formats#eigenvec</a>
+</p>
+<p>GCTA eigenvec format reference:
+<a href="https://cnsgenomics.com/software/gcta/#PCA">https://cnsgenomics.com/software/gcta/#PCA</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># to write an existing matrix `eigenvec` and optional `fam` tibble into file "data.eigenvec",
+# run like this:
+# write_eigenvec("data", eigenvec, fam = fam)
+# this also works
+# write_eigenvec("data.eigenvec", eigenvec, fam = fam)
+
+# The following example is more detailed but also more awkward
+# because (only for these examples) the package must create the file in a *temporary* location
+
+# create dummy eigenvectors matrix, in this case from a small identity matrix
+# number of individuals
+n &lt;- 10
+eigenvec &lt;- eigen( diag( n ) )$vectors
+# subset columns to use top 3 eigenvectors only
+eigenvec &lt;- eigenvec[ , 1:3 ]
+# dummy fam data
+library(tibble)
+fam &lt;- tibble( fam = 1:n, id = 1:n )
+
+# write this data to .eigenvec file
+# output path without extension
+file &lt;- tempfile('delete-me-example')
+eigenvec_final &lt;- write_eigenvec( file, eigenvec, fam = fam )
+# inspect the tibble that was written to file (returned invisibly)
+eigenvec_final
+
+# remove temporary file (add extension before deletion)
+file.remove( paste0( file, '.eigenvec' ) )
+
+</code></pre>
+
+
+</div>

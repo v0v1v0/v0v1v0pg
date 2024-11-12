@@ -1,0 +1,689 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>georob</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Robust Fitting of Spatial Linear Models</h2>
+
+<h3>Description</h3>
+
+<p>The function <code>georob</code> fits a linear model with spatially correlated
+errors to geostatistical data that are possibly contaminated by
+independent outliers.  The regression coefficients and the parameters of
+the variogram model are estimated by robust or Gaussian restricted
+maximum likelihood (REML) or by Gaussian maximum likelihood (ML).</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">georob(formula, data, subset, weights, na.action, model = TRUE,
+    x = FALSE, y = FALSE, contrasts = NULL, offset, locations,
+    variogram.model = c("RMexp", "RMaskey", "RMbessel", "RMcauchy",
+        "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian",
+        "RMfbm", "RMgauss", "RMgencauchy", "RMgenfbm", "RMgengneiting",
+        "RMgneiting", "RMlgd", "RMmatern", "RMpenta", "RMqexp",
+        "RMspheric", "RMstable", "RMwave", "RMwhittle"),
+    param, fit.param = default.fit.param()[names(param)],
+	  aniso = default.aniso(), fit.aniso = default.fit.aniso(),
+    variogram.object = NULL,
+    tuning.psi = 2, control = control.georob(),
+    verbose = 0, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>a symbolic description of the regression model for the
+external drift to be fit (mandatory argument).  See
+<code>lm</code> and <code>formula</code> for more
+details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>an optional data frame, a
+<code>SpatialPointsDataFrame</code>, list or environment (or another
+object coercible by <code>as.data.frame</code> to a data frame)
+containing the variables in the model and the coordinates where the data
+was recorded.  If not found in <code>data</code>, the variables are taken from
+<code>environment(formula)</code>, typically the environment from which
+<code>georob</code> is called.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>an optional vector specifying a subset of observations
+to be used in the fitting process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>an optional vector of weights to be used in the fitting
+process, currently ignored.  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>a function which indicates what should happen when the
+data contain <code>NA</code>s.  The default is set by the <code>na.action</code>
+argument of <code>options</code>, and is <code>na.fail</code> if that is
+unset.  The “factory-fresh” default is <code>na.omit</code>.
+Another possible value is <code>NULL</code>, no action.  Value
+<code>na.exclude</code> can be useful.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model, x, y</code></td>
+<td>
+<p>logical scalars.  If <code>TRUE</code> the corresponding
+components of the fit (the model frame, the model matrix, the response)
+are returned.  The model frame is augmented by the coordinates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>an optional list.  See the <code>contrasts.arg</code> of
+<code>model.matrix.default</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>this optional argument can be used to specify an <em>a
+priori</em> known component to be included in the linear predictor during
+fitting.  An <code>offset</code> term can be included in the formula
+instead or as well, and if both are specified their sum is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>locations</code></td>
+<td>
+<p>a one-sided formula defining the variables
+that are used as coordinates of the locations were the data was
+recorded (mandatory argument).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variogram.model</code></td>
+<td>
+<p>a character keyword defining the variogram model
+to be fitted.  Currently, most basic variogram models provided formerly
+by the now archived package <span class="pkg">RandomFields</span> can be fitted (see
+<em>Details</em> and <code>gencorr</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>a named numeric vector with initial values of the
+variogram parameters (mandatory argument).  The names of <code>param</code>
+are matched against the following names (see <em>Details</em> and
+<code>georobPackage</code> for information about the parametrization of
+variogram models):
+</p>
+
+<ul>
+<li>
+<p><code>variance</code>: variance (sill <code class="reqn">\sigma^2</code>) of the
+auto-correlated component of the Gaussian random field
+<code class="reqn">B(\boldsymbol{s})</code>.
+</p>
+</li>
+<li>
+<p><code>snugget</code>: variance
+(spatial nugget <code class="reqn">\sigma^2_{\mathrm{n}}</code>)
+of the seemingly spatially uncorrelated component of
+<code class="reqn">B(\boldsymbol{s})</code>
+(micro-scale spatial variation; default value<br><code>snugget = 0</code>).
+</p>
+</li>
+<li>
+<p><code>nugget</code>: variance (nugget <code class="reqn">\tau^2</code>) of the
+independent errors
+<code class="reqn">\varepsilon(\boldsymbol{s})</code>.
+</p>
+</li>
+<li>
+<p><code>scale</code>: range parameter (<code class="reqn">\alpha</code>) of the variogram.
+</p>
+</li>
+<li>
+<p>names of additional variogram parameters such as the smoothness
+parameter <code class="reqn">\nu</code> of the Whittle-Matérn model (see
+<code>gencorr</code> and <code>param.names</code>).
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit.param</code></td>
+<td>
+<p>a named logical vector (or a function such as
+<code>default.fit.param</code> that creates this vector) with the same
+names as used for <code>param</code>, defining which parameters are adjusted
+(<code>TRUE</code>) and which are kept fixed at their initial values
+(<code>FALSE</code>) when fitting the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aniso</code></td>
+<td>
+<p>a named numeric vector with initial values (or a function such as
+<code>default.aniso</code> that creates this vector) for fitting
+geometrically anisotropic variogram models.  The names of <code>aniso</code>
+are matched against the following names (see <em>Details</em> and
+<code>georobPackage</code> for information about the parametrization of
+variogram models):
+</p>
+
+<ul>
+<li>
+<p><code>f1</code>: ratio <code class="reqn">f_1</code> of lengths of second and first
+semi-principal axes of an ellipsoidal surface with constant
+semi-variance in <code class="reqn">\mathrm{I}\!\mathrm{R}^3</code> (default <code>f1 = 1</code>).
+</p>
+</li>
+<li>
+<p><code>f2</code>: ratio <code class="reqn">f_2</code> of lengths of third and first
+semi-principal axes of the semi-variance ellipsoid (default <code>f2 = 1</code>).
+</p>
+</li>
+<li>
+<p><code>omega</code>: azimuth in degrees of the first semi-principal axis
+of the semi-variance ellipsoid (default <code>omega = 90</code>).
+</p>
+</li>
+<li>
+<p><code>phi</code>: 90 degrees minus latitude of the first semi-principal axis
+of the semi-variance ellipsoid (default <code>phi = 90</code>).
+</p>
+</li>
+<li>
+<p><code>zeta</code>: angle in degrees between the second semi-principal
+axis and the direction of the line defined by the intersection
+between the <code class="reqn">x</code>-<code class="reqn">y</code>-plane and the plane orthogonal to the
+first semi-principal axis of the semi-variance ellipsoid through the
+origin (default <code>zeta = 0</code>).
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit.aniso</code></td>
+<td>
+<p>a named logical vector (or a function such as
+<code>default.fit.aniso</code> that creates this vector) with the same
+names as used for <code>aniso</code>, defining which parameters are adjusted
+(<code>TRUE</code>) and which are kept fixed at their initial values
+(<code>FALSE</code>) when fitting the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variogram.object</code></td>
+<td>
+<p>an optional list that defines a possibly nested
+variogram model.  Each component is itself a list with the following
+components:
+</p>
+
+<ul>
+<li>
+<p><code>variogram.model</code>: a mandatory character keyword defining
+the variogram model, see respective argument above.
+</p>
+</li>
+<li>
+<p><code>param</code>: a mandatory named numeric vector with initial
+values of the variogram parameters, see respective argument above.
+</p>
+</li>
+<li>
+<p><code>fit.param</code>: an optional named logical vector defining
+which parameters are adjusted, see respective argument above.
+</p>
+</li>
+<li>
+<p><code>aniso</code>: an optional named numeric vector with initial
+values for fitting geometrically anisotropic variogram models, see
+respective argument above.
+</p>
+</li>
+<li>
+<p><code>fit.param</code>: an optional named logical vector defining
+which anisotropy parameters are adjusted, see respective argument
+above.
+</p>
+</li>
+</ul>
+<p>Note that the arguments <code>variogram.model</code>, <code>param</code>,
+<code>fit.param</code>, <code>aniso</code> and<br><code>fit.aniso</code> are ignored when
+<code>variogram.object</code> is passed to <code>georob</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tuning.psi</code></td>
+<td>
+<p>positive numeric.  The tuning constant <code class="reqn">c</code> of the
+<code class="reqn">\psi_c</code>-function of the robust REML algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>a list specifying parameters that control the behaviour of
+<code>georob</code>.  Use the function <code>control.georob</code> and see its
+help page for the components of <code>control</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>positive integer controlling logging of diagnostic
+messages to the console during model fitting.  <code>verbose = 0</code> largely
+suppresses such messages and <code>verbose = 4</code> asks for most verbose
+output (see <code>control</code> arguments of <code>nleqslv</code>,
+<code>nlminb</code> and <code>optim</code> and
+<code>control.georob</code> for information how to fine tuning
+diagnostic output generated by <code>nleqslv</code>, <code>nlminb</code> and
+<code>optim</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments passed to function (e.g. <code>object.</code>
+used internally for updating <code>georob</code> objects). </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>georob</code> fits a spatial linear model by robust (<cite>Künsch et al., 2011</cite>, <cite>Künsch
+et al., in preparation</cite>) or Gaussian RE(ML) (<cite>Harville, 1977</cite>).
+<code>georobPackage</code> describes the employed model and briefly
+sketches the robust REML estimation and the robust external drift Kriging
+method.  Here, we describe further details of <code>georob</code>.
+</p>
+
+
+<h4>Implemented variograms</h4>
+
+<p>Currently, most basic variogram models provided formerly by the now
+archived package <span class="pkg">RandomFields</span> can be fitted by <code>georob</code> (see
+argument <code>variogram.model</code> and <code>gencorr</code> for a list of
+implemented models).  Some of these models have in addition to
+<code>variance</code>, <code>snugget</code>, <code>nugget</code> and <code>scale</code> further
+parameters.  Initial values of these parameters (<code>param</code>) and
+fitting flags (<code>fit.param</code>) must be passed to <code>georob</code> by the
+same names as used for the models <code>RM...</code> in
+<code>gencorr</code>.  Use the function <code>param.names</code> to
+list additional parameters of a given variogram.model.
+</p>
+<p>The arguments <code>fit.param</code> and <code>fit.aniso</code> are used to control
+what variogram and anisotropy parameters are estimated and which are
+kept at the constant initial values.  The functions<br><code>default.fit.param</code> and <code>default.fit.aniso</code> set
+reasonable default values for these arguments.  Note, as an aside, that
+the function <code>default.aniso</code> sets (default) values of the
+anisotropy parameters for an isotropic variogram.
+</p>
+
+
+
+<h4>Estimating parameters of power function variogram</h4>
+
+<p>The intrinsic variogram model <code>RMfbm</code> is over-parametrized when
+both the <code>variance</code> (plus possibly <code>snugget</code>) and the
+<code>scale</code> are estimated.  Therefore, to estimate the parameters of
+this model, <code>scale</code> must be kept fixed at an arbitrary value by
+using <code>fit.param["scale"] = FALSE</code>.</p>
+
+
+
+<h4>Estimating parameters of geometrically anisotropic variograms</h4>
+
+<p>The subsection <strong>Model</strong> of <code>georobPackage</code> describes
+how such models are parametrized and gives definitions the various
+elements of <code>aniso</code>.  Some additional remarks might be helpful:
+</p>
+
+<ul>
+<li>
+<p> The first semi-principal axis points into the direction with
+the farthest reaching auto-correlation, which is described by the range
+parameter <code>scale</code> (<code class="reqn">\alpha</code>).
+</p>
+</li>
+<li>
+<p> The ranges in the direction of the second and third
+semi-principal axes are given by <code class="reqn">f_1\alpha</code> and <code class="reqn">f_2
+      \alpha</code>, with <code class="reqn">0 &lt; f_2 \leq f_1 \leq 1</code>.
+</p>
+</li>
+<li>
+<p> The default values for <code>aniso</code> (<code class="reqn">f_1=1</code>, <code class="reqn">f_2=1</code>)
+define an isotropic variogram model.
+</p>
+</li>
+<li>
+<p> Valid ranges for the angles characterizing the orientation of
+the semi-variance ellipsoid are (in degrees): <code class="reqn">\omega</code> [0, 180],
+<code class="reqn">\phi</code> [0, 180], <code class="reqn">\zeta</code> [-90, 90].  </p>
+</li>
+</ul>
+<h4>Estimating variance of micro-scale variation</h4>
+
+<p>Simultaneous estimation of the variance of the micro-scale variation
+(<code>snugget</code>, <code class="reqn">\sigma_\mathrm{n}^2</code>), appears seemingly
+as spatially uncorrelated with a given sampling design, and of the
+variance (<code>nugget</code>, <code class="reqn">\tau^2</code>) of the independent errors
+requires that for some locations
+<code class="reqn">\boldsymbol{s}_i</code> replicated observations are
+available.  Locations less or equal than <code>zero.dist</code> apart are
+thereby considered as being coincident (see
+<code>control.georob</code>).
+</p>
+
+
+
+<h4>Constraining estimates of variogram parameters</h4>
+
+<p>Parameters of variogram models can vary only within certain bounds (see
+<code>param.bounds</code> and <code>gencorr</code>
+for allowed ranges).  <code>georob</code> uses three mechanisms to constrain
+parameter estimates to permissible ranges:
+</p>
+
+<ol>
+<li> <p><em>Parameter transformations</em>: By default, all variance
+(<code>variance</code>, <code>snugget</code>, <code>nugget</code>), the range
+<code>scale</code>, the anisotropy parameters <code>f1</code> and <code>f2</code> and
+many of the additional parameters are log-transformed before
+solving the estimating equations or maximizing the restricted
+log-likelihood and this warrants that the estimates are always
+positive (see <code>control.georob</code> for detailed explanations
+how to control parameter transformations).
+</p>
+</li>
+<li> <p><em>Checking permissible ranges</em>: The additional parameters
+of the variogram models such as the smoothness parameter <code class="reqn">\nu</code>
+of the Whittle-Matérn model are forced to stay in the permissible
+ranges by signalling an error to <code>nleqslv</code>, <code>nlminb</code> or
+<code>optim</code> if the current trial values are invalid.  These
+functions then graciously update the trial values of the parameters
+and carry their task on.  However, it is clear that such a
+procedure likely gets stuck at a point on the boundary of the
+parameter space and is therefore just a workaround for avoiding
+runtime errors due to invalid parameter values.
+</p>
+</li>
+<li> <p><em>Exploiting the functionality of <code>nlminb</code> and
+<code>optim</code></em>: If a spatial model is fitted non-robustly, then the
+arguments <code>lower</code>, <code>upper</code> (and <code>method</code> of
+<code>optim</code>) can be used to constrain the parameters
+(see <code>control.optim</code> how to pass them to <code>optim</code>).
+For <code>optim</code> one has to use the arguments <code>method =
+        "L-BFGS-B"</code>, <code>lower = <var>l</var></code>, <code>upper = <var>u</var></code>, where
+<var>l</var> and <var>u</var> are numeric vectors with the lower and upper
+bounds of the <em>transformed</em> parameters in the order as they
+appear in<br><code>c(variance, snugget, nugget, scale,
+        ...)[fit.param], aniso[fit.aniso])</code>,<br> where <code>...</code> are
+additional parameters of isotropic variogram models (use <br><code>param.names(variogram.model)</code> to display the names and the
+order of the additional parameters for <code>variogram.model</code>).
+For <code>nlminb</code> one has to use the arguments <code>lower =
+        <var>l</var></code>, <code>upper = <var>u</var></code>, where <var>l</var> and <var>u</var> are
+numeric vectors as described above.
+</p>
+</li>
+</ol>
+<h4>Computing robust initial estimates of parameters for robust
+REML</h4>
+
+<p>To solve the robustified estimating equations for
+<code class="reqn">\boldsymbol{B}</code> and
+<code class="reqn">\boldsymbol{\beta}</code> the following initial
+estimates are used:
+</p>
+
+<ul>
+<li> <p><code class="reqn"> \widehat{\boldsymbol{B}}=
+      \boldsymbol{0},</code> if this turns out to be
+infeasible, initial values can be passed to <code>georob</code> by the
+argument <code>bhat</code> of <code>control.georob</code>.
+</p>
+</li>
+<li> <p><code class="reqn">\widehat{\boldsymbol{\beta}}</code> is
+either estimated robustly by the function
+<code>lmrob</code>, <code>rq</code> or
+non-robustly by <code>lm</code> (see argument
+<code>initial.fixef</code> of <code>control.georob</code>).
+</p>
+</li>
+</ul>
+<p>Finding the roots of the robustified estimating equations of the
+variogram and anisotropy parameters is more sensitive to a good choice
+of initial values than maximizing the Gaussian (restricted)
+log-likelihood with respect to the same parameters.  If the initial
+values for <code>param</code> and <code>aniso</code> are not sufficiently close to
+the roots of the system of nonlinear equations, then
+<code>nleqslv</code> may fail to find them.
+Setting <code>initial.param = TRUE</code> (see <code>control.georob</code>)
+allows one to find initial values that are
+often sufficiently close to the roots so that
+<code>nleqslv</code> converges.  This is achieved by:
+</p>
+
+<ol>
+<li>
+<p> Initial values of the regression parameters are computed by
+<code>lmrob</code> irrespective of the choice for
+<code>initial.fixef</code> (see <code>control.georob</code>).
+</p>
+</li>
+<li>
+<p> Observations with “robustness weights” of the
+<code>lmrob</code> fit, satisfying<br><code class="reqn">\psi_c(\widehat{\varepsilon}_i/\widehat{\tau})/(\widehat{\varepsilon}_i/\widehat{\tau})
+      \leq \mbox{\code{min.rweight}}</code>, are discarded (see
+<code>control.georob</code>).
+</p>
+</li>
+<li>
+<p> The model is fit to the pruned data set by Gaussian REML using
+<code>nlminb</code> or <code>optim</code>.
+</p>
+</li>
+<li>
+<p> The resulting estimates of the variogram parameters
+(<code>param</code>, <code>aniso</code>) are used as initial estimates for the
+subsequent robust fit of the model by <code>nleqslv</code>.
+</p>
+</li>
+</ol>
+<p>Note that for step 3 above, initial values of <code>param</code> and
+<code>aniso</code> must be provided to <code>georob</code>.
+</p>
+
+
+
+<h4>Estimating variance parameters by Gaussian (RE)ML</h4>
+
+<p>Unlike robust REML, where robustified estimating equations are solved
+for the variance parameters <code>nugget</code> (<code class="reqn">\tau^2</code>),
+<code>variance</code> (<code class="reqn">\sigma^2</code>), and possibly <code>snugget</code>
+(<code class="reqn">\sigma_{\mathrm{n}}^2</code>), for Gaussian (RE)ML the
+variances can be re-parametrized to
+</p>
+
+<ul>
+<li>
+<p> the signal variance
+<code class="reqn">\sigma_B^2 = \sigma^2 + \sigma_{\mathrm{n}}^2</code>,
+</p>
+</li>
+<li>
+<p> the inverse relative nugget
+<code class="reqn">\eta = \sigma_B^2 / \tau^2</code> and
+</p>
+</li>
+<li>
+<p> the relative auto-correlated signal variance
+<code class="reqn">\xi = \sigma^2/\sigma_B^2</code>.
+</p>
+</li>
+</ul>
+<p><code>georob</code> maximizes then a (restricted) <em>profile
+log-likelihood</em> that depends only on <code class="reqn">\eta</code>, <code class="reqn">\xi</code>,
+<code class="reqn">\alpha</code>, ..., and <code class="reqn">\sigma_B^2</code> is estimated by an explicit
+expression that depends on these parameters (e.g. <cite>Diggle and
+Ribeiro, 2006, p.  113</cite>).  This is usually more efficient than
+maximizing the (restricted) log-likelihood with respect to the original
+variance parameters <code class="reqn">\tau^2</code>,
+<code class="reqn">\sigma_{\mathrm{n}}^2</code> and <code class="reqn">\sigma^2</code>.
+<code>georob</code> chooses the parametrization automatically, but the user
+can control it by the argument <code>reparam</code> of the function
+<code>control.georob</code>.
+</p>
+
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>georob</code> representing a robust (or Gaussian) (RE)ML
+fit of a spatial linear model.  See
+<code>georobObject</code> for the components of the fit.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Andreas Papritz <a href="mailto:papritz@retired.ethz.ch">papritz@retired.ethz.ch</a><br>
+with contributions by Cornelia Schwierz.
+</p>
+
+
+<h3>References</h3>
+
+<p>Diggle, P. J. and Ribeiro, P. J. R. (2006) Model-based Geostatistics.
+Springer, New York, <a href="https://doi.org/10.1007/978-0-387-48536-2">doi:10.1007/978-0-387-48536-2</a>.
+</p>
+<p>Harville, D. A. (1977) Maximum likelihood approaches to variance
+component estimation and to related problems, <em>Journal of the
+American Statistical Association</em>, <b>72</b>, 320–340,
+<a href="https://doi.org/10.1080/01621459.1977.10480998">doi:10.1080/01621459.1977.10480998</a>.
+</p>
+<p>Künsch, H. R., Papritz, A., Schwierz, C. and Stahel, W. A. (in
+preparation) Robust Geostatistics.
+</p>
+<p>Künsch, H. R., Papritz, A., Schwierz, C. and Stahel, W. A.
+(2011) Robust estimation of the external drift and the variogram of
+spatial data.  Proceedings of the ISI 58th World Statistics Congress of
+the International Statistical Institute.  <a href="https://doi.org/10.3929/ethz-a-009900710">doi:10.3929/ethz-a-009900710</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>georobPackage</code> for a description of the model and a brief summary of the algorithms;
+</p>
+
+<p><code>georobObject</code> for a description of the class <code>georob</code>;
+</p>
+<p><code>profilelogLik</code> for computing profiles of Gaussian likelihoods;
+</p>
+<p><code>plot.georob</code> for display of RE(ML) variogram estimates;
+</p>
+<p><code>control.georob</code> for controlling the behaviour of <code>georob</code>;
+</p>
+<p><code>georobModelBuilding</code> for stepwise building models of class <code>georob</code>;
+</p>
+<p><code>cv.georob</code> for assessing the goodness of a fit by <code>georob</code>;
+</p>
+<p><code>georobMethods</code> for further methods for the class <code>georob</code>;
+</p>
+<p><code>predict.georob</code> for computing robust Kriging predictions;
+
+</p>
+<p><code>lgnpp</code> for unbiased back-transformation of Kriging prediction
+of log-transformed data;
+</p>
+<p><code>georobSimulation</code> for simulating realizations of a Gaussian process
+from model fitted by <code>georob</code>; and finally
+</p>
+<p><code>sample.variogram</code> and <code>fit.variogram.model</code>
+for robust estimation and modelling of sample variograms.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">################
+## meuse data ##
+################
+data(meuse)
+
+## Gaussian REML fit
+r.logzn.reml &lt;- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
+    variogram.model = "RMexp",
+    param = c(variance = 0.15, nugget = 0.05, scale = 200),
+    tuning.psi = 1000)
+summary(r.logzn.reml, correlation = TRUE)
+plot(r.logzn.reml, lag.dist.def = seq(0, 2000, by = 100))
+
+## robust REML fit
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  r.logzn.rob &lt;- update(r.logzn.reml, tuning.psi = 1)
+
+  summary(r.logzn.rob, correlation = TRUE)
+  lines(r.logzn.rob, col = "red")
+}
+
+
+###################
+## wolfcamp data ##
+###################
+data(wolfcamp)
+
+## fitting isotropic IRF(0) model
+
+r.irf0.iso &lt;- georob(pressure ~ 1, data = wolfcamp, locations = ~ x + y,
+    variogram.model = "RMfbm",
+    param = c(variance = 10, nugget = 1500, scale = 1, alpha = 1.5),
+    fit.param = default.fit.param(scale = FALSE, alpha = TRUE),
+    tuning.psi = 1000)
+
+summary(r.irf0.iso)
+plot(r.irf0.iso, lag.dist.def = seq(0, 200, by = 7.5))
+
+## fitting anisotropic IRF(0) model
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  r.irf0.aniso &lt;- georob(pressure ~ 1, data = wolfcamp, locations = ~ x + y,
+      variogram.model = "RMfbm",
+      param = c(variance = 5.9, nugget = 1450, scale = 1, alpha = 1),
+      fit.param = default.fit.param(scale = FALSE, alpha = TRUE),
+      aniso = default.aniso(f1 = 0.51, omega = 148.),
+      fit.aniso = default.fit.aniso(f1 = TRUE, omega = TRUE),
+      tuning.psi = 1000)
+  summary(r.irf0.aniso)
+  plot(r.irf0.aniso, lag.dist.def = seq(0, 200, by = 7.5),
+      xy.angle.def = c(0, 22.5, 67.5, 112.5, 157.5, 180.),
+      add = TRUE, col = 2:5)
+
+  pchisq(2*(r.irf0.aniso[["loglik"]] - r.irf0.iso[["loglik"]]), 2, lower = FALSE)
+}
+</code></pre>
+
+
+</div>

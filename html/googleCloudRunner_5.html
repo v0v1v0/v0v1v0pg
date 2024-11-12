@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cr_build</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Starts a build with the specified configuration.</h2>
+
+<h3>Description</h3>
+
+<p>This method returns a long-running 'Operation', which includes the buildID. Pass the build ID to cr_build_status to determine the build status (such as 'SUCCESS' or 'FAILURE').
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cr_build(
+  x,
+  source = NULL,
+  timeout = NULL,
+  images = NULL,
+  substitutions = NULL,
+  serviceAccount = NULL,
+  artifacts = NULL,
+  options = NULL,
+  projectId = cr_project_get(),
+  launch_browser = interactive()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A cloudbuild.yaml file location or an R object that will be turned into yaml via as.yaml or a Build object created by cr_build_make or from a previous build you want to rerun.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>source</code></td>
+<td>
+<p>A Source object specifying the location of the source files to build, usually created by cr_build_source</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timeout</code></td>
+<td>
+<p>Amount of time that this build should be allowed to run, to second</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>images</code></td>
+<td>
+<p>A list of images to be pushed upon the successful completion of all build</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>substitutions</code></td>
+<td>
+<p>Substitutions data for 'Build' resource</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>serviceAccount</code></td>
+<td>
+<p>service account email to be used for the build</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>artifacts</code></td>
+<td>
+<p>Artifacts produced by the build that should be uploaded upon</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>options</code></td>
+<td>
+<p>Special options for this build</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>projectId</code></td>
+<td>
+<p>ID of the project</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>launch_browser</code></td>
+<td>
+<p>Whether to launch the logs URL in a browser once deployed</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><a href="https://cloud.google.com/build/docs/">Google Documentation for Cloud Build</a>
+</p>
+<p>Other Cloud Build functions: 
+<code>Build()</code>,
+<code>RepoSource()</code>,
+<code>Source()</code>,
+<code>StorageSource()</code>,
+<code>cr_build_artifacts()</code>,
+<code>cr_build_list()</code>,
+<code>cr_build_logs()</code>,
+<code>cr_build_make()</code>,
+<code>cr_build_status()</code>,
+<code>cr_build_targets()</code>,
+<code>cr_build_upload_gcs()</code>,
+<code>cr_build_wait()</code>,
+<code>cr_build_write()</code>,
+<code>cr_build_yaml_artifact()</code>,
+<code>cr_build_yaml_secrets()</code>,
+<code>cr_build_yaml()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">cr_project_set("my-project")
+my_gcs_source &lt;- cr_build_source(StorageSource("my_code.tar.gz",
+  bucket = "gs://my-bucket"
+))
+my_gcs_source
+
+my_repo_source &lt;- cr_build_source(RepoSource("github_username_my-repo.com",
+  branchName = "master"
+))
+my_repo_source
+## Not run: 
+
+# build from a cloudbuild.yaml file
+cloudbuild_file &lt;- system.file("cloudbuild/cloudbuild.yaml",
+  package = "googleCloudRunner"
+)
+
+# asynchronous, will launch log browser by default
+b1 &lt;- cr_build(cloudbuild_file)
+
+# synchronous waiting for build to finish
+b2 &lt;- cr_build_wait(b1)
+
+# the same results
+cr_build_status(b1)
+cr_build_status(b2)
+
+# build from a cloud storage source
+build1 &lt;- cr_build(cloudbuild_file,
+  source = my_gcs_source
+)
+# build from a git repository source
+build2 &lt;- cr_build(cloudbuild_file,
+  source = my_repo_source
+)
+
+# you can send in results for previous builds to trigger
+# the same build under a new Id
+# will trigger build2 again
+cr_build(build2)
+
+# a build with substitutions (Cloud Build macros)
+cr_build(build2, substitutions = list(`_SUB` = "yo"))
+
+## End(Not run)
+</code></pre>
+
+
+</div>

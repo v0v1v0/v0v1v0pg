@@ -1,0 +1,104 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getModelData4Forestplot</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get model data</h2>
+
+<h3>Description</h3>
+
+<p>A helper function for <code>forestplotCombineRegrObj()</code>. Extracts
+the data from the regression model fits and returns a <code>list</code>
+with model data gathered by the function [broom::tidy()]
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getModelData4Forestplot(
+  regr.obj,
+  exp = TRUE,
+  variablesOfInterest.regexp = NULL,
+  add_first_as_ref = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>regr.obj</code></td>
+<td>
+<p>A list with all the fits that have variables that are to
+be identified through the regular expression</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exp</code></td>
+<td>
+<p>Report in exponential form. Default true since the function was built for
+use with survival models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variablesOfInterest.regexp</code></td>
+<td>
+<p>A regular expression identifying the variables
+that are of interest of comparing. For instance it can be "(score|index|measure)"
+that finds scores in different models that should be compared.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>add_first_as_ref</code></td>
+<td>
+<p>If you want that the first variable should be reference for
+that group of variables. The ref is a variable with the estimate 1 or 0 depending
+if exp() and the confidence interval 0.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">org.par &lt;- par("ask" = TRUE)
+
+# simulated data to test
+library(tidyverse)
+set.seed(10)
+cov &lt;- tibble(ftime = rexp(200),
+              fstatus = sample(0:1, 200, replace = TRUE),
+              x1 = runif(200),
+              x2 = runif(200),
+              x3 = runif(200)) |&gt; 
+  # Add some column labels
+  Gmisc::set_column_labels(x1 = "First variable",
+                           x2 = "Second variable")
+
+library(rms)
+ddist &lt;- datadist(cov)
+options(datadist = "ddist")
+
+fit1 &lt;- cph(Surv(ftime, fstatus) ~ x1 + x2, data = cov)
+fit2 &lt;- cph(Surv(ftime, fstatus) ~ x1 + x3, data = cov)
+
+list(`First model` = fit1, 
+     `Second model` = fit2) |&gt; 
+  forestplotCombineRegrObj(variablesOfInterest.regexp = "(x2|x3)") |&gt; 
+  fp_set_style(lines = "steelblue",
+               box = "darkblue")
+
+# How to add expressions to the plot label
+list(fit1, fit2) |&gt; 
+  forestplotCombineRegrObj(variablesOfInterest.regexp = "(x2|x3)",
+                           reference.names = c("First model", "Second model"),
+                           post_process_data = \(data) {
+                             data$column_label[4] &lt;- c(rlang::expr(expression(Fever &gt;= 38.5)))
+                             return(data)
+                           })
+
+par(org.par)
+</code></pre>
+
+
+</div>

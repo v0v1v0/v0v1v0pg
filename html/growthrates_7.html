@@ -1,0 +1,228 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>all_growthmodels</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit Nonlinear Growth Models to Data Frame</h2>
+
+<h3>Description</h3>
+
+<p>Determine maximum growth rates by nonlinear fits for
+a series of experiments.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">all_growthmodels(...)
+
+## S3 method for class 'formula'
+all_growthmodels(
+  formula,
+  data,
+  p,
+  lower = -Inf,
+  upper = Inf,
+  which = names(p),
+  FUN = NULL,
+  method = "Marq",
+  transform = c("none", "log"),
+  ...,
+  subset = NULL,
+  ncores = detectCores(logical = FALSE)
+)
+
+## S3 method for class ''function''
+all_growthmodels(
+  FUN,
+  p,
+  data,
+  grouping = NULL,
+  time = "time",
+  y = "value",
+  lower = -Inf,
+  upper = Inf,
+  which = names(p),
+  method = "Marq",
+  transform = c("none", "log"),
+  ...,
+  ncores = detectCores(logical = FALSE)
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>generic parameters, including parameters passed to the optimizer.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>model formula specifying dependent, independent and grouping
+variables in the form:
+<code>dependent ~ independent | group1 + group2 + ...</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>data frame of observational data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>named vector of start parameters and initial values of the growth model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>lower bound of the parameter vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>upper bound of the parameter vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>which</code></td>
+<td>
+<p>vector of parameter names that are to be fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FUN</code></td>
+<td>
+<p>function of growth model to be fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>character vector specifying the optimization algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transform</code></td>
+<td>
+<p>fit model to non-transformed or log-transformed data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>a specification of the rows to be used: defaults to all rows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>number of CPU cores used for parallel computation. The number
+of real cores is detected automatically by default,
+but fort debugging purposes it could be wise to set <code>ncores = 1</code>.
+Usage of logical (hyperthreading) cores does not speed up computation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grouping</code></td>
+<td>
+<p>vector of grouping variables defining subsets in the data frame.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>character vector with name of independent variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>character vector with name of dependent variable.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>object containing the parameters of all fits.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other fitting functions: 
+<code>all_easylinear()</code>,
+<code>all_splines()</code>,
+<code>fit_easylinear()</code>,
+<code>fit_growthmodel()</code>,
+<code>fit_spline()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(bactgrowth)
+splitted.data &lt;- multisplit(value ~ time | strain + conc + replicate,
+                 data = bactgrowth)
+
+## show which experiments are in splitted.data
+names(splitted.data)
+
+## get table from single experiment
+dat &lt;- splitted.data[["D:0:1"]]
+
+fit0 &lt;- fit_spline(dat$time, dat$value)
+
+fit1 &lt;- all_splines(value ~ time | strain + conc + replicate,
+                 data = bactgrowth, spar = 0.5)
+
+
+## these examples require some CPU power and may take a bit longer
+
+## initial parameters
+p &lt;- c(coef(fit0), K = max(dat$value))
+
+## avoid negative parameters
+lower = c(y0 = 0, mumax = 0, K = 0)
+
+## fit all models
+fit2 &lt;- all_growthmodels(value ~ time | strain + conc + replicate,
+          data = bactgrowth, FUN=grow_logistic,
+          p = p, lower = lower, ncores = 2)
+
+results1 &lt;- results(fit1)
+results2 &lt;- results(fit2)
+plot(results1$mumax, results2$mumax, xlab="smooth splines", ylab="logistic")
+
+## experimental: nonlinear model as part of the formula
+
+fit3 &lt;- all_growthmodels(
+          value ~ grow_logistic(time, parms) | strain + conc + replicate,
+          data = bactgrowth, p = p, lower = lower, ncores = 2)
+
+## this allows also to fit to the 'global' data set or any subsets
+fit4 &lt;- all_growthmodels(
+          value ~ grow_logistic(time, parms),
+          data = bactgrowth, p = p, lower = lower, ncores = 1)
+plot(fit4)
+
+fit5 &lt;- all_growthmodels(
+          value ~ grow_logistic(time, parms) | strain + conc,
+          data = bactgrowth, p = p, lower = lower, ncores = 2)
+plot(fit5)
+
+
+</code></pre>
+
+
+</div>

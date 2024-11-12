@@ -1,0 +1,196 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>adjust_weights_parametric</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate adjusted hypothesis weights</h2>
+
+<h3>Description</h3>
+
+<p>An intersection hypothesis can be rejected if its p-values are less than or
+equal to their adjusted significance levels, which are their adjusted
+hypothesis weights times <code class="reqn">\alpha</code>. For Bonferroni tests, their adjusted
+hypothesis weights are their hypothesis weights of the intersection
+hypothesis. Additional adjustment is needed for parametric and Simes tests:
+</p>
+
+<ul>
+<li>
+<p> Parametric tests for <code>adjust_weights_parametric()</code>,
+</p>
+
+<ul><li>
+<p> Note that one-sided tests are required for parametric tests.
+</p>
+</li></ul>
+</li>
+<li>
+<p> Simes tests for <code>adjust_weights_simes()</code>.
+</p>
+</li>
+</ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R">adjust_weights_parametric(
+  matrix_weights,
+  matrix_intersections,
+  test_corr,
+  alpha,
+  test_groups,
+  maxpts = 25000,
+  abseps = 1e-06,
+  releps = 0
+)
+
+adjust_weights_simes(matrix_weights, p, test_groups)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>matrix_weights</code></td>
+<td>
+<p>(Optional) A matrix of hypothesis weights of all
+intersection hypotheses. This can be obtained as the second half of columns
+from the output of <code>graph_generate_weights()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>matrix_intersections</code></td>
+<td>
+<p>(Optional) A matrix of hypothesis indicators of
+all intersection hypotheses. This can be obtained as the first half of
+columns from the output of <code>graph_generate_weights()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test_corr</code></td>
+<td>
+<p>(Optional) A numeric matrix of correlations between test
+statistics, which is needed to perform parametric tests using
+<code>adjust_weights_parametric()</code>. The number of rows and columns of
+this correlation matrix should match the length of <code>p</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>(Optional) A numeric value of the overall significance level,
+which should be between 0 &amp; 1. The default is 0.025 for one-sided
+hypothesis testing problems; another common choice is 0.05 for two-sided
+hypothesis testing problems. Note when parametric tests are used, only
+one-sided tests are supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test_groups</code></td>
+<td>
+<p>(Optional) A list of numeric vectors specifying hypotheses
+to test together. Grouping is needed to correctly perform Simes and
+parametric tests.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxpts</code></td>
+<td>
+<p>(Optional) An integer scalar for the maximum number of function
+values, which is needed to perform parametric tests using the
+<code>mvtnorm::GenzBretz</code> algorithm. The default is 25000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>abseps</code></td>
+<td>
+<p>(Optional) A numeric scalar for the absolute error tolerance,
+which is needed to perform parametric tests using the <code>mvtnorm::GenzBretz</code>
+algorithm. The default is 1e-6.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>releps</code></td>
+<td>
+<p>(Optional) A numeric scalar for the relative error tolerance
+as double, which is needed to perform parametric tests using the
+<code>mvtnorm::GenzBretz</code> algorithm. The default is 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>(Optional) A numeric vector of p-values (unadjusted, raw), whose
+values should be between 0 &amp; 1. The length should match the number of
+columns of <code>matrix_weights</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+
+<ul>
+<li> <p><code>adjust_weights_parametric()</code> returns a matrix with the same
+dimensions as <code>matrix_weights</code>, whose hypothesis weights have been
+adjusted according to parametric tests.
+</p>
+</li>
+<li> <p><code>adjust_weights_simes()</code> returns a matrix with the same
+dimensions as <code>matrix_weights</code>, whose hypothesis weights have been
+adjusted according to Simes tests.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Lu, K. (2016). Graphical approaches using a Bonferroni mixture of weighted
+Simes tests. <em>Statistics in Medicine</em>, 35(22), 4041-4055.
+</p>
+<p>Xi, D., Glimm, E., Maurer, W., and Bretz, F. (2017). A unified framework
+for weighted parametric multiple test procedures.
+<em>Biometrical Journal</em>, 59(5), 918-931.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>adjust_p_parametric()</code> for adjusted p-values using parametric tests,
+<code>adjust_p_simes()</code> for adjusted p-values using Simes tests.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">alpha &lt;- 0.025
+p &lt;- c(0.018, 0.01, 0.105, 0.006)
+num_hyps &lt;- length(p)
+g &lt;- bonferroni_holm(rep(1 / 4, 4))
+weighting_strategy &lt;- graph_generate_weights(g)
+matrix_intersections &lt;- weighting_strategy[, seq_len(num_hyps)]
+matrix_weights &lt;- weighting_strategy[, -seq_len(num_hyps)]
+
+set.seed(1234)
+adjust_weights_parametric(
+  matrix_weights = matrix_weights,
+  matrix_intersections = matrix_intersections,
+  test_corr = diag(4),
+  alpha = alpha,
+  test_groups = list(1:4)
+)
+alpha &lt;- 0.025
+p &lt;- c(0.018, 0.01, 0.105, 0.006)
+num_hyps &lt;- length(p)
+g &lt;- bonferroni_holm(rep(1 / 4, 4))
+weighting_strategy &lt;- graph_generate_weights(g)
+matrix_intersections &lt;- weighting_strategy[, seq_len(num_hyps)]
+matrix_weights &lt;- weighting_strategy[, -seq_len(num_hyps)]
+
+adjust_weights_simes(
+  matrix_weights = matrix_weights,
+  p = p,
+  test_groups = list(1:4)
+)
+</code></pre>
+
+
+</div>

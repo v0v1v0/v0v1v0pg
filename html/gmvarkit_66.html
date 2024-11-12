@@ -1,0 +1,436 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>loglikelihood_int</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute log-likelihood of a GMVAR, StMVAR, and G-StMVAR models</h2>
+
+<h3>Description</h3>
+
+<p><code>loglikelihood_int</code> computes log-likelihoodof a GMVAR, StMVAR, and G-StMVAR models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">loglikelihood_int(
+  data,
+  p,
+  M,
+  params,
+  model = c("GMVAR", "StMVAR", "G-StMVAR"),
+  conditional = TRUE,
+  parametrization = c("intercept", "mean"),
+  constraints = NULL,
+  same_means = NULL,
+  weight_constraints = NULL,
+  structural_pars = NULL,
+  to_return = c("loglik", "mw", "mw_tplus1", "loglik_and_mw", "terms", "regime_cmeans",
+    "regime_ccovs", "total_cmeans", "total_ccovs", "arch_scalars",
+    "loglik_mw_archscalars"),
+  check_params = TRUE,
+  minval = NULL,
+  stat_tol = 0.001,
+  posdef_tol = 1e-08,
+  df_tol = 1e-08
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a matrix or class <code>'ts'</code> object with <code>d&gt;1</code> columns. Each column is taken to represent
+a univariate time series. <code>NA</code> values are not supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>a positive integer specifying the autoregressive order of the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+
+<dl>
+<dt>For <strong>GMVAR</strong> and <strong>StMVAR</strong> models:</dt>
+<dd>
+<p>a positive integer specifying the number of mixture components.</p>
+</dd>
+<dt>For <strong>G-StMVAR</strong> models:</dt>
+<dd>
+<p>a size (2x1) integer vector specifying the number of <em>GMVAR type</em> components <code>M1</code>
+in the first element and <em>StMVAR type</em> components <code>M2</code> in the second element. The total number of mixture components
+is <code>M=M1+M2</code>.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>params</code></td>
+<td>
+<p>a real valued vector specifying the parameter values.
+</p>
+
+<dl>
+<dt><strong>For unconstrained models:</strong></dt>
+<dd>
+<p>Should be size <code class="reqn">((M(pd^2+d+d(d+1)/2+2)-M1-1)x1)</code> and have the form
+<strong><code class="reqn">\theta</code></strong><code class="reqn"> = </code>(<strong><code class="reqn">\upsilon</code></strong><code class="reqn">_{1}</code>,
+...,<strong><code class="reqn">\upsilon</code></strong><code class="reqn">_{M}</code>, <code class="reqn">\alpha_{1},...,\alpha_{M-1},</code><strong><code class="reqn">\nu</code></strong><code class="reqn">)</code>, where
+</p>
+
+<ul>
+<li> <p><strong><code class="reqn">\upsilon</code></strong><code class="reqn">_{m}</code> <code class="reqn"> = (\phi_{m,0},</code><strong><code class="reqn">\phi</code></strong><code class="reqn">_{m}</code><code class="reqn">,\sigma_{m})</code>
+</p>
+</li>
+<li> <p><strong><code class="reqn">\phi</code></strong><code class="reqn">_{m}</code><code class="reqn"> = (vec(A_{m,1}),...,vec(A_{m,p})</code>
+</p>
+</li>
+<li>
+<p> and <code class="reqn">\sigma_{m} = vech(\Omega_{m})</code>, m=1,...,M,
+</p>
+</li>
+<li> <p><strong><code class="reqn">\nu</code></strong><code class="reqn">=(\nu_{M1+1},...,\nu_{M})</code>
+</p>
+</li>
+<li> <p><code class="reqn">M1</code> is the number of GMVAR type regimes.
+</p>
+</li>
+</ul>
+</dd>
+<dt><strong>For constrained models:</strong></dt>
+<dd>
+<p>Should be size <code class="reqn">((M(d+d(d+1)/2+2)+q-M1-1)x1)</code> and have the form
+<strong><code class="reqn">\theta</code></strong><code class="reqn"> = (\phi_{1,0},...,\phi_{M,0},</code><strong><code class="reqn">\psi</code>,</strong>
+<code class="reqn">\sigma_{1},...,\sigma_{M},\alpha_{1},...,\alpha_{M-1},</code><strong><code class="reqn">\nu</code></strong>), where
+</p>
+
+<ul><li> <p><strong><code class="reqn">\psi</code></strong> <code class="reqn">(qx1)</code> satisfies (<strong><code class="reqn">\phi</code></strong><code class="reqn">_{1}</code><code class="reqn">,...,</code>
+<strong><code class="reqn">\phi</code></strong><code class="reqn">_{M}) =</code> <strong><code class="reqn">C \psi</code></strong> where <strong><code class="reqn">C</code></strong> is a <code class="reqn">(Mpd^2xq)</code>
+constraint matrix.
+</p>
+</li></ul>
+</dd>
+<dt><strong>For same_means models:</strong></dt>
+<dd>
+<p>Should have the form
+<strong><code class="reqn">\theta</code></strong><code class="reqn"> = (</code><strong><code class="reqn">\mu</code>,</strong><strong><code class="reqn">\psi</code>,</strong>
+<code class="reqn">\sigma_{1},...,\sigma_{M},\alpha_{1},...,\alpha_{M-1},</code><strong><code class="reqn">\nu</code></strong><code class="reqn">)</code>, where
+</p>
+
+<ul>
+<li> <p><strong><code class="reqn">\mu</code></strong><code class="reqn">= (\mu_{1},...,\mu_{g})</code> where
+<code class="reqn">\mu_{i}</code> is the mean parameter for group <code class="reqn">i</code> and
+<code class="reqn">g</code> is the number of groups.
+</p>
+</li>
+<li>
+<p> If AR constraints are employed, <strong><code class="reqn">\psi</code></strong> is as for constrained
+models, and if AR constraints are not employed, <strong><code class="reqn">\psi</code></strong><code class="reqn"> = </code>
+(<strong><code class="reqn">\phi</code></strong><code class="reqn">_{1}</code><code class="reqn">,...,</code><strong><code class="reqn">\phi</code></strong><code class="reqn">_{M})</code>.
+</p>
+</li>
+</ul>
+</dd>
+<dt><strong>For models with weight_constraints:</strong></dt>
+<dd>
+<p>Drop <code class="reqn">\alpha_1,...,\alpha_{M-1}</code> from
+the parameter vector.</p>
+</dd>
+<dt><strong>For structural models:</strong></dt>
+<dd>
+<p>Reduced form models can be directly used as recursively identified structural models. If the structural model is
+identified by conditional heteroskedasticity, the parameter vector should have the form
+<strong><code class="reqn">\theta</code></strong><code class="reqn"> = (\phi_{1,0},...,\phi_{M,0},</code><strong><code class="reqn">\phi</code></strong><code class="reqn">_{1},...,</code><strong><code class="reqn">\phi</code></strong><code class="reqn">_{M},
+      vec(W),</code><strong><code class="reqn">\lambda</code></strong><code class="reqn">_{2},...,</code><strong><code class="reqn">\lambda</code></strong><code class="reqn">_{M},\alpha_{1},...,\alpha_{M-1},</code><strong><code class="reqn">\nu</code></strong><code class="reqn">)</code>,
+where
+</p>
+
+<ul><li>
+<p><strong><code class="reqn">\lambda</code></strong><code class="reqn">_{m}=(\lambda_{m1},...,\lambda_{md})</code> contains the eigenvalues of the <code class="reqn">m</code>th mixture component.
+</p>
+</li></ul>
+<dl>
+<dt><strong>If AR parameters are constrained: </strong></dt>
+<dd>
+<p>Replace <strong><code class="reqn">\phi</code></strong><code class="reqn">_{1}</code><code class="reqn">,...,</code>
+<strong><code class="reqn">\phi</code></strong><code class="reqn">_{M}</code> with <strong><code class="reqn">\psi</code></strong> <code class="reqn">(qx1)</code> that satisfies (<strong><code class="reqn">\phi</code></strong><code class="reqn">_{1}</code><code class="reqn">,...,</code>
+<strong><code class="reqn">\phi</code></strong><code class="reqn">_{M}) =</code> <strong><code class="reqn">C \psi</code></strong>, as above.</p>
+</dd>
+<dt><strong>If same_means: </strong></dt>
+<dd>
+<p>Replace <code class="reqn">(\phi_{1,0},...,\phi_{M,0})</code> with <code class="reqn">(\mu_{1},...,\mu_{g})</code>,
+as above.</p>
+</dd>
+<dt><strong>If <code class="reqn">W</code> is constrained:</strong></dt>
+<dd>
+<p>Remove the zeros from <code class="reqn">vec(W)</code> and make sure the other entries satisfy
+the sign constraints.</p>
+</dd>
+<dt><strong>If <code class="reqn">\lambda_{mi}</code> are constrained via <code>C_lambda</code>:</strong></dt>
+<dd>
+<p>Replace <strong><code class="reqn">\lambda</code></strong><code class="reqn">_{2},...,</code>
+<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{M}</code> with <strong><code class="reqn">\gamma</code></strong> <code class="reqn">(rx1)</code> that satisfies (<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{2}</code>
+<code class="reqn">,...,</code> <strong><code class="reqn">\lambda</code></strong><code class="reqn">_{M}) =</code> <strong><code class="reqn">C_{\lambda} \gamma</code></strong> where <code class="reqn">C_{\lambda}</code> is
+a <code class="reqn">(d(M-1) x r)</code> constraint matrix.</p>
+</dd>
+<dt><strong>If <code class="reqn">\lambda_{mi}</code> are constrained via <code>fixed_lambdas</code>:</strong></dt>
+<dd>
+<p>Drop <strong><code class="reqn">\lambda</code></strong><code class="reqn">_{2},...,</code>
+<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{M}</code> from the parameter vector.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Above, <code class="reqn">\phi_{m,0}</code> is the intercept parameter, <code class="reqn">A_{m,i}</code> denotes the <code class="reqn">i</code>th coefficient matrix of the <code class="reqn">m</code>th
+mixture component, <code class="reqn">\Omega_{m}</code> denotes the error term covariance matrix of the <code class="reqn">m</code>:th mixture component, and
+<code class="reqn">\alpha_{m}</code> is the mixing weight parameter. The <code class="reqn">W</code> and <code class="reqn">\lambda_{mi}</code> are structural parameters replacing the
+error term covariance matrices (see Virolainen, 2022). If <code class="reqn">M=1</code>, <code class="reqn">\alpha_{m}</code> and <code class="reqn">\lambda_{mi}</code> are dropped.
+If <code>parametrization=="mean"</code>, just replace each <code class="reqn">\phi_{m,0}</code> with regimewise mean <code class="reqn">\mu_{m}</code>.
+<code class="reqn">vec()</code> is vectorization operator that stacks columns of a given matrix into a vector. <code class="reqn">vech()</code> stacks columns
+of a given matrix from the principal diagonal downwards (including elements on the diagonal) into a vector.
+</p>
+<p>In the <strong>GMVAR model</strong>, <code class="reqn">M1=M</code> and <strong><code class="reqn">\nu</code></strong> is dropped from the parameter vector. In the <strong>StMVAR</strong> model,
+<code class="reqn">M1=0</code>. In the <strong>G-StMVAR</strong> model, the first <code>M1</code> regimes are <em>GMVAR type</em> and the rest <code>M2</code> regimes are
+<em>StMVAR type</em>. In <strong>StMVAR</strong> and <strong>G-StMVAR</strong> models, the degrees of freedom parameters in <strong><code class="reqn">\nu</code></strong> should
+be strictly larger than two.
+</p>
+<p>The notation is similar to the cited literature.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>is "GMVAR", "StMVAR", or "G-StMVAR" model considered? In the G-StMVAR model, the first <code>M1</code> components
+are GMVAR type and the rest <code>M2</code> components are StMVAR type.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conditional</code></td>
+<td>
+<p>a logical argument specifying whether the conditional or exact log-likelihood function
+should be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parametrization</code></td>
+<td>
+<p><code>"intercept"</code> or <code>"mean"</code> determining whether the model is parametrized with intercept
+parameters <code class="reqn">\phi_{m,0}</code> or regime means <code class="reqn">\mu_{m}</code>, m=1,...,M.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constraints</code></td>
+<td>
+<p>a size <code class="reqn">(Mpd^2 x q)</code> constraint matrix <strong><code class="reqn">C</code></strong> specifying general linear constraints
+to the autoregressive parameters. We consider constraints of form
+(<strong><code class="reqn">\phi</code></strong><code class="reqn">_{1}</code><code class="reqn">,...,</code><strong><code class="reqn">\phi</code></strong><code class="reqn">_{M}) = </code><strong><code class="reqn">C \psi</code></strong>,
+where <strong><code class="reqn">\phi</code></strong><code class="reqn">_{m}</code><code class="reqn"> = (vec(A_{m,1}),...,vec(A_{m,p}) (pd^2 x 1), m=1,...,M</code>,
+contains the coefficient matrices and <strong><code class="reqn">\psi</code></strong> <code class="reqn">(q x 1)</code> contains the related parameters.
+For example, to restrict the AR-parameters to be the same for all regimes, set <strong><code class="reqn">C</code></strong>=
+[<code>I:...:I</code>]<strong>'</strong> <code class="reqn">(Mpd^2 x pd^2)</code> where <code>I = diag(p*d^2)</code>.
+Ignore (or set to <code>NULL</code>) if linear constraints should <strong>not</strong> be employed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>same_means</code></td>
+<td>
+<p>Restrict the mean parameters of some regimes to be the same? Provide a list of numeric vectors
+such that each numeric vector contains the regimes that should share the common mean parameters. For instance, if
+<code>M=3</code>, the argument <code>list(1, 2:3)</code> restricts the mean parameters of the second and third regime to be
+the same but the first regime has freely estimated (unconditional) mean. Ignore or set to <code>NULL</code> if mean parameters
+should not be restricted to be the same among any regimes. <strong>This constraint is available only for mean parametrized models;
+that is, when <code>parametrization="mean"</code>.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight_constraints</code></td>
+<td>
+<p>a numeric vector of length <code class="reqn">M-1</code> specifying fixed parameter values for the mixing weight parameters
+<code class="reqn">\alpha_m, \ m=1,...,M-1</code>. Each element should be strictly between zero and one, and the sum of all the elements should
+be strictly less than one.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>structural_pars</code></td>
+<td>
+<p>If <code>NULL</code> a reduced form model is considered. Reduced models can be used directly as recursively
+identified structural models. For a structural model identified by conditional heteroskedasticity, should be a list containing
+at least the first one of the following elements:
+</p>
+
+<ul>
+<li> <p><code>W</code> - a <code class="reqn">(dxd)</code> matrix with its entries imposing constraints on <code class="reqn">W</code>: <code>NA</code> indicating that the element is
+unconstrained, a positive value indicating strict positive sign constraint, a negative value indicating strict
+negative sign constraint, and zero indicating that the element is constrained to zero.
+</p>
+</li>
+<li> <p><code>C_lambda</code> - a <code class="reqn">(d(M-1) x r)</code> constraint matrix that satisfies (<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{2}</code><code class="reqn">,...,</code>
+<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{M}) =</code> <strong><code class="reqn">C_{\lambda} \gamma</code></strong> where <strong><code class="reqn">\gamma</code></strong> is the new <code class="reqn">(r x 1)</code>
+parameter subject to which the model is estimated (similarly to AR parameter constraints). The entries of <code>C_lambda</code>
+must be either <strong>positive</strong> or <strong>zero</strong>. Ignore (or set to <code>NULL</code>) if the eigenvalues <code class="reqn">\lambda_{mi}</code>
+should not be constrained.
+</p>
+</li>
+<li> <p><code>fixed_lambdas</code> - a length <code class="reqn">d(M-1)</code> numeric vector (<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{2}</code><code class="reqn">,...,</code>
+<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{M})</code> with elements strictly larger than zero specifying the fixed parameter values for the
+parameters <code class="reqn">\lambda_{mi}</code> should be constrained to. This constraint is alternative <code>C_lambda</code>.
+Ignore (or set to <code>NULL</code>) if the eigenvalues <code class="reqn">\lambda_{mi}</code> should not be constrained.
+</p>
+</li>
+</ul>
+<p>See Virolainen (forthcoming) for the conditions required to identify the shocks and for the B-matrix as well (it is <code class="reqn">W</code> times
+a time-varying diagonal matrix with positive diagonal entries).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>to_return</code></td>
+<td>
+<p>should the returned object be the log-likelihood value, which is default, or something else?
+See the section "Return" for all the options.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check_params</code></td>
+<td>
+<p>should it be checked that the parameter vector satisfies the model assumptions? Can be skipped to save
+computation time if it does for sure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minval</code></td>
+<td>
+<p>the value that will be returned if the parameter vector does not lie in the parameter space
+(excluding the identification condition).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stat_tol</code></td>
+<td>
+<p>numerical tolerance for stationarity of the AR parameters: if the "bold A" matrix of any regime
+has eigenvalues larger that <code>1 - stat_tol</code> the model is classified as non-stationary. Note that if the
+tolerance is too small, numerical evaluation of the log-likelihood might fail and cause error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>posdef_tol</code></td>
+<td>
+<p>numerical tolerance for positive definiteness of the error term covariance matrices: if
+the error term covariance matrix of any regime has eigenvalues smaller than this, the model is classified
+as not satisfying positive definiteness assumption. Note that if the tolerance is too small, numerical
+evaluation of the log-likelihood might fail and cause error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df_tol</code></td>
+<td>
+<p>the parameter vector is considered to be outside the parameter space if all degrees of
+freedom parameters are not larger than <code>2 + df_tol</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>loglikelihood_int</code> takes use of the function <code>dmvn</code> from the package <code>mvnfast</code>.
+</p>
+
+
+<h3>Value</h3>
+
+
+<dl>
+<dt>By default:</dt>
+<dd>
+<p>log-likelihood value of the specified GMVAR, StMVAR, or G-StMVAR model,</p>
+</dd>
+<dt>If <code>to_return=="mw"</code>:</dt>
+<dd>
+<p>a size ((n_obs-p)xM) matrix containing the mixing weights: for m:th component in m:th column.</p>
+</dd>
+<dt>If <code>to_return=="mw_tplus1"</code>:</dt>
+<dd>
+<p>a size ((n_obs-p+1)xM) matrix containing the mixing weights: for m:th component in m:th column.
+The last row is for <code class="reqn">\alpha_{m,T+1}</code>.</p>
+</dd>
+<dt>If <code>to_return=="terms"</code>:</dt>
+<dd>
+<p>a size ((n_obs-p)x1) numeric vector containing the terms <code class="reqn">l_{t}</code>.</p>
+</dd>
+<dt>if <code>to_return=="loglik_and_mw"</code>:</dt>
+<dd>
+<p>a list of two elements. The first element contains the log-likelihood value and the
+second element contains the mixing weights.</p>
+</dd>
+<dt>If <code>to_return=="regime_cmeans"</code>:</dt>
+<dd>
+<p>an <code>[T-p, d, M]</code> array containing the regimewise conditional means
+(the first p values are used as the initial values).</p>
+</dd>
+<dt>If <code>to_return=="regime_ccovs"</code>:</dt>
+<dd>
+<p>an <code>[d, d, T-p, M]</code> array containing the regimewise conditional
+covariance matrices (the first p values are used as the initial values). The index <code>[ , , t, m]</code> gives the time
+<code>t</code> conditional covariance matrix for the regime <code>m</code>.</p>
+</dd>
+<dt>If <code>to_return=="total_cmeans"</code>:</dt>
+<dd>
+<p>a <code>[T-p, d]</code> matrix containing the conditional means of the process
+(the first p values are used as the initial values).</p>
+</dd>
+<dt>If <code>to_return=="total_ccov"</code>:</dt>
+<dd>
+<p>an <code>[d, d, T-p]</code> array containing the conditional covariance matrices of the process
+(the first p values are used as the initial values).</p>
+</dd>
+<dt>If <code>to_return=="arch_scalars"</code>:</dt>
+<dd>
+<p>a <code>[T-p, M]</code> matrix containing the regimewise arch scalars
+multiplying error term covariance matrix in the conditional covariance matrix of the regime. For GMVAR type regimes, these
+are all ones (the first p values are used as the initial values).</p>
+</dd>
+<dt>if <code>to_return=="loglik_mw_archscalars"</code>:</dt>
+<dd>
+<p>a list of three elements. The first element contains the log-likelihood value, the
+second element contains the mixing weights, the third element contains the arch scalars
+(this is used in <code>quantile_residuals_int</code>).</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+
+<ul>
+<li>
+<p> Kalliovirta L., Meitz M. and Saikkonen P. 2016. Gaussian mixture vector autoregression.
+<em>Journal of Econometrics</em>, <strong>192</strong>, 485-498.
+</p>
+</li>
+<li>
+<p> Lütkepohl H. 2005. New Introduction to Multiple Time Series Analysis,
+<em>Springer</em>.
+</p>
+</li>
+<li>
+<p> McElroy T. 2017. Computation of vector ARMA autocovariances.
+<em>Statistics and Probability Letters</em>, <strong>124</strong>, 92-96.
+</p>
+</li>
+<li>
+<p> Virolainen S. (forthcoming). A statistically identified structural vector autoregression with endogenously
+switching volatility regime. <em>Journal of Business &amp; Economic Statistics</em>.
+</p>
+</li>
+<li>
+<p> Virolainen S. 2022. Gaussian and Student's t mixture vector autoregressive model with application to the
+asymmetric effects of monetary policy shocks in the Euro area. Unpublished working
+paper, available as arXiv:2109.13648.
+</p>
+</li>
+</ul>
+</div>

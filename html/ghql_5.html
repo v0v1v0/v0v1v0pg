@@ -1,0 +1,338 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Query</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Query</h2>
+
+<h3>Description</h3>
+
+<p>ghql query class
+</p>
+
+
+<h3>Value</h3>
+
+<p>a 'Query' class (R6 class)
+</p>
+
+
+<h3>Public fields</h3>
+
+<div class="r6-fields">
+
+<dl>
+<dt><code>queries</code></dt>
+<dd>
+<p>(list) list of queries</p>
+</dd>
+</dl>
+</div>
+
+
+<h3>Methods</h3>
+
+
+
+<h4>Public methods</h4>
+
+
+<ul>
+<li> <p><a href="#method-print"><code>Query$print()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-query"><code>Query$query()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-add_fragment"><code>Query$add_fragment()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-parse2json"><code>Query$parse2json()</code></a>
+</p>
+</li>
+</ul>
+<hr>
+<a id="method-print"></a>
+
+
+<h4>Method <code>print()</code>
+</h4>
+
+<p>print method for the 'Query' class
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>Query$print(x, ...)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>x</code></dt>
+<dd>
+<p>self</p>
+</dd>
+<dt><code>...</code></dt>
+<dd>
+<p>ignored</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-query"></a>
+
+
+<h4>Method <code>query()</code>
+</h4>
+
+<p>define query in a character string
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>Query$query(name, x)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>name</code></dt>
+<dd>
+<p>(character) name of the query</p>
+</dd>
+<dt><code>x</code></dt>
+<dd>
+<p>(character) the query</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Returns</h5>
+
+<p>nothing returned; sets query with 'name' internally
+</p>
+
+
+<hr>
+<a id="method-add_fragment"></a>
+
+
+<h4>Method <code>add_fragment()</code>
+</h4>
+
+<p>add a fragment to a query
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>Query$add_fragment(query_name, fragment)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>query_name</code></dt>
+<dd>
+<p>(character) the query name to add the fragment to</p>
+</dd>
+<dt><code>fragment</code></dt>
+<dd>
+<p>(character) the fragment itself</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Returns</h5>
+
+<p>nothing returned; sets the fragment with the query
+</p>
+
+
+<hr>
+<a id="method-parse2json"></a>
+
+
+<h4>Method <code>parse2json()</code>
+</h4>
+
+<p>parse query string with libgraphqlparser and get back JSON
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>Query$parse2json(query, parse_schema = FALSE)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>query</code></dt>
+<dd>
+<p>(character) a query to parse</p>
+</dd>
+<dt><code>parse_schema</code></dt>
+<dd>
+<p>(logical) enable schema definition parsing?
+default: 'FAlSE'</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Returns</h5>
+
+<p>adf
+</p>
+
+
+
+
+<h3>Note</h3>
+
+<p>we run an internal method 'check_query()' that runs the public
+method ‘parse2json()' - if the query doesn’t pass the libgraphqlparser
+parser, we return the error message
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># make a client
+qry &lt;- Query$new()
+
+## define query
+qry$query('query2', '{
+  viewer {
+    repositories(last: 10, isFork: false, privacy: PUBLIC) {
+      edges {
+        node {
+          isPrivate
+          id
+          name
+        }
+      }
+    }
+  }
+}')
+qry
+qry$queries
+qry$queries$query2
+
+# fragments
+## by hand
+qry$query('querywithfrag', '{
+  ropensci: repositoryOwner(login:"ropensci") {
+    repositories(first: 3) {
+      edges {
+        node {
+          ...Watchers
+        }
+      }
+    }
+  }
+  ropenscilabs: repositoryOwner(login:"ropenscilabs") {
+    repositories(first: 3) {
+      edges {
+        node {
+          ...Watchers
+        }
+      }
+    }
+  }
+}
+fragment Watchers on Repository {
+  watchers(first: 3) {
+    edges {
+      node {
+        name
+      }
+    }
+  }
+}')
+qry
+qry$queries
+qry$queries$querywithfrag
+
+
+## Not run: 
+token &lt;- Sys.getenv("GITHUB_GRAPHQL_TOKEN")
+con &lt;- GraphqlClient$new(
+  url = "https://api.github.com/graphql",
+  headers = list(Authorization = paste0("Bearer ", token))
+)
+jsonlite::fromJSON(con$exec(qry$queries$querywithfrag))
+
+## use Fragment class fragments generator
+### define query without fragment, but referring to it
+qry$query('queryfrag', '{
+  ropensci: repositoryOwner(login:"ropensci") {
+    repositories(first: 3) {
+      edges {
+        node {
+          ...Watchers
+        }
+      }
+    }
+  }
+  ropenscilabs: repositoryOwner(login:"ropenscilabs") {
+    repositories(first: 3) {
+      edges {
+        node {
+          ...Watchers
+        }
+      }
+    }
+  }
+}')
+
+### define a fragment, and use it later
+frag &lt;- Fragment$new()
+frag$fragment('Watchers', '
+  fragment on Repository {
+    watchers(first: 3) {
+      edges {
+        node {
+          name
+       }
+    }
+  }
+}')
+frag$fragments
+frag$fragments$Watchers
+
+### add the fragment to the query 'queryfrag'
+qry$add_fragment('queryfrag', frag$fragments$Watchers)
+qry
+qry$queries
+qry$queries$queryfrag
+
+## End(Not run)
+</code></pre>
+
+
+</div>

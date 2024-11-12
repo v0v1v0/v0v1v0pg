@@ -1,0 +1,149 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>setup_plot</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Set up information for a <code>GenericML()</code> plot</h2>
+
+<h3>Description</h3>
+
+<p>Extract the relevant information for visualizing the point and interval estimates of the generic targets of interest. The generic targets of interest can be (subsets of) the parameters of the BLP, GATES, or CLAN analysis.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">setup_plot(
+  x,
+  type = "GATES",
+  learner = "best",
+  CLAN_variable = NULL,
+  groups = "all"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of the class <code>"GenericML"</code>, as returned by the function <code>GenericML()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>The analysis whose parameters shall be plotted. Either <code>"GATES"</code>, <code>"BLP"</code>, or <code>"CLAN"</code>. Default is <code>"GATES"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>learner</code></td>
+<td>
+<p>The learner whose results are to be returned. Default is <code>"best"</code> for the best learner as measured by the <code class="reqn">\Lambda</code> parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CLAN_variable</code></td>
+<td>
+<p>Name of the CLAN variable to be plotted. Only applicable if <code>type = "CLAN"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groups</code></td>
+<td>
+<p>Character vector indicating the per-group parameter estimates that shall be plotted in GATES and CLAN analyses. Default is <code>"all"</code> for all parameters. If there are <code class="reqn">K</code> groups, this variable is a subset of <code>c("G1", "G2",...,"GK", "G1-G2", "G1-G2",..., "G1-GK", "GK-G1", "GK-G2",...)</code>, where Gk denotes the k-th group. Note that this set depends on the choices of the arguments <code>"diff_GATES"</code> and <code>"diff_CLAN"</code> of the <code>"GenericML"</code> object.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function is used internally by <code>plot.GenericML()</code>. It may also be useful for users who want to produce a similar plot, but who want more control over what information to display or how to display that information.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>"setup_plot"</code>, which is a list with the following elements.
+</p>
+
+<dl>
+<dt><code>data_plot</code></dt>
+<dd>
+<p>A data frame containing point and interval estimates of the generic target specified in the argument <code>type</code>.</p>
+</dd>
+<dt><code>data_BLP</code></dt>
+<dd>
+<p>A data frame containing point and interval estimates of the BLP analysis.</p>
+</dd>
+<dt><code>confidence_level</code></dt>
+<dd>
+<p>The confidence level of the confidence intervals. The confidence level is equal to  <code>1 - 2 * significance_level</code>, which is the adjustment proposed in the paper.</p>
+</dd>
+</dl>
+<h3>See Also</h3>
+
+<p><code>plot.GenericML()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(require("ranger") &amp;&amp; require("ggplot2")) {
+
+## generate data
+set.seed(1)
+n  &lt;- 150                                  # number of observations
+p  &lt;- 5                                    # number of covariates
+D  &lt;- rbinom(n, 1, 0.5)                    # random treatment assignment
+Z  &lt;- matrix(runif(n*p), n, p)             # design matrix
+Y0 &lt;- as.numeric(Z %*% rexp(p) + rnorm(n)) # potential outcome without treatment
+Y1 &lt;- 2 + Y0                               # potential outcome under treatment
+Y  &lt;- ifelse(D == 1, Y1, Y0)               # observed outcome
+
+## name the columns of Z
+colnames(Z) &lt;- paste0("V", 1:p)
+
+## specify learners
+learners &lt;- c("random_forest")
+
+## perform generic ML inference
+# small number of splits to keep computation time low
+x &lt;- GenericML(Z, D, Y, learners,
+               num_splits = 2,
+               parallel = FALSE)
+
+## the plot we wish to replicate
+plot(x = x, type = "GATES")
+
+## get the data to plot the GATES estimates
+data &lt;- setup_plot(x = x, type = "GATES")
+
+## define variables to appease the R CMD check
+group &lt;- estimate &lt;- ci_lower &lt;- ci_upper &lt;- NULL
+
+## replicate the plot(x, type = "GATES")
+# for simplicity, we skip aligning the colors
+ggplot(mapping = aes(x = group,
+                     y = estimate), data = data$data_plot) +
+  geom_hline(aes(yintercept = 0),
+             color = "black", linetype = "dotted") +
+  geom_hline(aes(yintercept = data$data_BLP["beta.1", "estimate"],
+                 color = "ATE"),
+             linetype = "dashed") +
+  geom_hline(aes(yintercept = data$data_BLP["beta.1", "ci_lower"],
+                 color = paste0(100*data$confidence_level, "% CI (ATE)")),
+             linetype = "dashed")  +
+  geom_hline(yintercept = data$data_BLP["beta.1", "ci_upper"],
+             linetype = "dashed", color = "red") +
+  geom_point(aes(color = paste0("GATES with ",  100*data$confidence_level, "% CI")), size = 3) +
+  geom_errorbar(mapping = aes(ymin = ci_lower,
+                              ymax = ci_upper))
+}
+
+</code></pre>
+
+
+</div>

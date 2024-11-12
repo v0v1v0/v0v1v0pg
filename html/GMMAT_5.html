@@ -1,0 +1,517 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>glmm.wald</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Performing GLMM based Wald tests
+</h2>
+
+<h3>Description</h3>
+
+<p>Fit a GLMM under the alternative hypothesis to perform Wald tests for association with genotypes in a plink .bed file (binary genotypes), a GDS file .gds, or a plain text file (or compressed .gz or .bz2 file).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">glmm.wald(fixed, data = parent.frame(), kins = NULL, id, random.slope = NULL, 
+	groups = NULL, family = binomial(link = "logit"), infile, snps, 
+	method = "REML", method.optim = "AI", maxiter = 500, tol = 1e-5, 
+	taumin = 1e-5, taumax = 1e5, tauregion = 10, center = T, 
+	select = NULL, missing.method = "impute2mean", infile.nrow = NULL, 
+	infile.nrow.skip = 0, infile.sep = "\t", infile.na = "NA", 
+	snp.col = 1, infile.ncol.skip = 1, infile.ncol.print = 1, 
+	infile.header.print = "SNP", is.dosage = FALSE, verbose = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fixed</code></td>
+<td>
+
+<p>an object of class <code>formula</code> (or one that can be coerced to that class): a symbolic description of the fixed effects model (without including any <code>snps</code> to be tested) to be fitted.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>a data frame or list (or object coercible by <code>as.data.frame</code> to a data frame) containing the variables in the model.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kins</code></td>
+<td>
+
+<p>a known positive semi-definite relationship matrix (e.g. kinship matrix in genetic association studies) or a list of known positive semi-definite relationship matrices. The rownames and colnames of these matrices must at least include all samples as specified in the <code>id</code> column of the data frame <code>data</code>. If not provided, glmmkin will switch to the generalized linear model with no random effects (default = NULL).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+
+<p>a column in the data frame <code>data</code>, indicating the id of samples. When there are duplicates in id, the data is assumed to be longitudinal with repeated measures.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>random.slope</code></td>
+<td>
+
+<p>an optional column indicating the random slope for time effect used in a mixed effects model for cross-sectional data with related individuals, and longitudinal data. It must be included in the names of <code>data</code>. There must be duplicates in <code>id</code> and <code>method.optim</code> must be "AI" (default = NULL).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groups</code></td>
+<td>
+
+<p>an optional categorical variable indicating the groups used in a heteroscedastic linear mixed model (allowing residual variances in different groups to be different). This variable must be included in the names of <code>data</code>, and <code>family</code> must be "gaussian" and <code>method.optim</code> must be "AI" (default = NULL).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+
+<p>a description of the error distribution and link function to be used in the model. This can be a character string naming a family function, a family function or the result of a call to a family function. (See <code>family</code> for details of family functions.)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infile</code></td>
+<td>
+
+<p>the input file name. Note that for plink binary genotype files only the prefix without .bed, .bim or .fam should be used. Only SNP major mode recognized in the binary file. Alternatively, it can be the full name of a GDS file (including the suffix .gds) or a plain text file with some delimiters (comma, space, tab or something else), with one row for each SNP and one column for each individual. In that case, SNPs should be coded as numeric values (0/1/2 or dosages allowed, A/C/G/T coding is not recognized). There can be additional rows and columns to skip at the beginning. The order of individuals can be different from <code>obj</code> in the null GLMM (see the argument <code>select</code>). Some compressed files (.gz and .bz2) also allowed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>snps</code></td>
+<td>
+
+<p>a vector of SNP names to be tested.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+
+<p>method of fitting the generalized linear mixed model. Either "REML" or "ML" (default = "REML").
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method.optim</code></td>
+<td>
+
+<p>optimization method of fitting the generalized linear mixed model. Either "AI", "Brent" or "Nelder-Mead" (default = "AI").
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiter</code></td>
+<td>
+
+<p>a positive integer specifying the maximum number of iterations when fitting the generalized linear mixed model (default = 500).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+
+<p>a positive number specifying tolerance, the difference threshold for parameter estimates below which iterations should be stopped. Also the threshold for determining monomorphism. If a SNP has value range less than the tolerance, it will be considered monomorphic and its association test p-value will be NA (default = 1e-5).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>taumin</code></td>
+<td>
+
+<p>the lower bound of search space for the variance component parameter <code class="reqn">\tau</code> (default = 1e-5), used when <code>method.optim = "Brent"</code>. See <code>glmmkin</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>taumax</code></td>
+<td>
+
+<p>the upper bound of search space for the variance component parameter <code class="reqn">\tau</code> (default = 1e5), used when <code>method.optim = "Brent"</code>. See <code>glmmkin</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tauregion</code></td>
+<td>
+
+<p>the number of search intervals for the REML or ML estimate of the variance component parameter <code class="reqn">\tau</code> (default = 10), used when <code>method.optim = "Brent"</code>. See <code>glmmkin</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>center</code></td>
+<td>
+
+<p>a logical switch for centering genotypes before tests. If TRUE, genotypes will be centered to have mean 0 before tests, otherwise raw values will be directly used in tests (default = TRUE).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>select</code></td>
+<td>
+
+<p>an optional vector indicating the order of individuals in <code>infile</code>. If supplied, the length must match the number of individuals in <code>infile</code> (default = NULL). Individuals to be excluded should be coded 0. For example, <code>select = c(2, 3, 1, 0)</code> means the 1st individual in <code>infile</code> corresponds to the 2nd individual in <code>data</code>, the 2nd individual in <code>infile</code> corresponds to the 3rd individual in <code>data</code>, the 3rd individual in <code>infile</code> corresponds to the 1st individual in <code>data</code>, the 4th individual in <code>infile</code> is not included in <code>data</code>. If there are any duplicated <code>id</code> in <code>data</code> (longitudinal data analysis), indices in <code>select</code> should match the order of individuals with unique <code>id</code> in <code>data</code>. For plink binary genotype files and GDS files, this argument is not required and the sample ID's are automatically matched.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>missing.method</code></td>
+<td>
+
+<p>method of handling missing genotypes. Either "impute2mean" or "omit" (default = "impute2mean").
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infile.nrow</code></td>
+<td>
+
+<p>number of rows to read in <code>infile</code>, including number of rows to skip at the beginning. If NULL, the program will determine how many rows there are in <code>infile</code> automatically and read all rows (default = NULL). Only used when <code>infile</code> is a plain text file (or compressed .gz or .bz2 file).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infile.nrow.skip</code></td>
+<td>
+
+<p>number of rows to skip at the beginning of <code>infile</code>. Must be nonnegative integers. Useful when header or comment lines are present (default = 0). Only used when <code>infile</code> is a plain text file (or compressed .gz or .bz2 file).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infile.sep</code></td>
+<td>
+
+<p>delimiter in <code>infile</code> (default = "\t"). Only used when <code>infile</code> is a plain text file (or compressed .gz or .bz2 file).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infile.na</code></td>
+<td>
+
+<p>symbol in <code>infile</code> to denote missing genotypes (default = "NA"). Only used when <code>infile</code> is a plain text file (or compressed .gz or .bz2 file).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>snp.col</code></td>
+<td>
+
+<p>a positive integer specifying which column in <code>infile</code> is SNP names. Only used when <code>infile</code> is a plain text file (or compressed .gz or .bz2 file).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infile.ncol.skip</code></td>
+<td>
+
+<p>number of columns to skip before genotype data in <code>infile</code>. These columns can be SNP name, alleles and/or quality measures and should be placed at the beginning in each line. After skipping these columns, the program will read in genotype data and perform Wald tests. Must be positive integers. It is recommended that SNP name should be included as the first column in <code>infile</code> and genotype data should start from the second column or later (default = 1). Only used when <code>infile</code> is a plain text file (or compressed .gz or .bz2 file).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infile.ncol.print</code></td>
+<td>
+
+<p>a vector indicating which column(s) in <code>infile</code> should be shown in the results. These columns can be SNP name, alleles and/or quality measures placed at the beginning in each line. Must be positive integers, no greater than <code>infile.ncol.skip</code> and sorted numerically in ascending order. By default, it is assumed that the first column is SNP name and genotype data start from the second column, and SNP name should be carried over to the results (default = 1). Only used when <code>infile</code> is a plain text file (or compressed .gz or .bz2 file).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infile.header.print</code></td>
+<td>
+
+<p>a character vector indicating column name(s) of column(s) selected to print by <code>infile.ncol.print</code> (default = "SNP"). Only used when <code>infile</code> is a plain text file (or compressed .gz or .bz2 file).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>is.dosage</code></td>
+<td>
+
+<p>a logical switch for whether imputed dosage should be used from a GDS <code>infile</code> (default = FALSE).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>a logical switch for printing a progress bar and detailed information (parameter estimates in each iteration) for testing and debugging purpose (default = FALSE).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>additional arguments that could be passed to <code>glm</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>if <code>infile</code> is a plain text file, a data frame containing variables included in <code>infile.header.print</code> and the following:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>number of individuals with non-missing genotypes for each SNP.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>AF</code></td>
+<td>
+<p>effect allele frequency for each SNP.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BETA</code></td>
+<td>
+<p>effect size estimate for each SNP from the GLMM under the alternative hypothesis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SE</code></td>
+<td>
+<p>standard error of the effect size estimate for each SNP.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PVAL</code></td>
+<td>
+<p>Wald test p-value for each SNP.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>converged</code></td>
+<td>
+<p>a logical indicator for convergence for each SNP.</p>
+</td>
+</tr>
+</table>
+<p>if <code>infile</code> is the prefix of plink binary files (.bed, .bim and .fam), a data frame containing the following:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>CHR</code></td>
+<td>
+<p>Chromosome, copied from .bim file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SNP</code></td>
+<td>
+<p>SNP name, as supplied in <code>snps</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cM</code></td>
+<td>
+<p>genetic location in centi Morgans, copied from .bim file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>POS</code></td>
+<td>
+<p>physical position in base pairs, copied from .bim file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A1</code></td>
+<td>
+<p>allele 1, copied from .bim file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A2</code></td>
+<td>
+<p>allele 2, copied from .bim file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>number of individuals with non-missing genotypes for each SNP.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>AF</code></td>
+<td>
+<p>effect allele frequency for each SNP.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BETA</code></td>
+<td>
+<p>effect size estimate for each SNP from the GLMM under the alternative hypothesis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SE</code></td>
+<td>
+<p>standard error of the effect size estimate for each SNP.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PVAL</code></td>
+<td>
+<p>Wald test p-value for each SNP.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>converged</code></td>
+<td>
+<p>a logical indicator for convergence for each SNP.</p>
+</td>
+</tr>
+</table>
+<p>if <code>infile</code> is a GDS file (.gds), a data frame containing the following:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>SNP</code></td>
+<td>
+<p>SNP name, as supplied in <code>snps</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CHR</code></td>
+<td>
+<p>Chromosome, copied from .gds file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>POS</code></td>
+<td>
+<p>physical position in base pairs, copied from .gds file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>REF</code></td>
+<td>
+<p>reference allele, copied from .gds file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ALT</code></td>
+<td>
+<p>alternate allele, copied from .gds file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>number of individuals with non-missing genotypes for each SNP.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>AF</code></td>
+<td>
+<p>ALT allele frequency for each SNP.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BETA</code></td>
+<td>
+<p>effect size estimate for each SNP from the GLMM under the alternative hypothesis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SE</code></td>
+<td>
+<p>standard error of the effect size estimate for each SNP.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PVAL</code></td>
+<td>
+<p>Wald test p-value for each SNP.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>converged</code></td>
+<td>
+<p>a logical indicator for convergence for each SNP.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Han Chen, Matthew P. Conomos
+</p>
+
+
+<h3>References</h3>
+
+<p>Brent, R.P. (1973) "Chapter 4: An Algorithm with Guaranteed Convergence for Finding a Zero of a Function", Algorithms for Minimization without Derivatives, Englewood Cliffs, NJ: Prentice-Hall, ISBN 0-13-022335-2.
+</p>
+<p>Breslow, N.E. and Clayton, D.G. (1993) Approximate Inference in Generalized Linear Mixed Models. Journal of the American Statistical Association 88, 9-25.
+</p>
+<p>Chen, H., Wang, C., Conomos, M.P., Stilp, A.M., Li, Z., Sofer, T., Szpiro, A.A., Chen, W., Brehm, J.M., Celedón, J.C., Redline, S., Papanicolaou, G.J., Thornton, T.A., Laurie, C.C., Rice, K. and Lin, X. (2016) Control forpopulation structure and relatedness for binary traits in genetic association studies via logistic mixed models. The American Journal of Human Genetics 98, 653-666.
+</p>
+<p>Gilmour, A.R., Thompson, R. and Cullis, B.R. (1995) Average Information REML: An Efficient Algorithm for Variance Parameter Estimation in Linear Mixed Models. Biometrics 51, 1440-1450.
+</p>
+<p>Nelder, J.A. and Mead, R. (1965) A simplex algorithm for function minimization. Computer Journal 7, 308-313.
+</p>
+<p>Yang, J., Lee, S.H., Goddard, M.E. and Visscher, P.M. (2011) GCTA: A Tool for Genome-wide Complex Trait Analysis. The American Journal of Human Genetics 88, 76-82.
+</p>
+<p>Zhou, X. and Stephens, M. (2012) Genome-wide efficient mixed-model analysis for association studies. Nature Genetics 44, 821-824.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>glmmkin</code>, <code>glmm.score</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(example)
+attach(example)
+snps &lt;- c("SNP10", "SNP25", "SNP1", "SNP0")
+plinkfiles &lt;- strsplit(system.file("extdata", "geno.bed", package = "GMMAT"), 
+       ".bed", fixed = TRUE)[[1]]
+glmm.wald(disease ~ age + sex, data = pheno, kins = GRM, id = "id",
+	family = binomial(link = "logit"), infile = plinkfiles, snps = snps) 
+if(requireNamespace("SeqArray", quietly = TRUE) &amp;&amp; requireNamespace("SeqVarTools",
+        quietly = TRUE)) {
+	infile &lt;- system.file("extdata", "geno.gds", package = "GMMAT")
+	glmm.wald(disease ~ age + sex, data = pheno, kins = GRM, id = "id",
+	        family = binomial(link = "logit"), infile = infile, snps = snps)
+}
+infile &lt;- system.file("extdata", "geno.txt", package = "GMMAT")
+glmm.wald(disease ~ age + sex, data = pheno, kins = GRM, id = "id",
+	family = binomial(link = "logit"), infile = infile, snps = snps, 
+	infile.nrow.skip = 5, infile.ncol.skip = 3, infile.ncol.print = 1:3, 
+	infile.header.print = c("SNP", "Allele1", "Allele2"))
+
+</code></pre>
+
+
+</div>

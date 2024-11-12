@@ -1,0 +1,211 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>survfit2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create survival curves</h2>
+
+<h3>Description</h3>
+
+<p>Simple wrapper for <code>survival::survfit()</code> except the environment is also
+included in the returned object.
+</p>
+<p>Use this function with all other functions in this package to ensure
+all elements are calculable.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">survfit2(formula, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+
+<p>a formula object, which must have a 
+<code>Surv</code> object as the  
+response on the left of the <code>~</code> operator and, if desired, terms  
+separated by + operators on the right. 
+One of the terms may be a <code>strata</code> object.
+For a single survival curve the right hand side should be <code>~ 1</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Arguments passed on to <code>survival::survfit.formula</code>
+</p>
+
+<dl>
+<dt><code>data</code></dt>
+<dd>
+<p>a data frame in which to interpret the variables named in the formula, 
+<code>subset</code> and <code>weights</code> arguments. 
+</p>
+</dd>
+<dt><code>weights</code></dt>
+<dd>
+<p>The weights must be nonnegative and it is strongly recommended that  
+they be strictly positive, since zero weights are ambiguous, compared 
+to use of the <code>subset</code> argument.
+</p>
+</dd>
+<dt><code>subset</code></dt>
+<dd>
+<p>expression saying that only a subset of the rows of the data 
+should be used in the fit. 
+</p>
+</dd>
+<dt><code>na.action</code></dt>
+<dd>
+<p>a missing-data filter function, applied to the model frame, after any 
+<code>subset</code> argument has been used. 
+Default is <code>options()$na.action</code>. 
+</p>
+</dd>
+<dt><code>stype</code></dt>
+<dd>
+<p>the method to be used estimation of the survival curve:
+1 = direct,  2 = exp(cumulative hazard). </p>
+</dd>
+<dt><code>ctype</code></dt>
+<dd>
+<p>the method to be used for estimation of the cumulative
+hazard: 1 = Nelson-Aalen formula, 2 = Fleming-Harrington correction
+for tied events.</p>
+</dd>
+<dt><code>id</code></dt>
+<dd>
+<p>identifies individual subjects, when a given person can have multiple
+lines of data.
+</p>
+</dd>
+<dt><code>cluster</code></dt>
+<dd>
+<p>used to group observations for the infinitesimal
+jackknife variance estimate, defaults to the value of id.</p>
+</dd>
+<dt><code>robust</code></dt>
+<dd>
+<p>logical, should the function compute a robust variance.
+For multi-state survival curves or interval censored data
+this is true by default.
+For single state data see details, below.</p>
+</dd>
+<dt><code>istate</code></dt>
+<dd>
+<p>for multi-state models, identifies the initial state of
+each subject or observation.  This also forces <code>time0 =TRUE</code>.</p>
+</dd>
+<dt><code>timefix</code></dt>
+<dd>
+<p>process times through the <code>aeqSurv</code> function to
+eliminate potential roundoff issues.</p>
+</dd>
+<dt><code>etype</code></dt>
+<dd>
+<p>a variable giving the type of event.  This has been superseded by
+multi-state Surv objects and is deprecated; see example below.
+</p>
+</dd>
+<dt><code>model</code></dt>
+<dd>
+<p>include a copy of the model frame in the output</p>
+</dd>
+<dt><code>error</code></dt>
+<dd>
+<p>this argument is no longer used</p>
+</dd>
+<dt><code>entry</code></dt>
+<dd>
+<p>if TRUE, the output will contain <code>n.enter</code> which is
+the number of observations entering the risk set at any time; extra
+rows of output are created, if needed, for each unique entry time.
+Only applicable if there is an <code>id</code> statement.
+</p>
+</dd>
+<dt><code>time0</code></dt>
+<dd>
+<p>if TRUE, the output will include estimates at the
+starting point of the curve or ‘time 0’.  See discussion below.
+</p>
+</dd>
+</dl>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>survfit2 object
+</p>
+
+
+<h3>
+<code>survfit2()</code> vs <code>survfit()</code>
+</h3>
+
+<p>Both functions have identical inputs, so why do we need <code>survfit2()</code>?
+</p>
+<p>The <em>only</em> difference between <code>survfit2()</code> and <code>survival::survfit()</code> is that the
+former tracks the environment from which the call to the function was made.
+</p>
+<p>The definition of <code>survfit2()</code> is unremarkably simple:
+</p>
+<div class="sourceCode r"><pre>survfit2 &lt;- function(formula, ...) {
+  # construct survfit object
+  survfit &lt;- survival::survfit(formula, ...)
+
+  # add the environment
+  survfit$.Environment = &lt;calling environment&gt;
+
+  # add class and return
+  class(survfit) &lt;- c("survfit2", "survfit")
+  survfit
+}
+</pre></div>
+<p>The environment is needed to ensure the survfit call can be accurately
+reconstructed or parsed at any point post estimation.
+The call is parsed when p-values are reported and when labels are created.
+For example, the raw variable names appear in the output of a stratified
+<code>survfit()</code> result, e.g. <code>"sex=Female"</code>. When using <code>survfit2()</code>, the
+originating data frame and formula may be parsed and the raw variable
+names removed.
+</p>
+<p>Most functions in the package work with both <code>survfit2()</code> and <code>survfit()</code>;
+however, the output will be styled in a preferable format with <code>survfit2()</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>survival::survfit.formula()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># With `survfit()`
+fit &lt;- survfit(Surv(time, status) ~ sex, data = df_lung)
+fit
+
+# With `survfit2()`
+fit2 &lt;- survfit2(Surv(time, status) ~ sex, data = df_lung)
+fit2
+
+# Consistent behavior with other functions
+summary(fit, times = c(10, 20))
+
+summary(fit2, times = c(10, 20))
+</code></pre>
+
+
+</div>

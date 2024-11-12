@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>MPG</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Extract a minimum planar graph (MPG) model from a landscape resistance surface</h2>
+
+<h3>Description</h3>
+
+<p>Extracts a minimum planar graph (MPG) and is also the first step
+in grains of connectivity (GOC) modelling.
+Both patch-based and lattice MPGs can be extracted.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">MPG(cost, patch, ...)
+
+## S4 method for signature 'RasterLayer,RasterLayer'
+MPG(cost, patch, ...)
+
+## S4 method for signature 'RasterLayer,numeric'
+MPG(cost, patch, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>cost</code></td>
+<td>
+<p>A <code>RasterLayer</code> giving a landscape resistance surface,
+where the values of each raster cell are proportional to the
+resistance to movement, dispersal, or gene flow for an organism
+in the landscape feature they represent.
+Missing values <code>NA</code> are acceptable (but see below).
+Negative values are not.
+To extract an MPG with Euclidean links (i.e., and not least-cost
+path links) set <code>cost[] &lt;- 1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>patch</code></td>
+<td>
+<p>A raster of class <code>RasterLayer</code> for a patch-based analysis
+OR an integer for a lattice analysis.
+If a raster is given it must be of the same extent, origin and
+projection as <code>cost</code> and be binary, without missing values,
+where patches=1 and non-patches=0.
+For lattice analyses, an integer gives the spacing in raster
+cells between focal points in the lattice.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments (not used).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Use this function to create a minimum planar graph (MPG) that can be
+further analyzed using <code>igraph()</code> routines.
+It is also the first step in grains of connectivity (GOC) modelling.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>mpg()</code> object.
+</p>
+
+
+<h3>Note</h3>
+
+<p>Researchers should consider whether the use of a patch-based MPG or a lattice
+MPG model is appropriate based on the patch-dependency of the organism under study.
+Patch-based models make most sense when animals are restricted to, or dependent on,
+a resource patch. Lattice models can be used as a generalized and functional
+approach to scaling resistance surfaces.
+</p>
+<p>Rasters should be projected and not in geographic coordinates (i.e. <code>projection(cost)</code>
+should not contain <code>"+proj=longlat"</code>) or the function will issue a warning.
+In unprojected cases consider using <code>projectRaster()</code> to change to an appropriate
+coordinate system for the location and extent of interest that balances both distance and areal
+accuracy. See <a href="https://www.spatialreference.org/">https://www.spatialreference.org/</a> for location-specific suggestions.
+Use of geographic coordinates will result in inaccurate areal and distance measurements,
+rendering the models themselves inaccurate.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Paul Galpern, Sam Doctolero, Alex Chubaty
+</p>
+
+
+<h3>References</h3>
+
+<p>Fall, A., M.-J. Fortin, M. Manseau, D. O'Brien. (2007) Spatial graphs:
+Principles and applications for habitat connectivity. Ecosystems 10:448:461.
+</p>
+<p>Galpern, P., M. Manseau. (2013a) Finding the functional grain: comparing methods
+for scaling resistance surfaces. Landscape Ecology 28:1269-1291.
+</p>
+<p>Galpern, P., M. Manseau. (2013b) Modelling the influence of landscape connectivity
+on animal distribution: a functional grain approach. Ecography 36:1004-1016.
+</p>
+<p>Galpern, P., M. Manseau, A. Fall. (2011) Patch-based graphs of landscape connectivity:
+a guide to construction, analysis, and application for conservation.
+Biological Conservation 144:44-55.
+</p>
+<p>Galpern, P., M. Manseau, P.J. Wilson. (2012) Grains of connectivity: analysis
+at multiple spatial scales in landscape genetics. Molecular Ecology 21:3996-4009.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code style="white-space: pre;">⁠[GOC], [threshold]⁠</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Load raster landscape
+tiny &lt;- raster::raster(system.file("extdata/tiny.asc", package = "grainscape"))
+
+## Create a resistance surface from a raster using an is-becomes reclassification
+tinyCost &lt;- raster::reclassify(tiny, rcl = cbind(c(1, 2, 3, 4), c(1, 5, 10, 12)))
+## Produce a patch-based MPG where patches are resistance features=1
+tinyPatchMPG &lt;- MPG(cost = tinyCost, patch = tinyCost == 1)
+## Explore the graph structure and node/link attributes
+graphdf(tinyPatchMPG)
+
+## Find the mean patch area (see igraph manual for use of V() and E())
+mean(igraph::V(tinyPatchMPG@mpg)$patchArea)
+
+## Quick visualization of the MPG
+if (interactive())
+  plot(tinyPatchMPG, col = c("grey", "black"), legend = FALSE)
+
+## Additional graph extraction scenarios
+## Produce a lattice MPG where focal points are spaced 10 cells apart
+tinyLatticeMPG &lt;- MPG(cost = tinyCost, patch = 10)
+if (interactive())
+  plot(tinyLatticeMPG)
+</code></pre>
+
+
+</div>

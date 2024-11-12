@@ -1,0 +1,417 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GeoSimapprox</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fast simulation of Gaussian and non Gaussian Random Fields.</h2>
+
+<h3>Description</h3>
+
+<p>Simulation of Gaussian and some non Gaussian spatial, spatio-temporal and spatial bivariate 
+random fields using approximate methods of simulation (circulant embeeding and turning bands) (see Examples). 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GeoSimapprox(coordx, coordy=NULL, coordt=NULL, 
+coordx_dyn=NULL,corrmodel, distance="Eucl",GPU=NULL, 
+grid=FALSE,local=c(1,1),max.ext=1,
+method="TB", L=2000,model='Gaussian',
+n=1,param,anisopars=NULL, radius=6371,X=NULL,spobj=NULL,nrep=1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>coordx</code></td>
+<td>
+<p>A numeric (<code class="reqn">d \times 2</code>)-matrix (where
+<code>d</code> is the number of spatial sites) giving 2-dimensions of spatial coordinates or a numeric <code class="reqn">d</code>-dimensional vector giving
+1-dimension of spatial coordinates.
+Coordinates on a sphere for a  fixed radius <code>radius</code> 
+are passed in lon/lat format expressed in decimal degrees.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordy</code></td>
+<td>
+<p>A numeric vector giving 1-dimension of
+spatial coordinates; <code>coordy</code> is interpreted only if <code>coordx</code> is a numeric
+vector or <code>grid=TRUE</code> otherwise it will be ignored. Optional argument, the default is <code>NULL</code> then <code>coordx</code> is expected to
+be numeric a (<code class="reqn">d \times 2</code>)-matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordt</code></td>
+<td>
+<p>A numeric vector giving 1-dimension of
+temporal coordinates.  Optional argument, the default is <code>NULL</code>
+then a spatial RF is expected.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordx_dyn</code></td>
+<td>
+<p>A list of <code class="reqn">m</code> numeric (<code class="reqn">d_t \times 2</code>)-matrices
+containing dynamical (in time) spatial coordinates. Optional argument, the default is <code>NULL</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corrmodel</code></td>
+<td>
+<p>String; the name of a correlation model, for the
+description see the Section <b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distance</code></td>
+<td>
+<p>String; the name of the spatial distance. The default
+is <code>Eucl</code>, the euclidean distance. See the Section
+<b>Details</b>  of <code>GeoFit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GPU</code></td>
+<td>
+<p>Numeric; if <code>NULL</code> (the default) 
+no GPU computation is performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+<p>Logical; if <code>FALSE</code> (the default) the data
+are interpreted as spatial or spatial-temporal realisations on a set
+of non-equispaced spatial sites (irregular grid).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>local</code></td>
+<td>
+<p>Numeric; number of local work-items of the GPU</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.ext</code></td>
+<td>
+<p>Numeric; The maximum extension of the simulation window (for the spatial CE method).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>String; the type of approximation method. Default is <code>TB</code>  that is the 
+turning band method. The other possible choice is 
+and <code>CE</code> (circular embeeding).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+<p>Numeric; the number of lines in the  turning band method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>String; the type of RF and therefore the densities associated to the likelihood
+objects. <code>Gaussian</code> is the default, see the Section
+<b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Numeric; the number of trials for binomial RFs. The number of successes in the negative Binomial RFs. Default is <code class="reqn">1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>A list of parameter values required in the
+simulation procedure of RFs, see <b>Examples</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>anisopars</code></td>
+<td>
+<p> A list of two elements "angle" and "ratio" i.e. the anisotropy angle and the anisotropy ratio, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>radius</code></td>
+<td>
+<p>Numeric; a value indicating  the radius of the sphere when using the great 
+circle distance. Default value is the radius of the earth in Km (i.e. 6371)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Numeric; Matrix of space-time covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spobj</code></td>
+<td>
+<p>An object of class sp or spacetime</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nrep</code></td>
+<td>
+<p>Numeric; Numbers of indipendent replicates.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns an object of class <code>GeoSim</code>.
+An object of class <code>GeoSim</code> is a list containing
+at most the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>bivariate</code></td>
+<td>
+<p>Logical:<code>TRUE</code> if the Gaussian RF is bivariate, otherwise  <code>FALSE</code>;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordx</code></td>
+<td>
+<p>A <code class="reqn">d</code>-dimensional vector of spatial coordinates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordy</code></td>
+<td>
+<p>A <code class="reqn">d</code>-dimensional vector of spatial coordinates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordt</code></td>
+<td>
+<p>A <code class="reqn">t</code>-dimensional vector of temporal coordinates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordx_dyn</code></td>
+<td>
+<p>A  list of dynamical (in time) spatial coordinates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corrmodel</code></td>
+<td>
+<p>The correlation model; see <code>GeoCovmatrix</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The vector or matrix or array of data, see
+<code>GeoFit</code>;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distance</code></td>
+<td>
+<p>The type of spatial distance;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>The method of simulation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>The type of RF, see <code>GeoFit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The number of trial for Binomial RFs;the number of successes in a negative Binomial RFs;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numcoord</code></td>
+<td>
+<p>The number of spatial coordinates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numtime</code></td>
+<td>
+<p>The number the temporal realisations of the RF;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>The vector of  parameters' estimates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>radius</code></td>
+<td>
+<p>The radius of the sphere if coordinates are passed in lon/lat format;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spacetime</code></td>
+<td>
+<p><code>TRUE</code> if spatio-temporal and <code>FALSE</code> if
+spatial RF;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nrep</code></td>
+<td>
+<p>The number of indipendent replicates;</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Moreno Bevilacqua, <a href="mailto:moreno.bevilacqua89@gmail.com">moreno.bevilacqua89@gmail.com</a>,<a href="https://sites.google.com/view/moreno-bevilacqua/home">https://sites.google.com/view/moreno-bevilacqua/home</a>,
+Víctor Morales Oñate, <a href="mailto:victor.morales@uv.cl">victor.morales@uv.cl</a>, <a href="https://sites.google.com/site/moralesonatevictor/">https://sites.google.com/site/moralesonatevictor/</a>,
+Christian", Caamaño-Carrillo, <a href="mailto:chcaaman@ubiobio.cl">chcaaman@ubiobio.cl</a>,<a href="https://www.researchgate.net/profile/Christian-Caamano">https://www.researchgate.net/profile/Christian-Caamano</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>T. Gneiting, H. Sevcikova, D. B. Percival, M. Schlather and Y. Jiang (2006)
+Fast and Exact Simulation of Large Gaussian Lattice Systems in R2: Exploring the Limits
+<em>Journal of Computational and Graphical Statistics</em> 15 (3)
+</p>
+<p>D. Arroyo, X. Emery (2020) An R Implementation of a Continuous Spectral Algorithm for Simulating Vector Gaussian Random Fields in Euclidean Spaces <em>ACM Transactions on Mathematical Software</em>  47(1)
+</p>
+<p>J. Guiness (2018) Permutation and Grouping Methods for Sharpening Gaussian Process Approximations <em>Technometrics</em> 60(4) 415-429.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(GeoModels)
+
+
+################################################################
+###
+### Example 1. Simulation of a large spatial Gaussian RF 
+###            with  Matern  covariance model
+###            using circulant embeeding method
+###            It works only for regular grid
+###            for any typpe of correlation model
+###############################################################
+set.seed(68)
+x = seq(0,1,0.006)
+y = seq(0,1,0.006)
+param=list(smooth=1.5,mean=0,sill=1,scale=0.2/3,nugget=0)
+# Simulation of a spatial Gaussian RF with Matern correlation function
+data1 &lt;- GeoSimapprox(coordx=x,coordy=y, grid=TRUE,corrmodel="Matern", model="Gaussian",
+                      method="CE",param=param)$data
+fields::image.plot( matrix(data1, length(x), length(y), byrow = TRUE) )
+
+################################################################
+###
+### Example 2. Simulation of a large spatial Gaussian RF 
+###            with  Matern  covariance model
+###            using Turning band method
+###            It works for (ir)regular grid
+###            for the Matern model
+###############################################################
+set.seed(68)
+x = runif(8000)
+y = runif(8000)
+coords=cbind(x,y)
+param=list(smooth=0.5,mean=0,sill=1,scale=0.1,nugget=0)
+# Simulation of a spatial Gaussian RF with Matern correlation function
+data1 &lt;- GeoSimapprox(coords, corrmodel="Matern", model="Gaussian",
+                      method="TB",param=param)$data
+quilt.plot(coords,data1)
+
+
+
+################################################################
+###
+### Example 3. Simulation of a large spacetime Gaussian RF 
+###            with separable matern  covariance model
+###            using  Circular embeeding method
+###            It works  for (large) regular time grid
+###############################################################
+set.seed(68)
+coordt &lt;- (0:100)
+coords &lt;- cbind( runif(100, 0 ,1), runif(100, 0 ,1))
+param &lt;- list(mean  = 0, sill = 1, nugget = 0.25,
+              scale_s = 0.05, scale_t = 2, 
+              smooth_s = 0.5, smooth_t = 0.5)
+# Simulation of a spatial Gaussian RF with Matern correlation function
+param&lt;-list(nugget=0,mean=0,scale_s=0.2/3,scale_t=2/3,sill=1,smooth_s=0.5,smooth_t=0.5)
+
+data &lt;- GeoSimapprox(coordx=coords, coordt=coordt, corrmodel="Matern_Matern",
+                     model="Gaussian",method="CE",param=param)$data
+dim(data)
+
+################################################################
+###
+### Example 4. Simulation of a large spacetime Gaussian RF 
+###            with separable GenWend covariance model
+###            using  Circular embeeding method in time
+###############################################################
+set.seed(68)
+# Simulation of a spatial Gaussian RF with Matern correlation function
+param&lt;-list(nugget=0,mean=0,scale_s=0.2,scale_t=3,sill=1,
+             smooth_s=0,smooth_t=0, power2_s=4,power2_t=4)
+
+data &lt;- GeoSimapprox(coordx=coords, coordt=coordt, corrmodel="GenWend_GenWend",
+                     model="Gaussian",method="CE",param=param)$data
+dim(data)
+
+
+################################################################
+###
+### Example 6. Simulation of a large bivariate Gaussian RF
+### with  bivariate Matern correlation model
+###
+###############################################################
+
+# Define the spatial-coordinates of the points:
+#x &lt;- runif(20000, 0, 2)
+#y &lt;- runif(20000, 0, 2)
+#coords &lt;- cbind(x,y)
+
+# Simulation of a bivariate spatial Gaussian RF:
+# with a  Bivariate Matern
+#set.seed(12)
+#param=list(mean_1=4,mean_2=2,smooth_1=0.5,smooth_2=0.5,smooth_12=0.5,
+#           scale_1=0.12,scale_2=0.1,scale_12=0.15,
+#           sill_1=1,sill_2=1,nugget_1=0,nugget_2=0,pcol=0.5)
+#data &lt;- GeoSimapprox(coordx=coords,corrmodel="Bi_matern",
+#              param=param,method="TB",L=1000)$data
+#opar=par(no.readonly = TRUE)
+#par(mfrow=c(1,2))
+#quilt.plot(coords,data[1,],col=terrain.colors(100),main="1",xlab="",ylab="")
+#quilt.plot(coords,data[2,],col=terrain.colors(100),main="2",xlab="",ylab="")
+
+
+
+
+
+
+
+</code></pre>
+
+
+</div>

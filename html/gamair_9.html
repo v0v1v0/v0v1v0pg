@@ -1,0 +1,102 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>CanWeather</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Canadian Weather data</h2>
+
+<h3>Description</h3>
+
+<p>Data on temperature throughout the year at 35 Canadian locations, originally form the <code>fda</code> package.  
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">data(canWeather)
+</code></pre>
+
+
+<h3>Format</h3>
+
+<p>The <code>CanWeather</code> data frame has the following 5 columns
+</p>
+
+<dl>
+<dt>time</dt>
+<dd>
+<p>Day of year from 1 to 365.</p>
+</dd>
+<dt>T</dt>
+<dd>
+<p>Mean temperature for that day in centigrade.</p>
+</dd>
+<dt>region</dt>
+<dd>
+<p>A four level factor classifiying locations as <code>Arctic</code>, <code>Atlantic</code>, <code>Continental</code> or <code>Pacific</code>.</p>
+</dd>
+<dt>latitude</dt>
+<dd>
+<p>Degrees north of the equator.</p>
+</dd>
+<dt>place</dt>
+<dd>
+<p>A factor with 35 levels: the names of each locagtion.</p>
+</dd>
+</dl>
+<h3>Details</h3>
+
+<p>The data provide quite a nice application of function on scalar regression. Note that the data are for a single year, so will not generally be cyclic.  
+</p>
+
+
+<h3>Source</h3>
+
+<p>Data are from the <code>fda</code> package. 
+</p>
+<p><a href="https://cran.r-project.org/package=fda">https://cran.r-project.org/package=fda</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Ramsay J.O. and B.W. Silverman (2006) Functional data analysis (2nd ed). Springer
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">require(gamair);require(mgcv)
+data(canWeather)
+reg &lt;- unique(CanWeather$region)
+place &lt;- unique(CanWeather$place)
+col &lt;- 1:4;names(col) &lt;- reg
+for (k in 1:35) {
+  if (k==1) plot(1:365,CanWeather$T[CanWeather$place==place[k]],
+            ylim=range(CanWeather$T),type="l",
+	    col=col[CanWeather$region],xlab="day",ylab="temperature") else
+	    lines(1:365,CanWeather$T[CanWeather$place==place[k]],
+            col=col[CanWeather$region[CanWeather$place==place[k]]])
+}
+
+## Function on scalar regression.
+## T(t) = f_r(t) + f(t)*latitude + e(t)
+## where e(t) is AR1 Gaussian and f_r is
+## a smooth for region r.
+## 'rho' chosen to minimize AIC or (-ve) REML score. 
+
+b &lt;- bam(T ~ region + s(time,k=20,bs="cr",by=region) +
+         s(time,k=40,bs="cr",by=latitude),
+         data=CanWeather,AR.start=time==1,rho=.97)
+
+## Note: 'discrete==TRUE' option even faster.
+
+par(mfrow=c(2,3))
+plot(b,scale=0,scheme=1)
+acf(b$std)
+
+</code></pre>
+
+
+</div>

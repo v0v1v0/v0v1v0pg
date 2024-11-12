@@ -1,0 +1,199 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GeoVarestbootstrap</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Update a <code>GeoFit</code> object   using parametric bootstrap for std error estimation</h2>
+
+<h3>Description</h3>
+
+<p>The procedure update a <code>GeoFit</code> object  computing stderr estimation, confidence intervals
+and p-values  using parametric bootstrap.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GeoVarestbootstrap(fit,K=100,sparse=FALSE, GPU=NULL,local=c(1,1),
+  optimizer=NULL, lower=NULL, upper=NULL, 
+  method="cholesky",alpha=0.95, L=3000,parallel=FALSE,ncores=NULL)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>A fitted object obtained from the
+<code>GeoFit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>The number of simulations in the parametric bootstrap.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sparse</code></td>
+<td>
+<p>Logical; if <code>TRUE</code> then  cholesky decomposition is performed
+using sparse matrices algorithms (spam packake).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GPU</code></td>
+<td>
+<p>Numeric; if <code>NULL</code> (the default) 
+no OpenCL computation is performed. The user can choose the device to be used. Use <code>DeviceInfo()</code> function to see available devices, only double precision devices are allowed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>local</code></td>
+<td>
+<p>Numeric; number of local work-items of the OpenCL setup</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimizer</code></td>
+<td>
+<p>The type of optimization algorithm (see  <code>GeoFit</code> for details). If NULL then the optimization algorithm of 
+the object fit is chosen.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>An optional named list giving the values  for the lower bound of the space parameter
+when the optimizer is  <code>L-BFGS-B</code> or <code>nlminb</code>  or <code>optimize</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>An optional named list giving the values  for the upper bound of the space parameter
+when the optimizer is  <code>L-BFGS-B</code> or <code>nlminb</code>  or <code>optimize</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>String; The method of simulation. Default is <code>cholesky</code>. For large data set three options are  <code>TB</code> or <code>CE</code> (see the  <code>GeoSimapprox</code>) function. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p> Numeric; The level of the confidence interval. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+<p>Numeric; the number of lines in the  turning band method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>Logical; if <code>TRUE</code> then 
+the estimation step is  parallelized 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Numeric; number of cores involved in parallelization.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p> The function update a <code>GeoFit</code> object  estimating stderr estimation 
+and confidence interval using parametric bootstrap.</p>
+
+
+<h3>Value</h3>
+
+  
+<p>Returns an (updated) object of class <code>GeoFit</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Moreno Bevilacqua, <a href="mailto:moreno.bevilacqua89@gmail.com">moreno.bevilacqua89@gmail.com</a>,<a href="https://sites.google.com/view/moreno-bevilacqua/home">https://sites.google.com/view/moreno-bevilacqua/home</a>,
+Víctor Morales Oñate, <a href="mailto:victor.morales@uv.cl">victor.morales@uv.cl</a>, <a href="https://sites.google.com/site/moralesonatevictor/">https://sites.google.com/site/moralesonatevictor/</a>,
+Christian", Caamaño-Carrillo, <a href="mailto:chcaaman@ubiobio.cl">chcaaman@ubiobio.cl</a>,<a href="https://www.researchgate.net/profile/Christian-Caamano">https://www.researchgate.net/profile/Christian-Caamano</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GeoFit</code>.</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+library(GeoModels)
+
+################################################################
+###
+### Example 1. Test on the parameter
+### of a regression model using conditional composite likelihood
+###
+###############################################################
+set.seed(342)
+model="Gaussian" 
+# Define the spatial-coordinates of the points:
+NN=3500
+x = runif(NN, 0, 1)
+y = runif(NN, 0, 1)
+coords = cbind(x,y)
+# Parameters
+mean=1; mean1=-1.25;  # regression parameters
+ sill=1 # variance
+
+# matrix covariates
+X=cbind(rep(1,nrow(coords)),runif(nrow(coords)))
+
+# model correlation 
+corrmodel="Matern"
+smooth=0.5;scale=0.1; nugget=0;
+
+# simulation
+param=list(smooth=smooth,mean=mean,mean1=mean1,
+              sill=sill,scale=scale,nugget=nugget)
+data = GeoSim(coordx=coords, corrmodel=corrmodel,
+                model=model, param=param,X=X)$data
+
+I=Inf
+
+fixed=list(nugget=nugget,smooth=smooth)
+start=list(mean=mean,mean1=mean1,scale=scale,sill=sill)
+
+lower=list(mean=-I,mean1=-I,scale=0,sill=0)
+upper=list(mean=I,mean1=I,scale=I,sill=I)
+# Maximum pairwise composite-likelihood fitting of the RF:
+fit = GeoFit(data=data,coordx=coords,corrmodel=corrmodel, model=model,
+              likelihood="Conditional",type="Pairwise",sensitivity=TRUE,
+                   lower=lower,upper=upper,neighb=3,
+                   optimizer="nlminb",X=X,
+                    start=start,fixed=fixed)
+
+unlist(fit$param)
+
+
+#fit_update=GeoVarestbootstrap(fit,K=100,parallel=TRUE)
+#fit_update$stderr
+#fit_update$conf.int
+#fit_update$pvalues
+
+</code></pre>
+
+
+</div>

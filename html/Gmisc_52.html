@@ -1,0 +1,208 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mergeDesc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prepares a matrix for <code>htmlTable</code> from a list</h2>
+
+<h3>Description</h3>
+
+<p>By putting all the output from the <code>getDescriptionStatsBy</code>
+into a list, naming each element that we want in an <code>rgroup</code> we can
+automatically merge everything and create an object ready for the
+<code>htmlTable</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mergeDesc(..., htmlTable_args = list())
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>One or more elements coming from <code>getDescriptionStatsBy</code>.
+You can also provide pure output from the <code>getDescriptionStatsBy</code> function
+and have the function merge this together with the <code>...</code> argument.
+<em>Note</em> that all elements must have the same <code>by</code> argument or you
+will not be able to merge it into a list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>htmlTable_args</code></td>
+<td>
+<p>Any arguments that should be passed to
+<code>htmlTable</code> function. The default is to remove
+any css formatting for the <code>rgroup</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>matrix</code> Returns a matrix object of class descList
+</p>
+
+
+<h3>The <code>rgroup</code> value</h3>
+
+<p>The value for the <code>rgroup</code> is by default the name of the list element. If you have
+passed a list without a name for that particular element or if you have passed a
+matrix it will look for a label set by the <span class="pkg">Hmisc</span><code>::label</code> function.
+For those elements that have only one row no <code>rgroup</code> is set, and the naming sequence
+is the same as above but with an additional <code>rownames</code> if the previous
+two turn out empty. All this behavior is exemplified in the example.
+</p>
+<p>The <code>rgroup</code> value can be overridden by simply specifying a custom <code>rgroup</code> when
+calling the <code>htmlTable</code> function.
+</p>
+
+
+<h3>The <code>colnames</code> of the matrix</h3>
+
+<p>The function chooses the <code>colnames</code> from the first element in
+the <code>tlist</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(magrittr)
+library(dplyr)
+library(htmlTable)
+
+data(mtcars)
+mtcars %&lt;&gt;%
+  mutate(am = factor(am, levels = 0:1, labels = c("Automatic", "Manual")),
+         vs = factor(vs, levels = 0:1, labels = c("V-shaped", "straight")),
+         drat_prop = drat &gt; median(drat),
+         drat_prop = factor(drat_prop,
+                            levels = c(FALSE, TRUE),
+                            labels = c("High ratio", "Low ratio")),
+         carb_prop = carb &gt; 2,
+         carb_prop = factor(carb_prop,
+                            levels = c(FALSE, TRUE),
+                            labels = c("&amp;le; 2", "&amp;gt; 2")),
+         across(c(gear, carb, cyl), factor))
+
+# A simple bare-bone example
+mtcars %&gt;%
+  getDescriptionStatsBy(`Miles per gallon` = mpg,
+                        Weight = wt,
+                        `Carborators &amp;le; 2` = carb_prop,
+                        by = am) %&gt;%
+  htmlTable(caption  = "Basic continuous stats from the mtcars dataset")
+invisible(readline(prompt = "Press [enter] to continue"))
+
+# For labeling &amp; units we use set_column_labels/set_column_unit that use
+# the Hmisc package annotation functions
+mtcars %&lt;&gt;%
+  set_column_labels(am = "Transmission",
+                    mpg = "Gas",
+                    wt = "Weight",
+                    gear = "Gears",
+                    disp = "Displacement",
+                    vs = "Engine type",
+                    drat_prop = "Rear axel ratio",
+                    carb_prop = "Carburetors") %&gt;%
+  set_column_units(mpg = "Miles/(US) gallon",
+                   wt = "10&lt;sup&gt;3&lt;/sup&gt; lbs",
+                   disp = "cu.in.")
+
+mtcars %&gt;%
+  getDescriptionStatsBy(mpg,
+                        wt,
+                        `Gear&amp;dagger;` = gear,
+                        drat_prop,
+                        carb_prop,
+                        vs,
+                        by = am,
+                        header_count = TRUE,
+                        use_units = TRUE,
+                        show_all_values = TRUE)  %&gt;%
+  addHtmlTableStyle(pos.caption = "bottom") %&gt;%
+  htmlTable(caption  = "Stats from the mtcars dataset",
+            tfoot = "&amp;dagger; Number of forward gears")
+invisible(readline(prompt = "Press [enter] to continue"))
+
+# Using the default parameter we can
+mtcars %&gt;%
+  getDescriptionStatsBy(mpg,
+                        wt,
+                        `Gear&amp;dagger;` = gear,
+                        drat_prop,
+                        carb_prop,
+                        vs,
+                        by = am,
+                        header_count = TRUE,
+                        use_units = TRUE,
+                        default_ref = c(drat_prop = "Low ratio",
+                                        carb_prop = "&amp;gt; 2"))  %&gt;%
+  addHtmlTableStyle(pos.caption = "bottom") %&gt;%
+  htmlTable(caption  = "Stats from the mtcars dataset",
+            tfoot = "&amp;dagger; Number of forward gears")
+invisible(readline(prompt = "Press [enter] to continue"))
+
+# We can also use lists
+tll &lt;- list()
+tll[["Gear (3 to 5)"]] &lt;- getDescriptionStatsBy(mtcars$gear, mtcars$am)
+tll &lt;- c(tll,
+         list(getDescriptionStatsBy(mtcars$disp, mtcars$am)))
+
+mergeDesc(tll,
+          htmlTable_args = list(caption  = "Factored variables")) %&gt;%
+  htmlTable::addHtmlTableStyle(css.rgroup = "")
+invisible(readline(prompt = "Press [enter] to continue"))
+
+tl_no_units &lt;- list()
+tl_no_units[["Gas (mile/gallons)"]] &lt;-
+  getDescriptionStatsBy(mtcars$mpg, mtcars$am,
+                        header_count = TRUE)
+tl_no_units[["Weight (10&lt;sup&gt;3&lt;/sup&gt; kg)"]] &lt;-
+  getDescriptionStatsBy(mtcars$wt, mtcars$am,
+                        header_count = TRUE)
+mergeDesc(tl_no_units,
+          tll) %&gt;%
+  htmlTable::addHtmlTableStyle(css.rgroup = "")
+invisible(readline(prompt = "Press [enter] to continue"))
+
+# Other settings
+mtcars$mpg[sample(1:NROW(mtcars), size = 5)] &lt;- NA
+getDescriptionStatsBy(mtcars$mpg,
+                      mtcars$am,
+                      statistics = TRUE)
+invisible(readline(prompt = "Press [enter] to continue"))
+
+# Do the horizontal version
+getDescriptionStatsBy(mtcars$gear,
+                      mtcars$am,
+                      statistics = TRUE,
+                      hrzl_prop = TRUE)
+invisible(readline(prompt = "Press [enter] to continue"))
+
+mtcars$wt_with_missing &lt;- mtcars$wt
+mtcars$wt_with_missing[sample(1:NROW(mtcars), size = 8)] &lt;- NA
+getDescriptionStatsBy(mtcars$wt_with_missing, mtcars$am, statistics = TRUE,
+                      hrzl_prop = TRUE, total_col_show_perc = FALSE)
+invisible(readline(prompt = "Press [enter] to continue"))
+
+## Not run: 
+  ## There is also a LaTeX wrapper
+  tll &lt;- list(
+    getDescriptionStatsBy(mtcars$gear, mtcars$am),
+    getDescriptionStatsBy(mtcars$col, mtcars$am))
+
+  latex(mergeDesc(tll),
+        caption  = "Factored variables",
+        file = "")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

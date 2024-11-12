@@ -1,0 +1,139 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemAssetExchange_MatthewEffect_2_2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>An Example Illustrating the Matthew Effect of Asset Exchange</h2>
+
+<h3>Description</h3>
+
+<p>This is an example that illustrates the Matthew effect of asset exchange,
+wherein the wealth gap between two traders widens after the exchange process.
+Initially, these traders had a relatively small wealth (i.e. expected average payoff) gap.
+However, the exchange leads to an expansion of the wealth gap.
+This outcome can be attributed to the fact that a trader's risk aversion coefficient is affected by his level of wealth.
+When traders have less wealth their risk aversion coefficient is higher.
+Consequently, a trader with less wealth tends to acquire more low-risk, low-average-payoff assets through trading.
+As a result, the expected average payoff of a trader with less wealth may decrease after the exchange.
+Conversely, a trader with more wealth may hold more high-risk, high-average-payoff assets after trading.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemAssetExchange_MatthewEffect_2_2(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>See Also</h3>
+
+<p><code>gemAssetPricing_PUF</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### Matthew effect
+asset1 &lt;- c(40, 200)
+asset2 &lt;- c(100, 100)
+
+# unit asset payoff matrix.
+UAP &lt;- cbind(asset1, asset2)
+
+S &lt;- matrix(c(
+  0.49, 0.51,
+  0.49, 0.51
+), 2, 2, TRUE)
+
+ge &lt;- sdm2(
+  A = function(state) {
+    Portfolio &lt;- state$last.A %*% dg(state$last.z)
+
+    Payoff &lt;- UAP %*% Portfolio
+    payoff.average &lt;- colMeans(Payoff)
+
+    # the risk aversion coefficients.
+    rac &lt;- ifelse(payoff.average &gt; mean(UAP) * 1.02, 0.5, 1)
+    rac &lt;- ifelse(payoff.average &lt; mean(UAP) / 1.02, 2, rac)
+
+    uf1 &lt;- function(portfolio) {
+      payoff &lt;- UAP %*% portfolio
+      CES(alpha = 1, beta = c(0.5, 0.5), x = payoff, es = 1 / rac[1])
+    }
+
+    uf2 &lt;- function(portfolio) {
+      payoff &lt;- UAP %*% portfolio
+      CES(alpha = 1, beta = c(0.5, 0.5), x = payoff, es = 1 / rac[2])
+    }
+
+    VMU &lt;- marginal_utility(Portfolio, diag(2), list(uf1, uf2), state$p)
+    VMU &lt;- pmax(VMU, 1e-10)
+
+    Ratio &lt;- sweep(VMU, 2, colMeans(VMU), "/")
+    A &lt;- state$last.A * ratio_adjust(Ratio, coef = 0.1, method = "linear")
+
+    prop.table(A, 2)
+  },
+  B = matrix(0, 2, 2),
+  S0Exg = S,
+  names.commodity = c("asset1", "asset2"),
+  numeraire = 2,
+  maxIteration = 1,
+  numberOfPeriods = 1000,
+  policy = makePolicyMeanValue(50),
+  ts = TRUE
+)
+
+matplot(ge$ts.p, type = "l")
+ge$p
+ge$z
+ge$D
+
+(Payoff.S &lt;- UAP %*% S)
+colMeans(Payoff.S)
+
+(Payoff.D &lt;- UAP %*% ge$D)
+colMeans(Payoff.D)
+
+## Calculate the equilibrium under the fixed risk aversion coefficients.
+rac &lt;- c(2, 0.5)
+
+uf &lt;- list()
+uf[[1]] &lt;- function(portfolio) {
+  payoff &lt;- UAP %*% portfolio
+  CES(alpha = 1, beta = c(0.5, 0.5), x = payoff, es = 1 / rac[1])
+}
+
+uf[[2]] &lt;- function(portfolio) {
+  payoff &lt;- UAP %*% portfolio
+  CES(alpha = 1, beta = c(0.5, 0.5), x = payoff, es = 1 / rac[2])
+}
+
+ge &lt;- gemAssetPricing_PUF(
+  S = S,
+  uf = uf,
+  policy = makePolicyMeanValue(50)
+)
+
+ge$p
+addmargins(ge$D, 2)
+addmargins(ge$S, 2)
+ge$VMU
+
+(Payoff &lt;- UAP %*% ge$D)
+colMeans(Payoff)
+
+</code></pre>
+
+
+</div>

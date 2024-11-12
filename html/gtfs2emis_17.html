@@ -1,0 +1,160 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>transport_model</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Transport model</h2>
+
+<h3>Description</h3>
+
+<p>This function converts a public transport data set in GTFS format into a
+GPS-like table with the space-time positions and speeds of public transport
+vehicles. The function also allow users to set the spatial resolution of the
+output and to adjust the speed of public transport vehicles given a
+<code>min_speed</code> and <code>max_speed</code> range.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">transport_model(
+  gtfs_data,
+  min_speed = 2,
+  max_speed = 80,
+  new_speed = NULL,
+  parallel = TRUE,
+  ncores = NULL,
+  spatial_resolution = 100,
+  output_path = NULL,
+  continue = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>gtfs_data</code></td>
+<td>
+<p>A path to a GTFS file or a GTFS data organized as a list of
+<code>data.tables</code> created with <code>gtfstools::read_gtfs()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_speed</code></td>
+<td>
+<p>numeric (in km/h) or a speed units value. Minimum speed to
+be considered as valid. Values below minimum speed will be updated
+according to the <code>new_speed</code> parameter, which can affect the arrival
+and  departure times of vehicles at  transit stops. Defaults to <code>2</code>
+km/h.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_speed</code></td>
+<td>
+<p>numeric (in km/h) or a speed units value. Maximum speed to
+be considered as valid. Values above maximum speed will be  updated
+according to the <code>new_speed</code> parameter, which can affect the arrival
+and departure times of vehicles at transit stops. Defaults to <code>80</code>
+km/h.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>new_speed</code></td>
+<td>
+<p>numeric (in km/h) or a speed units value. Speed value used
+to replace the speeds that fall outside the <code>min_speed</code> and <code>max_speed</code>
+range or which are missing from the GTFS input. When <code>new_speed = NULL</code>
+(the default), the function uses the average speed of the entire GTFS
+data feed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>logical. Decides whether the function should run in parallel.
+Defaults is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>integer. Number of cores to be used in parallel execution. This
+argument is ignored if parallel is <code>FALSE</code>. Default (<code>NULL</code>) selects
+the total number of available cores minus one.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spatial_resolution</code></td>
+<td>
+<p>The spatial resolution in meters. Defaults to <code>100</code>.
+The function only creates points in order to guarantee that the
+minimum distance between two consecutive points will be at most the
+<code>spatial_resolution</code> value. If a given GTFS shape_id has two
+consecutive points with a distance smaller than the spatial resolution,
+the algorithm will not remove such points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_path</code></td>
+<td>
+<p>character. A directory path. If <code>NULL</code> (Default), the
+function returns the output. If the user passes a valid <code>passed</code>, the
+output will be saved in the <code>output_path</code> dir. Note that that the
+output of each public transport <code>shape_id</code> is saved separately in
+different files. Setting an <code>output_path</code> is recommended when working
+with large public transport system because the output of the function
+can be significantly large.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>continue</code></td>
+<td>
+<p>logical. Argument that can be used only with output_path When TRUE,
+it skips processing the shape identifiers that were already saved into
+files. It is useful to continue processing a GTFS file that was stopped
+for some reason. Default value is FALSE.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code style="white-space: pre;">⁠data.table sf_linestring⁠</code> object or <code>NULL</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other Core function: 
+<code>emission_model()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(gtfs2emis)
+library(gtfstools)
+
+# read GTFS
+gtfs_file &lt;- system.file("extdata/bra_cur_gtfs.zip", package = "gtfs2emis")
+gtfs &lt;- gtfstools::read_gtfs(gtfs_file) 
+
+# keep a single trip_id to speed up this example
+gtfs_small &lt;- gtfstools::filter_by_trip_id(gtfs, trip_id ="4451136")
+  
+# run transport model
+tp_model &lt;- transport_model(gtfs_data = gtfs_small,
+                            min_speed = 2,
+                            max_speed = 80,
+                            new_speed = 20,
+                            spatial_resolution = 100,
+                            parallel = FALSE)
+
+</code></pre>
+
+
+</div>

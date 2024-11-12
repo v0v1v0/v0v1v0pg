@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>galah_filter</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Narrow a query by specifying filters</h2>
+
+<h3>Description</h3>
+
+<p>"Filters" are arguments of the form <code>field</code> <code>logical</code> <code>value</code> that are used
+to narrow down the number of records returned by a specific query.
+For example, it is common for users to request records from a particular year
+(<code>year == 2020</code>), or to return all records except for fossils
+(<code>basisOfRecord != "FossilSpecimen"</code>).
+</p>
+<p>The result of <code>galah_filter()</code> can be passed to the <code>filter</code>
+argument in <code>atlas_occurrences()</code>, <code>atlas_species()</code>,
+<code>atlas_counts()</code> or <code>atlas_media()</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">galah_filter(..., profile = NULL)
+
+## S3 method for class 'data_request'
+filter(.data, ...)
+
+## S3 method for class 'metadata_request'
+filter(.data, ...)
+
+## S3 method for class 'files_request'
+filter(.data, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>filters, in the form <code style="white-space: pre;">⁠field logical value⁠</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>profile</code></td>
+<td>
+<p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated"><img src="../help/figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a>
+Use <code>galah_apply_profile</code> instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.data</code></td>
+<td>
+<p>An object of class <code>files_request</code>, created using <code>request_files()</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>galah_filter</code> uses non-standard evaluation (NSE),
+and is designed to be as compatible as possible with <code>dplyr::filter()</code>
+syntax.
+</p>
+<p>All statements passed to <code>galah_filter()</code> (except the <code>profile</code>
+argument) take the form of field - logical - value. Permissible examples include:
+</p>
+
+<ul>
+<li> <p><code>=</code> or <code>==</code> (e.g. <code>year = 2020</code>)
+</p>
+</li>
+<li> <p><code>!=</code>, e.g. <code>year != 2020</code>)
+</p>
+</li>
+<li> <p><code>&gt;</code> or <code>&gt;=</code> (e.g. <code>year &gt;= 2020</code>)
+</p>
+</li>
+<li> <p><code>&lt;</code> or <code>&lt;=</code> (e.g. <code>year &lt;= 2020</code>)
+</p>
+</li>
+<li> <p><code>OR</code> statements (e.g. <code>year == 2018 | year == 2020</code>)
+</p>
+</li>
+<li> <p><code>AND</code> statements (e.g. <code>year &gt;= 2000 &amp; year &lt;= 2020</code>)
+</p>
+</li>
+</ul>
+<p>In some cases <code>R</code> will fail to parse inputs with a single equals sign
+(<code>=</code>), particularly where statements are separated by <code>&amp;</code> or
+<code>|</code>. This problem can be avoided by using a double-equals (<code>==</code>) instead.
+</p>
+<p><em>Notes on behaviour</em>
+</p>
+<p>Separating statements with a comma is equivalent to an <code>AND</code> statement;
+Ergo <code>galah_filter(year &gt;= 2010 &amp; year &lt; 2020)</code> is the same as
+<code>galah_filter(year &gt;= 2010, year &lt; 2020)</code>.
+</p>
+<p>All statements must include the field name; so
+<code>galah_filter(year == 2010 | year == 2021)</code> works, as does
+<code>galah_filter(year == c(2010, 2021))</code>, but <code>galah_filter(year == 2010 | 2021)</code>
+fails.
+</p>
+<p>It is possible to use an object to specify required values, e.g.
+<code style="white-space: pre;">⁠year_value &lt;- 2010; galah_filter(year &gt; year_value)⁠</code>
+</p>
+<p><code>solr</code> supports range queries on text as well as numbers; so this is valid:
+<code>galah_filter(cl22 &gt;= "Tasmania")</code>
+</p>
+<p>It is possible to filter by 'assertions', which are statements about data
+validity, e.g. to remove those lacking critical spatial or taxonomic data:
+<code style="white-space: pre;">⁠galah_filter(assertions != c("INVALID_SCIENTIFIC_NAME", "COORDINATE_INVALID")⁠</code>
+Valid assertions can be found using <code>show_all(assertions)</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A tibble containing filter values.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>search_taxa()</code> and <code>galah_geolocate()</code> for other ways to restrict
+the information returned by <code>atlas_occurrences()</code> and related functions. Use
+<code>search_all(fields)</code> to find fields that
+you can filter by, and <code>show_values()</code> to find what values
+of those filters are available.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# Filter query results to return records of interest
+galah_call() |&gt;
+  galah_filter(year &gt;= 2019,
+               basisOfRecord == "HumanObservation") |&gt;
+  atlas_counts()
+
+# Alternatively, the same call using `dplyr` functions:
+request_data() |&gt;
+  filter(year &gt;= 2019,
+               basisOfRecord == "HumanObservation") |&gt;
+  count() |&gt;
+  collect()
+
+## End(Not run)
+</code></pre>
+
+
+</div>

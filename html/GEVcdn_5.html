@@ -1,0 +1,304 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gevcdn.bag</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fit an ensemble of GEV CDN models via bagging
+</h2>
+
+<h3>Description</h3>
+
+<p>Used to fit an ensemble of GEV CDN models using bootstrap aggregation
+(bagging) and, optionally, early stopping.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gevcdn.bag(x, y, iter.max = 1000, iter.step = 10,
+           n.bootstrap = 30, n.hidden = 3, Th = gevcdn.logistic,
+           fixed = NULL, init.range = c(-0.25, 0.25),
+           scale.min = .Machine$double.eps, beta.p = 3.3,
+           beta.q = 2, sd.norm = Inf,
+           method = c("BFGS", "Nelder-Mead"), max.fails = 100,
+           silent = TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+
+<p>covariate matrix with number of rows equal to the number of samples and number of columns equal to the number of variables.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+
+<p>column matrix of target values with number of rows equal to the number of samples.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter.max</code></td>
+<td>
+
+<p>maximum number of iterations of optimization algorithm.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter.step</code></td>
+<td>
+
+<p>number of iterations between which the value of the cost function is calculated on the out-of-bootstrap samples; used during stopped training.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.bootstrap</code></td>
+<td>
+
+<p>number of ensemble members trained during bootstrap aggregation (bagging).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.hidden</code></td>
+<td>
+
+<p>number of hidden nodes in each GEV CDN ensemble member.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Th</code></td>
+<td>
+
+<p>hidden layer transfer function; defaults to <code>gevcdn.logistic</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed</code></td>
+<td>
+
+<p>vector indicating GEV parameters to be held constant; elements chosen from <code>c("location", "scale", "shape")</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init.range</code></td>
+<td>
+
+<p>range for random weights on [<code>min(init.range)</code>, <code>max(init.range)</code>]
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale.min</code></td>
+<td>
+
+<p>minimum allowable value for the GEV scale parameter.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.p</code></td>
+<td>
+
+<p><code>shape1</code> parameter for shifted beta distribution prior for GEV shape parameter
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.q</code></td>
+<td>
+
+<p><code>shape2</code> parameter for shifted beta distribution prior for GEV shape parameter
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sd.norm</code></td>
+<td>
+
+<p><code>sd</code> parameter for normal distribution prior for the magnitude of input-hidden layer weights; equivalent to weight penalty regularization.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+
+<p>optimization method for <code>optim</code> function; must be chosen from <code>c("BFGS", "Nelder-Mead")</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.fails</code></td>
+<td>
+
+<p>maximum number of repeated exceptions allowed during optimization.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>silent</code></td>
+<td>
+
+<p>logical value indicating whether or not cost function information should be reported every <code>iter.step</code> iterations.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>additional arguments passed to the <code>control</code> list of <code>optim</code> function.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Bootstrap aggregation (bagging) (Breiman, 1996) is used as an alternative to
+<code>gevcdn.fit</code> for fitting an ensemble of nonstationary GEV CDN models
+(Cannon, 2010). Each ensemble member is trained on bootstrapped <code>x</code> and
+<code>y</code> sample pairs. As an added check on overfitting, early stopping,
+whereby training is stopped prior to convergence of the optimization algorithm,
+can be turned on. In this case, the "best" iteration for stopping optimization
+is chosen based on model performance on out-of-bag samples. Additional details on
+the bagging/early stopping procedure can be found in Cannon and Whitfield
+(2001, 2002). Unlike <code>gevcdn.fit</code>, where models of increasing complexity
+are fitted and the one that satisfies some model selection criterion is chosen for
+final use, model selection in <code>gevcdn.bag</code> is implicit. Ensemble averaging and,
+optionally, early stopping are used to limit model complexity. One need only
+set <code>n.hidden</code> to avoid underfitting.
+</p>
+<p>Note: values of <code>x</code> and <code>y</code> need not be standardized or rescaled by
+the user. All variables are automatically scaled to range between 0 and 1 prior
+to fitting and parameters are automatically rescaled by
+<code>gevcdn.evaluate</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a list of length <code>n.bootstrap</code> with elements consisting of
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>W1</code></td>
+<td>
+<p>input-hidden layer weights</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>W2</code></td>
+<td>
+<p>hidden-output layer weights</p>
+</td>
+</tr>
+</table>
+<p>Attributes indicating the minimum/maximum values of <code>x</code> and <code>y</code>; the
+values of <code>Th</code>, <code>fixed</code>, <code>scale.min</code>; a logical value
+<code>stopped.training</code> indicating whether or not early stopping was used;
+and the minimum value of the cost function on the out-of-bag samples
+<code>cost.valid</code> are also returned.
+</p>
+
+
+<h3>References</h3>
+
+<p>Breiman, L., 1996. Bagging predictors. Machine Learning, 24(2): 123-140.
+DOI: 10.1007/BF00058655
+</p>
+<p>Cannon, A.J., 2010. A flexible nonlinear modelling framework for
+nonstationary generalized extreme value analysis in hydroclimatology.
+Hydrological Processes, 24: 673-685. DOI: 10.1002/hyp.7506
+</p>
+<p>Cannon, A.J. and P.H. Whitfield, 2001. Modeling transient pH depressions in
+coastal streams of British Columbia using neural networks, 37(1): 73-89.
+DOI: 10.1111/j.1752-1688.2001.tb05476.x
+</p>
+<p>Cannon, A.J. and P.H. Whitfield, 2002. Downscaling recent streamflow conditions
+in British Columbia, Canada using ensemble neural network models. Journal of
+Hydrology, 259: 136-151. DOI: 10.1016/S0022-1694(01)00581-9
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gevcdn.cost</code>, <code>gevcdn.evaluate</code>,
+<code>gevcdn.fit</code>, <code>gevcdn.bootstrap</code>,
+<code>dgev</code>, <code>optim</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Generate synthetic data, quantiles
+
+x &lt;- as.matrix(seq(0.1, 1, length = 50))
+
+loc &lt;- x^2
+scl &lt;- x/2
+shp &lt;- seq(-0.1, 0.3, length = length(x))
+
+set.seed(100)
+y &lt;- as.matrix(rgev(length(x), location = loc, scale = scl,
+               shape = shp))
+q &lt;- sapply(c(0.1, 0.5, 0.9), qgev, location = loc, scale = scl,
+            shape = shp)
+
+## Not run: 
+## Fit ensemble of models with early stopping turned on
+
+weights.on &lt;- gevcdn.bag(x = x, y = y, iter.max = 100,
+                         iter.step = 10, n.bootstrap = 10,
+                         n.hidden = 2)
+
+parms.on &lt;- lapply(weights.on, gevcdn.evaluate, x = x)
+
+## 10th, 50th, and 90th percentiles
+
+q.10.on &lt;- q.50.on &lt;- q.90.on &lt;- matrix(NA, ncol=length(parms.on),
+                                        nrow=nrow(x))
+for(i in seq_along(parms.on)){
+    q.10.on[,i] &lt;- qgev(p = 0.1,
+                        location = parms.on[[i]][,"location"],
+                        scale = parms.on[[i]][,"scale"],
+                        shape = parms.on[[i]][,"shape"])
+    q.50.on[,i] &lt;- qgev(p = 0.5,
+                        location = parms.on[[i]][,"location"],
+                        scale = parms.on[[i]][,"scale"],
+                        shape = parms.on[[i]][,"shape"])
+    q.90.on[,i] &lt;- qgev(p = 0.9,
+                        location = parms.on[[i]][,"location"],
+                        scale = parms.on[[i]][,"scale"],
+                        shape = parms.on[[i]][,"shape"])
+}
+
+## Plot data and quantiles
+
+matplot(cbind(y, q, rowMeans(q.10.on), rowMeans(q.50.on),
+        rowMeans(q.90.on)), type = c("b", rep("l", 6)),
+        lty = c(1, rep(c(1, 2, 1), 2)),
+        lwd = c(1, rep(c(3, 2, 3), 2)),
+        col = c("red", rep("orange", 3), rep("blue", 3)),
+        pch = 19, xlab = "x", ylab = "y",
+        main = "gevcdn.bag (early stopping on)")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

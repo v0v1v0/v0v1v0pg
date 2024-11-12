@@ -1,0 +1,163 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>create_combinations</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create Valid Combinations</h2>
+
+<h3>Description</h3>
+
+<p>Generate a list which contains all possible combinations of the provided
+parameter values. This excludes combinations that are invalid because the
+sum criterion for functional groups <code>w_FGA + w_FGB + w_FGC + w_FGD = 1</code> is
+not fulfilled.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">create_combinations(param_values, eps = 0.02)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>param_values</code></td>
+<td>
+<p>A list giving all options for the parameter values
+which are to be combined. The format is <code>list[[param_name]] =  param_values</code> where <code>param_values</code> is a vector with the values for the
+respective parameter. The parameter names for functional group weights
+(<code>w_FGX</code> with <code>X</code> in (A, B, C, D)) receive special treatment and
+therefore need to be spelled correctly.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>Float specifying the precision to which the sum criterion for
+functional group has to be satisfied. The criterion is considered
+satisfied, if “'
+abs(w_FGA + w_FGB + w_FGC + w_FGD) - 1) &lt;= eps
+</p>
+<div class="sourceCode"></div>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Assume for example the following list as argument <em>param_values</em>:
+</p>
+<div class="sourceCode"><pre>list(w_FGA = c(0, 0.5, 1), w_FGB = c(0, 0.5, 1), NI = c(0.5, 0.9))
+</pre></div>
+<p>This would generate the combinations</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+   w_FGA </td>
+<td style="text-align: left;"> w_FGB </td>
+<td style="text-align: left;"> NI </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   0 </td>
+<td style="text-align: left;"> 1 </td>
+<td style="text-align: left;"> 0.5 </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   0 </td>
+<td style="text-align: left;"> 1 </td>
+<td style="text-align: left;"> 0.9 </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   0.5 </td>
+<td style="text-align: left;"> 0.5 </td>
+<td style="text-align: left;"> 0.5 </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   0.5 </td>
+<td style="text-align: left;"> 0.5 </td>
+<td style="text-align: left;"> 0.9 </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   1 </td>
+<td style="text-align: left;"> 0 </td>
+<td style="text-align: left;"> 0.5 </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   1 </td>
+<td style="text-align: left;"> 0 </td>
+<td style="text-align: left;"> 0.9 </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+</tr>
+</table>
+<p>One can see that the input <em>param_values</em> has to be set up carefully: one
+has to ensure that the given <code>w_FGX</code> values <em>can</em> actually add up to 1. The
+following would be a bad counterexample, where only one single valid
+combination is found, even though many values for <code>w_FGA</code> and <code>w_FGB</code> are
+provided:
+</p>
+<div class="sourceCode"><pre>list(w_FGA = seq(0.5, 1, 0.01), w_FGB = c(0.5, 1, 0.01))
+</pre></div>
+<p>Similarly, if the steps in the <code>w_FGX</code> don't match, we might not end up
+with many valid combinations, even though the ranges are reasonabl:
+</p>
+<div class="sourceCode"><pre>list(w_FGA = seq(0.5, 1, 0.1), w_FGB = c(0, 0.5, 0.25))
+</pre></div>
+<p>Here, no combination can be made with <code>w_FGA</code> in <code>c(0.6, 0.7, 0.8, 0.9)</code> or
+<code>w_FGB = 0.25</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>combinations An unnamed list where every entry is a list
+containing the parameter values (named as in the input <em>param_values</em>)
+for a valid combination.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Define the parameter steps you want to explore. This is a minimal example.
+# A more realistic one follows below.
+param_values = list(w_FGA = c(0, 0.5, 1),
+                    w_FGB = c(0, 0.5, 1),
+                    NI = c(0.5, 0.9)
+)
+# Create all valid combinations of the defined steps
+create_combinations(param_values)
+
+# More realistic example for an initial exploration of parameter space, 
+# where we suspect that functional groups A and B should be more prevalent 
+# than C and D. This produces 54 parameter combinations, which is a number 
+# of model evaluations that can run within a reasonable timeframe 
+# (depending on your system).
+param_values = list(w_FGA = seq(0, 1, 0.33),
+                    w_FGB = seq(0, 1, 0.33),
+                    w_FGC = seq(0, 0.7, 0.33),
+                    w_FGD = seq(0, 0.7, 0.33),
+                    NI = seq(0.5, 1.0, 0.25)
+)
+length(create_combinations(param_values))
+
+# The default value for *eps* made sure that combinations of 0.33 + 0.66 = 
+# 0.99 etc. are considered "valid". If we make *eps* too small, no valid 
+# combinations can be found:
+length(create_combinations(param_values, eps = 1e-3))
+
+</code></pre>
+
+
+</div>

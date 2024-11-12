@@ -1,0 +1,298 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gqlr_schema</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create Schema definitions</h2>
+
+<h3>Description</h3>
+
+<p>Creates a Schema object from the defined GraphQL string and
+inserts the provided descriptions, resolve methods, resolve_type methods
+into the appropriate place.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gqlr_schema(schema, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>schema</code></td>
+<td>
+<p>GraphQL schema string or Schema object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>named lists of information to help produce the schema definition.
+See Details</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The ... should be named arguments whose values are lists of
+information.  What information is needed for each type is described below.
+</p>
+<p>ScalarTypeDefinition: </p>
+ <dl>
+<dt>resolve</dt>
+<dd>
+<p>function with two
+parameters: <code>x</code> (the raw to be parsed, such as 5.0) and <code>schema</code>
+(the full Schema definition). Should return a parsed value</p>
+</dd>
+<dt>description</dt>
+<dd>
+<p>(optional) single character value that describes the
+Scalar definition</p>
+</dd> <dt>parse_ast</dt>
+<dd>
+<p>(optional) function with two
+parameters: <code>obj</code> (a GraphQL wrapped raw value, such as an object of
+class IntValue with value 5) and <code>schema</code> (the full Schema
+definition).  If the function returns <code>NULL</code> then the AST could not be
+parsed.</p>
+</dd> </dl>
+<p>EnumTypeDefinition: </p>
+ <dl>
+<dt>resolve</dt>
+<dd>
+<p>(optional) function with two
+parameters: <code>x</code> and <code>schema</code> (the full Schema definition). Should
+return the value <code>x</code> represents, such as the Star Wars Episode enum
+value "4" could represent Episode "NEWHOPE". By default,
+EnumTypeDefinitions will return the current value.</p>
+</dd>
+<dt>description</dt>
+<dd>
+<p>(optional) single character value that describes the
+Enum definition</p>
+</dd> <dt>values</dt>
+<dd>
+<p>(optional) named list of enum value
+descriptions. Such as <code>values = list(ENUMA = "description for ENUMA",
+  ENUMZ = "description for ENUMZ")</code></p>
+</dd> </dl>
+<p>ObjectTypeDefinition: </p>
+ <dl>
+<dt>resolve</dt>
+<dd>
+<p>function with two
+parameters: <code>x</code> (place holder value to be expanded into a named list)
+and <code>schema</code> (the full Schema definition). By using the resolve
+method, recursive relationships, such as friends, can easily be handled.
+The resolve function should return a fully named list of all the fields the
+definition defines.  Missing fields are automatically interpreted as
+<code>NULL</code>.
+</p>
+<p>Values in the returned list may be a function of the form
+<code>function(obj, args, schema) {...}</code>.  This allows for fields to be
+determined dynamically and lazily. See how <code>add_human</code> makes a field
+for <code>totalCredits</code>, while the <code>add_droid</code> pre computes the
+information.</p>
+</dd> <dt>description</dt>
+<dd>
+<p>(optional) single character value that
+describes the object</p>
+</dd> <dt>fields</dt>
+<dd>
+<p>(optional) named list of field
+descriptions. Such as <code>fields = list(fieldA = "description for field
+  A", fieldB = "description for field B")</code></p>
+</dd> </dl>
+<p>InterfaceTypeDefinition and UnionTypeDefinition: </p>
+
+<dl>
+<dt>resolve_type</dt>
+<dd>
+<p>function with two parameters: <code>x</code> (a pre-resolved
+object value) and <code>schema</code> (the full Schema definition). This function
+is required to determine which object type is being used.
+<code>resolve_type</code> is called before any ObjectTypeDefinition
+<code>resolve</code> methods are called.</p>
+</dd> <dt>description</dt>
+<dd>
+<p>(optional) single
+character value that describes the object</p>
+</dd> </dl>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(magrittr)
+
+## Set up data
+add_human &lt;- function(human_data, id, name, appear, home, friend) {
+  human &lt;- list(id = id, name = name, appearsIn = appear, friends = friend, homePlanet = home)
+  # set up a function to be calculated if the field totalCredits is required
+  human$totalCredits &lt;- function(obj, args, schema) {
+    length(human$appearsIn)
+  }
+  human_data[[id]] &lt;- human
+  human_data
+}
+add_droid &lt;- function(droid_data, id, name, appear, pf, friend) {
+  droid &lt;- list(id = id, name = name, appearsIn = appear, friends = friend, primaryFunction = pf)
+  # set extra fields manually
+  droid$totalCredits &lt;- length(droid$appearsIn)
+  droid_data[[id]] &lt;- droid
+  droid_data
+}
+
+human_data &lt;- list() %&gt;%
+  add_human("1000", "Luke Skywalker", c(4, 5, 6), "Tatooine", c("1002", "1003", "2000", "2001")) %&gt;%
+  add_human("1002", "Han Solo",       c(4, 5, 6), "Corellia", c("1000", "1003", "2001")) %&gt;%
+  add_human("1003", "Leia Organa",    c(4, 5, 6), "Alderaan", c("1000", "1002", "2000", "2001"))
+
+droid_data &lt;- list() %&gt;%
+  add_droid("2000", "C-3PO", c(4, 5, 6), "Protocol", c("1000", "1002", "1003", "2001")) %&gt;%
+  add_droid("2001", "R2-D2", c(4, 5, 6), "Astromech", c("1000", "1002", "1003"))
+
+all_characters &lt;- list() %&gt;% append(human_data) %&gt;% append(droid_data) %&gt;% print()
+## End data set up
+
+
+
+# Define the schema using GraphQL code
+star_wars_schema &lt;- Schema$new()
+
+"
+enum Episode { NEWHOPE, EMPIRE, JEDI }
+" %&gt;%
+  gqlr_schema(
+    Episode = list(
+      resolve = function(episode_id, schema) {
+        switch(as.character(episode_id),
+          "4" = "NEWHOPE",
+          "5" = "EMPIRE",
+          "6" = "JEDI",
+          "UNKNOWN_EPISODE"
+        )
+      }
+    )
+  ) -&gt;
+episode_schema
+# display the schema
+episode_schema$get_schema()
+# add the episode definitions to the Star Wars schema
+star_wars_schema$add(episode_schema)
+
+
+"
+interface Character {
+  id: String!
+  name: String
+  friends: [Character]
+  appearsIn: [Episode]
+}
+" %&gt;%
+  gqlr_schema(
+    Character = list(
+      resolve_type = function(id, schema) {
+        if (id %in% names(droid_data)) {
+          "Droid"
+        } else {
+          "Human"
+        }
+      }
+    )
+  ) -&gt;
+character_schema
+# print the Character schema with no extra formatting
+character_schema$get_schema() %&gt;% format() %&gt;% cat("\n")
+star_wars_schema$add(character_schema)
+
+
+"
+type Droid implements Character {
+  id: String!
+  name: String
+  friends: [Character]
+  appearsIn: [Episode]
+  primaryFunction: String
+}
+type Human implements Character {
+  id: String!
+  name: String
+  friends: [Character]
+  appearsIn: [Episode]
+  homePlanet: String
+}
+" %&gt;%
+  gqlr_schema(
+    Human = list(
+      # Add a resolve method for type Human that takes in an id and returns the human data
+      resolve = function(id, args, schema) {
+        human_data[[id]]
+      }
+    ),
+    Droid = list(
+      # description for Droid
+      description = "A mechanical creature in the Star Wars universe.",
+      # Add a resolve method for type Droid that takes in an id and returns the droid data
+      resolve = function(id, schema) {
+        droid_data[[id]]
+      }
+    )
+  ) -&gt;
+human_and_droid_schema
+human_and_droid_schema$get_schema()
+star_wars_schema$add(human_and_droid_schema)
+
+
+"
+type Query {
+  hero(episode: Episode): Character
+  human(id: String!): Human
+  droid(id: String!): Droid
+}
+# the schema type must be provided if a query or mutation is to be executed
+schema {
+  query: Query
+}
+" %&gt;%
+  gqlr_schema(
+    Query = function(null, schema) {
+      list(
+        # return a function for key 'hero'
+        # the id will be resolved by the appropriate resolve() method of Droid or Human
+        hero = function(obj, args, schema) {
+          episode &lt;- args$episode
+          if (identical(episode, 5) || identical(episode, "EMPIRE")) {
+            "1000" # Luke Skywalker
+          } else {
+            "2001" # R2-D2
+          }
+        },
+        # the id will be resolved by the Human resolve() method
+        human = function(obj, args, schema) {
+          args$id
+        },
+        # the id will be resolved by the Droid resolve() method
+        droid = function(obj, args, schema) {
+          args$id
+        }
+      )
+    }
+  ) -&gt;
+schema_def
+# print Schema with no extra formatting
+schema_def$get_schema() %&gt;% format() %&gt;% cat("\n")
+star_wars_schema$add(schema_def)
+
+
+# view the final schema definitiion
+star_wars_schema$get_schema()
+
+</code></pre>
+
+
+</div>

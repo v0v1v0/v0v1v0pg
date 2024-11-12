@@ -1,0 +1,102 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>with_custom</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Apply a custom filter</h2>
+
+<h3>Description</h3>
+
+<p>This function allows you to apply a custom filtering function to a layer. The
+function must take a <code>nativeRaster</code> object as the first argument along with
+any other arguments passed to <code>...</code>. Be aware that the raster spans the full
+device size and not just the viewport currently rendered to. This is because
+graphics may extend outside of the viewport depending on the clipping
+settings. You can use <code>get_viewport_area()</code> along with all the other raster
+helpers provided by ggfx to facilitate working with the input raster. See the
+example below for some inspiration.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">with_custom(x, filter, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A ggplot2 layer object, a ggplot, a grob, or a character string
+naming a filter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filter</code></td>
+<td>
+<p>A function taking a <code>nativeRaster</code> object as the first argument
+along with whatever you pass in to <code>...</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to <code>filter</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Depending on the input, either a <code>grob</code>, <code>Layer</code>, list of <code>Layer</code>s,
+<code>guide</code>, or <code>element</code> object. Assume the output can be used in the same
+context as the input.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(ggplot2)
+flip_raster &lt;- function(raster, horizontal = TRUE) {
+  # Get the viewport area of the raster
+  vp &lt;- get_viewport_area(raster)
+
+  # Get the columns and rows of the raster - reverse order depending on
+  # the value of horizontal
+  dims &lt;- dim(vp)
+  rows &lt;- seq_len(dims[1])
+  cols &lt;- seq_len(dims[2])
+  if (horizontal) {
+    cols &lt;- rev(cols)
+  } else {
+    rows &lt;- rev(rows)
+  }
+
+  # change the order of columns or rows in the viewport raster
+  vp &lt;- index_raster(vp, cols, rows)
+
+  # Assign the modified viewport back
+  set_viewport_area(raster, vp)
+}
+
+ggplot() +
+  with_custom(
+    geom_text(aes(0.5, 0.75, label = 'Flippediflop!'), size = 10),
+    filter = flip_raster,
+    horizontal = TRUE
+  )
+
+ggplot() +
+  with_custom(
+    geom_text(aes(0.5, 0.75, label = 'Flippediflop!'), size = 10),
+    filter = flip_raster,
+    horizontal = FALSE
+  )
+
+</code></pre>
+
+
+</div>

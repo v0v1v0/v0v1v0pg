@@ -1,0 +1,123 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>aggr_es</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Aggregates event-study treatment effects.</h2>
+
+<h3>Description</h3>
+
+<p>Aggregates post- (and/or pre-) treatment effects of an
+"event-study" estimation, also known as a dynamic difference-in-differences
+(DDiD) model. The event-study should have been estimated using the <code>fixest</code>
+package, which provides a specialised <code>i()</code> operator for this class
+of models. By default, the function will return the average post-treatment
+effect (i.e. across multiple periods). However, it can also return the
+cumulative post-treatment effect and can be used to aggregate pre-treatment
+effects too. At its heart, <code>aggr_es()</code> is a convenience wrapper around
+<code>marginaleffects::hypotheses()</code>, which is used to perform the underlying
+joint hypothesis test.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">aggr_es(
+  object,
+  rhs = 0,
+  period = "post",
+  aggregation = c("mean", "cumulative"),
+  abbr_term = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A model object of class <code>fixest</code>, where the <code>i()</code> operator has
+been used to facilitate an "event-study" DiD design. See Examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rhs</code></td>
+<td>
+<p>Numeric. The null hypothesis value. Defaults to 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>period</code></td>
+<td>
+<p>Keyword string or numeric sequence. Which group of periods
+are we aggregating? Can either be one of three convenience strings—i.e.,
+"post" (the default), "prep", or "both"—or a numeric sequence that matches
+a subset of periods in the data (e.g. 6:8).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aggregation</code></td>
+<td>
+<p>Character string. The aggregation type. Either "mean" (the
+default) or "cumulative".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>abbr_term</code></td>
+<td>
+<p>Logical. Should the leading "term" column of the return
+data frame be abbreviated? The default is TRUE. If FALSE, then the term
+column will retain the full hypothesis test string as per usual with
+<code>marginaleffects()</code>. Note that this information is retained as an attribute
+of the return object, regardless.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to <code>marginaleffects::hypotheses()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A "tidy" data frame of aggregated (pre and/or post) treatment
+effects, plus inferential information about standard errors, confidence
+intervals, etc. Potentially useful information about the underlying
+hypothesis test is also provided as an attribute. See Examples.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>marginaleffects::hypotheses()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(ggfixest) ## Will load fixest too
+
+est = feols(y ~ x1 + i(period, treat, 5) | id + period, base_did)
+
+# Default hypothesis test is a null mean post-treatment effect
+(post_mean = aggr_es(est))
+# The underlying hypothesis is saved as an attribute
+attributes(post_mean)["hypothesis"]
+
+# Other hypothesis and aggregation options
+aggr_es(est, aggregation = "cumulative") # cumulative instead of mean effects
+aggr_es(est, period = "pre")             # pre period instead of post
+aggr_es(est, period = "both")            # pre &amp; post periods separately
+aggr_es(est, period = 6:8)               # specific subset of periods
+aggr_es(est, rhs = -1, period = "pre")   # pre period with H0 value of 1
+# Etc.
+
+</code></pre>
+
+
+</div>

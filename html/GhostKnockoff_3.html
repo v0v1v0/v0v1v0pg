@@ -1,0 +1,81 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GhostKnockoff.GetCorStudy</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Calculate study correlation
+</h2>
+
+<h3>Description</h3>
+
+<p>This function computes correlation among studies given Z-scores and the output of GhostKnockoff.prelim.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GhostKnockoff.GetCorStudy(Zscore_0, fit.prelim)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Zscore_0</code></td>
+<td>
+
+<p>A p*K Z-score matrix, where p is the number of variants and K is the number of studies. Variants not observed in the study should be coded as NA.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit.prelim</code></td>
+<td>
+
+<p>The output of function "GhostKnockoff.prelim".
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>cor.study</code></td>
+<td>
+
+<p>The correlation among studies.
+</p>
+</td>
+</tr></table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# We use genetic data as an example
+library(GhostKnockoff)
+
+# load example vcf file from package "seqminer", this serves as the reference panel
+vcf.filename = system.file("vcf/1000g.phase1.20110521.CFH.var.anno.vcf.gz", package = "seqminer")
+
+## this is how the actual genotype matrix from package "seqminer" looks like
+example.G &lt;- t(readVCFToMatrixByRange(vcf.filename, "1:196621007-196716634",annoType='')[[1]])
+example.G &lt;- example.G[,apply(example.G,2,sd)!=0]
+example.G &lt;- example.G[,1:100]
+
+# compute correlation among variants
+cor.G&lt;-matrix(as.numeric(corpcor::cor.shrink(example.G)), nrow=ncol(example.G))
+
+# fit null model
+fit.prelim&lt;-GhostKnockoff.prelim(cor.G,M=5,method='asdp',max.size=500)
+
+# compute study correlation
+Zscore_0&lt;-cbind(rnorm(nrow(cor.G)),rnorm(nrow(cor.G))) # hypothetical Z-scores
+Zscore_0&lt;-Zscore_0+rbinom(nrow(cor.G),size=2,0.1) # set causal
+cor.study&lt;-GhostKnockoff.GetCorStudy(Zscore_0,fit.prelim)
+
+</code></pre>
+
+
+</div>

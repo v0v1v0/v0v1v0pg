@@ -1,0 +1,259 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fitDiscrete</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Model fitting for discrete comparative data </h2>
+
+<h3>Description</h3>
+
+<p>fitting macroevolutionary models to phylogenetic trees
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fitDiscrete(phy, dat,
+    model = c("ER","SYM","ARD","meristic"),
+    transform = c("none", "EB", "lambda", "kappa", "delta", "white"),
+    bounds = list(), control = list(method = c("subplex", "L-BFGS-B"),
+    niter = 100, FAIL = 1e+200, hessian = FALSE, CI = 0.95), ncores=NULL,
+    ...)
+## S3 method for class 'gfit'
+as.Qmatrix(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>phy</code></td>
+<td>
+<p> a phylogenetic tree of class phylo</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dat</code></td>
+<td>
+<p> data vector for a single trait, with names matching tips in <code>phy</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p> an Mkn model to fit to comparative data (see <b>Details</b>) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transform</code></td>
+<td>
+<p> an evolutionary model used to transform the tree (see <b>Details</b>) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bounds</code></td>
+<td>
+<p> range to constrain parameter estimates (see <b>Details</b>)  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p> settings used for optimization of the model likelihood</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p> Number of cores. If <code>NULL</code> then number of cores is detected</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> Object of class <code>"gfit"</code> for S3 method <code>as.Qmatrix</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>if <code>model="meristic"</code>, <code>...</code> can dictate whether the matrix is asymmetric (<code>symmetric=FALSE</code>)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function fits various likelihood models for discrete character evolution. The function returns parameter estimates and the likelihood for univariate datasets. All of the models are continuous-time Markov models of trait evolution (see Yang 2006 for a good general discussion of this type of model).
+</p>
+<p>The model likelihood is maximized using methods available in <code>optim</code> as well as <code>subplex</code>. Optimization methods to be used within <code>optim</code> can be specified through the <code>control</code> object.
+</p>
+<p>A number of random starting points are used in optimization and are given through the <code>niter</code> element within the <code>control</code> object (e.g., <code>control$niter</code>). Finding the maximum likelihood fit is sometimes tricky, especially as the number of parameters in the model increases. Even in the example below, a slightly suboptimal fit is occasionally returned with the default settings fitting the general (<code>ARD</code>) model. There is no rule of thumb for the number of iterations that will be appropriate for a given dataset and model, but one use the variance in fitted likelihoods across iterations as an indication of the difficulty of the likelihood space (see details of the <code>res</code> object in <b>Value</b>). Twenty optimization iterations per parameter seems to be a decent <em>starting</em> point for fitting these models.
+</p>
+<p>The <code>FAIL</code> value within the <code>control</code> object should be a large value that will be considerably far from -lnL of the maximum model likelihood. In most cases, the default setting for <code>control$FAIL</code> will be appropriate. The Hessian may be used to compute confidence intervals (<code>CI</code>) for the parameter estimates if the <code>hessian</code> element in <code>control</code> is TRUE.
+</p>
+<p>The function can handle traits with any number of character states, under a range of models. The character model is specified by the <code>model</code> argument:
+</p>
+
+<ul>
+<li>
+<p><b>ER</b> is an <code>equal-rates</code> model of where a single parameter governs all transition rates
+</p>
+</li>
+<li>
+<p><b>SYM</b> is a <code>symmetric</code> model where forward and reverse transitions share the same parameter
+</p>
+</li>
+<li>
+<p><b>ARD</b> is an <code>all-rates-different</code> model where each rate is a unique parameter
+</p>
+</li>
+<li>
+<p><b>meristic</b> is a model wherein transitions occur in a stepwise fashion (e.g., 1 to 2 to 3 to 2) without skipping intermediate steps; this requires a sensible coding of the character
+states as consecutive integers are assumed to be neighboring states
+</p>
+</li>
+<li>
+<p><b>matrix</b> is a user supplied model (given as a dummy matrix representing transition classes between states); elements that are zero signify rates that are also zero (see <b>Examples</b>)
+</p>
+</li>
+</ul>
+<p>The <code>transform</code> argument allows one to test models where rates vary across the tree.  Bounds for the relevant parameters of the tree <code>transform</code>
+may be given through the <code>bounds</code> argument. Several bounds can be given at a time. Default bounds under the different models are given below.
+Options for <code>transform</code> are as follows:
+</p>
+
+<ul>
+<li>
+<p><b>none</b> is a model of rate constancy through time
+</p>
+</li>
+<li>
+<p><b>EB</b> is the Early-burst model (Harmon et al. 2010) and also called the <code>ACDC</code> model (accelerating-decelerating; Blomberg et al. 2003). Set by the <code>a</code> rate parameter, <code>EB</code>
+fits a model where the rate of evolution increases or decreases exponentially through time, under the model r[t] = r[0] * exp(a * t), where <code>r[0]</code> is the
+initial rate, <code>a</code> is the rate change parameter, and <code>t</code> is time. Default bounds are <code>a = c(min = -10, max = 10)</code>
+</p>
+</li>
+<li>
+<p><b>lambda</b> is one of the Pagel (1999) models that fits the extent to which the phylogeny predicts covariance among trait values for species. The model effectively transforms the tree:
+values of <code>lambda</code> near 0 cause the phylogeny to become more star-like, and a <code>lambda</code> value of 1 recovers the <code>none</code> model. Default
+bounds are <code>lambda = c(min = 0, max = 1)</code>
+</p>
+</li>
+<li>
+<p><b>kappa</b> is a punctuational (speciational) model of trait evolution (Pagel 1999), where character divergence is related to the number of speciation events between two species. Note that if
+there are speciation events in the given phylogeny (due to extinction or incomplete sampling), interpretation under the <code>kappa</code> model may be difficult. Considered as a tree
+transformation, the model raises all branch lengths to an estimated power (<code>kappa</code>). Default bounds are <code>kappa = c(min = 0, max = 1)</code>
+</p>
+</li>
+<li>
+<p><b>delta</b> is a time-dependent model of trait evolution (Pagel 1999).  The <code>delta</code> model is similar to <code>ACDC</code> insofar as the <code>delta</code> model fits the relative contributions of
+early versus late evolution in the tree to the covariance of species trait values.  Where <code>delta</code> is greater than 1, recent evolution has been relatively fast; if <code>delta</code> is less
+than 1, recent evolution has been comparatively slow. Intrepreted as a tree transformation, the model raises all node depths to an estimated power (<code>delta</code>). Default bounds are <code>delta = c(min = 0, max = 3)</code>
+</p>
+</li>
+<li>
+<p><b>white</b> is a <code>white</code>-noise (non-phylogenetic) model, which converts the tree into a star phylogeny
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p><code>fitDiscrete</code> returns a list with the following four elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code><b>lik</b> </code></td>
+<td>
+<p>is the function used to compute the model likelihood. The returned function (<code>lik</code>) takes arguments that are necessary for the given model.
+For instance, if estimating an untransformed <code>ER</code> model, there would be a single argument (the transition rate) necessary for the <code>lik</code> function. The tree and data are stored internally within the <code>lik</code> function, which permits those elements to be efficiently reused when computing the likelihood under different parameter values. By default, the function evaluates the likelihood of the model by weighting root states in accordance with their conditional probability given the data (this is the <code>"obs"</code> option; see FitzJohn et al. 2009). This default behavior can be changed in the call to <code>lik</code> with <code>lik(pars, root="flat")</code>, for instance, which would weight each state equally at the root. The other useful option is <code>"given"</code>, where the user must also supply a vector (<code>root.p</code>) of probabilities for each possible state. To make likelihoods roughly comparable between <span class="pkg">geiger</span> and <span class="pkg">ape</span>, one should use the option <code>lik(pars, root="given", root.p=rep(1,k))</code>, where <code>k</code> is the number of character states. See <b>Examples</b> for a demonstration
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code><b>bnd</b> </code></td>
+<td>
+<p>is a matrix of the used bounds for the relevant parameters estimated in the model. Warnings will be issued if any parameter estimates occur at the supplied (or default) parameter bounds
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code><b>res</b> </code></td>
+<td>
+<p>is a matrix of results from optimization. Rownames of the <code>res</code> matrix are the optimization methods
+(see <code>optim</code> and <code>subplex</code>). The columns in the <code>res</code> matrix are the estimated
+parameter values, the estimated model likelihood, and an indication of optimization convergence. Values of convergence not
+equal to zero are not to be trusted
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code><b>opt</b> </code></td>
+<td>
+<p>is a list of the primary results: estimates of the parameters, the maximum-likelihood estimate (<code>lnL</code>) of the model, the
+optimization method used to compute the MLE, the number of model parameters (<code>k</code>, including one parameter for the root state), the AIC (<code>aic</code>),
+sample-size corrected AIC (<code>aicc</code>). The number of observations for AIC computation is taken to be the number of trait values observed.
+If the Hessian is used, confidence intervals on the parameter estimates (<code>CI</code>) and the Hessian matrix (<code>hessian</code>) are also returned
+</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>To speed the likelihood search, one may set an environment variable to make use of parallel processing, used by <code>mclapply</code>. To set the environment variable, use <code>options(mc.cores=INTEGER)</code>, where <code>INTEGER</code> is the number of available cores. Alternatively, the <code>mc.cores</code> variable may be preset upon the initiation of an R session (see <code>Startup</code> for details).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> LJ Harmon, RE Glor, RG FitzJohn, and JM Eastman </p>
+
+
+<h3>References</h3>
+
+<p>Yang Z. 2006. <em>Computational Molecular Evolution</em>. Oxford University Press: Oxford.
+FitzJohn RG, WP Maddison, and SP Otto. 2009. Estimating trait-dependent speciation and extinction rates from incompletely resolved molecular phylogenies. <em>Systematic Biology</em> 58:595-611.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## match data and tree
+tmp=get(data(geospiza))
+td=treedata(tmp$phy, tmp$dat)
+geo=list(phy=td$phy, dat=td$data)
+gb=round(geo$dat[,5]) ## create discrete data
+names(gb)=rownames(geo$dat)
+
+tmp=fitDiscrete(geo$phy, gb, model="ER", control=list(niter=5), ncores=2) #-7.119792
+## using the returned likelihood function
+lik=tmp$lik
+lik(0.3336772, root="obs") #-7.119792
+lik(0.3336772, root="flat") #-8.125354
+lik(0.3336772, root="given", root.p=rep(1/3,3)) #-8.125354
+lik(0.3336772, root="given", root.p=c(0, 1, 0)) #-7.074039
+lik(c(0.3640363), root="given", root.p=rep(1,3)) #-7.020569 &amp; comparable to ape:::ace solution
+
+## End(Not run)
+
+# general model (ARD)
+## match data and tree
+tmp=get(data(geospiza))
+td=treedata(tmp$phy, tmp$dat)
+geo=list(phy=td$phy, dat=td$data)
+gb=round(geo$dat[,5]) ## create discrete data
+names(gb)=rownames(geo$dat)
+fitDiscrete(geo$phy, gb, model="ARD", ncores=1) #-6.064573
+
+# user-specified rate classes
+mm=rbind(c(NA, 0, 0), c(1, NA, 2), c(0, 2, NA))
+fitDiscrete(geo$phy, gb, model=mm, ncores=1) #-7.037944
+
+# symmetric-rates model
+fitDiscrete(geo$phy, gb, model="SYM", ncores=1)#-6.822943
+</code></pre>
+
+
+</div>

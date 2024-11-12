@@ -1,0 +1,145 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>spConsistency</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Spatial consistency index</h2>
+
+<h3>Description</h3>
+
+<p>Calculate a spatial consistency index
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">spConsistency(
+  object,
+  nblistw = NULL,
+  window = NULL,
+  nrep = 999,
+  adj = FALSE,
+  mindist = 1e-11
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A FCMres object, typically obtained from functions CMeans,
+GCMeans, SFCMeans, SGFCMeans. Can also be a simple membership matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nblistw</code></td>
+<td>
+<p>A list.w object describing the neighbours typically produced
+by the spdep package. Required if data is a dataframe, see the parameter window
+if you use a list of rasters as input. Can also be NULL if object is a FCMres object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>window</code></td>
+<td>
+<p>if rasters were used for the classification, the window must be
+specified instead of a list.w object. Can also be NULL if object is a FCMres object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nrep</code></td>
+<td>
+<p>An integer indicating the number of permutation to do to simulate
+spatial randomness. Note that if rasters are used, each permutation can be very long.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adj</code></td>
+<td>
+<p>A boolean indicating if the adjusted version of the indicator must be
+calculated when working with rasters (globally standardized). When working with vectors, see the function
+adjustSpatialWeights to modify the list.w object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mindist</code></td>
+<td>
+<p>When adj is true, a minimum value for distance between two observations. If two
+neighbours have exactly the same values, then the euclidean distance between
+them is 0, leading to an infinite spatial weight. In that case, the minimum
+distance is used instead of 0.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This index is experimental, it aims to measure how much a clustering solution
+is spatially consistent. A classification is spatially inconsistent if
+neighbouring observation do not belong to the same group. See detail for
+a description of its calculation
+</p>
+<p>The total spatial inconsistency (*Scr*) is calculated as follow
+</p>
+<p style="text-align: center;"><code class="reqn">isp = \sum_{i}\sum_{j}\sum_{k} (u_{ik} - u_{jk})^{2} * W_{ij}</code>
+</p>
+
+<p>With U the membership matrix, i an observation, k the neighbours of i and W
+the spatial weight matrix This represents the total spatial inconsistency of
+the solution (true inconsistency) We propose to compare this total with
+simulated values obtained by permutations (simulated inconsistency). The
+values obtained by permutation are an approximation of the spatial
+inconsistency obtained in a random context Ratios between the true
+inconsistency and simulated inconsistencies are calculated A value of 0
+depict a situation where all observations are identical to their neighbours
+A value of 1 depict a situation where all observations are as much different
+as their neighbours that what randomness can produce A classification
+solution able to reduce this index has a better spatial consistency
+</p>
+
+
+<h3>Value</h3>
+
+<p>A named list with
+</p>
+
+<ul>
+<li>
+<p> Mean : the mean of the spatial consistency index
+</p>
+</li>
+<li>
+<p> prt05 : the 5th percentile of the spatial consistency index
+</p>
+</li>
+<li>
+<p> prt95 : the 95th percentile of the spatial consistency index
+</p>
+</li>
+<li>
+<p> samples : all the value of the spatial consistency index
+</p>
+</li>
+<li>
+<p> sum_diff : the total sum of squarred difference between observations and their neighbours
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(LyonIris)
+AnalysisFields &lt;-c("Lden","NO2","PM25","VegHautPrt","Pct0_14","Pct_65","Pct_Img",
+"TxChom1564","Pct_brevet","NivVieMed")
+dataset &lt;- sf::st_drop_geometry(LyonIris[AnalysisFields])
+queen &lt;- spdep::poly2nb(LyonIris,queen=TRUE)
+Wqueen &lt;- spdep::nb2listw(queen,style="W")
+result &lt;- SFCMeans(dataset, Wqueen,k = 5, m = 1.5, alpha = 1.5, standardize = TRUE)
+# NOTE : more replications are needed for proper inference
+spConsistency(result$Belongings, nblistw = Wqueen, nrep=25)
+</code></pre>
+
+
+</div>

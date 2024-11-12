@@ -1,0 +1,188 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BLMCP</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Accommodating missingness in environmental measurements in gene-environment interaction
+analysis: penalized estimation and selection</h2>
+
+<h3>Description</h3>
+
+<p>The joint gene-environment (G-E) interaction analysis approach developed in Liu et al, 2013.
+To accommodate "main effects, interactions" hierarchy, two types of penalty, group minimax
+concave penalty (MCP) and MCP are adopted. Specifically, for each G factor, its main effect
+and corresponding G-E interactions are regarded as a group, where the group MCP is imposed to
+identify whether this G factor has any effect at all. In addition, the MCP is imposed on the
+interaction terms to further identify important interactions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BLMCP(
+  G,
+  E,
+  Y,
+  weight = NULL,
+  lambda1,
+  lambda2,
+  gamma1 = 6,
+  gamma2 = 6,
+  max_iter = 200
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+<p>Input matrix of <code>p</code> G measurements consisting of <code>n</code> rows. Each row is an
+observation vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>E</code></td>
+<td>
+<p>Input matrix of <code>q</code> environmental risk factors. Each row is an observation
+vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>Response variable. A quantitative vector for continuous response. For survival response, <code>Y</code> should be a two-column matrix with the first column being
+the log(survival time) and the second column being the censoring indicator. The indicator is a
+binary variable, with "1" indicating dead, and "0" indicating right censored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight</code></td>
+<td>
+<p>Observation weights.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda1</code></td>
+<td>
+<p>A user supplied lambda for group MCP, where each main G effect and its
+corresponding interactions are regarded as a group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda2</code></td>
+<td>
+<p>A user supplied lambda for MCP accommodating interaction selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma1</code></td>
+<td>
+<p>The regularization parameter of the group MCP penalty.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma2</code></td>
+<td>
+<p>The regularization parameter of the MCP penalty.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_iter</code></td>
+<td>
+<p>Maximum number of iterations.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object with S3 class <code>"BLMCP"</code> is returned, which is a list with the following components.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The call that produced this object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>The matrix of the coefficients for main E effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>The matrix of the regression coefficients for all main G effects (the first row)
+and interactions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>The number of nonzeros.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BIC</code></td>
+<td>
+<p>Bayesian Information Criterion.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aa</code></td>
+<td>
+<p>The indicator representing whether the algorithm reaches convergence.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Mengyun Wu, Yangguang Zang, Sanguo Zhang, Jian Huang, and Shuangge Ma.
+<em>Accommodating missingness in environmental measurements in gene-environment interaction
+analysis. Genetic Epidemiology, 41(6):523-554, 2017.</em><br>  Jin Liu, Jian Huang, Yawei Zhang,
+Qing Lan, Nathaniel Rothman, Tongzhang Zheng, and Shuangge Ma.
+<em>Identification of gene-environment interactions in cancer studies using penalization.
+Genomics, 102(4):189-194, 2013.</em>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>predict</code>, and <code>coef</code>, and <code>plot</code>, and <code>bic.BLMCP</code> and
+<code>Augmentated.data</code> methods.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(100)
+sigmaG=AR(0.3,100)
+G=MASS::mvrnorm(250,rep(0,100),sigmaG)
+E=matrix(rnorm(250*5),250,5)
+E[,2]=E[,2]&gt;0;E[,3]=E[,3]&gt;0
+alpha=runif(5,2,3)
+beta=matrix(0,5+1,100);beta[1,1:8]=runif(8,2,3)
+beta[2:4,1]=runif(3,2,3);beta[2:3,2]=runif(2,2,3);beta[5,3]=runif(1,2,3)
+
+# continuous with Normal error
+y1=simulated_data(G,E,alpha,beta,error=rnorm(250),family="continuous")
+fit1&lt;-BLMCP(G,E,y1,weight=NULL,lambda1=0.05,lambda2=0.06,gamma1=3,gamma2=3,max_iter=200)
+coef1=coef(fit1)
+y1_hat=predict(fit1,E,G)
+plot(fit1)
+
+# survival with Normal error
+y2=simulated_data(G,E,alpha,beta,rnorm(250,0,1),family="survival",0.7,0.9)
+fit2&lt;-BLMCP(G,E,y2,weight=NULL,lambda1=0.05,lambda2=0.06,gamma1=3,gamma2=3,max_iter=200)
+coef2=coef(fit2)
+y2_hat=predict(fit2,E,G)
+plot(fit2)
+</code></pre>
+
+
+</div>

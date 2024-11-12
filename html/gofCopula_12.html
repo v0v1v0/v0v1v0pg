@@ -1,0 +1,274 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gofCustomTest</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Function to derive own tests</h2>
+
+<h3>Description</h3>
+
+<p><code>gofCustomTest</code> allows to include own Goodness-of-Fit tests and
+perform the test with the package. The margins can be estimated by a bunch
+of distributions and the time which is necessary for the estimation can be
+given. The approximate p-values are computed with a parametric bootstrap,
+which computation can be accelerated by enabling in-build parallel
+computation. It is possible to insert datasets of all dimensions above 1 and
+the possible copulae are <code>"normal"</code>, <code>"t"</code>, <code>"clayton"</code>, 
+<code>"gumbel"</code>, <code>"frank"</code>, <code>"joe"</code>, <code>"amh"</code>, 
+<code>"galambos"</code>, <code>"huslerReiss"</code>, <code>"tawn"</code>, <code>"tev"</code>, 
+<code>"fgm"</code> and <code>"plackett"</code>. The parameter estimation is performed
+with pseudo maximum likelihood method. In case the estimation fails,
+inversion of Kendall's tau is used.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gofCustomTest(
+  copula = c("normal", "t", "clayton", "gumbel", "frank", "joe", "amh", "galambos",
+    "huslerReiss", "tawn", "tev", "fgm", "plackett"),
+  x,
+  customTest = NULL,
+  param = 0.5,
+  param.est = TRUE,
+  df = 4,
+  df.est = TRUE,
+  margins = "ranks",
+  flip = 0,
+  M = 1000,
+  dispstr = "ex",
+  lower = NULL,
+  upper = NULL,
+  seed.active = NULL,
+  processes = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>copula</code></td>
+<td>
+<p>The copula to test for. Possible are <code>"normal"</code>, 
+<code>"t"</code>, <code>"clayton"</code>, <code>"gumbel"</code>, <code>"frank"</code>, <code>"joe"</code>, 
+<code>"amh"</code>, <code>"galambos"</code>, <code>"huslerReiss"</code>, <code>"tawn"</code>, 
+<code>"tev"</code>, <code>"fgm"</code> and <code>"plackett"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A matrix containing the data with rows being observations and
+columns being variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>customTest</code></td>
+<td>
+<p>A character string with the name of the customized test.
+The test has to be loaded into the workspace. Currently the function
+containing the test has to have 2 arguments, the first one for the dataset
+and the second one for the copula to test for. The arguments have to be
+named "x" and "copula" respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>The copula parameter to use, if it shall not be estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param.est</code></td>
+<td>
+<p>Shall be either <code>TRUE</code> or <code>FALSE</code>. <code>TRUE</code>
+means that <code>param</code> will be estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>Degrees of freedom, if not meant to be estimated. Only necessary
+if tested for <code>"t"</code>-copula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df.est</code></td>
+<td>
+<p>Indicates if <code>df</code> shall be estimated. Has to be either
+<code>FALSE</code> or <code>TRUE</code>, where <code>TRUE</code> means that it will be
+estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>margins</code></td>
+<td>
+<p>Specifies which estimation method for the margins shall be
+used. The default is <code>"ranks"</code>, which is the standard approach to
+convert data in such a case. Alternatively the following distributions can
+be specified: <code>"beta"</code>, <code>"cauchy"</code>, Chi-squared (<code>"chisq"</code>),
+<code>"f"</code>, <code>"gamma"</code>, Log normal (<code>"lnorm"</code>), Normal
+(<code>"norm"</code>), <code>"t"</code>, <code>"weibull"</code>, Exponential (<code>"exp"</code>).
+Input can be either one method, e.g. <code>"ranks"</code>, which will be used for
+estimation of all data sequences. Also an individual method for each margin
+can be specified, e.g. <code>c("ranks", "norm", "t")</code> for 3 data sequences.
+If one does not want to estimate the margins, set it to <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>flip</code></td>
+<td>
+<p>The control parameter to flip the copula by 90, 180, 270 degrees
+clockwise. Only applicable for bivariate copula. Default is 0 and possible 
+inputs are 0, 90, 180, 270 and NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>Number of bootstrapping loops.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dispstr</code></td>
+<td>
+<p>A character string specifying the type of the symmetric
+positive definite matrix characterizing the elliptical copula. Implemented
+structures are "ex" for exchangeable and "un" for unstructured, see package
+<code>copula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>Lower bound for the maximum likelihood estimation of the copula
+parameter. The constraint is also active in the bootstrapping procedure. The
+constraint is not active when a switch to inversion of Kendall's tau is
+necessary. Default <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>Upper bound for the maximum likelihood estimation of the copula
+parameter. The constraint is also active in the bootstrapping procedure. The
+constraint is not active when a switch to inversion of Kendall's tau is
+necessary. Default <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed.active</code></td>
+<td>
+<p>Has to be either an integer or a vector of M+1 integers.
+If an integer, then the seeds for the bootstrapping procedure will be
+simulated. If M+1 seeds are provided, then these seeds are used in the
+bootstrapping procedure. Defaults to <code>NULL</code>, then <code>R</code> generates
+the seeds from the computer runtime. Controlling the seeds is useful for
+reproducibility of a simulation study to compare the power of the tests or
+for reproducibility of an empirical study.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>processes</code></td>
+<td>
+<p>The number of parallel processes which are performed to
+speed up the bootstrapping. Shouldn't be higher than the number of logical
+processors. Please see the details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The approximate p-value is computed by the formula, see <span class="pkg">copula</span>,
+</p>
+<p style="text-align: center;"><code class="reqn">\sum_{b=1}^M \mathbf{I}(|T_b| \geq |T|) / M,</code>
+</p>
+
+<p>where <code class="reqn">T</code> and <code class="reqn">T_b</code> denote the test statistic and the
+bootstrapped test statistc, respectively.
+</p>
+<p>For small values of <code>M</code>, initializing the parallelisation via
+<code>processes</code> does not make sense. The registration of the parallel
+processes increases the computation time. Please consider to enable
+parallelisation just for high values of <code>M</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of the <code>class</code> gofCOP with the components
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>a character which informs about the performed analysis</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>copula</code></td>
+<td>
+<p>the copula tested for</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>margins</code></td>
+<td>
+<p>the method used to
+estimate the margin distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param.margins</code></td>
+<td>
+<p>the parameters of
+the estimated margin distributions. Only applicable if the margins were not
+specified as <code>"ranks"</code> or <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>dependence
+parameters of the copulae</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>the degrees of freedem of the copula.
+Only applicable for t-copula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res.tests</code></td>
+<td>
+<p>a matrix with the p-values
+and test statistics of the hybrid and the individual tests</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# For illustration we load here the test statistic of the gofSn test
+Testfunc = function(x, copula) {
+            C.theo = pCopula(x, copula = copula)
+            C.n = F.n(x, X = x)
+            CnK = sum((C.n - C.theo)^2)
+            return(CnK)
+}
+
+data(IndexReturns2D)
+
+gofCustomTest(copula = "normal", x = IndexReturns2D, 
+              customTest = "Testfunc", M=10)
+
+
+</code></pre>
+
+
+</div>

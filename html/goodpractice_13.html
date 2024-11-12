@@ -1,0 +1,105 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>customization</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Defining custom preparations and checks</h2>
+
+<h3>Description</h3>
+
+<p>Defining custom preparations and checks
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">make_prep(name, func)
+
+make_check(description, check, gp, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>name</code></td>
+<td>
+<p>Name of the preparation function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>func</code></td>
+<td>
+<p>A function that takes two arguments:
+The <code>path</code> to the root directory of the package, and a logical
+argument: <code>quiet</code>. If <code>quiet</code> is true, the preparation function
+may print out diagnostic messages. The output of this function will be
+saved as the " <code>name</code>" entry of <code>state</code>, i.e. of the input for
+the  <code>check</code>-functions (see example).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>description</code></td>
+<td>
+<p>A description of the check.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check</code></td>
+<td>
+<p>A function that takes the <code>state</code> as an argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gp</code></td>
+<td>
+<p>A short description of what is good practice.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments. Most important: A <code>preps</code> argument that
+contains the names of all the preparation functions required for the check.</p>
+</td>
+</tr>
+</table>
+<h3>Functions</h3>
+
+
+<ul>
+<li> <p><code>make_prep()</code>: Create a preparation function
+</p>
+</li>
+<li> <p><code>make_check()</code>: Create a check function
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># make a preparation function
+url_prep &lt;- make_prep(
+  name = "desc", 
+  func = function(path, quiet) desc::description$new(path)
+)
+# and the corresponding check function
+url_chk &lt;- make_check(
+  description = "URL field in DESCRIPTION",
+  tags = character(),
+  preps = "desc",
+  gp = "have a URL field in DESCRIPTION",
+  check = function(state) state$desc$has_fields("URL")
+)
+# use together in gp():
+# (note that you have to list the name of your custom check in
+# the checks-argument as well....)
+bad1 &lt;- system.file("bad1", package = "goodpractice")
+res &lt;- gp(bad1, checks = c("url", "no_description_depends"),
+          extra_preps = list("desc" = url_prep),
+          extra_checks = list("url" = url_chk))
+</code></pre>
+
+
+</div>

@@ -1,0 +1,237 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>estimate.geolm_cmodStd</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Determine MLEs of model parameters for a geostatistical
+model</h2>
+
+<h3>Description</h3>
+
+<p><code>estimate</code> estimates the parameters of a
+geostatistical linear model of class <code>geolm_cmodStd</code>
+using maximum likelihood estimation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'geolm_cmodStd'
+estimate(
+  object,
+  reml = FALSE,
+  noise_type = "e",
+  lower = NULL,
+  upper = NULL,
+  method = "nlminb",
+  itnmax = NULL,
+  control = list(),
+  est_nugget = TRUE,
+  est_par3 = TRUE,
+  est_angle = FALSE,
+  est_ratio = FALSE,
+  verbose = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A geostatistical linear model object
+produced by the <code>geolm</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reml</code></td>
+<td>
+<p>A logical value indicating whether standard
+maximum likelihood estimation should be performed
+(<code>reml = FALSE</code>).  If <code>reml = TRUE</code>, then
+restricted maximum likelihood estimation is performed.  The
+default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>noise_type</code></td>
+<td>
+<p>A character vector indicating the type
+of noise (nugget) variance to estimate. The default is
+<code>est = "e"</code>, indicating the error variance should
+be estimated. Alternatively, the user can specify
+<code>est = "f"</code>, indicating that the finescale (microscale)
+variance should be estimated. The other type of noise
+variance is set to 0, otherwise the model is not
+identifiable. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>A named list with the names of the
+parameters you wish to set lower bounds for and the
+associated value. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>A named list with the names of the
+parameters you wish to set upper bounds for and the
+associated value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>The optimization method.  The default is
+<code>"nlminb"</code>. <code>"L-BFGS-B"</code> is another
+acceptable choice.  See <code>optimx</code>
+for further choices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>itnmax</code></td>
+<td>
+<p>An integer indicating the maximum number of
+iterations to allow for the optimization procedure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>A list of control parameters passed
+internally to <code>optimx</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>est_nugget</code></td>
+<td>
+<p>A logical value indicating whether the
+nugget variance (<code>evar</code> or <code>fvar</code>) should be
+estimated. The default is <code>TRUE</code>, indicating that
+the nugget should be estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>est_par3</code></td>
+<td>
+<p>A logical value indicating whether
+<code>par3</code> should be estimated (for an appropriate
+covariance model such as <code>"matern"</code> or
+<code>"amatern"</code>). The default is <code>TRUE</code>,
+indicating that this parameter should be estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>est_angle</code></td>
+<td>
+<p>A logical value indicating whether the
+geometric anisotropy angle should be estimated. The
+default is <code>FALSE</code>, indicating that this parameter
+should not be estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>est_ratio</code></td>
+<td>
+<p>A logical value indicating whether the
+geometric anisotropy ratio of minor axis length to
+major axis length should be estimated. The default is
+<code>FALSE</code>, indicating that this parameter should not
+be estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>A logical value indicating whether
+potentially informative messages should be printed. The
+default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Currently unimplemented</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>optimx</code> function is used to find
+the MLEs.  The <code>control</code> argument of
+<code>optimx</code> has a parameter <code>kkt</code>
+related to checking optimality conditions. This is
+internally set to <code>FALSE</code>.  See
+<code>optimx</code> for Details.
+</p>
+<p>Only the sum of <code>evar</code> and <code>fvar</code> is
+identifiable. Depending on the choice of
+<code>noise_type</code>, the covariance model is internally
+updated to estimate only one type of noise. e.g., if
+<code>noise_type = "e"</code>, then internally we update
+<code>evar</code> so that <code>evar = evar + fvar</code> and
+<code>fvar = 0</code>. Estimation is then performed on
+<code>evar</code> alone. Alternatively, the analagous estimated
+would be made for <code>fvar</code> if <code>noise_type =
+"fvar"</code>.
+</p>
+<p>When <code>est_nugget</code> is true, the likelihood is
+profiled to simplify the optimization problem. In that
+case a parameter <code>lambda = (evar + fvar)/psill</code> is
+optimized. The optimal <code>psill</code> and noise variance
+are then determined.
+</p>
+<p>The <code>lower</code> argument should be a named list with the
+names of the parameters you wish to set lower bounds for.
+If not specified, an attempt is made to specify
+reasonable lower bounds. The current choices are <code>r
+= 0.001</code>, <code>psill = 0.001</code>, <code>lambda = 0</code>,
+<code>angle = 0</code>, <code>ratio = 0.001</code>, <code>par3 =
+0.001</code>.
+</p>
+<p>The <code>upper</code> argument should be a named list with the
+names of the parameters you wish to set upper bounds for.
+If not specified, an attempt is made to specify
+reasonable upper bounds. The current choices are <code>r
+= 5 * </code> maximum intercentroid distance, <code>psill = 5 *
+var(object$y)</code>, <code>lambda = 5</code>, <code>angle = 179.99</code>,
+<code>ratio = 1</code>, <code>par3 = 3</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Joshua French
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cmod_std</code>,
+<code>optimx</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(toydata, package = "gear")
+# setup standard covariance model
+mod_std = cmod_std("exponential", psill = 1, r = 1, evar = 0.1)
+# setup  dataframe with data
+# fit Std geolm
+object = geolm(y ~ x1 + x2, data = toydata, mod = mod_std,
+                  coordnames = c("x1", "x2"))
+est_object = estimate(object, control = list(trace = 1),
+                      verbose = TRUE,
+                      lower = list(r = 0.05, lambda = 0.05))
+</code></pre>
+
+
+</div>

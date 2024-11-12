@@ -1,0 +1,115 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>threshold</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Threshold Intervention</h2>
+
+<h3>Description</h3>
+
+<p>This function implements a threshold intervention (i.e., once treatment bypasses a certain
+threshold, it remains at that threshold until end of follow-up) for the specified
+intervention variable in the data table <code>newdf</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">threshold(newdf, pool, intvar, intvals, time_name, t)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>newdf</code></td>
+<td>
+<p>Data table containing the simulated data at time <code class="reqn">t</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pool</code></td>
+<td>
+<p>Data table containing the simulated data at times before <code class="reqn">t</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intvar</code></td>
+<td>
+<p>Character string specifying the name of the variable to be intervened on in each round of the simulation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intvals</code></td>
+<td>
+<p>A list of length 2. The first entry is lower bound of the threshold, and the second entry is the upper bound.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_name</code></td>
+<td>
+<p>Character string specifying the name of the time variable in <code>pool</code> and <code>newdf</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t</code></td>
+<td>
+<p>Integer specifying the current time index.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>No value is returned. The data table <code>newdf</code> is modified in place.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Estimating the effect of threshold interventions on the mean of a binary
+## end of follow-up outcome
+
+id &lt;- 'id_num'
+time_name &lt;- 'time'
+covnames &lt;- c('cov1', 'cov2', 'treat')
+outcome_name &lt;- 'outcome'
+histories &lt;- c(lagged, cumavg)
+histvars &lt;- list(c('treat', 'cov1', 'cov2'), c('cov1', 'cov2'))
+covtypes &lt;- c('binary', 'zero-inflated normal', 'normal')
+covparams &lt;- list(covmodels = c(cov1 ~ lag1_treat + lag1_cov1 + lag1_cov2 + cov3 +
+                                  time,
+                                cov2 ~ lag1_treat + cov1 + lag1_cov1 + lag1_cov2 +
+                                  cov3 + time,
+                                treat ~ lag1_treat + cumavg_cov1 +
+                                  cumavg_cov2 + cov3 + time))
+ymodel &lt;- outcome ~  treat + cov1 + cov2 + lag1_cov1 + lag1_cov2 + cov3
+intervention1.treat &lt;- list(static, rep(0, 7))
+intervention2.treat &lt;- list(threshold, 1, Inf)
+int_descript &lt;- c('Never treat', 'Threshold - lower bound 1')
+nsimul &lt;- 10000
+ncores &lt;- 2
+
+gform_bin_eof &lt;- gformula_binary_eof(obs_data = binary_eofdata, id = id,
+                                     time_name = time_name,
+                                     covnames = covnames,
+                                     outcome_name = outcome_name,
+                                     covtypes = covtypes,
+                                     covparams = covparams,
+                                     ymodel = ymodel,
+                                     intervention1.treat = intervention1.treat,
+                                     intervention2.treat = intervention2.treat,
+                                     int_descript = int_descript,
+                                     histories = histories, histvars = histvars,
+                                     basecovs = c("cov3"), seed = 1234,
+                                     parallel = TRUE, nsamples = 5,
+                                     nsimul = nsimul, ncores = ncores)
+gform_bin_eof
+
+
+</code></pre>
+
+
+</div>

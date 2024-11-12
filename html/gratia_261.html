@@ -1,0 +1,246 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>response_derivatives</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Derivatives on the response scale from an estimated GAM</h2>
+
+<h3>Description</h3>
+
+<p>Derivatives on the response scale from an estimated GAM
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">response_derivatives(object, ...)
+
+## Default S3 method:
+response_derivatives(object, ...)
+
+## S3 method for class 'gamm'
+response_derivatives(object, ...)
+
+## S3 method for class 'gam'
+response_derivatives(
+  object,
+  focal = NULL,
+  data = NULL,
+  order = 1L,
+  type = c("forward", "backward", "central"),
+  scale = c("response", "linear_predictor"),
+  method = c("gaussian", "mh", "inla", "user"),
+  n = 100,
+  eps = 1e-07,
+  n_sim = 10000,
+  level = 0.95,
+  seed = NULL,
+  mvn_method = c("mvnfast", "mgcv"),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>an R object to compute derivatives for.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments passed to other methods and on to <code>fitted_samples()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>focal</code></td>
+<td>
+<p>character; name of the focal variable. The response derivative
+of the response with respect to this variable will be returned.
+All other variables involved in the model will be held at constant values.
+This can be missing if supplying <code>data</code>, in which case, the focal variable
+will be identified as the one variable that is not constant.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a data frame containing the values of the model covariates
+at which to evaluate the first derivatives of the smooths. If supplied,
+all but one variable must be held at a constant value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order</code></td>
+<td>
+<p>numeric; the order of derivative.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>character; the type of finite difference used. One of
+<code>"forward"</code>, <code>"backward"</code>, or <code>"central"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>character; should the derivative be estimated on the response
+or the linear predictor (link) scale? One of <code>"response"</code> (the default),
+or <code>"linear predictor"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>character; which method should be used to draw samples from
+the posterior distribution. <code>"gaussian"</code> uses a Gaussian (Laplace)
+approximation to the posterior. <code>"mh"</code> uses a Metropolis Hastings sample
+that alternates t proposals with proposals based on a shrunken version of
+the posterior covariance matrix. <code>"inla"</code> uses a variant of Integrated
+Nested Laplace Approximation due to Wood (2019), (currently not
+implemented). <code>"user"</code> allows for user-supplied posterior draws
+(currently not implemented).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>numeric; the number of points to evaluate the derivative at (if
+<code>data</code> is not supplied).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>numeric; the finite difference.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_sim</code></td>
+<td>
+<p>integer; the number of simulations used in computing the
+simultaneous intervals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>numeric; <code style="white-space: pre;">⁠0 &lt; level &lt; 1⁠</code>; the coverage level of the
+credible interval. The default is <code>0.95</code> for a 95% interval.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>numeric; a random seed for the simulations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mvn_method</code></td>
+<td>
+<p>character; one of <code>"mvnfast"</code> or <code>"mgcv"</code>. The default is
+uses <code>mvnfast::rmvn()</code>, which can be considerably faster at generate large
+numbers of MVN random values than <code>mgcv::rmvn()</code>, but which might not work
+for some marginal fits, such as those where the covariance matrix is close
+to singular.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A tibble, currently with the following variables:
+</p>
+
+<ul>
+<li> <p><code>.row</code>: integer, indexing the row of <code>data</code> each row in the output
+represents
+</p>
+</li>
+<li> <p><code>.focal</code>: the name of the variable for which the partial derivative was
+evaluated,
+</p>
+</li>
+<li> <p><code>.derivative</code>: the estimated partial derivative,
+</p>
+</li>
+<li> <p><code>.lower_ci</code>: the lower bound of the confidence or simultaneous interval,
+</p>
+</li>
+<li> <p><code>.upper_ci</code>: the upper bound of the confidence or simultaneous interval,
+</p>
+</li>
+<li>
+<p> additional columns containing the covariate values at which the derivative
+was evaluated.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Gavin L. Simpson
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library("ggplot2")
+library("patchwork")
+load_mgcv()
+
+df &lt;- data_sim("eg1", dist = "negbin", scale = 0.25, seed = 42)
+
+# fit the GAM (note: for execution time reasons using bam())
+m &lt;- bam(y ~ s(x0) + s(x1) + s(x2) + s(x3),
+  data = df, family = nb(), method = "fREML"
+)
+
+# data slice through data along x2 - all other covariates will be set to
+# typical values (value closest to median)
+ds &lt;- data_slice(m, x2 = evenly(x2, n = 100))
+
+# fitted values along x2
+fv &lt;- fitted_values(m, data = ds)
+
+# response derivatives - ideally n_sim = &gt;10000
+y_d &lt;- response_derivatives(m,
+  data = ds, type = "central", focal = "x2",
+  eps = 0.01, seed = 21, n_sim = 1000
+)
+
+# draw fitted values along x2
+p1 &lt;- fv |&gt;
+  ggplot(aes(x = x2, y = .fitted)) +
+  geom_ribbon(aes(ymin = .lower_ci, ymax = .upper_ci, y = NULL),
+    alpha = 0.2
+  ) +
+  geom_line() +
+  labs(
+    title = "Estimated count as a function of x2",
+    y = "Estimated count"
+  )
+
+# draw response derivatives
+p2 &lt;- y_d |&gt;
+  ggplot(aes(x = x2, y = .derivative)) +
+  geom_ribbon(aes(ymin = .lower_ci, ymax = .upper_ci), alpha = 0.2) +
+  geom_line() +
+  labs(
+    title = "Estimated 1st derivative of estimated count",
+    y = "First derivative"
+  )
+
+# draw both panels
+p1 + p2 + plot_layout(nrow = 2)
+
+</code></pre>
+
+
+</div>

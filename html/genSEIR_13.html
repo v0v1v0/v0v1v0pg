@@ -1,0 +1,255 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>SEIQRDP</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulate generalized SEIR model</h2>
+
+<h3>Description</h3>
+
+<p>This function simulates the time-histories of an epidemic outbreak using a generalized SEIR model
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">SEIQRDP(
+  alpha,
+  beta,
+  gamma,
+  delta,
+  lambda0,
+  kappa0,
+  Npop,
+  E0,
+  I0,
+  Q0,
+  R0,
+  D0,
+  lambdaFun,
+  kappaFun,
+  tstart,
+  tfinish,
+  dt = 1/24,
+  f = 0
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>fitted protection rate</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>fitted  infection rate</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>fitted  Inverse of the average latent time</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>fitted  rate at which people enter in quarantine</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda0</code></td>
+<td>
+<p>fitted  cure rate</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kappa0</code></td>
+<td>
+<p>fitted  mortality rate</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Npop</code></td>
+<td>
+<p>Total population of the sample</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>E0</code></td>
+<td>
+<p>Initial number of exposed cases</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>I0</code></td>
+<td>
+<p>Initial number of infectious cases</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Q0</code></td>
+<td>
+<p>Initial number of quarantined cases</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R0</code></td>
+<td>
+<p>Initial number of recovered cases</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>D0</code></td>
+<td>
+<p>Initial number of dead cases</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambdaFun</code></td>
+<td>
+<p>anonymous function giving the time-dependant recovery rate</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kappaFun</code></td>
+<td>
+<p>anonymous function giving the time-dependant death rate</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tstart</code></td>
+<td>
+<p>start date</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tfinish</code></td>
+<td>
+<p>finish date</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dt</code></td>
+<td>
+<p>the time step. This oversamples time to ensure that the algorithm converges</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>f</code></td>
+<td>
+<p>number of days for future predictions</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a list of predicted cases including susceptible, exposed,  infectious, quarantined, recovered, dead and insusceptible.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Selcuk Korkmaz, <a href="mailto:selcukorkmaz@gmail.com">selcukorkmaz@gmail.com</a>
+</p>
+<p>Selcuk Korkmaz, <a href="mailto:selcukorkmaz@gmail.com">selcukorkmaz@gmail.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Peng, L., Yang, W., Zhang, D., Zhuge, C., Hong, L. 2020. “Epidemic analysis of COVID-19 in China by dynamical modeling”, arXiv preprint arXiv:2002.06563.
+</p>
+<p><a href="https://www.mathworks.com/matlabcentral/fileexchange/74545-generalized-seir-epidemic-model-fitting-and-computation">https://www.mathworks.com/matlabcentral/fileexchange/74545-generalized-seir-epidemic-model-fitting-and-computation</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>fit_SEIQRDP</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+start = "01/01/21"
+finish = "04/01/21"
+country = "Italy"
+dt = 1
+f=30
+
+covidData = getDataCOVID(start = start, finish = finish, country = country)
+Recovered = covidData$tableRecovered
+Deaths = covidData$tableDeaths
+Confirmed = covidData$tableConfirmed
+
+if(nrow(Recovered) == 1){
+  name = Recovered$CountryRegion
+}else{
+   name = paste0(Recovered$ProvinceState, " (",Recovered$CountryRegion,")")
+}
+
+  recovered = Recovered[ ,5:ncol(covidData$tableRecovered)]
+  deaths = Deaths[ ,5:ncol(covidData$tableDeaths)]
+  confirmed = Confirmed[ ,5:ncol(covidData$tableConfirmed)]
+
+  Npop = 60000000
+
+  alpha_guess = 0.05
+  beta_guess = 0.8
+  LT_guess = 7
+  Q_guess = 0.8
+  lambda_guess = c(0.01,0.001,10)
+  kappa_guess = c(0.001,0.001,10)
+
+guess = list(alpha_guess,
+            beta_guess,
+            1/LT_guess,
+            Q_guess,
+            lambda_guess[1],
+            lambda_guess[2],
+            lambda_guess[3],
+            kappa_guess[1],
+            kappa_guess[2],
+            kappa_guess[3])
+
+ Q0 = confirmed[1]-recovered[1]-deaths[1]
+ I0 = 0.3*Q0
+ E0 = 0.3*Q0
+ R0 = recovered[1]
+ D0 = deaths[1]
+
+ Active = confirmed-recovered-deaths
+ Active[Active&lt;0] &lt;- 0
+
+ Q=Active
+ R=recovered
+ D = deaths
+
+ time = seq(as.Date(start, format = "%m/%d/%y"), as.Date(finish, format = "%m/%d/%y"), by = "1 day")
+
+ params = fit_SEIQRDP(Q = Active, R = recovered, D = deaths, Npop = Npop, E0 = E0, I0 = I0,
+                        time = time, dt = dt, guess = guess, ftol = 1e-6, ptol = 1e-6, gtol = 1e-6,
+                        epsfcn = 0.001, factor = 100, maxfev = 1000,maxiter = 100, nprint = 1,
+                        trace = TRUE)
+
+ res = SEIQRDP(alpha = params$alpha1, beta = params$beta1,
+               gamma = params$gamma1, delta = params$delta1,
+               lambda0 = c(params$lambda01, params$lambda02, params$lambda03),
+               kappa0 = c(params$kappa01, params$kappa02, params$kappa03),
+               Npop, E0, I0, Q0, R0, D0,lambdaFun = params$lambdaFun,
+               kappaFun = params$kappaFun, tstart = start, tfinish = finish,
+               dt = dt, f =f)
+
+</code></pre>
+
+
+</div>

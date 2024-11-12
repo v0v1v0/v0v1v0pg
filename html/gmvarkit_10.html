@@ -1,0 +1,134 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>check_constraints</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Check the constraint matrix has the correct form</h2>
+
+<h3>Description</h3>
+
+<p><code>check_constraints</code> checks that the constraints are correctly set.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">check_constraints(
+  p,
+  M,
+  d,
+  constraints = NULL,
+  same_means = NULL,
+  weight_constraints = NULL,
+  structural_pars = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>a positive integer specifying the autoregressive order of the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+
+<dl>
+<dt>For <strong>GMVAR</strong> and <strong>StMVAR</strong> models:</dt>
+<dd>
+<p>a positive integer specifying the number of mixture components.</p>
+</dd>
+<dt>For <strong>G-StMVAR</strong> models:</dt>
+<dd>
+<p>a size (2x1) integer vector specifying the number of <em>GMVAR type</em> components <code>M1</code>
+in the first element and <em>StMVAR type</em> components <code>M2</code> in the second element. The total number of mixture components
+is <code>M=M1+M2</code>.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>the number of time series in the system.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constraints</code></td>
+<td>
+<p>a size <code class="reqn">(Mpd^2 x q)</code> constraint matrix <strong><code class="reqn">C</code></strong> specifying general linear constraints
+to the autoregressive parameters. We consider constraints of form
+(<strong><code class="reqn">\phi</code></strong><code class="reqn">_{1}</code><code class="reqn">,...,</code><strong><code class="reqn">\phi</code></strong><code class="reqn">_{M}) = </code><strong><code class="reqn">C \psi</code></strong>,
+where <strong><code class="reqn">\phi</code></strong><code class="reqn">_{m}</code><code class="reqn"> = (vec(A_{m,1}),...,vec(A_{m,p}) (pd^2 x 1), m=1,...,M</code>,
+contains the coefficient matrices and <strong><code class="reqn">\psi</code></strong> <code class="reqn">(q x 1)</code> contains the related parameters.
+For example, to restrict the AR-parameters to be the same for all regimes, set <strong><code class="reqn">C</code></strong>=
+[<code>I:...:I</code>]<strong>'</strong> <code class="reqn">(Mpd^2 x pd^2)</code> where <code>I = diag(p*d^2)</code>.
+Ignore (or set to <code>NULL</code>) if linear constraints should <strong>not</strong> be employed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>same_means</code></td>
+<td>
+<p>Restrict the mean parameters of some regimes to be the same? Provide a list of numeric vectors
+such that each numeric vector contains the regimes that should share the common mean parameters. For instance, if
+<code>M=3</code>, the argument <code>list(1, 2:3)</code> restricts the mean parameters of the second and third regime to be
+the same but the first regime has freely estimated (unconditional) mean. Ignore or set to <code>NULL</code> if mean parameters
+should not be restricted to be the same among any regimes. <strong>This constraint is available only for mean parametrized models;
+that is, when <code>parametrization="mean"</code>.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight_constraints</code></td>
+<td>
+<p>a numeric vector of length <code class="reqn">M-1</code> specifying fixed parameter values for the mixing weight parameters
+<code class="reqn">\alpha_m, \ m=1,...,M-1</code>. Each element should be strictly between zero and one, and the sum of all the elements should
+be strictly less than one.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>structural_pars</code></td>
+<td>
+<p>If <code>NULL</code> a reduced form model is considered. Reduced models can be used directly as recursively
+identified structural models. For a structural model identified by conditional heteroskedasticity, should be a list containing
+at least the first one of the following elements:
+</p>
+
+<ul>
+<li> <p><code>W</code> - a <code class="reqn">(dxd)</code> matrix with its entries imposing constraints on <code class="reqn">W</code>: <code>NA</code> indicating that the element is
+unconstrained, a positive value indicating strict positive sign constraint, a negative value indicating strict
+negative sign constraint, and zero indicating that the element is constrained to zero.
+</p>
+</li>
+<li> <p><code>C_lambda</code> - a <code class="reqn">(d(M-1) x r)</code> constraint matrix that satisfies (<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{2}</code><code class="reqn">,...,</code>
+<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{M}) =</code> <strong><code class="reqn">C_{\lambda} \gamma</code></strong> where <strong><code class="reqn">\gamma</code></strong> is the new <code class="reqn">(r x 1)</code>
+parameter subject to which the model is estimated (similarly to AR parameter constraints). The entries of <code>C_lambda</code>
+must be either <strong>positive</strong> or <strong>zero</strong>. Ignore (or set to <code>NULL</code>) if the eigenvalues <code class="reqn">\lambda_{mi}</code>
+should not be constrained.
+</p>
+</li>
+<li> <p><code>fixed_lambdas</code> - a length <code class="reqn">d(M-1)</code> numeric vector (<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{2}</code><code class="reqn">,...,</code>
+<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{M})</code> with elements strictly larger than zero specifying the fixed parameter values for the
+parameters <code class="reqn">\lambda_{mi}</code> should be constrained to. This constraint is alternative <code>C_lambda</code>.
+Ignore (or set to <code>NULL</code>) if the eigenvalues <code class="reqn">\lambda_{mi}</code> should not be constrained.
+</p>
+</li>
+</ul>
+<p>See Virolainen (forthcoming) for the conditions required to identify the shocks and for the B-matrix as well (it is <code class="reqn">W</code> times
+a time-varying diagonal matrix with positive diagonal entries).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Checks the constraints and throws an error
+if something is wrong.
+</p>
+
+
+</div>

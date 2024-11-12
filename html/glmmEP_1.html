@@ -1,0 +1,158 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>glmmEP</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Approximate frequentist inference for generalized linear mixed models via expectation propagation.</h2>
+
+<h3>Description</h3>
+
+<p>The machine learning paradigm known as expectation propagation, typically used for approximation inference in Bayesian graphical models contexts, is adapted to the problem of frequentist inference in generalized linear mixed model analysis. The essence is rapid approximation evaluation of the log-likelihood surface by using expectation propagation projections onto the Multivariate Normal family that circumvent the need for numerical integration. The approach applies to any reasonable dimension of the random effects vector, but currently is limited to probit mixed models with one level of nesting. The reference below provides full details.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">glmmEP(y,Xfixed=NULL,Xrandom,idNum,control)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Vector containing the (0/1) response data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Xfixed</code></td>
+<td>
+<p>Matrix with columns consisting of predictors that enter the model as fixed effects. Each entry of the first column equal the number 1 corresponding to the fixed effects intercept.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Xrandom</code></td>
+<td>
+<p>Matrix with columns consisting of predictors that enter the model as random effects. Each entry of the  first column must equal the number 1 corresponding to the random effects intercept.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idNum</code></td>
+<td>
+<p>Vector containing group membership identification numbers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>Function for controlling convergence and other specifications.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Matt Wand<a href="mailto:matt.wand@uts.edu.au">matt.wand@uts.edu.au</a> and James Yu<a href="mailto:james.yu@student.uts.edu.au">james.yu@student.uts.edu.au</a></p>
+
+
+<h3>References</h3>
+
+<p>Hall, P., Johnstone, I.M., Ormerod, J.T., Wand, M.P. and Yu, J. (2018). 
+Fast and accurate binary response mixed model analysis via expectation propagation. 
+&lt;arXiv:1805.08423v1&gt;.</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(glmmEP)
+
+# Simulate data corresponding to a
+# a simple random intercept model:
+
+set.seed(1)  ; m &lt;- 100 ; n &lt;- 10
+beta0True &lt;- 0.37 ; beta1True &lt;- 0.93 ; sigmaTrue &lt;- 0.73
+uTrue &lt;- rnorm(m)*sigmaTrue
+x &lt;- runif(m*n)
+y &lt;- rbinom(m*n,1,pnorm(beta0True + beta1True*x 
+            + crossprod(t(kronecker(diag(m),rep(1,n))),uTrue)))
+idNum &lt;- rep(1:m,each=n)
+Xfixed &lt;- cbind(1,x)
+Xrandom &lt;- matrix(1,length(y),1)
+colnames(Xfixed) &lt;- c("intercept","x")
+
+# Obtain and summarise glmmEP() fit:
+
+fit &lt;- glmmEP(y,Xfixed,Xrandom,idNum)
+summary(fit)
+
+# Obtain simulated data corresponding to the
+# simulation study in Section 4.1.2. of 
+# Hall et al. (2018):
+
+dataObj &lt;- glmmSimData(seed=54321)
+y &lt;- dataObj$y  
+Xfixed &lt;- dataObj$Xfixed
+Xrandom &lt;- dataObj$Xrandom  
+idNum &lt;- dataObj$idNum
+
+# Obtain the probit mixed model fit and summaries:
+
+
+fitSimData &lt;- glmmEP(y,Xfixed,Xrandom,idNum)
+summary(fitSimData)
+plot(fitSimData$randomEffects) ; abline(h=0) ; abline(v=0)
+
+
+if (require("mlmRev"))
+{
+   # Example involving the data frame `Contraception'
+   # in the package `mlmRev', starting with
+   # setting up the input vectors and matrices
+   # for a random intercepts model:
+
+   data(Contraception)
+   y &lt;- as.numeric(as.character(Contraception$use)=="Y")
+   Xfixed &lt;- cbind(1,as.numeric(as.character(Contraception$urban)=="Y"),
+                   Contraception$age,
+                   as.numeric(as.character(Contraception$livch)=="1"),
+                   as.numeric(as.character(Contraception$livch)=="2"),
+                   as.numeric(as.character(Contraception$livch)=="3+"))
+   colnames(Xfixed) &lt;- c("intercept","isUrban","age","livChEq1",
+                         "livChEq2","livChGe3")
+   Xrandom &lt;- as.matrix(rep(1,length(y)))
+   colnames(Xrandom) &lt;- "intercept"
+   idNum &lt;- as.numeric(as.character(Contraception$district))
+
+   # Obtain random intercepts probit mixed model fit and summaries:
+
+   
+   fitContracRanInt &lt;- glmmEP(y,Xfixed,Xrandom,idNum)
+   summary(fitContracRanInt)
+   hist(as.numeric(fitContracRanInt$randomEffects),
+        xlab="random intercepts predicted values",probability=TRUE,
+        col="dodgerblue",breaks=15,main="")
+   abline(v=0,col="slateblue",lwd=2)
+   
+
+   # Change `Xrandom' to correspond to a random intercepts and 
+   # slopes model:
+
+   Xrandom &lt;- cbind(1,as.numeric(as.character(Contraception$urban)=="Y"))
+   colnames(Xrandom) &lt;- c("intercept","isUrban")
+
+   # Obtain random intercepts and slopes probit mixed model fit and summaries:
+
+   
+   fitContracRanIntAndSlp &lt;- glmmEP(y,Xfixed,Xrandom,idNum)
+   summary(fitContracRanIntAndSlp)
+   plot(fitContracRanIntAndSlp$randomEffects,
+        col="dodgerblue",xlab="random intercepts predicted values",
+        ylab="random slopes predicted values",bty="l")
+   abline(v=0,col="slateblue",lwd=2); abline(h=0,col="slateblue",lwd=2)
+   
+}
+</code></pre>
+
+
+</div>

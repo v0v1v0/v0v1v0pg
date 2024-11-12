@@ -1,0 +1,159 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemLand_Labor</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some Examples of Spot Market Clearing Paths Involving Land and Labor</h2>
+
+<h3>Description</h3>
+
+<p>Some examples of spot market clearing paths (alias instantaneous equilibrium paths) involving land and labor.
+The labor supply may increase from the fifth period.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemLand_Labor(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### a 3-by-3 economy
+f &lt;- function(GRLabor = 0,
+              es.land.labor = 1) {
+  dst.firm &lt;- node_new("output",
+                       type = "SCES",
+                       es = es.land.labor, alpha = 1,
+                       beta = c(0.5, 0.5),
+                       "land", "lab"
+  )
+
+  dst.landowner &lt;- node_new(
+    "util",
+    type = "Leontief", a = 1,
+    "prod"
+  )
+
+  dst.laborer &lt;- Clone(dst.landowner)
+
+  dstl &lt;- list(dst.firm, dst.landowner, dst.laborer)
+
+  ge &lt;- sdm2(
+    A = dstl,
+    B = diag(c(1, 0, 0)),
+    S0Exg = matrix(c(
+      NA, NA, NA,
+      NA, 100, NA,
+      NA, NA, 100
+    ), 3, 3, TRUE),
+    names.commodity = c("prod", "land", "lab"),
+    names.agent = c("firm", "landowner", "laborer"),
+    maxIteration = 1,
+    numberOfPeriods = 30,
+    numeraire = "lab",
+    ts = TRUE,
+    policy = list(
+      function(time, state) {
+        if (time &gt;= 5) {
+          state$S[3, 3] &lt;- 100 * (1 + GRLabor)^(time - 4)
+        }
+        state
+      },
+      policyMarketClearingPrice
+    ),
+    z0 = c(200, 100, 100),
+    p0 = c(1, 1, 1)
+  )
+
+  par(mfrow = c(1, 2))
+  matplot(growth_rate(ge$ts.p), type = "o", pch = 20)
+  matplot(growth_rate(ge$ts.z), type = "o", pch = 20)
+
+  ge
+}
+
+ge &lt;- f()
+ge$p
+ge$z
+
+
+f(GRLabor = 0.03)
+f(GRLabor = -0.03)
+f(GRLabor = 0.03, es.land.labor = 0.5)
+f(GRLabor = 0.03, es.land.labor = 1.5)
+
+#### a 4-by-3 economy
+GRLabor &lt;- 0.03
+
+dst.agri &lt;- node_new("agri",
+                     type = "SCES", es = 0.5, alpha = 1,
+                     beta = c(0.75, 0.25),
+                     "land", "lab"
+)
+
+dst.manu &lt;- node_new("manu",
+                     type = "SCES", es = 0.5, alpha = 1,
+                     beta = c(0.25, 0.75),
+                     "land", "lab"
+)
+
+dst.consumer &lt;- node_new("util",
+                         type = "SCES", es = 0.5, alpha = 1,
+                         beta = c(0.5, 0.5),
+                         "agri", "manu"
+)
+
+dstl &lt;- list(dst.agri, dst.manu, dst.consumer)
+
+ge &lt;- sdm2(
+  A = dstl,
+  B = matrix(c(
+    1, 0, 0,
+    0, 1, 0,
+    0, 0, 0,
+    0, 0, 0
+  ), 4, 3, TRUE),
+  S0Exg = {
+    S0Exg &lt;- matrix(NA, 4, 3)
+    S0Exg[3:4, 3] &lt;- 100
+    S0Exg
+  },
+  names.commodity = c("agri", "manu", "land", "lab"),
+  names.agent = c("agri", "manu", "consumer"),
+  numeraire = c("manu"),
+  ts = TRUE,
+  policy = list(
+    function(time, state) {
+      if (time &gt;= 5) {
+        state$S[4, 3] &lt;- 100 * (1 + GRLabor)^(time - 4)
+      }
+      state
+    },
+    policyMarketClearingPrice
+  ),
+  numberOfPeriods = 40,
+  maxIteration = 1,
+  z0 = c(100, 100, 200),
+  p0 = c(1, 1, 1, 1)
+)
+
+matplot(ge$ts.z, type = "o", pch = 20)
+matplot(growth_rate(ge$ts.z), type = "o", pch = 20)
+matplot(growth_rate(ge$ts.p), type = "o", pch = 20)
+
+</code></pre>
+
+
+</div>

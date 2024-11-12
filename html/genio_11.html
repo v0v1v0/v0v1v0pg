@@ -1,0 +1,145 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>read_bed</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Read a genotype matrix in Plink BED format</h2>
+
+<h3>Description</h3>
+
+<p>This function reads genotypes encoded in a Plink-formatted BED (binary) file, returning them in a standard R matrix containing genotypes encoded numerically as dosages (values in <code>c( 0, 1, 2, NA )</code>).
+Each genotype per locus (<code>m</code> loci) and individual (<code>n</code> total) counts the number of reference alleles, or <code>NA</code> for missing data.
+No *.fam or *.bim files are read by this basic function.
+Since BED does not encode the data dimensions internally, these values must be provided by the user.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">read_bed(
+  file,
+  names_loci = NULL,
+  names_ind = NULL,
+  m_loci = NA,
+  n_ind = NA,
+  ext = "bed",
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>Input file path.
+*.bed extension may be omitted (will be added automatically if <code>file</code> doesn't exist but <code>file</code>.bed does).
+See <code>ext</code> option below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names_loci</code></td>
+<td>
+<p>Vector of loci names, to become the row names of the genotype matrix.
+If provided, its length sets <code>m_loci</code> below.
+If <code>NULL</code>, the returned genotype matrix will not have row names, and <code>m_loci</code> must be provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names_ind</code></td>
+<td>
+<p>Vector of individual names, to become the column names of the genotype matrix.
+If provided, its length sets <code>n_ind</code> below.
+If <code>NULL</code>, the returned genotype matrix will not have column names, and <code>n_ind</code> must be provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m_loci</code></td>
+<td>
+<p>Number of loci in the input genotype table.
+Required if <code>names_loci = NULL</code>, as its value is not deducible from the BED file itself.
+Ignored if <code>names_loci</code> is provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_ind</code></td>
+<td>
+<p>Number of individuals in the input genotype table.
+Required if <code>names_ind = NULL</code>, as its value is not deducible from the BED file itself.
+Ignored if <code>names_ind</code> is provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ext</code></td>
+<td>
+<p>The desired file extension (default "bed").
+Ignored if <code>file</code> points to an existing file.
+Set to <code>NA</code> to force <code>file</code> to exist as-is.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>If <code>TRUE</code> (default) function reports the path of the file being read (after autocompleting the extension).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The code enforces several checks to validate data given the requested dimensions.
+Errors are thrown if file terminates too early or does not terminate after genotype matrix is filled.
+In addition, as each locus is encoded in an integer number of bytes, and each byte contains up to four individuals, bytes with fewer than four are padded.
+To agree with other software (plink2, BEDMatrix), byte padding values are ignored (may take on any value without causing errors).
+</p>
+<p>This function only supports locus-major BED files, which are the standard for modern data.
+Format is validated via the BED file's magic numbers (first three bytes of file).
+Older BED files can be converted using Plink.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The <code>m</code>-by-<code>n</code> genotype matrix.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>read_plink()</code> for reading a set of BED/BIM/FAM files.
+</p>
+<p><code>geno_to_char()</code> for translating numerical genotypes into more human-readable character encodings.
+</p>
+<p>Plink BED format reference:
+<a href="https://www.cog-genomics.org/plink/1.9/formats#bed">https://www.cog-genomics.org/plink/1.9/formats#bed</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># first obtain data dimensions from BIM and FAM files
+# all file paths
+file_bed &lt;- system.file("extdata", 'sample.bed', package = "genio", mustWork = TRUE)
+file_bim &lt;- system.file("extdata", 'sample.bim', package = "genio", mustWork = TRUE)
+file_fam &lt;- system.file("extdata", 'sample.fam', package = "genio", mustWork = TRUE)
+# read annotation tables
+bim &lt;- read_bim(file_bim)
+fam &lt;- read_fam(file_fam)
+
+# read an existing Plink *.bim file
+# pass locus and individual IDs as vectors, setting data dimensions too
+X &lt;- read_bed(file_bed, bim$id, fam$id)
+X
+
+# can specify without extension
+file_bed &lt;- sub('\\.bed$', '', file_bed) # remove extension from this path on purpose
+file_bed # verify .bed is missing
+X &lt;- read_bed(file_bed, bim$id, fam$id) # loads too!
+X
+
+</code></pre>
+
+
+</div>

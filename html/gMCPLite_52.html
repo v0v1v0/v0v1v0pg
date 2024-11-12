@@ -1,0 +1,261 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gMCP</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Graph based Multiple Comparison Procedures</h2>
+
+<h3>Description</h3>
+
+<p>Performs a graph based multiple test procedure for a given graph and
+unadjusted p-values.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gMCP(
+  graph,
+  pvalues,
+  test,
+  correlation,
+  alpha = 0.05,
+  approxEps = TRUE,
+  eps = 10^(-3),
+  ...,
+  upscale = ifelse(missing(test) &amp;&amp; !missing(correlation) || !missing(test) &amp;&amp; test ==
+    "Bretz2011", TRUE, FALSE),
+  useC = FALSE,
+  verbose = FALSE,
+  keepWeights = FALSE,
+  adjPValues = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>graph</code></td>
+<td>
+<p>A graph of class <code>graphMCP</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pvalues</code></td>
+<td>
+<p>A numeric vector specifying the p-values for the graph based
+MCP. Note the assumptions in the details section for the parametric tests,
+when a correlation is specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test</code></td>
+<td>
+<p>Should be either <code>"Bonferroni"</code>, <code>"Simes"</code> or <code>"parametric"</code>.
+If not specified by default the Bonferroni-based test procedure is used if no
+correlation is specified or the algorithm from Bretz et al. 2011 if a
+correlation is specified. If <code>test</code> is set to <code>"Simes"</code> the weighted
+Simes test will be performed for each subset of hypotheses.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correlation</code></td>
+<td>
+<p>Optional correlation matrix.  If the weighted Simes test
+is performed, it is checked whether type I error rate can be ensured and a
+warning is given if this is not the case.  For parametric tests the p-values
+must arise from one-sided tests with multivariate normal distributed test
+statistics for which the correlation is (partially) known. In that case a
+weighted parametric closed test is performed (also see
+<code>generatePvals</code>). Unknown values can be set to NA. (See details
+for more information)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>A numeric specifying the maximal allowed type one error rate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>approxEps</code></td>
+<td>
+<p>A boolean specifying whether epsilon values should be
+substituted with the value given in the parameter <code>eps</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>A numeric scalar specifying a value for epsilon edges.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Test specific arguments can be given here.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upscale</code></td>
+<td>
+<p>Logical. If <code>upscale=FALSE</code> then for each intersection
+of hypotheses (i.e. each subgraph) a weighted test is performed at the
+possibly reduced level alpha of sum(w)*alpha,
+where sum(w) is the sum of all node weights in this subset.
+If <code>upscale=TRUE</code> all weights are upscaled, so that sum(w)=1.
+</p>
+<p>For backward compatibility the default value is TRUE if a the parameter <code>test</code>
+is missing, but parameter <code>correlation</code> is specified or if <code>test=="Bretz2011"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useC</code></td>
+<td>
+<p>Logical scalar. If <code>TRUE</code> neither adjusted p-values nor
+intermediate graphs are returned, but the calculation is sped up by using
+code written in C. THIS CODE IS NOT FOR PRODUCTIVE USE YET!  If approxEps is
+<code>FALSE</code> and the graph contains epsilon edges, a warning is thrown and
+<code>useC</code> will be ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical scalar. If <code>TRUE</code> verbose output is generated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keepWeights</code></td>
+<td>
+<p>Logical scalar. If <code>FALSE</code> the weight of a node
+without outgoing edges is set to 0 if it is removed.  Otherwise it keeps its
+weight.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adjPValues</code></td>
+<td>
+<p>Logical scalar. If <code>FALSE</code> no adjusted p-values will
+be calculated.  Especially for the weighted Simes test this will result in
+significantly less calculations in most cases.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For the Bonferroni procedure the p-values can arise from any statistical
+test, but if you improve the test by specifying a correlation matrix, the
+following assumptions apply:
+</p>
+<p>It is assumed that under the global null hypothesis
+<code class="reqn">(\Phi^{-1}(1-p_1),...,\Phi^{-1}(1-p_m))</code> follow a multivariate normal
+distribution with correlation matrix <code>correlation</code> where
+<code class="reqn">\Phi^{-1}</code> denotes the inverse of the standard normal distribution
+function.
+</p>
+<p>For example, this is the case if <code class="reqn">p_1,..., p_m</code> are the raw p-values
+from one-sided z-tests for each of the elementary hypotheses where the
+correlation between z-test statistics is generated by an overlap in the
+observations (e.g. comparison with a common control, group-sequential
+analyses etc.). An application of the transformation <code class="reqn">\Phi^{-1}(1-p_i)</code>
+to raw p-values from a two-sided test will not in general lead to a
+multivariate normal distribution. Partial knowledge of the correlation
+matrix is supported. The correlation matrix has to be passed as a numeric
+matrix with elements of the form: <code class="reqn">correlation[i,i] = 1</code> for diagonal
+elements, <code class="reqn">correlation[i,j] = \rho_{ij}</code>, where <code class="reqn">\rho_{ij}</code> is the
+known value of the correlation between <code class="reqn">\Phi^{-1}(1-p_i)</code> and
+<code class="reqn">\Phi^{-1}(1-p_j)</code> or <code>NA</code> if the corresponding correlation is
+unknown. For example correlation[1,2]=0 indicates that the first and second
+test statistic are uncorrelated, whereas correlation[2,3] = NA means that
+the true correlation between statistics two and three is unknown and may
+take values between -1 and 1. The correlation has to be specified for
+complete blocks (ie.: if cor(i,j), and cor(i,j') for i!=j!=j' are specified
+then cor(j,j') has to be specified as well) otherwise the corresponding
+intersection null hypotheses tests are not uniquely defined and an error is
+returned.
+</p>
+<p>For further details see the given references.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>gMCPResult</code>, more specifically a list with
+elements
+</p>
+
+<dl>
+<dt><code>graphs</code></dt>
+<dd>
+<p>list of graphs</p>
+</dd>
+<dt><code>pvalues</code></dt>
+<dd>
+<p>p-values</p>
+</dd>
+<dt><code>rejected</code></dt>
+<dd>
+<p>logical whether hypotheses could be rejected</p>
+</dd>
+<dt><code>adjPValues</code></dt>
+<dd>
+<p>adjusted p-values</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Kornelius Rohmeyer <a href="mailto:rohmeyer@small-projects.de">rohmeyer@small-projects.de</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Frank Bretz, Willi Maurer, Werner Brannath, Martin Posch: A
+graphical approach to sequentially rejective multiple test procedures.
+Statistics in Medicine 2009 vol. 28 issue 4 page 586-604.
+<a href="https://www.meduniwien.ac.at/fwf_adaptive/papers/bretz_2009_22.pdf">https://www.meduniwien.ac.at/fwf_adaptive/papers/bretz_2009_22.pdf</a>
+</p>
+<p>Bretz F., Posch M., Glimm E., Klinglmueller F., Maurer W., Rohmeyer K.
+(2011): Graphical approaches for multiple endpoint problems using weighted
+Bonferroni, Simes or parametric tests. Biometrical Journal 53 (6),
+pages 894-913, Wiley.
+<a href="https://doi.org/10.1002/bimj.201000239">doi:10.1002/bimj.201000239</a>
+</p>
+<p>Strassburger K., Bretz F.: Compatible simultaneous lower confidence bounds
+for the Holm procedure and other Bonferroni based closed tests. Statistics
+in Medicine 2008; 27:4914-4927.
+</p>
+<p>Hommel G., Bretz F., Maurer W.: Powerful short-cuts for multiple testing
+procedures with special reference to gatekeeping strategies. Statistics in
+Medicine 2007; 26:4063-4073.
+</p>
+<p>Guilbaud O.: Simultaneous confidence regions corresponding to Holm's
+stepdown procedure and other closed-testing procedures. Biometrical Journal
+2008; 50:678-692.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>graphMCP</code> <code>multcomp::contrMat()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">g &lt;- BonferroniHolm(5)
+gMCP(g, pvalues=c(0.01, 0.02, 0.04, 0.04, 0.7))
+# Simple Bonferroni with empty graph:
+g2 &lt;- matrix2graph(matrix(0, nrow=5, ncol=5))
+gMCP(g2, pvalues=c(0.01, 0.02, 0.04, 0.04, 0.7))
+# With 'upscale=TRUE' equal to BonferroniHolm:
+gMCP(g2, pvalues=c(0.01, 0.02, 0.04, 0.04, 0.7), upscale=TRUE)
+
+</code></pre>
+
+
+</div>

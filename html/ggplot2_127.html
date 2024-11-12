@@ -1,0 +1,176 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bidirection</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Utilities for working with bidirectional layers</h2>
+
+<h3>Description</h3>
+
+<p>These functions are what underpins the ability of certain geoms to work
+automatically in both directions. See the <em>Extending ggplot2</em> vignette for
+how they are used when implementing <code>Geom</code>, <code>Stat</code>, and <code>Position</code> classes.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">has_flipped_aes(
+  data,
+  params = list(),
+  main_is_orthogonal = NA,
+  range_is_orthogonal = NA,
+  group_has_equal = FALSE,
+  ambiguous = FALSE,
+  main_is_continuous = FALSE,
+  main_is_optional = FALSE
+)
+
+flip_data(data, flip = NULL)
+
+flipped_names(flip = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The layer data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>params</code></td>
+<td>
+<p>The parameters of the <code>Stat</code>/<code>Geom</code>. Only the <code>orientation</code>
+parameter will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>main_is_orthogonal</code></td>
+<td>
+<p>If only <code>x</code> or <code>y</code> are present do they correspond
+to the main orientation or the reverse. E.g. If <code>TRUE</code> and <code>y</code> is present
+it is not flipped. If <code>NA</code> this check will be ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>range_is_orthogonal</code></td>
+<td>
+<p>If <code>xmin</code>/<code>xmax</code> or <code>ymin</code>/<code>ymax</code> is present do
+they correspond to the main orientation or reverse. If <code>NA</code> this check will
+be ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group_has_equal</code></td>
+<td>
+<p>Is it expected that grouped data has either a single
+<code>x</code> or <code>y</code> value that will correspond to the orientation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ambiguous</code></td>
+<td>
+<p>Is the layer ambiguous in its mapping by nature. If so, it
+will only be flipped if <code>params$orientation == "y"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>main_is_continuous</code></td>
+<td>
+<p>If there is a discrete and continuous axis, does
+the continuous one correspond to the main orientation?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>main_is_optional</code></td>
+<td>
+<p>Is the main axis aesthetic optional and, if not
+given, set to <code>0</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>flip</code></td>
+<td>
+<p>Logical. Is the layer flipped.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>has_flipped_aes()</code> is used to sniff out the orientation of the layer from
+the data. It has a range of arguments that can be used to finetune the
+sniffing based on what the data should look like. <code>flip_data()</code> will switch
+the column names of the data so that it looks like x-oriented data.
+<code>flipped_names()</code> provides a named list of aesthetic names that corresponds
+to the orientation of the layer.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>has_flipped_aes()</code> returns <code>TRUE</code> if it detects a layer in the other
+orientation and <code>FALSE</code> otherwise. <code>flip_data()</code> will return the input
+unchanged if <code>flip = FALSE</code> and the data with flipped aesthetic names if
+<code>flip = TRUE</code>. <code>flipped_names()</code> returns a named list of strings. If
+<code>flip = FALSE</code> the name of the element will correspond to the element, e.g.
+<code>flipped_names(FALSE)$x == "x"</code> and if <code>flip = TRUE</code> it will correspond to
+the flipped name, e.g. <code>flipped_names(FALSE)$x == "y"</code>
+</p>
+
+
+<h3>Controlling the sniffing</h3>
+
+<p>How the layer data should be interpreted depends on its specific features.
+<code>has_flipped_aes()</code> contains a range of flags for defining what certain
+features in the data correspond to:
+</p>
+
+<ul>
+<li> <p><code>main_is_orthogonal</code>: This argument controls how the existence of only a <code>x</code>
+or <code>y</code> aesthetic is understood. If <code>TRUE</code> then the existing aesthetic
+would be then secondary axis. This behaviour is present in <code>stat_ydensity()</code>
+and <code>stat_boxplot()</code>. If <code>FALSE</code> then the existing aesthetic is the main
+axis as seen in e.g. <code>stat_bin()</code>, <code>geom_count()</code>, and <code>stat_density()</code>.
+</p>
+</li>
+<li> <p><code>range_is_orthogonal</code>: This argument controls whether the existence of
+range-like aesthetics (e.g. <code>xmin</code> and <code>xmax</code>) represents the main or
+secondary axis. If <code>TRUE</code> then the range is given for the secondary axis as
+seen in e.g. <code>geom_ribbon()</code> and <code>geom_linerange()</code>.
+</p>
+</li>
+<li> <p><code>group_has_equal</code>: This argument controls whether to test for equality of
+all <code>x</code> and <code>y</code> values inside each group and set the main axis to the one
+where all is equal. This test is only performed if <code>TRUE</code>, and only after
+less computationally heavy tests has come up empty handed. Examples are
+<code>stat_boxplot()</code> and stat_ydensity
+</p>
+</li>
+<li> <p><code>ambiguous</code>: This argument tells the function that the layer, while
+bidirectional, doesn't treat each axis differently. It will circumvent any
+data based guessing and only take hint from the <code>orientation</code> element in
+<code>params</code>. If this is not present it will fall back to <code>FALSE</code>. Examples are
+<code>geom_line()</code> and <code>geom_area()</code>
+</p>
+</li>
+<li> <p><code>main_is_continuous</code>: This argument controls how the test for discreteness
+in the scales should be interpreted. If <code>TRUE</code> then the main axis will be
+the one which is not discrete-like. Conversely, if <code>FALSE</code> the main axis
+will be the discrete-like one. Examples of <code>TRUE</code> is <code>stat_density()</code> and
+<code>stat_bin()</code>, while examples of <code>FALSE</code> is <code>stat_ydensity()</code> and
+<code>stat_boxplot()</code>
+</p>
+</li>
+<li> <p><code>main_is_optional</code>: This argument controls the rare case of layers were the
+main direction is an optional aesthetic. This is only seen in
+<code>stat_boxplot()</code> where <code>x</code> is set to <code>0</code> if not given. If <code>TRUE</code> there will
+be a check for whether all <code>x</code> or all <code>y</code> are equal to <code>0</code>
+</p>
+</li>
+</ul>
+</div>

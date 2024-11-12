@@ -1,0 +1,136 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gpkg_table_pragma</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Lazy Access to Tables by Name</h2>
+
+<h3>Description</h3>
+
+<p><code>gpkg_table_pragma()</code>: Get information on a table in a GeoPackage (without returning the whole table).
+</p>
+<p><code>gpkg_table()</code>: access a specific table (by name) and get a "lazy" <code>tibble</code> object referencing that table
+</p>
+<p><code>gpkg_collect()</code>: alias for <code>gpkg_table(..., collect=TRUE)</code>
+</p>
+<p><code>gpkg_tbl()</code>: shorthand for <code>gpkg_table(..., collect=FALSE)</code>(default) that always returns a 'dplyr' object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gpkg_table_pragma(x, table_name = NULL, ...)
+
+## S3 method for class 'character'
+gpkg_table_pragma(x, table_name = NULL, ...)
+
+## S3 method for class 'SQLiteConnection'
+gpkg_table_pragma(x, table_name, ...)
+
+## S3 method for class 'geopackage'
+gpkg_table_pragma(x, table_name = NULL, ...)
+
+gpkg_table(x, table_name, collect = FALSE, query_string = FALSE, ...)
+
+## Default S3 method:
+gpkg_table(x, table_name, collect = FALSE, query_string = FALSE, ...)
+
+gpkg_collect(x, table_name, query_string = FALSE, ...)
+
+gpkg_tbl(x, table_name, ...)
+
+gpkg_rast(x, table_name = NULL, ...)
+
+gpkg_vect(x, table_name, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A <em>geopackage</em> object or character path to GeoPackage file</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>table_name</code></td>
+<td>
+<p><em>character</em>. One or more table names; for <code>gpkg_table_pragma()</code> if <code>table_name=NULL</code> returns a record for each table. <code>gpkg_table()</code> requires <code>table_name</code> be specified</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments. In <code>gpkg_table()</code> arguments in <code>...</code> are passed to <code>dplyr::tbl()</code>. For <code>gpkg_table_pragma()</code>, <code>...</code> arguments are (currently) not used. For <code>gpkg_rast()</code> additional arguments are passed to <code>terra::rast()</code>. For <code>gpkg_vect()</code> additional arguments (such as <code>proxy=TRUE</code>) are passed to <code>terra::vect()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>collect</code></td>
+<td>
+<p><em>logical</em>. Materialize a data.frame object in memory? Default: <code>FALSE</code> requires 'dbplyr' package. <code>TRUE</code> uses 'RSQLite'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>query_string</code></td>
+<td>
+<p><em>logical</em>. Return SQLite query rather than executing it? Default: <code>FALSE</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>gpkg_table()</code>: A 'dbplyr' object of class <em>tbl_SQLiteConnection</em>
+</p>
+<p><code>gpkg_collect()</code>: An object of class <em>data.frame</em>
+</p>
+<p><code>gpkg_tbl()</code>: An object of class <em>tbl_SQLiteConnection</em>
+</p>
+<p><code>gpkg_rast()</code>: A 'terra' object of class <em>SpatRaster</em>
+</p>
+<p><code>gpkg_vect()</code>: A 'terra' object of class <em>SpatVector</em> (may not contain geometry columns)
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+
+tf &lt;- tempfile(fileext = ".gpkg")
+
+r &lt;- terra::rast(system.file("extdata", "dem.tif", package = "gpkg"))
+
+gpkg_write(r,
+           destfile = tf,
+           RASTER_TABLE = "DEM1",
+           FIELD_NAME = "Elevation")
+
+gpkg_write(r,
+           destfile = tf,
+           append = TRUE,
+           RASTER_TABLE = "DEM2",
+           FIELD_NAME = "Elevation")
+
+g &lt;- geopackage(tf)
+
+# inspect gpkg_contents table
+gpkg_table(g, "gpkg_contents")
+
+gpkg_vect(g, "gpkg_contents")
+
+# materialize a data.frame from gpkg_2d_gridded_tile_ancillary
+library(dplyr, warn.conflicts = FALSE)
+
+gpkg_table(g, "gpkg_2d_gridded_tile_ancillary") %&gt;% 
+  dplyr::filter(tpudt_name == "DEM2") %&gt;% 
+  dplyr::select(mean, std_dev) %&gt;% 
+  dplyr::collect()
+
+gpkg_disconnect(g)
+</code></pre>
+
+
+</div>

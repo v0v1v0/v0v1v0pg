@@ -1,0 +1,171 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>comb_WA</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Winsorized Mean Forecast Combination</h2>
+
+<h3>Description</h3>
+
+<p>Computes a ‘combined forecast’ from a pool of individual model forecasts using winsorized mean at each point in time.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">comb_WA(x, trim_factor = NULL, criterion = "RMSE")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of class <code>foreccomb</code>. Contains training set (actual values + matrix of model forecasts) and optionally a test set.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trim_factor</code></td>
+<td>
+<p>numeric. Must be between 0 and 0.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>criterion</code></td>
+<td>
+<p>If <code>trim_factor</code> is not specified, an optimization criterion for automated trimming needs to be defined. One of
+"MAE", "MAPE", or "RMSE" (default).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Suppose <code class="reqn">y_t</code> is the variable of interest, there are <code class="reqn">N</code> not perfectly collinear predictors,
+<code class="reqn">\mathbf{f}_t = (f_{1t}, \ldots, f_{Nt})'</code>. For each point in time, the order forecasts are
+computed:
+</p>
+<p style="text-align: center;"><code class="reqn">\mathbf{f}_t^{ord} = (f_{(1)t}, \ldots, f_{(N)t})'</code>
+</p>
+
+<p>Using a trim factor <code class="reqn">\lambda</code> (i.e., the top/bottom <code class="reqn">\lambda \%</code> are winsorized), and setting <code class="reqn">K = N\lambda</code> ,
+the combined forecast is calculated as (Jose and Winkler, 2008):
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{y}_t = \frac{1}{N} \left[Kf_{(K+1)t} + \sum_{i=K+1}^{N-K} f_{(i)t} + Kf_{(N-K)t}\right]</code>
+</p>
+
+<p>Like the trimmed mean, the winsorized mean is a robust statistic that is less sensitive to outliers than the simple average.
+It is less extreme about handling outliers than the trimmed mean and preferred by Jose and Winkler (2008) for this reason.
+</p>
+<p>This method allows the user to select <code class="reqn">\lambda</code> (by specifying <code>trim_factor</code>), or to leave the selection to
+an optimization algorithm – in which case the optimization criterion has to be selected (one of "MAE", "MAPE", or "RMSE").
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns an object of class <code>foreccomb_res</code> with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Method</code></td>
+<td>
+<p>Returns the used forecast combination method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Models</code></td>
+<td>
+<p>Returns the individual input models that were used for the forecast combinations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Weights</code></td>
+<td>
+<p>Returns the combination weights obtained by applying the combination method to the training set.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Trim Factor</code></td>
+<td>
+<p>Returns the trim factor, <code class="reqn">\lambda</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Fitted</code></td>
+<td>
+<p>Returns the fitted values of the combination method for the training set.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Accuracy_Train</code></td>
+<td>
+<p>Returns range of summary measures of the forecast accuracy for the training set.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Forecasts_Test</code></td>
+<td>
+<p>Returns forecasts produced by the combination method for the test set. Only returned if input included a forecast matrix for the test set.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Accuracy_Test</code></td>
+<td>
+<p>Returns range of summary measures of the forecast accuracy for the test set. Only returned if input included a forecast matrix and a vector of actual values for the test set.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Input_Data</code></td>
+<td>
+<p>Returns the data forwarded to the method.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Christoph E. Weiss and Gernot R. Roetzer
+</p>
+
+
+<h3>References</h3>
+
+<p>Jose, V. R. R., and Winkler, R. L. (2008). Simple Robust Averages of Forecasts: Some Empirical Results. <em>International Journal of Forecasting</em>, <b>24(1)</b>, 163–169.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>winsor.mean</code>,
+<code>foreccomb</code>,
+<code>plot.foreccomb_res</code>,
+<code>summary.foreccomb_res</code>,
+<code>comb_SA</code>,
+<code>comb_TA</code>,
+<code>accuracy</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">obs &lt;- rnorm(100)
+preds &lt;- matrix(rnorm(1000, 1), 100, 10)
+train_o&lt;-obs[1:80]
+train_p&lt;-preds[1:80,]
+test_o&lt;-obs[81:100]
+test_p&lt;-preds[81:100,]
+
+## User-selected trim factor:
+data&lt;-foreccomb(train_o, train_p, test_o, test_p)
+comb_TA(data, trim_factor=0.1)
+
+## Algorithm-optimized trim factor:
+data&lt;-foreccomb(train_o, train_p, test_o, test_p)
+comb_TA(data, criterion="RMSE")
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,169 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Model Predictions from GPfit</h2>
+
+<h3>Description</h3>
+
+<p>Computes the regularized predicted response <code class="reqn">\hat{y}_{\delta_{lb},M}(x)</code>
+and the mean squared error <code class="reqn">s^2_{\delta_{lb},M}(x)</code> for a new set of
+inputs using the fitted GP model.
+</p>
+<p>The value of <code>M</code> determines the number of iterations (or terms) in
+approximating <code class="reqn">R^{-1} \approx R^{-1}_{\delta_{lb},M}</code>. The iterative use
+of the nugget <code class="reqn">\delta_{lb}</code>, as outlined in Ranjan et al. (2011), is
+used in calculating <code class="reqn">\hat{y}_{\delta_{lb},M}(x)</code> and
+<code class="reqn">s^2_{\delta_{lb},M}(x)</code>, where <code class="reqn">R_{\delta,M}^{-1} = \sum_{t =
+1}^{M} \delta^{t - 1}(R+\delta I)^{-t}</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'GP'
+predict(object, xnew = object$X, M = 1, ...)
+
+## S3 method for class 'GP'
+fitted(object, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>a class <code>GP</code> object estimated by <code>GP_fit</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xnew</code></td>
+<td>
+<p>the (<code>n_new x d</code>) design matrix of test points where model
+predictions and MSEs are desired</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>the number of iterations. See 'Details'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>for compatibility with generic method <code>predict</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a list containing the predicted values (<code>Y_hat</code>), the
+mean squared errors of the predictions (<code>MSE</code>), and a matrix
+(<code>complete_data</code>) containing <code>xnew</code>, <code>Y_hat</code>, and <code>MSE</code>
+</p>
+
+
+<h3>Methods (by class)</h3>
+
+
+<ul>
+<li> <p><code>GP</code>: The <code>predict</code> method 
+returns a list of elements Y_hat (fitted values), 
+Y (dependent variable), MSE (residuals), and 
+completed_data (the matrix of independent variables, 
+Y_hat, and MSE).
+</p>
+</li>
+<li> <p><code>GP</code>: The <code>fitted</code> method extracts the complete data.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Blake MacDonald, Hugh Chipman, Pritam Ranjan
+</p>
+
+
+<h3>References</h3>
+
+<p>Ranjan, P., Haynes, R., and Karsten, R. (2011). A
+Computationally Stable Approach to Gaussian Process Interpolation of
+Deterministic Computer Simulation Data, Technometrics, 53(4), 366 - 378.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GP_fit</code> for estimating the parameters of the GP model;
+<br><code>plot</code> for plotting the predicted and error surfaces.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## 1D Example
+n &lt;- 5
+d &lt;- 1
+computer_simulator &lt;- function(x){
+    x &lt;- 2*x+0.5
+    sin(10*pi*x)/(2*x) + (x-1)^4
+}
+set.seed(3)
+library(lhs)
+x &lt;- maximinLHS(n,d)
+y &lt;- computer_simulator(x)
+xvec &lt;- seq(from = 0, to = 1, length.out = 10)
+GPmodel &lt;- GP_fit(x, y)
+head(fitted(GPmodel))
+lapply(predict(GPmodel, xvec), head)
+
+
+## 1D Example 2
+n &lt;- 7
+d &lt;- 1
+computer_simulator &lt;- function(x) {
+    log(x+0.1)+sin(5*pi*x)
+}
+set.seed(1)
+library(lhs)
+x &lt;- maximinLHS(n,d)
+y &lt;- computer_simulator(x)
+xvec &lt;- seq(from = 0,to = 1, length.out = 10)
+GPmodel &lt;- GP_fit(x, y)
+head(fitted(GPmodel))
+predict(GPmodel, xvec)
+
+## 2D Example: GoldPrice Function
+computer_simulator &lt;- function(x) {
+    x1 &lt;- 4*x[,1] - 2
+    x2 &lt;- 4*x[,2] - 2
+    t1 &lt;- 1 + (x1 + x2 + 1)^2*(19 - 14*x1 + 3*x1^2 - 14*x2 + 
+        6*x1*x2 + 3*x2^2)
+    t2 &lt;- 30 + (2*x1 -3*x2)^2*(18 - 32*x1 + 12*x1^2 + 48*x2 - 
+        36*x1*x2 + 27*x2^2)
+    y &lt;- t1*t2
+    return(y)
+}
+n &lt;- 10
+d &lt;- 2
+set.seed(1)
+library(lhs)
+x &lt;- maximinLHS(n,d) 
+y &lt;- computer_simulator(x)
+GPmodel &lt;- GP_fit(x,y)
+# fitted values
+head(fitted(GPmodel))
+# new data
+xvector &lt;- seq(from = 0,to = 1, length.out = 10)
+xdf &lt;- expand.grid(x = xvector, y = xvector)
+predict(GPmodel, xdf)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,378 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>calculate_effects</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Marginal Effects</h2>
+
+<h3>Description</h3>
+
+<p>These functions calculate marginal effects or predicted values after
+estimating a model with <code>gam</code> or <code>bam</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">calculate_effects(
+  model,
+  data = NULL,
+  variables = NULL,
+  continuous_type = c("IQR", "minmax", "derivative", "onesd", "predict",
+    "second_derivative"),
+  conditional = NULL,
+  individual = FALSE,
+  vcov = NULL,
+  raw = FALSE,
+  use_original = FALSE,
+  epsilon = 1e-07,
+  verbose = FALSE
+)
+
+calculate_interactions(
+  model,
+  variables,
+  QOI = c("AMIE", "ACE", "AME", "AIE"),
+  ...
+)
+
+get_individual_effects(x)
+
+## S3 method for class 'gKRLS_mfx'
+print(x, ...)
+
+## S3 method for class 'gKRLS_mfx'
+summary(object, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>A model estimated using functions from <code>mgcv</code> (e.g.,
+<code>gam</code> or <code>bam</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data frame that is used to calculate the marginal effect or set
+to <code>NULL</code> which will employ the data used when estimating the model.
+The default is <code>NULL</code>. Using a custom dataset may have unexpected
+implications for continuous and character/factor variables. See "WARNINGS"
+for more discussion.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variables</code></td>
+<td>
+<p>A character vector that specifies the variables for which to
+calculate effects. The default, <code>NULL</code>, calculates effects for all
+variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>continuous_type</code></td>
+<td>
+<p>A character value, with a default of <code>"IQR"</code>,
+that indicates the type of marginal effects to estimate when the variable
+is continuous (i.e. not binary, logical, factor, or character). Options are
+<code>"IQR"</code> (compares the variable at its 25% and 75% percentile),
+<code>"minmax"</code> (compares the variable at its minimum and maximum),
+<code>"derivative"</code> (numerically approximates the derivative at each
+observed value), <code>"second_derivative"</code> (numerically approximates the
+second derivative at each observed value), <code>"onesd"</code> (compares one
+standard deviation below and one standard deviation above the mean of the
+variable). It also accepts a named list where each named element
+corresponds to a continuous variable and has a two-length vector as each
+element. The two values are then compared. If this is used, then all
+continuous variables must have two values specified.
+</p>
+<p>A special option (<code>"predict"</code>) produces predictions (e.g.,
+<code>predict(model, type = "response")</code>) at each observed value and then
+averages them together. This, in conjunction with <code>conditional</code>,
+provides a way of calculating quantities such as predicted probability
+curves using an "observed value" approach (e.g., Hanmer and Kalkan 2013).
+Examples are provided below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conditional</code></td>
+<td>
+<p>A data.frame or <code>NULL</code>. This is an analogue of
+Stata's <code>at()</code> option and the <code>at</code> argument in the <code>margins</code>
+package. For a marginal effect on some variable <code>"a"</code>, this specifies
+fixed values for certain other covariates, e.g. <code>data.frame("b" = 0)</code>.
+If <code>conditional</code> is <code>NULL</code>, all other covariates are held at
+their observed value. If <code>conditional</code> is a data.frame, then each row
+represents a different combination of covariate values to be held fixed,
+and marginal effects are calculated separately for each row. Examples are
+provided below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>individual</code></td>
+<td>
+<p>A logical value. <code>TRUE</code> calculates individual effects (i.e.
+an effect for each observation in the <code>data</code>). The default is
+<code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov</code></td>
+<td>
+<p>A matrix that specifies the covariance matrix of the parameters.
+The default, <code>NULL</code>, uses the standard covariance matrix from
+<code>mgcv</code>. This can be used to specify clustered or robust standard
+errors using output from (for example) <code>sandwich</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>raw</code></td>
+<td>
+<p>A logical value. <code>TRUE</code> returns the raw values used to
+calculate the effect in addition to the estimated effect. The default is
+<code>FALSE</code>. If <code>TRUE</code>, an additional column <code>...id</code> is present
+in the estimated effects that reports whether the row corresponds to the
+effect (<code>effect</code>), the first value (<code>raw_0</code>) or the second value
+(<code>raw_1</code>) where <code>effect=raw_1 - raw_0</code>. For <code>"derivative"</code>,
+this is further scaled by the step size. For <code>"second_derivative"</code>,
+<code>effect=raw_2 - 2 * raw_1 + raw_0</code>, scaled by the step size; see the
+discussion for <code>epsilon</code> for how the step size is calculated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_original</code></td>
+<td>
+<p>A logical value that indicates whether to use the
+estimation data (<code>TRUE</code>) or <code>data</code> (<code>FALSE</code>) when
+calculating quantities such as the IQR for continuous variables or the
+levels to examine for factor variables. Default (<code>FALSE</code>) uses the
+provided data; if <code>data = NULL</code>, this is equivalent to using the
+estimation data. The "WARNINGS" section provides more discussion of this
+option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epsilon</code></td>
+<td>
+<p>A numerical value that defines the step size when calculating
+numerical derivatives (default of 1e-7).  For <code>"derivative"</code>, the step
+size for the approximation is  <code class="reqn">h = \epsilon \cdot \mathrm{max}(1,
+  \mathrm{max}(|x|))</code>, i.e. <code class="reqn">f'(x)
+  \approx \frac{f(x+h) - f(x-h)}{2h}</code>. Please
+see Leeper (2016) for more details.
+</p>
+<p>For <code>"second_derivative"</code>, the step size is <code class="reqn">h = [\epsilon \cdot
+  \mathrm{max}(1, \mathrm{max}(|x|))]^{0.5}</code>, i.e. <code class="reqn">f''(x) \approx \frac{f(x+h) - 2 f(x) +
+  f(x-h)}{h^2}</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>A logical value that indicates whether to report progress when
+calculating the marginal effects. The default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>QOI</code></td>
+<td>
+<p>A vector of quantities of interest calculate for
+<code>calculate_interactions</code>. Options include <code>"AME"</code> (average
+marginal effect), <code>"ACE"</code> (average combination effect), <code>"AIE"</code>
+(average interaction effect) and <code>"AMIE"</code> (average marginal
+interaction effect); see "Details" for more information. The default
+setting calculates all four quantities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>An argument used for <code>calculate_interactions</code> to pass
+arguments to <code>calculate_effects</code>. It is unused for
+<code>summary.gKRLS_mfx</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object estimated using <code>calculate_effects</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A model estimated using functions from <code>mgcv</code> (e.g.,
+<code>gam</code> or <code>bam</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><b>Overview:</b> <code>calculate_effects</code> returns a data.frame of
+class <code>"gKRLS_mfx"</code> that reports the estimated average marginal effects
+and standard errors. Other columns include <code>"type"</code> that reports the
+type of marginal effect calculated. For families with multiple predicted
+outcomes (e.g., multinomial), the column <code>"response"</code> numbers the
+different outcomes in the same order as <code>predict.gam(object)</code> for the
+specified family. Many (but not all) extended and generalized families from
+<code>mgcv</code> are included.
+</p>
+<p>The <code>conditional</code> argument while setting <code>continuous_type =
+"predict"</code> can be used to estimate predicted values at different covariate
+strata (e.g., to create an "observed value" predicted probability curve for a
+logistic regression). The examples provide an illustration.
+</p>
+<p><b>Interactions:</b> <code>calculate_interactions</code> provides some simple
+functions for calculating interaction effects between variables. The default
+quantities it can produce are listed below. Egami and Imai (2019) provide a
+detailed exposition of these quantities. All marginalization is done using an
+"observed value" approach, i.e. over the estimation data or a custom dataset
+provided to <code>data</code>. </p>
+ <ul>
+<li>
+<p>"AME" or Average Marginal Effect: 
+This is the standard quantity reported from <code>calculate_effects</code>.
+</p>
+</li>
+<li>
+<p>"ACE" or Average Combination Effect:  This is the effect of changing
+two variables simultaneously on the outcome. </p>
+</li>
+<li>
+<p>"AMIE" or Average Marginal
+Interaction Effect:  This is ACE minus each corresponding AME. </p>
+</li>
+<li>
+<p>"AIE"
+or Average Interaction Effect: This has a "conditional effect"
+interpretation and reports the difference in average effect of one variable
+("A") between two different levels of a second variable ("B"). </p>
+</li>
+</ul>
+<p><b>Other Functions:</b> <code>get_individual_effects</code> extracts the
+individual-level effects that are estimated if <code>individual=TRUE</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Both <code>calculate_effects</code> and <code>calculate_interactions</code> return
+data.frames. <code>calculate_effects</code> contains attributes—including the
+ones noted below—that may be useful for other analyses. </p>
+
+<ul>
+<li>
+<p>"gradient":  This contains the gradients used to calculate the
+standard error (via the delta method) for the estimates from
+<code>calculate_effects</code>. There is one column for each quantity calculated in
+the main object. The format of this object depends on the family used for
+<code>gam</code> or <code>bam</code>. This could be used manually to calculate a standard error on the
+difference between two estimated marginal effects.
+</p>
+</li>
+<li>
+<p>"N_eff": The number of observations (in the estimation data) minus the
+effective degrees of freedom. This is used when calculating p-values as the
+degrees of freedom for the t-distribution. </p>
+</li>
+<li>
+<p>"N": The number of
+observations. </p>
+</li>
+</ul>
+<h3>WARNINGS</h3>
+
+<p>Using a custom dataset for <code>data</code>, i.e. a dataset other than the
+estimation data, may have unexpected implications. For continuous and
+character/factor variables, the estimated marginal effects may depend on
+the distribution of the variable in <code>data</code>. For example, if
+<code>continuous_type="IQR"</code>, the variable <code>x1</code> is counterfactually
+set to <code>quantile(data$x1, 0.25)</code> and <code>quantile(data$x1, 0.75)</code>
+where <code>data</code> is provided by <code>calculate_effects</code> (versus the
+estimation data). To force this range to be set based on the
+<em>estimation</em> data, set <code>use_original=TRUE</code>.
+</p>
+<p>This default behavior if <code>data</code> is provided may be undesirable and
+thus <code>calculate_effects</code> will issue a warning if this situation arises
+and a custom <code>data</code> is provided. These settings are subject to change
+in future releases.
+</p>
+
+
+<h3>References</h3>
+
+<p>Egami, Naoki, and Kosuke Imai. 2019. "Causal Interaction in Factorial
+Experiments: Application to Conjoint Analysis." <em>Journal of the American
+Statistical Association</em>. 114(526):529-540.
+</p>
+<p>Hanmer, Michael J., and Kerem Ozan Kalkan. 2013. "Behind the Curve: Clarifying
+the Best Approach to Calculating Predicted Probabilities and Marginal Effects
+from Limited Dependent Variable Models." <em>American Journal of Political
+Science</em> 57(1): 263-277.
+</p>
+<p>Leeper, Thomas J. 2016. "Interpreting Regression Results using Average
+Marginal Effects with R's <code>margins</code>." Working paper available at
+<a href="https://s3.us-east-2.amazonaws.com/tjl-sharing/assets/AverageMarginalEffects.pdf">https://s3.us-east-2.amazonaws.com/tjl-sharing/assets/AverageMarginalEffects.pdf</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(654)
+n &lt;- 50
+x1 &lt;- rnorm(n)
+x2 &lt;- rnorm(n)
+x3 &lt;- rnorm(n)
+state &lt;- sample(letters[1:5], n, replace = TRUE)
+y &lt;- 0.3 * x1 + 0.4 * x2 + 0.5 * x3 + rnorm(n)
+data &lt;- data.frame(y, x1, x2, x3, state)
+
+# Make character variables into factors for mgcv
+data$state &lt;- factor(data$state)
+
+# A gKRLS model
+fit_gKRLS &lt;- mgcv::gam(y ~ state + s(x1, x2, x3, bs = "gKRLS"), data = data)
+
+# calculate marginal effect using derivative
+calculate_effects(fit_gKRLS, variables = "x1", continuous_type = "derivative")
+
+# calculate marginal effect by specifying conditional variables
+calculate_effects(fit_gKRLS,
+  variables = "x1",
+  conditional = data.frame(x2 = c(0.6, 0.8), x3 = 0.3)
+)
+
+# calculate interaction effects between two variables
+# use the default setting ("IQR") for the baseline and
+# comparison categories for each variable
+calculate_interactions(fit_gKRLS,
+   variables = list(c("x1", "x2")),
+   QOI = c('AIE', 'AMIE')
+)
+
+# calculate marginal effect by specifying a factor conditional variable
+# estimate the individual marginal effects
+out &lt;- calculate_effects(fit_gKRLS,
+  variables = "x1", individual = TRUE,
+  conditional = data.frame(state = c("a", "b", "c")), continuous_type = "derivative"
+)
+
+# Extract the individual marginal effects:
+# shorthand for attr(fit_main, 'individual')
+get_individual_effects(out)
+
+# calculated the average expected value across a grid of "x1"
+# using an observed value approach for the other covariates
+calculate_effects(fit_gKRLS, conditional = data.frame(x1 = c(0, 0.2, 0.4, 0.6)),
+  continuous_type = 'predict'
+)
+</code></pre>
+
+
+</div>

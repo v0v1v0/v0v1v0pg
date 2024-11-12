@@ -1,0 +1,185 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>multinomial_GAGA</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a multinomial model via the GAGA algorithm</h2>
+
+<h3>Description</h3>
+
+<p>Fit a multinomial model the Global Adaptive Generative Adjustment algorithm
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">multinomial_GAGA(
+  X,
+  y,
+  alpha = 1,
+  itrNum = 50,
+  thresh = 0.001,
+  flag = TRUE,
+  lamda_0 = 0.001,
+  fdiag = TRUE,
+  subItrNum = 20
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Input matrix, of dimension nobs*nvars; each row is an observation.
+If the intercept term needs to be considered in the estimation process, then the first column of <code>X</code> must be all 1s.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>a One-hot response matrix or a <code>nc&gt;=2</code> level factor</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Hyperparameter. The suggested value for alpha is 1 or 2.
+When the collinearity of the load matrix is serious, the hyperparameters can be selected larger, such as 5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>itrNum</code></td>
+<td>
+<p>The number of iteration steps. In general, 20 steps are enough.
+If the condition number of <code>X</code> is large, it is recommended to greatly increase the
+number of iteration steps.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thresh</code></td>
+<td>
+<p>Convergence threshold for beta Change, if <code>max(abs(beta-beta_old))&lt;threshold</code>, return.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>flag</code></td>
+<td>
+<p>It identifies whether to make model selection. The default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lamda_0</code></td>
+<td>
+<p>The initial value of the regularization parameter for ridge regression.
+The running result of the algorithm is not sensitive to this value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fdiag</code></td>
+<td>
+<p>It identifies whether to use diag Approximation to speed up the algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subItrNum</code></td>
+<td>
+<p>Maximum number of steps for subprocess iterations.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Coefficient matrix with K-1 columns, where K is the class number.
+For k=1,..,K-1, the probability
+</p>
+<p style="text-align: center;"><code class="reqn">Pr(G=k|x)=exp(x^T beta_k) /(1+sum_{k=1}^{K-1}exp(x^T beta_k))</code>
+</p>
+<p>.
+For k=K, the probability </p>
+<p style="text-align: center;"><code class="reqn">Pr(G=K|x)=1/(1+sum_{k=1}^{K-1}exp(x^T beta_k))</code>
+</p>
+<p>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># multinomial
+set.seed(2022)
+cat("\n")
+cat("Test multinomial GAGA\n")
+p_size = 20
+C = 3
+classnames = c("C1","C2","C3","C4")
+sample_size = 500
+test_size = 1000
+ratio = 0.5 #The ratio of zeroes in coefficients
+Num = 10 # Total number of experiments
+R1 = 1
+R2 = 5
+#Set the true coefficients
+beta_true = matrix(rep(0,p_size*C),c(p_size,C))
+zeroNum = round(ratio*p_size)
+for(jj in 1:C){
+  ind = sample(1:p_size,zeroNum)
+  tmp = runif(p_size,0,R2)
+  tmp[ind] = 0
+  beta_true[,jj] = tmp
+}
+#Generate training samples
+X = R1*matrix(rnorm(sample_size * p_size), ncol = p_size)
+X[1:sample_size,1]=1
+z = X%*%beta_true
+t = exp(z)/(1+rowSums(exp(z)))
+t = cbind(t,1-rowSums(t))
+tt = t(apply(t,1,cumsum))
+tt = cbind(rep(0,sample_size),tt)
+# y = matrix(rep(0,sample_size*(C+1)),c(sample_size,C+1))
+y = rep(0,sample_size)
+for(jj in 1:sample_size){
+  tmp = runif(1,0,1)
+  for(kk in 1:(C+1)){
+    if((tmp&gt;tt[jj,kk])&amp;&amp;(tmp&lt;=tt[jj,kk+1])){
+      # y[jj,kk] = 1
+      y[jj] = kk
+      break
+    }
+  }
+}
+y = classnames[y]
+fit = GAGAs(X, y,alpha=1,family = "multinomial")
+Eb = fit$beta
+#Prediction
+#Generate test samples
+X_t = R1*matrix(rnorm(test_size * p_size), ncol = p_size)
+X_t[1:test_size,1]=1
+z = X_t%*%beta_true
+t = exp(z)/(1+rowSums(exp(z)))
+t = cbind(t,1-rowSums(t))
+tt = t(apply(t,1,cumsum))
+tt = cbind(rep(0,test_size),tt)
+y_t = rep(0,test_size)
+for(jj in 1:test_size){
+  tmp = runif(1,0,1)
+  for(kk in 1:(C+1)){
+    if((tmp&gt;tt[jj,kk])&amp;&amp;(tmp&lt;=tt[jj,kk+1])){
+      y_t[jj] = kk
+      break
+    }
+  }
+}
+y_t = classnames[y_t]
+Ey = predict(fit,newx = X_t)
+cat("\n--------------------")
+cat("\n err:", norm(Eb-beta_true,type="2")/norm(beta_true,type="2"))
+cat("\n acc:", cal.w.acc(as.character(Eb!=0),as.character(beta_true!=0)))
+cat("\n pacc:", cal.w.acc(as.character(Ey),as.character(y_t)))
+cat("\n")
+</code></pre>
+
+
+</div>

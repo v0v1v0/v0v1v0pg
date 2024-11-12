@@ -1,0 +1,391 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>VSIFile-class</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Class wrapping the GDAL VSIVirtualHandle API for binary file I/O</h2>
+
+<h3>Description</h3>
+
+<p><code>VSIFile</code> provides bindings to the GDAL VSIVirtualHandle API. Encapsulates a
+<code>VSIVirtualHandle</code>
+(<a href="https://gdal.org/api/cpl_cpp.html#_CPPv416VSIVirtualHandle">https://gdal.org/api/cpl_cpp.html#_CPPv416VSIVirtualHandle</a>).
+This API abstracts binary file I/O across "regular" file systems, URLs,
+cloud storage services, Zip/GZip/7z/RAR, and in-memory files.
+It provides analogs of several Standard C file I/O functions, allowing
+virtualization of disk I/O so that non-file data sources can be made to
+appear as files.
+</p>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>filename</code></td>
+<td>
+<p>Character string containing the filename to open. It may be
+a file in a regular local filesystem, or a filename with a GDAL /vsiPREFIX/
+(see <a href="https://gdal.org/user/virtual_file_systems.html">https://gdal.org/user/virtual_file_systems.html</a>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>access</code></td>
+<td>
+<p>Character string containing the access requested (i.e., <code>"r"</code>,
+<code>"r+"</code>, <code>"w"</code>, <code style="white-space: pre;">⁠"w+⁠</code>). Defaults to <code>"r"</code>. Binary access is always implied
+and the "b" does not need to be included in <code>access</code>.
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+<strong>Access</strong> </td>
+<td style="text-align: left;"> <strong>Explanation</strong>             </td>
+<td style="text-align: left;"> <strong>If file exists</strong>
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>"r"</code>      </td>
+<td style="text-align: left;"> open file for reading       </td>
+<td style="text-align: left;"> read from start</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>"r+"</code>     </td>
+<td style="text-align: left;"> open file for read/write    </td>
+<td style="text-align: left;"> read from start</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>"w"</code>      </td>
+<td style="text-align: left;"> create file for writing     </td>
+<td style="text-align: left;"> destroy contents</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>"w+"</code>     </td>
+<td style="text-align: left;"> create file for read/write  </td>
+<td style="text-align: left;"> destroy contents
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>options</code></td>
+<td>
+<p>Optional character vector of <code>NAME=VALUE</code> pairs specifying
+filesystem-dependent options (GDAL &gt;= 3.3, see Details).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>VSIFile</code> which contains a pointer to a
+<code>VSIVirtualHandle</code>, and methods that operate on the file as described in
+Details. <code>VSIFile</code> is a C++ class exposed directly to R (via
+<code>RCPP_EXPOSED_CLASS</code>). Methods of the class are accessed using the
+<code>$</code> operator.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>
+## Constructors
+vf &lt;- new(VSIFile, filename)
+# specifying access:
+vf &lt;- new(VSIFile, filename, access)
+# specifying access and options (both required):
+vf &lt;- new(VSIFile, filename, access, options)
+
+## Methods (see Details)
+vf$seek(offset, origin)
+vf$tell()
+vf$rewind()
+vf$read(nbytes)
+vf$write(object)
+vf$eof()
+vf$truncate(new_size)
+vf$flush()
+vf$ingest(max_size)
+
+vf$close()
+vf$open()
+vf$get_filename()
+vf$get_access()
+vf$set_access(access)
+</pre>
+
+
+<h3>Details</h3>
+
+<p><code>new(VSIFile, filename)</code>
+Constructor. Returns an object of class <code>VSIFile</code>, or an error is raised
+if a file handle cannot be obtained.
+</p>
+<p><code>new(VSIFile, filename, access)</code>
+Alternate constructor for passing <code>access</code> as a character string
+(e.g., <code>"r"</code>, <code>"r+"</code>, <code>"w"</code>, <code>"w+"</code>).
+Returns an object of class <code>VSIFile</code> with an open file handle, or an error
+is raised if a file handle cannot be obtained.
+</p>
+<p><code>new(VSIFile, filename, access, options)</code>
+Alternate constructor for passing <code>access</code> as a character string, and
+<code>options</code> as a character vector of "NAME=VALUE" pairs (both arguments
+required, GDAL &gt;= 3.3 required for <code>options</code> support).
+Returns an object of class <code>VSIFile</code> with an open file handle, or an error
+is raised if a file handle cannot be obtained.
+</p>
+<p>The <code>options</code> argument is highly file system dependent. Supported options
+as of GDAL 3.9 include:
+</p>
+
+<ul>
+<li>
+<p> MIME headers such as Content-Type and Content-Encoding are supported for
+the /vsis3/, /vsigs/, /vsiaz/, /vsiadls/ file systems.
+</p>
+</li>
+<li>
+<p> DISABLE_READDIR_ON_OPEN=YES/NO (GDAL &gt;= 3.6) for /vsicurl/ and other
+network-based file systems. By default, directory file listing is done,
+unless YES is specified.
+</p>
+</li>
+<li>
+<p> WRITE_THROUGH=YES (GDAL &gt;= 3.8) for Windows regular files to set the
+FILE_FLAG_WRITE_THROUGH flag to the <code>CreateFile()</code> function. In that mode,
+the data are written to the system cache but are flushed to disk without
+delay.
+</p>
+</li>
+</ul>
+<p><code>$seek(offset, origin)</code>
+Seek to a requested <code>offset</code> in the file.
+<code>offset</code> is given as a positive numeric scalar, optionally as
+<code>bit64::integer64</code> type.
+<code>origin</code> is given as a character string, one of <code>SEEK_SET</code>, <code>SEEK_CUR</code> or
+<code>SEEK_END</code>. Package global constants are defined for convenience, so these
+can be passed unquoted. Note that <code>offset</code> is an unsigned type, so <code>SEEK_CUR</code>
+can only be used for positive seek. If negative seek is needed, use:
+</p>
+<div class="sourceCode"><pre>vf$seek(vf$tell() + negative_offset, SEEK_SET)
+</pre></div>
+<p>Returns <code>0</code> on success or <code>-1</code> on failure.
+</p>
+<p><code>$tell()</code>
+Returns the current file read/write offset in bytes from the beginning of
+the file. The return value is a numeric scalar carrying the <code>integer64</code>
+class attribute.
+</p>
+<p><code>$rewind()</code>
+Rewind the file pointer to the beginning of the file. This is equivalent to
+<code>vf$seek(0, SEEK_SET)</code>. No return value, called for that side effect.
+</p>
+<p><code>$read(nbytes)</code>
+Read <code>nbytes</code> bytes from the file at the current offset. Returns a vector
+of R <code>raw</code> type, or <code>NULL</code> if the operation fails.
+</p>
+<p><code>$write(object)</code>
+Write bytes to the file at the current offset. <code>object</code> is a <code>raw</code> vector.
+Returns the number of bytes successfully written, as numeric scalar
+carrying the <code>integer64</code> class attribute.
+See also base R <code>charToRaw()</code> / <code>rawToChar()</code>, convert to or from raw
+vectors, and <code>readBin()</code> / <code>writeBin()</code> which read binary data from or write
+binary data to a raw vector.
+</p>
+<p><code>$eof()</code>
+Test for end of file. Returns <code>TRUE</code> if an end-of-file condition occurred
+during the previous read operation. The end-of-file flag is cleared by a
+successful call to <code style="white-space: pre;">⁠$seek()⁠</code>.
+</p>
+<p><code>$truncate(new_size)</code>
+Truncate/expand the file to the specified <code>new_size</code>, given as a positive
+numeric scalar, optionally as <code>bit64::integer64</code> type.
+Returns <code>0</code> on success.
+</p>
+<p><code>$flush()</code>
+Flush pending writes to disk. For files in write or update mode and on
+file system types where it is applicable, all pending output on the file is
+flushed to the physical disk.
+On Windows regular files, this method does nothing, unless the
+<code>VSI_FLUSH=YES</code> configuration option is set (and only when the file has not
+been opened with the <code>WRITE_THROUGH</code> option).
+Returns <code>0</code> on success or <code>-1</code> on error.
+</p>
+<p><code>$ingest(max_size)</code>
+Ingest a file into memory. Read the whole content of the file into a <code>raw</code>
+vector.
+<code>max_size</code> is the maximum size of file allowed, given as a numeric scalar,
+optionally as <code>bit64::integer64</code> type. If no limit, set to a negative value.
+Returns a <code>raw</code> vector, or <code>NULL</code> if the operation fails.
+</p>
+<p><code>$close()</code>
+Closes the file. The file should always be closed when I/O has been
+completed. Returns <code>0</code> on success or <code>-1</code> on error.
+</p>
+<p><code>$open()</code>
+This method can be used to re-open the file after it has been closed, using
+the same <code>filename</code>, and same <code>options</code> if any are set. The file will be
+opened using <code>access</code> as currently set. The <code style="white-space: pre;">⁠$set_access()⁠</code> method can be
+called to change the requested access while the file is closed.
+No return value. An error is raised if a file handle cannot be obtained.
+</p>
+<p><code>$get_filename()</code>
+Returns a character string containing the <code>filename</code> associated with this
+<code>VSIFile</code> object (the <code>filename</code> originally used to create the object).
+</p>
+<p><code>$get_access()</code>
+Returns a character string containing the <code>access</code> as currently set on this
+<code>VSIFile</code> object.
+</p>
+<p><code>$set_access(access)</code>
+Sets the requested read/write access on this <code>VSIFile</code> object, given as a
+character string (i.e., <code>"r"</code>, <code>"r+"</code>, <code>"w"</code>, <code>"w+"</code>). The access can be
+changed only while the <code>VSIFile</code> object is closed, and will apply when it is
+re-opened with a call to <code style="white-space: pre;">⁠$open()⁠</code>.
+Returns <code>0</code> on success or <code>-1</code> on error.
+</p>
+
+
+<h3>Note</h3>
+
+<p>File offsets are given as R <code>numeric</code> (i.e., <code>double</code> type), optionally
+carrying the <code>bit64::integer64</code> class attribute. They are returned as
+<code>numeric</code> with the <code>integer64</code> class attribute attached. The <code>integer64</code>
+type is signed, so the maximum file offset supported by this interface
+is <code>9223372036854775807</code> (the value of <code>bit64::lim.integer64()[2]</code>).
+</p>
+<p>Some virtual file systems allow only sequential write, so no seeks or read
+operations are then allowed (e.g., AWS S3 files with /vsis3/).
+Starting with GDAL 3.2, a configuration option can be set with:
+</p>
+<div class="sourceCode"><pre>set_config_option("CPL_VSIL_USE_TEMP_FILE_FOR_RANDOM_WRITE", "YES")
+</pre></div>
+<p>in which case random-write access is possible (involves the creation of a
+temporary local file, whose location is controlled by the <code>CPL_TMPDIR</code>
+configuration option). In this case, setting <code>access</code> to <code>"w+"</code> may be
+needed for writing with seek and read operations (if creating a new file,
+otherwise, <code>"r+"</code> to open an existing file), while <code>"w"</code> access would
+allow sequential write only.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>GDAL Virtual File Systems (compressed, network hosted, etc...):<br>
+/vsimem, /vsizip, /vsitar, /vsicurl, ...<br><a href="https://gdal.org/user/virtual_file_systems.html">https://gdal.org/user/virtual_file_systems.html</a>
+</p>
+<p><code>vsi_copy_file()</code>, <code>vsi_read_dir()</code>, <code>vsi_stat()</code>, <code>vsi_unlink()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># The examples make use of the FARSITE LCP format specification at:
+# https://gdal.org/drivers/raster/lcp.html
+# An LCP file is a raw format with a 7,316-byte header. The format
+# specification gives byte offets and data types for fields in the header.
+
+lcp_file &lt;- system.file("extdata/storm_lake.lcp", package="gdalraster")
+
+# identify a FARSITE v.4 LCP file
+# function to check if the first three fields have valid data
+# input is the first twelve raw bytes in the file
+is_lcp &lt;- function(bytes) {
+  values &lt;- readBin(bytes, "integer", n = 3)
+  if ((values[1] == 20 || values[1] == 21) &amp;&amp;
+      (values[2] == 20 || values[2] == 21) &amp;&amp;
+      (values[3] &gt;= -90 &amp;&amp; values[3] &lt;= 90)) {
+
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+}
+
+vf &lt;- new(VSIFile, lcp_file)
+vf$read(12) |&gt; is_lcp()
+
+vf$tell()
+
+# read the whole file into memory
+bytes &lt;- vf$ingest(-1)
+vf$close()
+
+# write to a VSI in-memory file
+mem_file &lt;- "/vsimem/storml_copy.lcp"
+vf &lt;- new(VSIFile, mem_file, "w")
+vf$write(bytes)
+
+vf$tell()
+vf$rewind()
+vf$tell()
+
+vf$seek(0, SEEK_END)
+(vf$tell() == vsi_stat(lcp_file, "size"))  # TRUE
+
+vf$rewind()
+vf$read(12) |&gt; is_lcp()
+
+# read/write an integer field
+# write invalid data for the Latitude field and then set back
+# save the original first
+vf$seek(8, SEEK_SET)
+lat_orig &lt;- vf$read(4)
+readBin(lat_orig, "integer")  # 46
+# latitude -99 out of range
+vf$seek(8, SEEK_SET)
+writeBin(-99L, raw()) |&gt; vf$write()
+vf$rewind()
+vf$read(12) |&gt; is_lcp()  # FALSE
+vf$seek(8, SEEK_SET)
+vf$read(4) |&gt; readBin("integer")  # -99
+# set back to original
+vf$seek(8, SEEK_SET)
+vf$write(lat_orig)
+vf$rewind()
+vf$read(12) |&gt; is_lcp()  # TRUE
+
+# read a vector of doubles - xmax, xmin, ymax, ymin
+# 327766.1, 323476.1, 5105082.0, 5101872.0
+vf$seek(4172, SEEK_SET)
+vf$read(32) |&gt; readBin("double", n = 4)
+
+# read a short int, the canopy cover units
+vf$seek(4232, SEEK_SET)
+vf$read(2) |&gt; readBin("integer", size = 2)  # 1 = "percent"
+
+# read the Description field
+vf$seek(6804, SEEK_SET)
+bytes &lt;- vf$read(512)
+rawToChar(bytes)
+
+# edit the Description
+desc &lt;- paste(rawToChar(bytes),
+              "Storm Lake AOI,",
+              "Beaverhead-Deerlodge National Forest, Montana.")
+
+vf$seek(6804, SEEK_SET)
+charToRaw(desc) |&gt; vf$write()
+vf$close()
+
+# verify the file as a raster dataset
+ds &lt;- new(GDALRaster, mem_file)
+ds$info()
+
+# retrieve Description from the metadata
+# band = 0 for dataset-level metadata, domain = "" for default domain
+ds$getMetadata(band = 0, domain = "")
+ds$getMetadataItem(band = 0, mdi_name = "DESCRIPTION", domain = "")
+
+ds$close()
+vsi_unlink(mem_file)
+</code></pre>
+
+
+</div>

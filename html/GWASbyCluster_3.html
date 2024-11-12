@@ -1,0 +1,312 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>estMemSNPs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Estimate SNP cluster membership
+</h2>
+
+<h3>Description</h3>
+
+<p>Estimate SNP cluster membership. Only update cluster mixture proportions.
+Assume the 3 clusters have different sets of hyperparameters.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">estMemSNPs(es, 
+           var.memSubjs = "memSubjs", 
+           eps = 0.001, 
+           MaxIter = 50, 
+           bVec = rep(3, 3), 
+           pvalAdjMethod = "fdr", 
+           method = "FDR",
+           fdr = 0.05,
+           verbose = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>es</code></td>
+<td>
+
+<p>An ExpressionSet object storing SNP genotype data.
+It contains 3 matrices. The first matrix, which can be extracted by <code>exprs</code> method (e.g., <code>exprs(es)</code>), stores genotype data, with rows are SNPs and columns are subjects.
+</p>
+<p>The second matrix, which can be extracted by <code>pData</code> method (e.g., <code>pData(es)</code>), stores phenotype data describing subjects. Rows are subjects, and columns are phenotype variables.
+</p>
+<p>The third matrix, which can be extracted by <code>fData</code> method (e.g., <code>fData(es)</code>), stores feature data describing SNPs. Rows are SNPs and columns are feature variables.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var.memSubjs</code></td>
+<td>
+
+<p>character. The name of the phenotype variable indicating subject's case-control status. It must take only two values: 1 indicating case and 0 indicating control.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+
+<p>numeric. A small positive number as threshold for convergence of EM algorithm.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MaxIter</code></td>
+<td>
+
+<p>integer. A positive integer indicating maximum iteration in EM algorithm.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bVec</code></td>
+<td>
+
+<p>numeric. A vector of 2 elements. Indicates the parameters of the symmetric Dirichlet prior for proportion mixtures.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pvalAdjMethod</code></td>
+<td>
+
+<p>character. Indicating p-value adjustment method. c.f. <code>p.adjust</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>method to obtain SNP cluster membership based on the responsibility matrix. The default value is “FDR”. The other possible 
+value is “max”. see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fdr</code></td>
+<td>
+<p>numeric. A small positive FDR threshold used to call SNP cluster membership</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>logical. Indicating if intermediate and final results should be output.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In this simulation, we generate additive-coded genotypes for 3 clusters of SNPs
+based on a mixture of 3 Bayesian hierarchical models. 
+</p>
+<p>In cluster <code class="reqn">+</code>, the minor allele frequency
+(MAF) <code class="reqn">\theta_{x+}</code> of cases is greater than the MAF <code class="reqn">\theta_{y+}</code> of
+controls.
+</p>
+<p>In cluster <code class="reqn">0</code>, the MAF <code class="reqn">\theta_{0}</code> of cases is equal to 
+the MAF of controls.
+</p>
+<p>In cluster <code class="reqn">-</code>, the MAF <code class="reqn">\theta_{x-}</code> of cases is smaller than 
+the MAF <code class="reqn">\theta_{y-}</code> of controls.
+</p>
+<p>The proportions of the 3 clusters of SNPs are <code class="reqn">\pi_{+}</code>,
+<code class="reqn">\pi_{0}</code>, and <code class="reqn">\pi_{-}</code>, respectively.
+</p>
+<p>We assume a “half-flat shape” bivariate prior for the MAF in
+cluster <code class="reqn">+</code>
+</p>
+<p style="text-align: center;"><code class="reqn">2h_{+}\left(\theta_{x+}\right)h_{+}\left(\theta_{y+}\right)
+I\left(\theta_{x+}&gt;\theta_{y+}\right),
+</code>
+</p>
+
+<p>where <code class="reqn">I(a)</code> is hte indicator function taking value <code class="reqn">1</code> if the event 
+<code class="reqn">a</code> is true, and value <code class="reqn">0</code> otherwise.
+The function <code class="reqn">h_{+}</code> is the probability density function of the 
+beta distribution <code class="reqn">Beta\left(\alpha_{+}, \beta_{+}\right)</code>.
+</p>
+<p>We assume <code class="reqn">\theta_{0}</code> has the beta prior <code class="reqn">Beta(\alpha_0, \beta_0)</code>. 
+</p>
+<p>We also assume a “half-flat shape” bivariate prior for the MAF in
+cluster <code class="reqn">-</code>
+</p>
+<p style="text-align: center;"><code class="reqn">2h_{-}\left(\theta_{x-}\right)h_{-}\left(\theta_{y-}\right)
+I\left(\theta_{x-}&gt;\theta_{y-}\right).
+</code>
+</p>
+
+<p>The function <code class="reqn">h_{-}</code> is the probability density function of the 
+beta distribution <code class="reqn">Beta\left(\alpha_{-}, \beta_{-}\right)</code>.
+</p>
+<p>Given a SNP, we assume Hardy-Weinberg equilibrium holds for its genotypes. 
+That is, given MAF <code class="reqn">\theta</code>, the probabilities of genotypes are
+</p>
+<p style="text-align: center;"><code class="reqn">Pr(geno=2) = \theta^2</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">Pr(geno=1) = 2\theta\left(1-\theta\right)</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">Pr(geno=0) = \left(1-\theta\right)^2</code>
+</p>
+
+<p>We also assume the genotypes <code class="reqn">0</code> (wild-type), <code class="reqn">1</code> (heterozygote), and 
+<code class="reqn">2</code> (mutation) follows a multinomial distribution
+<code class="reqn">Multinomial\left\{1, \left[
+\theta^2, 2\theta\left(1-\theta\right),
+\left(1-\theta\right)^2
+\right]\right\}</code>
+</p>
+<p>For each SNP, we calculat its posterior probabilities that it belongs to cluster <code class="reqn">k</code>. This forms a matrix with 3 columns. Rows are SNPs. 
+The 1st column is the posterior probability that the SNP belongs to cluster <code class="reqn">-</code>. 
+The 2nd column is the posterior probability that the SNP belongs to cluster <code class="reqn">0</code>.
+The 3rd column is the posterior probability that the SNP belongs to cluster <code class="reqn">+</code>.
+We call this posterior probability matrix as responsibility matrix.
+To determine which cluster a SNP eventually belongs to, we can use 2 methods.
+The first method (the default method) is “FDR” method, which will
+use FDR criterion to determine SNP cluster membership.
+The 2nd method is use the maximum posterior probability to decide which
+cluster a SNP belongs to.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of 12 elements
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>wMat </code></td>
+<td>
+<p>matrix of posterior probabilities. The rows are SNPs. There are 3 columns. 
+The first column is the posterior probability that a SNP belongs to cluster - given genotypes of subjects. 
+The second column is the posterior probability that a SNP belongs to cluster 0 given genotypes of subjects. 
+The third column is the posterior probability that a SNP belongs to cluster + given genotypes of subjects. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>memSNPs </code></td>
+<td>
+<p>a vector of SNP cluster membership for the 3-cluster partitionfrom the mixture of 3 Bayesian hierarchical models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>memSNPs2 </code></td>
+<td>
+<p>a vector of binary SNP cluster membership. 1 indicates the SNP has different MAFs between cases and controls. 0 indicates the SNP has the same MAF in cases as that in controls.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>piVec</code></td>
+<td>
+<p>a vector of cluster mixture proportions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha.p</code></td>
+<td>
+<p>the first shape parameter of the beta prior for MAF obtaind from initial 3-cluster partitions based on GWAS for cluster +.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.p</code></td>
+<td>
+<p>the second shape parameter of the beta prior for MAF obtaind from initial 3-cluster partitions based on GWAS for cluster +.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha0</code></td>
+<td>
+<p>the first shape parameter of the beta prior for MAF obtaind from initial 3-cluster partitions based on GWAS for cluster 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta0</code></td>
+<td>
+<p>the second shape parameter of the beta prior for MAF obtaind from initial 3-cluster partitions based on GWAS for cluster 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha.n</code></td>
+<td>
+<p>the first shape parameter of the beta prior for MAF obtaind from initial 3-cluster partitions based on GWAS for cluster -.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.n</code></td>
+<td>
+<p>the second shape parameter of the beta prior for MAF obtaind from initial 3-cluster partitions based on GWAS for cluster -.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loop</code></td>
+<td>
+<p>number of iteration in EM algorithm</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>diff</code></td>
+<td>
+<p>sum of the squared difference of cluster mixture proportions between current iteration and previous iteration in EM algorithm. if <code>eps &lt; eps</code>, we claim the EM algorithm converges.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res.limma</code></td>
+<td>
+<p>object returned by limma</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Yan Xu &lt;yanxu@uvic.ca&gt;, 
+Li Xing &lt;sfulxing@gmail.com&gt;, 
+Jessica Su &lt;rejas@channing.harvard.edu&gt;, 
+Xuekui Zhang &lt;xuekui@uvic.ca&gt;, 
+Weiliang Qiu &lt;Weiliang.Qiu@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Yan X, Xing L, Su J, Zhang X, Qiu W. 
+Model-based clustering for identifying disease-associated SNPs in case-control genome-wide association studies. 
+Scientific Reports 9, Article number: 13686 (2019) https://www.nature.com/articles/s41598-019-50229-6.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(esSimDiffPriors)
+print(esSimDiffPriors)
+
+es=esSimDiffPriors[1:500,]
+fDat = fData(es)
+print(fDat[1:2,])
+print(table(fDat$memGenes))
+
+res = estMemSNPs(
+  es = es, 
+  var.memSubjs = "memSubjs")
+
+print(table(fDat$memGenes, res$memSNPs))
+
+</code></pre>
+
+
+</div>

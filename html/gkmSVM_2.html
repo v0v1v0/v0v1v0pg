@@ -1,0 +1,196 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>genNullSeqs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Generating GC/repeat matched randomly selected genomic sequences for the negative set
+</h2>
+
+<h3>Description</h3>
+
+<p>Generates null sequences (negative set) with matching repeat and GC content as the input bed file for positive set regions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">genNullSeqs(
+  inputBedFN, 
+  genomeVersion='hg19', 
+  outputBedFN = 'negSet.bed', 
+  outputPosFastaFN = 'posSet.fa',
+  outputNegFastaFN = 'negSet.fa', 
+  xfold = 1, 
+  repeat_match_tol = 0.02, 
+  GC_match_tol = 0.02, 
+  length_match_tol = 0.02, 
+  batchsize = 5000, 
+  nMaxTrials = 20, 
+  genome = NULL)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>inputBedFN</code></td>
+<td>
+
+<p>positive set regions 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>genomeVersion</code></td>
+<td>
+
+<p>genome version: 'hg19' and 'hg18' are supported. Default='hg19'. For other genomes, provide the BSgenome object using parameter 'genome'
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outputBedFN</code></td>
+<td>
+
+<p>output file name for the null sequences genomic regions. Default='negSet.bed'
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outputPosFastaFN</code></td>
+<td>
+
+<p>output file name for the positive set sequences. Default='posSet.fa'
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outputNegFastaFN</code></td>
+<td>
+
+<p>output file name for the negative set sequences. Default='negSet.fa'
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xfold</code></td>
+<td>
+
+<p>controls the desired number of sequences in the negative set. Default=1 (same number as in positive set)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>repeat_match_tol</code></td>
+<td>
+
+<p>tolerance for difference in repeat ratio. Default=0.02 (repeat content difference of 0.02 or less is acceptable)      </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GC_match_tol</code></td>
+<td>
+
+<p>tolerance for difference in GC content. Default=0.02
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>length_match_tol</code></td>
+<td>
+
+<p>tolerance for difference in relative sequence length. Default=0.02
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>batchsize</code></td>
+<td>
+
+<p>number of candidate random sequences tested in each trial. Default=5000
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nMaxTrials</code></td>
+<td>
+
+<p>maximum number of trials. Default=20. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>genome</code></td>
+<td>
+
+<p>BSgenome object. Default=NULL. If this parameter is used, parameter genomeVersion is ignored. 
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Writes the null sequences to files with the provided filenames. Outputs the filename for the output negative sequences file. 
+
+
+
+
+
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Mahmoud Ghandi
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Example 1: 
+# genNullSeqs('ctcfpos.bed' );
+
+#Example 2:
+# genNullSeqs('ctcfpos.bed', nMaxTrials=3, xfold=2, genomeVersion = 'hg18' );
+
+#Example 3:
+# genNullSeqs('ctcfpos.bed', xfold=2, genomeVersion = 'hg18', outputBedFN = 'ctcf_negSet.bed',
+# outputPosFastaFN = 'ctcf_posSet.fa',outputNegFastaFN = 'ctcf_negSet.fa' );
+
+#Example 4:
+# Input file names:  
+  
+  posBedFN = 'test_positives.bed' # positive set genomic ranges (bed format)
+  genomeVer = 'hg19' #genome version 
+  testfn= 'test_testset.fa'    #test set (FASTA format)
+  
+# output file names:  
+  posfn= 'test_positives.fa'   #positive set (FASTA format)
+  negfn= 'test_negatives.fa'   #negative set (FASTA format)
+  kernelfn= 'test_kernel.txt' #kernel matrix
+  svmfnprfx= 'test_svmtrain'  #SVM files 
+  outfn =   'output.txt'      #output scores for sequences in the test set       
+
+#  genNullSeqs(posBedFN, genomeVersion = genomeVer, 
+#    outputPosFastaFN = posfn, outputNegFastaFN = negfn );
+
+#  gkmsvm_kernel(posfn, negfn, kernelfn);                #computes kernel 
+#  gkmsvm_train(kernelfn, posfn, negfn, svmfnprfx);       #trains SVM
+#  gkmsvm_classify(testfn, svmfnprfx, outfn);            #scores test sequences 
+
+#  using L=18, K=7, maxnmm=4
+
+#  gkmsvm_kernel(posfn, negfn, kernelfn, L=18, K=7, maxnmm=4);     #computes kernel 
+#  gkmsvm_train(kernelfn, posfn, negfn, svmfnprfx);                 #trains SVM
+#  gkmsvm_classify(testfn, svmfnprfx, outfn, L=18, K=7, maxnmm=4); #scores test sequences 
+
+
+</code></pre>
+
+
+</div>

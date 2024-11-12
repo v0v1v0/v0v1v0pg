@@ -1,0 +1,258 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>glaguerre.quadrature</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Perform Gauss Laguerre quadrature </h2>
+
+<h3>Description</h3>
+
+<p>This function evaluates the integral of the given function between 
+the lower and upper limits using the weight and abscissa values specified in 
+the rule data frame.  The quadrature formula uses the weight function for
+generalized Laguerre polynomials.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">glaguerre.quadrature(functn, rule, alpha = 0, lower = 0, upper = Inf, 
+weighted = TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>functn</code></td>
+<td>
+<p> an R function which should take a numeric argument x and 
+possibly some parameters.  The function returns a numerical vector value 
+for the given argument x. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rule</code></td>
+<td>
+<p> a data frame containing the order <code class="reqn">n</code> generalized Laguerre quadrature rule </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p> numeric value for the generalized Laguerre polynomial parameter </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p> numeric value for the lower limit of the integral with a default value of 0 </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p> numeric value for the upper limit of the integral with a default value of Inf </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weighted</code></td>
+<td>
+<p> a boolean value which if true causes the generalized Laguerre weight function 
+to be included in the integrand </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> other arguments passed to the give function </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The rule argument corresponds to an order <code class="reqn">n</code> generalized Laguerre polynomial, 
+weight function and interval <code class="reqn">\left[ {0,\infty } \right)</code>.  
+The one limit of the integral must be finite and the other must be infinite.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The value of definite integral evaluated using Gauss Laguerre quadrature
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Frederick Novomestky <a href="mailto:fnovomes@poly.edu">fnovomes@poly.edu</a> </p>
+
+
+<h3>References</h3>
+
+<p>Abramowitz, M. and I. A. Stegun, 1968. <em>Handbook of Mathematical Functions with
+Formulas, Graphs, and Mathematical Tables</em>, Dover Publications, Inc., New York.
+</p>
+<p>Press, W. H., S. A. Teukolsky, W. T. Vetterling, and B. P. Flannery, 1992. 
+<em>Numerical Recipes in C</em>, Cambridge University Press, Cambridge, U.K.
+</p>
+<p>Stroud, A. H., and D. Secrest, 1966. <em>Gaussian Quadrature Formulas</em>,
+Prentice-Hall, Englewood Cliffs, NJ.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>glaguerre.quadrature.rules</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">###
+### this example evaluates the quadrature function for
+### the generalized Laguerre polynomials.  it computes the integral
+### of the product for all pairs of orthogonal polynomials
+### from order 0 to order 12.  the results are compared to
+### the diagonal matrix of the inner products for the
+### polynomials.  it also computes the integral of the product
+### of all pairs of orthonormal polynomials from order 0
+### to order 12.  the resultant matrix should be an identity matrix
+###
+###
+### set the polynomial parameter
+###
+alpha &lt;- 1
+###
+### set the value for the maximum polynomial order
+###
+    n &lt;- 12
+###
+### maximum order plus 1
+###
+    np1 &lt;- n + 1
+###
+### function to construct the polynomial products by column
+###
+by.column.products &lt;- function( c, p.list, p.p.list )
+{
+###
+### function to construct the polynomial products by row
+###
+    by.row.products &lt;- function( r, c, p.list )
+    {
+        row.column.product &lt;- p.list[[r]] * p.list[[c]]
+        return (row.column.product )
+    }
+    np1 &lt;- length( p.list )
+    row.list &lt;- lapply( 1:np1, by.row.products, c, p.list )
+    return( row.list )
+}
+###
+### function construct the polynomial functions by column
+###
+by.column.functions &lt;- function( c, p.p.products )
+{
+###
+### function to construct the polynomial functions by row
+###
+    by.row.functions &lt;- function( r, c, p.p.products )
+    {
+        row.column.function &lt;- as.function( p.p.products[[r]][[c]] )
+        return( row.column.function )
+    }
+    np1 &lt;- length( p.p.products[[1]] )
+    row.list &lt;- lapply( 1:np1, by.row.functions, c, p.p.products )
+    return( row.list )
+}
+###
+### function to compute the integral of the polynomials by column
+###
+by.column.integrals &lt;- function( c, p.p.functions )
+{
+###
+### function to compute the integral of the polynomials by row
+###
+    by.row.integrals &lt;- function( r, c, p.p.functions )
+    {
+        row.column.integral &lt;- glaguerre.quadrature(
+            p.p.functions[[r]][[c]], order.np1.rule, alpha )
+        return( row.column.integral )
+    }
+    np1 &lt;- length( p.p.functions[[1]] )
+    row.vector &lt;- sapply( 1:np1, by.row.integrals, c, p.p.functions )
+    return( row.vector )
+}
+###
+### construct a list of the generalized Laguerre orthogonal polynomials
+###
+p.list &lt;- glaguerre.polynomials( n, alpha )
+###
+### construct the two dimensional list of pair products
+### of polynomials
+###
+p.p.products &lt;- lapply( 1:np1, by.column.products, p.list )
+###
+### compute the two dimensional list of functions
+### corresponding to the polynomial products in
+### the two dimensional list p.p.products
+###
+p.p.functions &lt;- lapply( 1:np1, by.column.functions, p.p.products )
+###
+### get the rule table for the order np1 polynomial
+###
+rules &lt;- glaguerre.quadrature.rules( np1, alpha )
+order.np1.rule &lt;- rules[[np1]]
+###
+### construct the square symmetric matrix containing
+### the definite integrals over the default limits
+### corresponding to the two dimensional list of
+### polynomial functions
+###
+p.p.integrals &lt;- sapply( 1:np1, by.column.integrals, p.p.functions )
+###
+### construct the diagonal matrix with the inner products
+### of the orthogonal polynomials on the diagonal
+###
+p.p.inner.products &lt;- diag( glaguerre.inner.products( n,alpha ) )
+print( "Integral of cross products for the orthogonal polynomials " )
+print( apply( p.p.integrals, 2, round, digits=6 ) )
+print( apply( p.p.inner.products, 2, round, digits=6 ) )
+###
+### construct a list of theg generalized Laguerre orthonormal polynomials
+###
+p.list &lt;- glaguerre.polynomials( n, alpha, TRUE )
+###
+### construct the two dimensional list of pair products
+### of polynomials
+###
+p.p.products &lt;- lapply( 1:np1, by.column.products, p.list )
+###
+### compute the two dimensional list of functions
+### corresponding to the polynomial products in
+### the two dimensional list p.p.products
+###
+p.p.functions &lt;- lapply( 1:np1, by.column.functions, p.p.products )
+###
+### get the rule table for the order np1 polynomial
+###
+rules &lt;- glaguerre.quadrature.rules( np1, alpha, TRUE )
+order.np1.rule &lt;- rules[[np1]]
+###
+### construct the square symmetric matrix containing
+### the definite integrals over the default limits
+### corresponding to the two dimensional list of
+### polynomial functions
+###
+p.p.integrals &lt;- sapply( 1:np1, by.column.integrals, p.p.functions )
+###
+### display the matrix of integrals
+###
+print( "Integral of cross products for the orthonormal polynomials " )
+print(apply( p.p.integrals, 2, round, digits=6 ) )
+</code></pre>
+
+
+</div>

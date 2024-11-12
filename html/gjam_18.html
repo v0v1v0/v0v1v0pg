@@ -1,0 +1,130 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gjamSpec2Trait</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Ecological traits for gjam analysis</h2>
+
+<h3>Description</h3>
+
+<p>Constructs community-weighted mean-mode (CWMM) trait matrix for analysis with <code>gjam</code> for <code>n</code> observations, <code>S</code> species, <code>P</code> traits, and <code>M</code> total trait levels.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  gjamSpec2Trait(pbys, sbyt, tTypes)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>pbys</code></td>
+<td>
+<p><code>n x S</code> plot by species matrix (presence-absence, abundance)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sbyt</code></td>
+<td>
+<p><code>S x P</code> species by trait matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tTypes</code></td>
+<td>
+<p><code>P</code> data types for trait columns</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Generates the objects needed for a trait response model (TRM).  As inputs the <code>sbyt</code> <code>data.frame</code> has <code>P</code> columns containing numeric values, ordinal scores, and categorical variables, identified by data type in <code>tTypes</code>.  Additional trait columns can appear in the <code>n x M</code> output <code>matrix plotByCWMM</code>, because each level of a category becomes a new <code>'FC'</code> column as a CWMM.  Thus, <code>M</code> can exceed <code>P</code>, depending on the number of factors in <code>sbyt</code>. The exception is for categorical traits with only two levels, which can be treated as (0, 1) censored <code>'CA'</code> data.
+</p>
+<p>As output, the CWMM data types are given in <code>traitTypes</code>.  
+</p>
+<p>The list <code>censor = NULL</code> unless some data types are censored.  In the example below there are two censored columns.
+</p>
+<p>A detailed vignette on trait analysis is obtained with:
+</p>
+<p><code>browseVignettes('gjam')</code>
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>plotByCWM</code></td>
+<td>
+<p><code>n x M matrix</code> of community-weight means (numeric) or modes (ordinal)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>traitTypes</code></td>
+<td>
+<p><code>character vector</code> of data types for traits</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>specByTrait</code></td>
+<td>
+<p><code>S x M matrix</code> translates species to traits</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>censor</code></td>
+<td>
+<p><code>list</code> of censored columns, values, and intervals; see <code>gjamCensorY</code></p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>James S Clark, <a href="mailto:jimclark@duke.edu">jimclark@duke.edu</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Clark, J.S. 2016. Why species tell us more about traits than traits tell us about species: Predictive models. Ecology 97, 1979-1993.
+</p>
+<p>Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2017.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs 87, 34-56.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gjam</code>, <code>gjamCensorY</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+library(repmis)
+source_data("https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True")
+
+xdata       &lt;- forestTraits$xdata
+plotByTree  &lt;- gjamReZero(forestTraits$treesDeZero) # re-zero
+traitTypes  &lt;- forestTraits$traitTypes
+specByTrait &lt;- forestTraits$specByTrait
+
+tmp &lt;- gjamSpec2Trait(pbys = plotByTree, sbyt = specByTrait, 
+                      tTypes = traitTypes)
+tTypes &lt;- tmp$traitTypes
+traity &lt;- tmp$plotByCWM
+censor &lt;- tmp$censor
+
+ml  &lt;- list(ng=2000, burnin=500, typeNames = tTypes, censor = censor)
+out &lt;- gjam(~ temp + stdage + deficit, xdata, ydata = traity, modelList = ml)
+gjamPlot( output = out )         
+
+## End(Not run)
+</code></pre>
+
+
+</div>

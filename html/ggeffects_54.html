@@ -1,0 +1,165 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>vcov</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate variance-covariance matrix for adjusted predictions</h2>
+
+<h3>Description</h3>
+
+<p>Returns the variance-covariance matrix for the predicted values from <code>object</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'ggeffects'
+vcov(
+  object,
+  vcov_fun = NULL,
+  vcov_type = NULL,
+  vcov_args = NULL,
+  vcov.fun = vcov_fun,
+  vcov.type = vcov_type,
+  vcov.args = vcov_args,
+  verbose = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class <code>"ggeffects"</code>, as returned by <code>predict_response()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov_fun</code></td>
+<td>
+<p>Variance-covariance matrix used to compute uncertainty
+estimates (e.g., for confidence intervals based on robust standard errors).
+This argument accepts a covariance matrix, a function which returns a
+covariance matrix, or a string which identifies the function to be used to
+compute the covariance matrix.
+</p>
+
+<ul>
+<li>
+<p> A (variance-covariance) matrix
+</p>
+</li>
+<li>
+<p> A function which returns a covariance matrix (e.g., <code>stats::vcov()</code>)
+</p>
+</li>
+<li>
+<p> A string which indicates the estimation type for the heteroscedasticity-consistent
+variance-covariance matrix, e.g. <code>vcov_fun = "HC0"</code>. Possible values are
+<code>"HC0"</code>, <code>"HC1"</code>, <code>"HC2"</code>, <code>"HC3"</code>, <code>"HC4"</code>, <code>"HC4m"</code>, and <code>"HC5"</code>, which
+will then call the <code>vcovHC()</code>-function from the <strong>sandwich</strong> package, using
+the specified type. Further possible values are <code>"CR0"</code>, <code>"CR1"</code>, <code>"CR1p"</code>,
+<code>"CR1S"</code>, <code>"CR2"</code>, and <code>"CR3"</code>, which will call the <code>vcovCR()</code>-function from
+the <strong>clubSandwich</strong> package.
+</p>
+</li>
+<li>
+<p> A string which indicates the name of the <code style="white-space: pre;">⁠vcov*()⁠</code>-function from the
+<strong>sandwich</strong> or <strong>clubSandwich</strong> packages, e.g. <code>vcov_fun = "vcovCL"</code>,
+which is used to compute (cluster) robust standard errors for predictions.
+</p>
+</li>
+</ul>
+<p>If <code>NULL</code>, standard errors (and confidence intervals) for predictions are
+based on the standard errors as returned by the <code>predict()</code>-function.
+<strong>Note</strong> that probably not all model objects that work with <code>predict_response()</code>
+are also supported by the <strong>sandwich</strong> or <strong>clubSandwich</strong> packages.
+</p>
+<p>See details in <a href="https://strengejacke.github.io/ggeffects/articles/practical_robustestimation.html">this vignette</a>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov_type</code></td>
+<td>
+<p>Character vector, specifying the estimation type for the
+robust covariance matrix estimation (see <code>?sandwich::vcovHC</code>
+or <code>?clubSandwich::vcovCR</code> for details). Only used when <code>vcov_fun</code> is a
+character string indicating one of the functions from those packages.
+When <code>vcov_fun</code> is a function, a possible <code>type</code> argument <em>must</em> be provided
+via the <code>vcov_args</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov_args</code></td>
+<td>
+<p>List of named vectors, used as additional arguments that
+are passed down to <code>vcov_fun</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov.fun, vcov.type, vcov.args</code></td>
+<td>
+<p>Deprecated. Use <code>vcov_fun</code>, <code>vcov_type</code>
+and <code>vcov_args</code> instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Toggle messages or warnings.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Currently not used.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The returned matrix has as many rows (and columns) as possible combinations
+of predicted values from the <code>predict_response()</code> call. For example, if there
+are two variables in the <code>terms</code>-argument of <code>predict_response()</code> with 3 and 4
+levels each, there will be 3*4 combinations of predicted values, so the returned
+matrix has a 12x12 dimension. In short, <code>nrow(object)</code> is always equal to
+<code>nrow(vcov(object))</code>. See also 'Examples'.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The variance-covariance matrix for the predicted values from <code>object</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(efc)
+model &lt;- lm(barthtot ~ c12hour + neg_c_7 + c161sex + c172code, data = efc)
+result &lt;- predict_response(model, c("c12hour [meansd]", "c161sex"))
+
+vcov(result)
+
+# compare standard errors
+sqrt(diag(vcov(result)))
+as.data.frame(result)
+
+# only two predicted values, no further terms
+# vcov() returns a 2x2 matrix
+result &lt;- predict_response(model, "c161sex")
+vcov(result)
+
+# 2 levels for c161sex multiplied by 3 levels for c172code
+# result in 6 combinations of predicted values
+# thus vcov() returns a 6x6 matrix
+result &lt;- predict_response(model, c("c161sex", "c172code"))
+vcov(result)
+</code></pre>
+
+
+</div>

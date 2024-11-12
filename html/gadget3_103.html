@@ -1,0 +1,95 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>timedata</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gadget3 time-based data</h2>
+
+<h3>Description</h3>
+
+<p>Convert time-based data into a formula to lookup values
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">g3_timeareadata(lookup_name, df, value_field = "total_weight", areas = NULL)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>lookup_name</code></td>
+<td>
+
+<p>A unique name for this lookup, e.g. <code>"igfs_landings"</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+
+<p>A data.frame with any of columns out of age, area, year and step, finally <var>value_field</var>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>value_field</code></td>
+<td>
+
+<p>Column name that contains output value.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>areas</code></td>
+<td>
+
+<p>Named integer vector of area names to integer values. See <code>g3s_livesonareas</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A formula object that looks up <var>value_field</var> for the current
+values of <code>age</code>, <code>area</code>, <code>cur_year</code> and <code>cur_step</code>,
+depending on the columns in <var>df</var>. If there's no match, return 0.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+ling_imm &lt;- g3_stock(c(species = 'ling', 'imm'), seq(20, 156, 4)) %&gt;% g3s_age(3, 10)
+ling_mat &lt;- g3_stock(c(species = 'ling', 'mat'), seq(20, 156, 4)) %&gt;% g3s_age(5, 15)
+igfs &lt;- g3_fleet('igfs')
+
+igfs_landings &lt;-
+  structure(expand.grid(year=1990:1994, step=2, area=1, total_weight=1),
+            area_group = list(`1` = 1))
+
+# Generate a fleet predation action, use g3_timeareadata to supply landings
+# NB: Since igfs_landings only contains values for step=2, there will be no
+#     predation on other steps (since g3_timeareadata will return 0).
+predate_action &lt;- g3a_predate_fleet(
+    igfs,
+    list(ling_imm, ling_mat),
+    suitabilities = list(
+        ling_imm = g3_suitability_exponentiall50(
+            g3_parameterized('lln.alpha', by_stock = 'species'),
+            g3_parameterized('lln.l50', by_stock = 'species')),
+        ling_mat = g3_suitability_exponentiall50(
+            g3_parameterized('lln.alpha', by_stock = 'species'),
+            g3_parameterized('lln.l50', by_stock = 'species'))),
+    catchability = g3a_predate_catchability_totalfleet(
+        g3_timeareadata('igfs_landings', igfs_landings)))
+</code></pre>
+
+
+</div>

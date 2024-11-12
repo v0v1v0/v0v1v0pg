@@ -1,0 +1,125 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>excProb</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Exceedance probabilities
+</h2>
+
+<h3>Description</h3>
+
+<p>Calculate exceedance probabilities pr(X &gt; threshold) from a fitted geostatistical model.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">excProb(x, threshold=0, random=FALSE, template=NULL, templateIdCol=NULL,
+nuggetInPrediction=TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Output from either the <code>lgm</code> or <code>glgm</code> functions, or
+a list of two-column matrices with columns named <code>x</code> and <code>y</code> containing the 
+posterior distributions of random effects, as produced by <code>inla</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threshold</code></td>
+<td>
+<p> the value which the exceedance probability is calculated with respect to.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>random</code></td>
+<td>
+<p>Calculate exceedances for the random effects, rather than the
+predicted observations (including fixed effects). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>template</code></td>
+<td>
+<p>A <code>SpatRaster</code> or <code>SpatVector</code>
+object which the results will be contained in.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>templateIdCol</code></td>
+<td>
+<p>The data column in <code>template</code> corresponding to names of <code>marginals</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nuggetInPrediction</code></td>
+<td>
+<p>If <code>TRUE</code>, calculate exceedance probabilities of new observations by adding the 
+nugget effect. Otherwise calculate probabilities for the latent process.  Ignored if <code>x</code> is output from <code>glgm</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>When <code>x</code> is the output from <code>lgm</code>, pr(Y&gt;threshold) is calculated using
+the Gaussian distribution using the Kriging mean and conditional variance.  When
+<code>x</code> is from the <code>glgm</code> function, 
+the marginal posteriors are numerically integrated to obtain pr(X &gt; threshold).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Either a vector of exceedance probabilities or an object of the same class as <code>template</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">	data('swissRain')
+	swissRain = unwrap(swissRain)
+	swissAltitude = unwrap(swissAltitude)
+	swissBorder = unwrap(swissBorder)
+	swissFit =  lgm("rain", swissRain, grid=30, 
+		boxcox=0.5,fixBoxcox=TRUE,	covariates=swissAltitude)
+	swissExc = excProb(swissFit, 20)
+	mycol = c("green","yellow","orange","red")
+	mybreaks = c(0, 0.2, 0.8, 0.9, 1)
+	plot(swissBorder)
+	plot(swissExc, breaks=mybreaks, col=mycol,add=TRUE,legend=FALSE)
+	plot(swissBorder, add=TRUE)
+	legend("topleft",legend=mybreaks, col=c(NA,mycol))
+
+
+
+if(requireNamespace("INLA", quietly=TRUE) ) {
+  INLA::inla.setOption(num.threads=2)
+  # not all versions of INLA support blas.num.threads
+  try(INLA::inla.setOption(blas.num.threads=2), silent=TRUE)
+
+	swissRain$sqrtrain = sqrt(swissRain$rain)
+	swissFit2 =  glgm(formula="sqrtrain",data=swissRain, grid=40, 
+	covariates=swissAltitude,family="gaussian")
+	swissExc = excProb(swissFit2, threshold=sqrt(30))
+	swissExc = excProb(swissFit2$inla$marginals.random$space, 0,
+		template=swissFit2$raster)
+	
+}
+
+
+
+</code></pre>
+
+
+</div>

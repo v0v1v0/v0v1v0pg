@@ -1,0 +1,213 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>event_prediction_KM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Event prediction using a lifetable and a recruitment RCurve</h2>
+
+<h3>Description</h3>
+
+<p>This is a function to perform event prediction using summary-level data. As of 1.4.0 this function is deprecated as event_prediction gives improved accuracy.<br>
+It uses the fit_KM function to perform non-linear regression of Weibull and log-normal curves to the provided survival data.<br>
+It creates an event Curve object from this, and combines it with a recruitment RCurve and an optional dropout(censoring) Curve.<br>
+Using the same numerical integration approach as nph_curve_trajectories it performs an unconditional event prediction.<br>
+If a conditioning time, event number (and preferably number at risk) are provided, a conditional event prediction is also calculated.<br></p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">event_prediction_KM(
+  KMcurve,
+  Survival = "Survival",
+  Time = "Time",
+  weighting = FALSE,
+  Weights = "Weights",
+  Weight_power = 1,
+  rcurve,
+  max_time = 100,
+  dcurve = Blank(),
+  type = c("automatic", "Weibull", "Lognormal", "Exponential"),
+  startbeta = 1,
+  startsigma = 1,
+  condition = FALSE,
+  cond_Events = 0,
+  cond_NatRisk = NULL,
+  cond_Time = 0,
+  units = c("Days", "Months"),
+  discountHR = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>KMcurve</code></td>
+<td>
+<p>The dataframe object containing the survival data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Survival</code></td>
+<td>
+<p>The column name for the survival function (i.e. the probabilities). Default is "Survival"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Time</code></td>
+<td>
+<p>The column name for the times. Default is "Time"
+Alternatively accepts "Weibull" or "Lognormal" to force the type.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weighting</code></td>
+<td>
+<p>Boolean for whether to use weighting. Default=TRUE as it greatly improves curve fitting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Weights</code></td>
+<td>
+<p>Name of Weights column. Default="Weights". Optional if weighting=FALSE. Recommended to use number at risk or remaining.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Weight_power</code></td>
+<td>
+<p>Power to raise the weights to. Useful in large trials to give added weight to later points where numbers may still be high. Default=1 (Use weights as specified).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rcurve</code></td>
+<td>
+<p>Observed and/or expected recruitment distribution as an RCurve object. This should typically be of PieceR type (piecewise linear recruitment).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_time</code></td>
+<td>
+<p>Maximum time to predict events up to.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dcurve</code></td>
+<td>
+<p>Dropout/censoring distribution as a Curve object. This is Blank() by default, i.e. no dropout.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Type of event curve to fit. Default is "Automatic", fitting both Weibull and Log-normal curves.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startbeta</code></td>
+<td>
+<p>Starting value for the Weibull beta (shape) parameter to be used in the non-linear regression. Default=1 (exponential).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startsigma</code></td>
+<td>
+<p>Starting value for the Lognormal sigma (sd) parameter to be used in the non-linear regression. Default=1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>condition</code></td>
+<td>
+<p>Boolean whether to also do a conditional event prediction. Default=FALSE
+Note that If all conditioning options are left as defaults, conditioned calculation will equal the unconditional one.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cond_Events</code></td>
+<td>
+<p>Number of events to condition on. Default=0. Optional unless condition=TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cond_NatRisk</code></td>
+<td>
+<p>Number of patients at risk to condition on. By default, the program will estimate the number at risk assuming no censoring.
+It is highly recommended to specify this if conditioning. Default=NULL(takes value of N - cond_Events). Optional unless condition=TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cond_Time</code></td>
+<td>
+<p>Time, in months, to condition on. Default=0. Optional unless condition=TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>units</code></td>
+<td>
+<p>Units that the KM-curve is specified in. Accepts "Days", "Months". Default="Days".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>discountHR</code></td>
+<td>
+<p>Hazard ratio for discounting events e.g. used to predict adjudicated events from unadjudicated data where patients remain 'at risk' after an event is adjudicated not to have occurred.
+Values below 1 indicate fewer events will occur than predicted by the curve-fitting.
+Note that changing this argument is only allowed if type="Weibull" since log-normal curves are not compatible with proportional hazards.
+Default=1 (No discounting)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a list object with the fitted ecurve, the dcurve, the rcurve, the fitting details, and a summary table with one row per month up to max_time containing the following columns:
+</p>
+
+<ul>
+<li>
+<p>"Time"Time of assessment.
+</p>
+</li>
+<li>
+<p>"Patients"Number of patients recruited by the assessment time.
+</p>
+</li>
+<li>
+<p>"Predicted_Events"Number of events unconditionally predicted at the assessment time.
+</p>
+</li>
+<li>
+<p>"Conditioned_Events"Number of events unconditionally predicted at the assessment time (Column present only if conditioning specified).
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>James Bell
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">recruit &lt;- PieceR(matrix(c(rep(1,12),10,15,25,30,45,60,55,50,65,60,55,30),ncol=2),1)
+example_data_short &lt;- simulate_trials(active_ecurve=Weibull(50,0.8),control_ecurve=Weibull(50,0.8),
+rcurve=recruit, assess=10,iterations=1,seed=12345,detailed_output=TRUE)
+
+library(survival)
+
+temp1 &lt;- summary(survfit(Surv(example_data_short[,"Time"],1-example_data_short[,"Censored"])~ 1,
+error="greenwood"))
+out1 &lt;- cbind(temp1$time,temp1$n.risk,temp1$surv,temp1$std.err)
+out1 &lt;- rbind(c(0,out1[1,2],1,0),out1)
+colnames(out1) &lt;- c("Time","NAR","Survival","Std.Err")
+x1 &lt;- ceiling(max(out1[,"Time"]))
+example_lifetable &lt;- out1[findInterval(0:x1,out1[,"Time"]),]
+example_lifetable[,"Time"] &lt;- 0:x1
+
+event_prediction_KM(KMcurve=example_lifetable, weighting=TRUE, Weights="NAR", rcurve=recruit,
+max_time=60, type="automatic", condition=TRUE, cond_Events=49, cond_NatRisk=451, cond_Time=10, 
+units="Months")
+</code></pre>
+
+
+</div>

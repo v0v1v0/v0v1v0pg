@@ -1,0 +1,189 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getEfronp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimation of empirical null distribution.</h2>
+
+<h3>Description</h3>
+
+<p>Estimation of empirical null distribution using Efron's central matching.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getEfronp(
+  z,
+  bins = 120L,
+  maxQ = 9,
+  pct = 0,
+  pct0 = 0.25,
+  cc = 1.2,
+  plotIt = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>z</code></td>
+<td>
+<p>A numeric vector of z values following the theoretical normal null 
+distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bins</code></td>
+<td>
+<p>The number of intervals for density estimation of the marginal 
+density of z.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxQ</code></td>
+<td>
+<p>The maximum degree of the polynomial to be considered for density
+estimation of the marginal density of z.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pct</code></td>
+<td>
+<p>Low and top (pct*100)
+f(z).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pct0</code></td>
+<td>
+<p>Low and top (pct0*100)
+estimate f0(z).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cc</code></td>
+<td>
+<p>The central parts 
+</p>
+<p style="text-align: center;"><code class="reqn">(\mu - \sigma cc, \mu + \sigma cc)</code>
+</p>
+
+<p>of the empirical distribution z are used for an estimate of the null 
+proportion (eta).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plotIt</code></td>
+<td>
+<p>TRUE if density plot is to be produced.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>correctz </code></td>
+<td>
+<p>The corrected z values to follow empirically 
+standard normal distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correctp </code></td>
+<td>
+<p>The corrected p values using the correct z values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q </code></td>
+<td>
+<p>The chosen degree of polynomial for the estimated 
+marginal density.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu0hat </code></td>
+<td>
+<p>The location parameter for the normal null 
+distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma0hat </code></td>
+<td>
+<p>The scale parameter for the normal null 
+distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta </code></td>
+<td>
+<p>The estimated null proportion.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Min Jin Ha
+</p>
+
+
+<h3>References</h3>
+
+<p>Efron, B. 
+(2004). 
+Large-scale simultaneous hypothesis testing. 
+Journal of the American Statistical Association, 99, 96–104.
+</p>
+<p>Ha, M. J. and Sun, W. 
+(2014).
+Partial correlation matrix estimation using ridge penalty 
+followed by thresholding and re-estimation.
+Biometrics, 70, 762–770.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> p &lt;- 100 # number of variables
+ n &lt;- 50 # sample size
+
+ ###############################
+ # Simulate data
+ ###############################
+ simulation &lt;- simulateData(G = p, etaA = 0.02, n = n, r = 1)
+ data &lt;- simulation$data[[1]]
+ stddata &lt;- scale(x = data, center = TRUE, scale = TRUE)
+   
+ ###############################
+ # estimate ridge parameter
+ ###############################
+ lambda.array &lt;- seq(from = 0.1, to = 20, by = 0.1) * (n - 1.0)
+ fit &lt;- lambda.cv(x = stddata, lambda = lambda.array, fold = 10L)
+ lambda &lt;- fit$lambda[which.min(fit$spe)] / (n - 1.0)
+   
+ ###############################
+ # calculate partial correlation
+ # using ridge inverse
+ ###############################
+ w.upper &lt;- which(upper.tri(diag(p)))
+ partial &lt;- solve(lambda * diag(p) + cor(data))
+ partial &lt;- (-scaledMat(x = partial))[w.upper]
+   
+ ###############################
+ # get p-values from empirical 
+ # null distribution 
+ ###############################
+ efron.fit &lt;- getEfronp(z = transFisher(x = partial))
+ 
+</code></pre>
+
+
+</div>

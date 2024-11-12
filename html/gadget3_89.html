@@ -1,0 +1,167 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>language</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>G3 language extensions to R</h2>
+
+<h3>Description</h3>
+
+<p>Additional meta-functions available for use in G3 formula.
+</p>
+
+
+<h3>Details</h3>
+
+<p>Whilst used as functions, these functions alter the code output of the model,
+rather than appearing directly.
+</p>
+
+
+<h3>g3_idx</h3>
+
+<p>Adds a <code>- 1</code> to the supplied expression, but only in C++ (which has 0-based
+indexes). Under R the expression is passed through unchanged.
+</p>
+<p><em>Note:</em> This is generally for internal use, as <code>[[</code> will do this
+automatically for you.
+</p>
+<p>For example, <code>g3_idx(a)</code> will be replaced with <code>a</code> in R output
+and <code>a - 1</code> in C++ output.
+</p>
+
+
+<h3>g3_param</h3>
+
+<p>Reference a scalar parameter by name. Arguments:
+</p>
+
+<dl>
+<dt>name</dt>
+<dd>
+<p>Variable name for parameter. Required</p>
+</dd>
+<dt>value</dt>
+<dd>
+<p>Initial value in model parameter_template. Default 0</p>
+</dd>
+<dt>optimise</dt>
+<dd>
+<p>Initial optimise setting in parameter_template. Default TRUE</p>
+</dd>
+<dt>random</dt>
+<dd>
+<p>Initial random setting in parameter_template. Default FALSE</p>
+</dd>
+<dt>lower</dt>
+<dd>
+<p>Initial lower setting in parameter_template. Default NA</p>
+</dd>
+<dt>upper</dt>
+<dd>
+<p>Initial upper setting in parameter_template. Default NA</p>
+</dd>
+</dl>
+<p>For example, <code>g3_param("ling.Linf")</code> will register a scalar parameter
+called <var>ling.Linf</var>, available in the model parameter template, and be
+replaced by a reference to that parameter.
+</p>
+<p><code>g3_param("ling.Linf")</code> can be used multiple times, to refer to the same
+value.  
+</p>
+
+
+<h3>g3_param_vector</h3>
+
+<p>Reference a vector parameter by name. Arguments:
+</p>
+
+<dl>
+<dt>name</dt>
+<dd>
+<p>Variable name for parameter. Required</p>
+</dd>
+<dt>value</dt>
+<dd>
+<p>Initial value for use in model paramter_template. Default 0</p>
+</dd>
+</dl>
+<p>Same as <code>g3_param</code>, but the parameter will be expected to be a vector.
+You can then dereference with <code>[[</code>.
+</p>
+<p>For example, <code>g3_param_vector("lingimm.M")[[age - 3 + 1]]</code>.
+</p>
+
+
+<h3>g3_param_table</h3>
+
+<p>Reference a lookup-table of parameters.
+</p>
+
+<dl>
+<dt>name</dt>
+<dd>
+<p>Variable name for parameter. Required</p>
+</dd>
+<dt>table</dt>
+<dd>
+<p>A data.frame, one column for each variable to check, one row for possible values. Required</p>
+</dd>
+<dt>value</dt>
+<dd>
+<p>Initial value for use in model parameter_template. Default 0</p>
+</dd>
+<dt>optimise</dt>
+<dd>
+<p>Initial optimise setting in parameter_template. Default TRUE</p>
+</dd>
+<dt>random</dt>
+<dd>
+<p>Initial random setting in parameter_template. Default FALSE</p>
+</dd>
+<dt>lower</dt>
+<dd>
+<p>Initial lower setting in parameter_template. Default NA</p>
+</dd>
+<dt>upper</dt>
+<dd>
+<p>Initial upper setting in parameter_template. Default NA</p>
+</dd>
+<dt>ifmissing</dt>
+<dd>
+<p>Value to return when outside of table bounds. Default NaN with warning if a value is missing</p>
+</dd>
+</dl>
+<p>This is similar to providing a vector, but can use values in the model to
+provide bounds-checking.
+</p>
+<p>The function takes 2 arguments, a prefix for the generated parameters, and a
+data.frame of variables to possible values. <code>expand.grid</code> can be
+used to produce a cross product of all provided variables.
+</p>
+<p><em>Note:</em> The variables referenced will need to be integer variables, most
+likely iteration variables such as <code>cur_year</code>, <code>age</code>,
+<code>area</code>...
+</p>
+<p>For example, the following: <code>g3_param_table('lingimm.M', expand.grid(age = seq(ling_imm__minage,
+  ling_imm__maxage)))</code> will generate parameters
+<var>lingimm.M.3</var>..<var>lingimm.M.10</var>, assuming that ling_imm has ages 3..10.
+</p>
+<p>The call to <code>g3_param_table</code> will be replaced with
+<code>param[[paste("lingimm.M", age, sep = ".")]]</code>, or equivalent code
+in C++.
+</p>
+
+
+<h3>g3_with</h3>
+
+<p><code>g3_with(var1 := val1, var2 := val2, { x &lt;- val1 * val2 })</code>
+is equivalent to
+<code>local({var1 &lt;- val1, var2 &lt;- val2, { x &lt;&lt;- val1 * val2 } })</code>
+</p>
+<p>However, we don't make a new environment for the code block in R, only in C++.
+</p>
+
+
+</div>

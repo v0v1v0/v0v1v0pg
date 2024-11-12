@@ -1,0 +1,365 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>carma</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Continuous ARMA for Unequally Spaced Repeated Measurements</h2>
+
+<h3>Description</h3>
+
+<p><code>carma</code> is designed to handle a polynomial within subject design matrix
+with unequally spaced observations which can be at different times for
+different subjects. The origin of time is taken as the mean time of all the
+subjects. The within subject errors are assumed to be independent Gaussian
+or have a continuous time ARMA(p,q) Gaussian structure with the option to
+include measurement error. The between subject random coefficients are
+assumed to have an arbitrary covariance matrix. The fixed effect design
+matrix is a polynomial of equal or higher order than the within subject
+design matrix. This matrix can be augmented by covariates multiplied by
+polynomial design matrices of any order up to the order of the first
+partition of the design matrix. The method is based on exact maximum
+likelihood using the Kalman filter to calculate the likelihood.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">carma(response = NULL, ccov = NULL, times = NULL, torder = 0,
+  interaction, arma = c(0, 0, 0), parma = NULL, pre = NULL,
+  position = NULL, iopt = TRUE, resid = TRUE,
+  transform = "identity", delta = NULL, envir = parent.frame(),
+  print.level = 0, typsize = abs(p), ndigit = 10, gradtol = 1e-05,
+  steptol = 1e-05, iterlim = 100, fscale = 1, stepmax = 10 * sqrt(p
+  %*% p))
+
+## S3 method for class 'carma'
+coef(object, ...)
+
+## S3 method for class 'carma'
+deviance(object, ...)
+
+## S3 method for class 'carma'
+residuals(object, recursive = TRUE, ...)
+
+## S3 method for class 'carma'
+print(x, digits = max(3, .Options$digits - 3),
+  correlation = TRUE, ...)
+
+## S3 method for class 'carma'
+mprofile(z, times = NULL, ccov, plotse = TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>response</code></td>
+<td>
+<p>A list of two column matrices with response values and times
+for each individual, one matrix or dataframe of response values, or an
+object of either class, <code>response</code> (created by
+<code>restovec</code>) or <code>repeated</code> (created by
+<code>rmna</code> or <code>lvna</code>). If the
+<code>repeated</code> data object contains more than one response variable, give
+that object in <code>envir</code> and give the name of the response variable to be
+used here.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ccov</code></td>
+<td>
+<p>A matrix of columns of baseline covariates with one row per
+individual, a model formula using vectors of the same size, or an object of
+class, <code>tccov</code> (created by <code>tcctomat</code>). If response
+has class, <code>repeated</code>, the covariates must be specified as a Wilkinson
+and Rogers formula unless none are to be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>times</code></td>
+<td>
+<p>When response is a matrix, a vector of possibly unequally
+spaced times when they are the same for all individuals or a matrix of
+times. Not necessary if equally spaced. Ignored if response has class,
+<code>response</code> or <code>repeated</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>torder</code></td>
+<td>
+<p>Order of the polynomial in time to be fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interaction</code></td>
+<td>
+<p>Vector indicating order of interactions of covariates
+with time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>arma</code></td>
+<td>
+<p>Vector of three values: order of AR, order of MA, binary
+indicator for presence of measurement error. Not required for an AR(1) if an
+initial estimate is supplied. If only one value is supplied, it is assumed
+to be the order of the AR.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parma</code></td>
+<td>
+<p>Initial estimates of ARMA parameters. For example, with
+<code>arma=c(1,0,0)</code>, an AR(1), the parameter is <code>parma[1]=log(theta)</code>,
+where <code>theta</code> is the positive, continuous time autoregressive
+coefficient. The finite step autoregression coefficient for a step of length
+<code>delta</code> is then <code>alpha=exp(-delta*theta)</code> i.e.
+<code>alpha=exp(-delta*exp(parma[1]))</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pre</code></td>
+<td>
+<p>Initial estimates of random effect parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>position</code></td>
+<td>
+<p>Two column matrix with rows giving index positions of random
+effects in the covariance matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iopt</code></td>
+<td>
+<p>TRUE if optimization should be performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resid</code></td>
+<td>
+<p>TRUE if residuals to be calculated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transform</code></td>
+<td>
+<p>Transformation of the response variable: <code>identity</code>,
+<code>exp</code>, <code>square</code>, <code>sqrt</code>, or <code>log</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>Scalar or vector giving the unit of measurement for each
+response value, set to unity by default. For example, if a response is
+measured to two decimals, <code>delta=0.01</code>. Ignored if response has class,
+<code>response</code> or <code>repeated</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>envir</code></td>
+<td>
+<p>Environment in which model formulae are to be interpreted or a
+data object of class, <code>repeated</code>, <code>tccov</code>, or <code>tvcov</code>; the
+name of the response variable should be given in <code>response</code>. If
+<code>response</code> has class <code>repeated</code>, it is used as the environment.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print.level</code></td>
+<td>
+<p>Arguments for nlm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>typsize</code></td>
+<td>
+<p>Arguments for nlm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ndigit</code></td>
+<td>
+<p>Arguments for nlm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gradtol</code></td>
+<td>
+<p>Arguments for nlm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>steptol</code></td>
+<td>
+<p>Arguments for nlm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterlim</code></td>
+<td>
+<p>Arguments for nlm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fscale</code></td>
+<td>
+<p>Arguments for nlm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stepmax</code></td>
+<td>
+<p>Arguments for nlm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class, <code>carma</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recursive</code></td>
+<td>
+<p>If TRUE, recursive residuals or fitted values are given;
+otherwise, marginal ones.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of class, <code>carma</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>number of digits to print.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correlation</code></td>
+<td>
+<p>logical; print correlations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>z</code></td>
+<td>
+<p>An object of class, <code>carma</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plotse</code></td>
+<td>
+<p>Plot the standard errors around the marginal profile curve.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For clustered (non-longitudinal) data, where only random effects will be
+fitted, <code>times</code> are not necessary.
+</p>
+<p>Marginal and individual profiles can be plotted using
+<code>mprofile</code> and <code>iprofile</code> and
+residuals with <code>plot.residuals</code>.
+</p>
+<p>For any ARMA of order superior to an AR(1), the (complex) roots of the
+characteristic equation are printed out; see Jones and Ackerson (1991) for
+their use in calculation of the covariance function.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class <code>carma</code> is returned that contains all of the
+relevant information calculated, including error codes.
+</p>
+
+
+<h3>Methods (by generic)</h3>
+
+
+<ul>
+<li> <p><code>coef</code>: Coefficients
+</p>
+</li>
+<li> <p><code>deviance</code>: Deviance
+</p>
+</li>
+<li> <p><code>residuals</code>: Residuals
+</p>
+</li>
+<li> <p><code>print</code>: Print method
+</p>
+</li>
+<li> <p><code>mprofile</code>: Special marginal profiles with SEs
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>R.H. Jones and J.K. Lindsey
+</p>
+
+
+<h3>References</h3>
+
+<p>Jones, R. H. and Ackerson, L. M. (1991) Serial correlation in
+unequally spaced longitudinal data. Biometrika, 77, 721-731.
+</p>
+<p>Jones, R.H. (1993) Longitudinal Data Analysis with Serial Correlation: A
+State-space Approach. Chapman and Hall
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>elliptic</code>, <code>gar</code>,
+<code>gnlmix</code>, <code>glmm</code>,
+<code>gnlmm</code>, <code>iprofile</code>,
+<code>kalseries</code>, <code>mprofile</code>,
+<code>plot.residuals</code>, <code>potthoff</code>,
+<code>read.list</code>, <code>restovec</code>,
+<code>rmna</code>, <code>tcctomat</code>,
+<code>tvctomat</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+y &lt;- matrix(rnorm(40),ncol=5)
+x1 &lt;- gl(2,4)
+x2 &lt;- gl(2,1,8)
+# independence with time trend
+carma(y, ccov=~x1, torder=2)
+# AR(1)
+carma(y, ccov=~x1, torder=2, arma=c(1,0,0), parma=-0.5)
+carma(y, ccov=~x1, torder=3, interact=3, arma=c(1,0,0), parma=-1)
+# ARMA(2,1)
+carma(y, ccov=~x1+x2, interact=c(2,0), torder=3,arma=c(2,1,0),
+	parma=c(0.3,2,0.7))
+# random intercept
+carma(y, ccov=~x1+x2, interact=c(2,0), torder=3, pre=-0.4, 
+	position=c(1,1))
+# random coefficients
+carma(y, ccov=~x1+x2, interact=c(2,0), torder=3, pre=c(-0.4,0.1), 
+	position=rbind(c(1,1),c(2,2)))
+
+</code></pre>
+
+
+</div>

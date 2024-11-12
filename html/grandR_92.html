@@ -1,0 +1,143 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GetTable</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Obtain a genes x values table</h2>
+
+<h3>Description</h3>
+
+<p>This is the main function to access slot data for all genes as a large matrix. If data from a particular gene (or a small set of genes)
+must be retrieved, use the <code>GetData</code> function. For analysis results, use the <code>GetAnalysisTable</code> function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GetTable(
+  data,
+  type = DefaultSlot(data),
+  columns = NULL,
+  genes = Genes(data),
+  ntr.na = TRUE,
+  gene.info = FALSE,
+  summarize = NULL,
+  prefix = NULL,
+  name.by = "Symbol"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A grandR object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Either a mode.slot (see details) or a regex to be matched against analysis names. Can also be a vector</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>columns</code></td>
+<td>
+<p>A vector of columns (either condition/cell names if the type is a mode.slot, or names in the output table from an analysis; use Columns(data,&lt;analysis&gt;) to learn which columns are available); all condition/cell names if NULL</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>genes</code></td>
+<td>
+<p>Restrict the output table to the given genes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ntr.na</code></td>
+<td>
+<p>For columns representing a 4sU naive sample, should types <em>ntr</em>,<em>new.count</em> and <em>old.count</em> be 0,0 and count (ntr.na=FALSE; can be any other slot than count) or NA,NA and NA (ntr.na=TRUE)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gene.info</code></td>
+<td>
+<p>Should the table contain the GeneInfo values as well (at the beginning)?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>summarize</code></td>
+<td>
+<p>Should replicates by summarized? see details</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prefix</code></td>
+<td>
+<p>Prepend each column in the output table (except for the gene.info columns) by the given prefix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name.by</code></td>
+<td>
+<p>A column name of Coldata(data). This is used as the rownames of the output table</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This is a convenience wrapper for GetData (values from data slots) and GetAnalysisTable (values from analyses).
+Types can refer to any of the two (and can be mixed). If there are types from both data and analyses, columns must be NULL.
+Otherwise columns must either be condition/cell names (if type refers to one or several data slots), or regular expressions
+to match against the names in the analysis tables.
+</p>
+<p>Columns definitions for data slots can be given as a logical, integer or character vector representing a selection of the columns (samples or cells).
+The expression is evaluated in an environment having the <code>Coldata</code>, i.e. you can use names of <code>Coldata</code> as variables to
+conveniently build a logical vector (e.g., columns=Condition=="x").
+</p>
+<p>To refer to data slots via <code>type</code>, the mode.slot syntax can be used: Each name is either a data slot, or one of (new,old,total)
+followed by a dot followed by a slot. For new or old, the data slot value is multiplied by ntr or 1-ntr. This can be used e.g. to obtain the <em>new counts</em>.
+</p>
+<p>The summarization parameter can only be specified if columns is NULL. It is either a summarization matrix (GetSummarizeMatrix) or
+TRUE (in which case GetSummarizeMatrix(data) is called). If there a NA values, they are imputed as the mean per group!
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data frame containing the desired values
+</p>
+
+
+<h3>See Also</h3>
+
+<p>GetData,GetAnalysisTable,DefaultSlot,Genes,GetSummarizeMatrix
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">sars &lt;- ReadGRAND(system.file("extdata", "sars.tsv.gz", package = "grandR"),
+                  design=c("Condition",Design$dur.4sU,Design$Replicate))
+sars &lt;- Normalize(FilterGenes(sars))
+
+head(GetTable(sars))
+# DefaultSlot values, i.e. size factor normalized read counts for all samples
+head(GetTable(sars,summarize=TRUE))
+# DefaultSlot values averaged over the two conditions
+head(GetTable(sars,type="new.count",columns=!no4sU))
+# Estimated counts for new RNA for all samples with 4sU
+
+sars&lt;-LFC(sars,contrasts=GetContrasts(sars,group = "duration.4sU"))
+head(GetAnalysisTable(sars,columns="LFC"))
+# Estimated fold changes SARS vs Mock for each time point
+
+
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,162 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>add_difference.tbl_summary</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Add differences between groups</h2>
+
+<h3>Description</h3>
+
+<p>Adds difference to tables created by <code>tbl_summary()</code>.
+The difference between two groups (typically mean or rate difference) is added
+to the table along with the difference's confidence interval and a p-value (when applicable).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'tbl_summary'
+add_difference(
+  x,
+  test = NULL,
+  group = NULL,
+  adj.vars = NULL,
+  test.args = NULL,
+  conf.level = 0.95,
+  include = everything(),
+  pvalue_fun = label_style_pvalue(digits = 1),
+  estimate_fun = list(c(all_continuous(), all_categorical(FALSE)) ~ label_style_sigfig(),
+    all_dichotomous() ~ label_style_sigfig(scale = 100, suffix = "%"), all_tests("smd")
+    ~ label_style_sigfig()),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>(<code>tbl_summary</code>)<br>
+table created with <code>tbl_summary()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test</code></td>
+<td>
+<p>(<code>formula-list-selector</code>)<br>
+Specifies the tests/methods to perform for each variable, e.g.
+<code>list(all_continuous() ~ "t.test", all_dichotomous() ~ "prop.test", all_categorical(FALSE) ~ "smd")</code>.
+</p>
+<p>See below for details on default tests and ?tests for details on available
+tests and creating custom tests.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>(<code>tidy-select</code>)<br>
+Variable name of an ID or grouping variable. The column can be used to
+calculate p-values with correlated data.
+Default is <code>NULL</code>. See tests for methods that utilize the <code>group</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adj.vars</code></td>
+<td>
+<p>(<code>tidy-select</code>)<br>
+Variables to include in adjusted calculations (e.g. in ANCOVA models).
+Default is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test.args</code></td>
+<td>
+<p>(<code>formula-list-selector</code>)<br>
+Containing additional arguments to pass to tests that accept arguments.
+For example, add an argument for all t-tests, use
+<code>test.args = all_tests("t.test") ~ list(var.equal = TRUE)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.level</code></td>
+<td>
+<p>(<code>numeric</code>)<br>
+a scalar in the interval <code style="white-space: pre;">⁠(0, 1)⁠</code> indicating the confidence level. Default is 0.95</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include</code></td>
+<td>
+<p>(<code>tidy-select</code>)<br>
+Variables to include in output. Default is <code>everything()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pvalue_fun</code></td>
+<td>
+<p>(<code>function</code>)<br>
+Function to round and format p-values. Default is <code>label_style_pvalue()</code>.
+The function must have a numeric vector input, and return a string that is
+the rounded/formatted p-value (e.g. <code>pvalue_fun = label_style_pvalue(digits = 2)</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimate_fun</code></td>
+<td>
+<p>(<code>formula-list-selector</code>)<br>
+List of formulas specifying the functions
+to round and format differences and confidence limits.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>These dots are for future extensions and must be empty.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a gtsummary table of class <code>"tbl_summary"</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Example 1 ----------------------------------
+trial |&gt;
+  select(trt, age, marker, response, death) %&gt;%
+  tbl_summary(
+    by = trt,
+    statistic =
+      list(
+        all_continuous() ~ "{mean} ({sd})",
+        all_dichotomous() ~ "{p}%"
+      ),
+    missing = "no"
+  ) |&gt;
+  add_n() |&gt;
+  add_difference()
+
+# Example 2 ----------------------------------
+# ANCOVA adjusted for grade and stage
+trial |&gt;
+  select(trt, age, marker, grade, stage) %&gt;%
+  tbl_summary(
+    by = trt,
+    statistic = list(all_continuous() ~ "{mean} ({sd})"),
+    missing = "no",
+    include = c(age, marker, trt)
+  ) |&gt;
+  add_n() |&gt;
+  add_difference(adj.vars = c(grade, stage))
+
+</code></pre>
+
+
+</div>

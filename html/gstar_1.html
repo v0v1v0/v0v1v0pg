@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gstar</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit Generalized Space-Time Autoregressive Model</h2>
+
+<h3>Description</h3>
+
+<p>gstar function return the parameter estimation of Generalized Space-Time Autoregressive Model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gstar(x, weight, p = 1, d = 0, est = "OLS")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a dataframe, matrix or xts or ts object that contain time series data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight</code></td>
+<td>
+<p>a spatial weight ncol(x) * ncol(x) with diagonal = 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>an autoregressive order, value must be greater than 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>a lag differencing order, value must be greater than 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>est</code></td>
+<td>
+<p>estimation method, currently only OLS available, another estimation will be added later.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>gstar returns output similar to lm, the detail are shown in the following list :
+</p>
+
+<ul>
+<li>
+<p> coefficients - a named vector of coefficients.
+</p>
+</li>
+<li>
+<p> AIC - A version of Akaike's An Information Criterion (the calculation is similar to aic in <em>lm</em> method )</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Budi Nurani Ruchjana, Svetlana A. Borovkova and H. P. Lopuhaa (2012), <em>Least Squares Estimation of Generalized Space Time Autoregressive (GSTAR) Model and Its Properties</em>, The 5th International Conference on Research and Education in Mathematics AIP Conf. Proc. 1450, 61-64 &lt;doi : 10.1063/1.4724118&gt;.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>summary</code> for summarize the model that has been built. Also use <code>predict</code> to predict model to testing or new data.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(gstar)
+library(xts)
+data("LocationCPI")
+
+#-----Use data with xts object----#
+x = xts(LocationCPI[, -1], order.by = as.Date(LocationCPI[, 1]))
+
+s &lt;- round(nrow(x) * 0.8) ## split into training and testing (80:20)
+x_train &lt;- x[1:s, ]
+x_test &lt;- x[-c(1:s), ]
+
+
+weight = matrix(c(0, 1, 1, 1,                    # create the uniform weight.
+                1, 0, 1, 1,
+                1, 1, 0, 1,
+                1, 1, 1, 0), ncol = 4, nrow = 4)
+
+
+weight = weight/(ncol(x) - 1) #the sum of weight is equal to 1 every row.
+
+
+fit &lt;-  gstar(x_train, weight = weight,
+    p = 1, d = 0, est = "OLS")
+summary(fit)
+
+performance(fit)
+performance(fit, x_test) ## to check the performance with testing data
+
+predict(fit, n = 10) #forecast 10 data ahead
+
+plot(fit)
+plot(fit, n_predict = 10) #plot with 10 forecasting data
+plot(fit, testing = x_test)
+
+#---- Use dataframe or matrix---#
+x2 &lt;- LocationCPI
+x2$Date &lt;- NULL # remove the date column
+
+data(Loc)
+dst &lt;- as.matrix(dist(Loc[, -1], diag = TRUE, upper = TRUE))
+dst1 &lt;- matrix(0, nrow = nrow(dst), ncol = ncol(dst))
+
+
+for(i in 1:nrow(dst)) {
+   for(j in 1:ncol(dst)){
+     if(j == i) next
+     dst1[i, j] &lt;- sum(dst[i, -j])/sum(dst[i,])
+ }
+}
+
+weight_inverse_distance &lt;- matrix(0, nrow =
+       nrow(dst), ncol = ncol(dst))
+
+for(i in 1:nrow(dst)) {
+   for(j in 1:ncol(dst)){
+     if(j == i) next
+     weight_inverse_distance[i, j] &lt;- sum(dst1[i, j])/sum(dst1[i,])
+
+ }
+}
+
+fit_inverse_distance &lt;-  gstar(x2, weight =
+     weight_inverse_distance, p = 2, d = 1, est = "OLS")
+
+summary(fit_inverse_distance)
+performance(fit_inverse_distance)
+predict(fit_inverse_distance)
+plot(fit_inverse_distance)
+
+</code></pre>
+
+
+</div>

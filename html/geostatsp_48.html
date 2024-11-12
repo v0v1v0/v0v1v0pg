@@ -1,0 +1,79 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>postExp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Exponentiate posterior quantiles</h2>
+
+<h3>Description</h3>
+
+<p>Converts a summary table for model parameters on the log scale to the natural or exponentiated scale.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">	postExp(x, 
+		exclude = grep('^(range|aniso|shape|boxcox)', rownames(x)),
+		invLogit=FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a matrix or data frame as returned by <code>glgm</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exclude</code></td>
+<td>
+<p>vector of parameters not transformed, defaults to the range parameter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>invLogit</code></td>
+<td>
+<p>Converts intercept parameter to inverse-logit scale when <code>TRUE</code>.  Can also be a vector of parameters to inverse-logit transform.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a summary table for log or exponentially transformed model parameters</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">require("geostatsp")
+data("swissRain")
+swissRain = unwrap(swissRain)
+swissAltitude = unwrap(swissAltitude)
+
+swissRain$lograin = log(swissRain$rain)
+
+if(requireNamespace('INLA', quietly=TRUE)) {
+  INLA::inla.setOption(num.threads=2)
+  # not all versions of INLA support blas.num.threads
+  try(INLA::inla.setOption(blas.num.threads=2), silent=TRUE)
+swissFit =  glgm(formula="lograin", data=swissRain, 
+	grid=20, 
+	covariates=swissAltitude/1000, family="gaussian", 
+	prior = list(sd=1, range=100*1000, sdObs = 2),
+	control.inla = list(strategy='gaussian', int.strategy='eb'),
+	control.mode = list(theta=c(1.6542995, 0.7137123,2.2404179))
+	)
+if(length(swissFit$parameters)) {
+	postExp(swissFit$parameters$summary)
+}
+
+}
+
+</code></pre>
+
+
+</div>

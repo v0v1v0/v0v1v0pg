@@ -1,0 +1,544 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>global_envelope_test</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Global envelope test</h2>
+
+<h3>Description</h3>
+
+<p>Global envelope test, global envelopes and p-values
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">global_envelope_test(
+  curve_sets,
+  typeone = c("fwer", "fdr"),
+  alpha = 0.05,
+  alternative = c("two.sided", "less", "greater"),
+  type = "erl",
+  algorithm = c("IATSE", "ATSE"),
+  ties = "erl",
+  probs = c(0.025, 0.975),
+  quantile.type = 7,
+  central = "mean",
+  nstep = 2,
+  ...,
+  lower = NULL,
+  upper = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>curve_sets</code></td>
+<td>
+<p>A <code>curve_set</code> object or a list of <code>curve_set</code>
+objects containing a data function and simulated functions from which the envelope is
+to be constructed.
+Also <code>envelope</code> objects of <span class="pkg">spatstat</span> are accepted instead of curve_set objects.
+If an envelope object is given, it must contain the summary
+functions from simulated patterns which can be achieved by setting
+<code>savefuns = TRUE</code> when calling the <code>envelope</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>typeone</code></td>
+<td>
+<p>Character string indicating which type I error rate to control,
+either the family-wise error rate ('fwer') or false discovery rate ('fdr').</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>The significance level. The 100(1-alpha)% global envelope will be calculated
+under the 'fwer' or 'fdr' control.
+If a vector of values is provided, the global envelopes are calculated for each value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alternative</code></td>
+<td>
+<p>A character string specifying the alternative hypothesis.
+Must be one of the following: "two.sided" (default), "less" or "greater".
+The last two options only available for types <code>'rank'</code>, <code>'erl'</code>,
+<code>'cont'</code> and <code>'area'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>The type of the global envelope with current options for 'rank', 'erl', 'cont', 'area',
+'qdir', 'st' and 'unscaled'. See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algorithm</code></td>
+<td>
+<p>The algorithm for the computation of the FDR envelope.
+Either "IATSE" or "ATSE" standing for the iteratively adaptive two-stage
+envelope and the adaptive two-stage envelope, respectively, see Mrkvička and Myllymäki (2023).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ties</code></td>
+<td>
+<p>The method to obtain a unique p-value when <code>typeone = 'fwer'</code> and <code>type = 'rank'</code>;
+otherwise ignored.
+Possible values are 'midrank', 'random', 'conservative', 'liberal' and 'erl'.
+For 'conservative' the resulting p-value will be the highest possible.
+For 'liberal' the p-value will be the lowest possible.
+For 'random' the rank of the obs within the tied values is uniformly sampled so that the resulting
+p-value is at most the conservative option and at least the liberal option.
+For 'midrank' the mid-rank within the tied values is taken.
+For 'erl' the extreme rank length p-value is calculated.
+The default is 'erl'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>probs</code></td>
+<td>
+<p>A two-element vector containing the lower and upper
+quantiles for the measure 'q' or 'qdir', in that order and on the interval [0, 1].
+The default values are 0.025 and 0.975, suggested by Myllymäki et al. (2015, 2017).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quantile.type</code></td>
+<td>
+<p>As type argument of <code>quantile</code>, how to
+calculate quantiles for 'q' or 'qdir'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>central</code></td>
+<td>
+<p>Either "mean" or "median". If the curve sets do not contain the component
+<code>theo</code> for the theoretical central function, then the central function (used for plotting only)
+is calculated either as the mean or median of functions provided in the curve sets.
+For 'qdir', 'st' and 'unscaled' only the mean is allowed as an option, due to their definition.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nstep</code></td>
+<td>
+<p>1 or 2 for how to contruct a combined global envelope if list of curve sets
+is provided. 2 (default) for a two-step combining procedure, 1 for one-step.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional parameters to be passed to <code>central_region</code> for the computation
+of the 'fwer' envelope.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>A single number (or a vector of suitable length) giving a lower bound
+for the functions. Used only for the extension of the FDR envelope.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>A single number (or a vector of suitable length) giving an upper bound
+for the functions. Used only for the extension of the FDR envelope.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Given a <code>curve_set</code> object,
+or an <code>envelope</code> object of <span class="pkg">spatstat</span>,
+which contains both the data curve (or function or vector) <code class="reqn">T_1(r)</code>
+(in the component <code>obs</code>) and
+the simulated curves <code class="reqn">T_2(r),\dots,T_{s+1}(r)</code>
+(in the component <code>sim_m</code>),
+the function <code>global_envelope_test</code> performs a global envelope test,
+either under the control of family-wise error rate (FWER) or false discovery rate (FDR),
+as specified by the argument <code>typeone</code>.
+The function <code>global_envelope_test</code> is the main function for global envelope tests
+(for simple hypotheses).
+</p>
+<p>The case <code>typeone = "fdr"</code> corresponds to the FDR envelopes proposed by
+Mrkvička and Myllymäki (2023). See details in <code>fdr_envelope</code> and
+in the vignette <code>vignette("FDRenvelopes")</code>. Note there also the arguments that are
+the relevant ones for the FDR envelope specification.
+The descriptions below concern the FWER envelopes.
+</p>
+<p>If <code>typeone = "fwer"</code>, the functionality of the function is rather similar to the
+function <code>central_region</code>, but in addition to ordering the functions from
+the most extreme one to the least extreme one using different measures
+and providing the global envelopes with intrinsic
+graphical interpretation, p-values are calculated for the test.
+Thus, while <code>central_region</code> can be used to construct global
+envelopes in a general setting, the function <code>global_envelope_test</code>
+is devoted to testing as its name suggests.
+</p>
+<p>Different <code>type</code> of global envelope tests under the control of FWER can be computed.
+We use such ordering of the functions for which we are able to construct global
+envelopes with intrinsic graphical interpretation (IGI, see Myllymäki and Mrkvička, 2023).
+</p>
+
+<ul>
+<li> <p><code>'rank'</code>: the completely non-parametric rank envelope test (Myllymäki et al., 2017)
+based on minimum of pointwise ranks
+</p>
+</li>
+<li> <p><code>'erl'</code>: the completely non-parametric rank envelope test based on extreme rank lengths
+(Myllymäki et al., 2017; Mrkvička et al., 2018) based on number of minimal pointwise ranks
+</p>
+</li>
+<li> <p><code>'cont'</code>: the completely non-parametric rank envelope test based on continuous rank
+(Hahn, 2015; Mrkvička et al., 2022) based on minimum of continuous pointwise ranks
+</p>
+</li>
+<li> <p><code>'area'</code>: the completely non-parametric rank envelope test based on area rank
+(Mrkvička et al., 2022) based on area between continuous pointwise ranks and minimum
+pointwise ranks for those argument (r) values for which pointwise ranks achieve the minimum
+(it is a combination of erl and cont)
+</p>
+</li>
+<li>
+<p> "qdir", the directional quantile envelope test, protected against unequal variance and
+asymmetry of T(r) for different distances r (Myllymäki et al., 2015, 2017)
+</p>
+</li>
+<li>
+<p> "st", the studentised envelope test, protected against unequal variance of T(r) for
+different distances r (Myllymäki et al., 2015, 2017)
+</p>
+</li>
+<li>
+<p> "unscaled", the unscaled envelope (providing a baseline) that has a contant width and
+that corresponds to the classical maximum deviation test (Ripley, 1981).
+</p>
+</li>
+</ul>
+<p>The first four types are global rank envelopes.
+The <code>'rank'</code> envelope test is a completely non-parametric test,
+which provides the 100(1-alpha)% global envelope for the chosen test function
+T(r) on the chosen interval of distances and associated p-values.
+The other three are modifications of <code>'rank'</code> to treat the ties in
+the extreme rank ordering on which the <code>'rank'</code> test is based on.
+The last three envelopes are global scaled maximum absolute difference (MAD)
+envelope tests. The unscaled envelope test leads to envelopes with constant width over the
+distances r. Thus, it suffers from unequal variance of T(r) over the distances r and
+from the asymmetry of distribution of T(r). We recommend to use the other global
+envelope tests available. The unscaled envelope is provided as a reference.
+</p>
+<p>See Myllymäki and Mrkvička (2023, Appendix.), i.e. <code>vignette("GET")</code>, for more detailed
+description of the measures and the corresponding envelopes.
+</p>
+<p>See <code>vignette("pointpatterns")</code> for examples of point pattern analyses.
+See <code>vignette("FDRenvelopes")</code> for examples of FDR envelopes obtained by
+<code>typeone = "fdr"</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Either an object of class "global_envelope" or "combined_global_envelope",
+similarly as the objects returned by <code>central_region</code>.
+Further, if <code>typeone = "fdr"</code>, the objects have the further class
+"fdr_envelope" or "combined_fdr_envelope".
+</p>
+<p>The <code>global_envelope</code> is essentially a data frame containing columns
+</p>
+
+<ul>
+<li>
+<p> the values of the argument r at which the test was made, copied from the argument <code>curve_sets</code> with the corresponding names
+</p>
+</li>
+<li>
+<p> obs = values of the data function, copied from the argument <code>curve_sets</code>
+(unlike for central regions, <code>obs</code> always exists for a global envelope test)
+</p>
+</li>
+<li>
+<p> lo = the lower envelope; in case of a vector of alpha values, several 'lo' exist with names paste0("lo.", 100*(1-alpha))
+</p>
+</li>
+<li>
+<p> hi = the upper envelope; in case of a vector of alpha values, several 'lo' exist with names paste0("hi.", 100*(1-alpha))
+</p>
+</li>
+<li>
+<p> central = a central curve as specified in the argument <code>central</code>.
+</p>
+</li>
+</ul>
+<p>Moreover, the returned object has the same attributes as the <code>global_envelope</code> object returned by
+<code>central_region</code> and in addition
+</p>
+
+<ul><li>
+<p> p = the p-value of the test
+</p>
+</li></ul>
+<p>and in the case that <code>type = 'rank'</code> also
+</p>
+
+<ul>
+<li>
+<p> p_interval = The p-value interval <code class="reqn">[p_{liberal}, p_{conservative}]</code>.
+</p>
+</li>
+<li>
+<p> ties = As the argument <code>ties</code>.
+</p>
+</li>
+</ul>
+<p>The <code>combined_global_envelope</code> is a list of <code>global_envelope</code> objects
+containing the above mentioned columns and which all together form the global envelope.
+It has the same attributes as described in <code>central_region</code>, and in addition also
+the p-value <code>p</code>.
+The 2d classes are attached as described in <code>central_region</code>.
+</p>
+
+
+<h3>Procedure</h3>
+
+<p>1) First the curves are ranked from the most extreme one to the least extreme one
+by a measure that is specified by the argument <code>type</code>. The options are
+</p>
+
+<ul>
+<li>
+<p> 'rank': extreme ranks (Myllymäki et al., 2017)
+</p>
+</li>
+<li>
+<p> 'erl': extreme rank lengths (Myllymäki et al., 2017; Mrkvička et al., 2018)
+</p>
+</li>
+<li>
+<p> 'cont': continuous ranks (Hahn, 2015; Mrkvička et al., 2019)
+</p>
+</li>
+<li>
+<p> 'area': area ranks (Mrkvička et al., 2019)
+</p>
+</li>
+<li>
+<p> 'qdir': the directional quantile maximum absolute deviation (MAD) measure (Myllymäki et al., 2015, 2017)
+</p>
+</li>
+<li>
+<p> 'st': the studentized MAD measure (Myllymäki et al., 2015, 2017)
+</p>
+</li>
+<li>
+<p> 'unscaled': the unscaled MAD measure (Ripley, 1981)
+</p>
+</li>
+</ul>
+<p>2) Based on the measures used to rank the functions, the 100(1-alpha)% global envelope is provided.
+It corresponds to the 100*coverage% central region.
+</p>
+<p>3) P-values:
+In the case <code>type="rank"</code>, based on the extreme ranks <code class="reqn">k_i, i=1, ..., s+1</code>,
+the p-interval is calculated. Because the extreme ranks contain ties, there is not just
+one p-value. The p-interval is given by the most liberal and the most conservative p-value
+estimate. Also a single p-value is calculated.
+By default this single p-value is the extreme rank length p-value ("erl") as specified by the argument <code>ties</code>.
+If the case of other measures, a (single) p-value based on the given ordering
+of the functions is calculated and returned in the attribute <code>p</code>.
+</p>
+
+
+<h3>Number of simulations</h3>
+
+<p>For the global <code>"rank"</code> envelope test, Myllymäki et al. (2017) recommended to use
+at least 2500 simulations for testing at the significance level alpha = 0.05 for single
+function tests, based on experiments with summary functions for point processes evaluated
+approximately at 500 argument values.
+In this case, the width of the p-interval associated with the extreme rank measure tended
+to be smaller than 0.01.
+The tests <code>'erl'</code>, <code>'cont'</code> and <code>'area'</code>, similarly as
+the MAD deviation/envelope tests <code>'qdir'</code>, <code>'st'</code> and <code>'unscaled'</code>,
+allow in principle a lower number of simulations to be used than the test based on
+extreme ranks (<code>'rank'</code>), because no ties occur for these measures.
+If affordable, we recommend in any case some thousands of simulations for all the measures
+to achieve a good power and repeatability of the test.
+If the dimension of the test functions is higher, also the number of simulations should
+preferably be higher.
+</p>
+
+
+<h3>Tests based on several functions</h3>
+
+<p>If a list of (suitable) objects are provided in the argument <code>curve_sets</code>,
+then by default (<code>nstep = 2</code>) the two-step combining procedure is used to
+perform the combined global test as described in Myllymäki and Mrkvička (2020).
+If <code>nstep = 1</code> and the lengths of the multivariate vectors in each component
+of the list are equal, then the one-step combining procedure is used where the
+functions are concatenated together into a one long vector.
+</p>
+
+
+<h3>References</h3>
+
+<p>Mrkvička, T., Myllymäki, M. and Hahn, U. (2017). Multiple Monte Carlo testing, with applications in spatial point processes. Statistics &amp; Computing 27(5), 1239-1255. doi: 10.1007/s11222-016-9683-9
+</p>
+<p>Mrkvička, T., Myllymäki, M., Jilek, M. and Hahn, U. (2020) A one-way ANOVA test for functional data with graphical interpretation. Kybernetika 56(3), 432-458. doi: 10.14736/kyb-2020-3-0432
+</p>
+<p>Mrkvička, T., Myllymäki, M., Kuronen, M. and Narisetty, N. N. (2022) New methods for multiple testing in permutation inference for the general linear model. Statistics in Medicine 41(2), 276-297. doi: 10.1002/sim.9236
+</p>
+<p>Mrkvička and Myllymäki (2023). False discovery rate envelopes. Statistics and Computing 33, 109. https://doi.org/10.1007/s11222-023-10275-7
+</p>
+<p>Myllymäki, M., Grabarnik, P., Seijo, H. and Stoyan. D. (2015). Deviation test construction and power comparison for marked spatial point patterns. Spatial Statistics 11, 19-34. doi: 10.1016/j.spasta.2014.11.004
+</p>
+<p>Myllymäki, M., Mrkvička, T., Grabarnik, P., Seijo, H. and Hahn, U. (2017). Global envelope tests for spatial point patterns. Journal of the Royal Statistical Society: Series B (Statistical Methodology) 79, 381–404. doi: 10.1111/rssb.12172
+</p>
+<p>Myllymäki, M. and Mrkvička, T. (2023). GET: Global envelopes in R. arXiv:1911.06583 [stat.ME]. https://doi.org/10.48550/arXiv.1911.06583
+</p>
+<p>Ripley, B.D. (1981). Spatial statistics. Wiley, New Jersey.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plot.global_envelope</code>, <code>central_region</code>,
+<code>GET.composite</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Goodness-of-fit testing for simple hypothesis
+if(require("spatstat.explore", quietly=TRUE)) {
+  # Testing complete spatial randomness (CSR)
+  #==========================================
+  X &lt;- unmark(spruces)
+
+  nsim &lt;- 1999 # Number of simulations
+  
+
+  # Illustration of general workflow for simple hypotheses
+  #=======================================================
+  # First illustrate the general workflow for the test by this example
+  # of CSR test for a point pattern X using the empirical L-function.
+  # Define the argument values at which the functions are evaluated
+  obs.L &lt;- Lest(X, correction="translate")
+  r &lt;- obs.L[['r']]
+  # The test function for the data
+  obs &lt;- obs.L[['trans']] - r
+  # Prepare simulations and calculate test functions for them at same r as 'obs'
+  sim &lt;- matrix(nrow=length(r), ncol=nsim)
+  for(i in 1:nsim) {
+    sim.X &lt;- runifpoint(ex=X) # simulation under CSR
+    sim[, i] &lt;- Lest(sim.X, correction="translate", r=r)[['trans']] - r
+  }
+  # Create a curve_set containing argument values, observed and simulated functions
+  cset &lt;- curve_set(r=r, obs=obs, sim=sim)
+  # Perform the test
+  res &lt;- global_envelope_test(cset, type="erl")
+  plot(res) + ggplot2::ylab(expression(italic(hat(L)(r)-r)))
+
+  # Simple hypothesis for a point pattern utilizing the spatstat package
+  #=====================================================================
+  # Generate nsim simulations under CSR, calculate L-function for the data and simulations
+  env &lt;- envelope(X, fun="Lest", nsim=nsim,
+                  savefuns=TRUE, # save the functions
+                  correction="translate", # edge correction for L
+                  transform=expression(.-r), # centering
+                  simulate=expression(runifpoint(ex=X))) # Simulate CSR
+  # The rank envelope test (ERL)
+  res &lt;- global_envelope_test(env, type="erl")
+  # Plot the result
+  plot(res)
+
+  ## Advanced use:
+  # Choose the interval of distances [r_min, r_max] (at the same time create a curve_set from 'env')
+  cset &lt;- crop_curves(env, r_min=1, r_max=7)
+  # Do the rank envelope test (erl)
+  res &lt;- global_envelope_test(cset, type="erl")
+  plot(res) + ggplot2::ylab(expression(italic(L(r)-r)))
+
+  # A combined global envelope test
+  #================================
+  # As an example test CSR of the saplings point pattern by means of
+  # L, F, G and J functions.
+  data(saplings)
+  X &lt;- as.ppp(saplings, W=square(75))
+
+  nsim &lt;- 499 # Number of simulations
+  
+  # Specify distances for different test functions
+  n &lt;- 500 # the number of r-values
+  rmin &lt;- 0; rmax &lt;- 20; rstep &lt;- (rmax-rmin)/n
+  rminJ &lt;- 0; rmaxJ &lt;- 8; rstepJ &lt;- (rmaxJ-rminJ)/n
+  r &lt;- seq(0, rmax, by=rstep)    # r-distances for Lest
+  rJ &lt;- seq(0, rmaxJ, by=rstepJ) # r-distances for Fest, Gest, Jest
+  
+
+  # Perform simulations of CSR and calculate the L-functions
+  env_L &lt;- envelope(X, nsim=nsim,
+   simulate=expression(runifpoint(ex=X)),
+   fun="Lest", correction="translate",
+   transform=expression(.-r), # Take the L(r)-r function instead of L(r)
+   r=r,                       # Specify the distance vector
+   savefuns=TRUE,             # Save the estimated functions
+   savepatterns=TRUE)         # Save the simulated patterns
+  # Take the simulations from the returned object
+  simulations &lt;- attr(env_L, "simpatterns")
+  # Then calculate the other test functions F, G, J for each simulated pattern
+  env_F &lt;- envelope(X, nsim=nsim, simulate=simulations,
+                    fun="Fest", correction="Kaplan", r=rJ,
+                    savefuns=TRUE)
+  env_G &lt;- envelope(X, nsim=nsim, simulate=simulations,
+                    fun="Gest", correction="km", r=rJ,
+                    savefuns=TRUE)
+  env_J &lt;- envelope(X, nsim=nsim, simulate=simulations,
+                    fun="Jest", correction="none", r=rJ,
+                    savefuns=TRUE)
+
+  # Crop the curves to the desired r-interval I
+  curve_set_L &lt;- crop_curves(env_L, r_min=rmin, r_max=rmax)
+  curve_set_F &lt;- crop_curves(env_F, r_min=rminJ, r_max=rmaxJ)
+  curve_set_G &lt;- crop_curves(env_G, r_min=rminJ, r_max=rmaxJ)
+  curve_set_J &lt;- crop_curves(env_J, r_min=rminJ, r_max=rmaxJ)
+
+  res &lt;- global_envelope_test(curve_sets=list(L=curve_set_L, F=curve_set_F,
+                                              G=curve_set_G, J=curve_set_J))
+  plot(res)
+  plot(res, labels=c("L(r)-r", "F(r)", "G(r)", "J(r)"))
+}
+
+# A test based on a low dimensional random vector
+#================================================
+# Let us generate some example data.
+X &lt;- matrix(c(-1.6,1.6),1,2) # data pattern X=(X_1,X_2)
+if(requireNamespace("mvtnorm", quietly=TRUE)) {
+  Y &lt;- mvtnorm::rmvnorm(200,c(0,0),matrix(c(1,0.5,0.5,1),2,2)) # simulations
+  plot(Y, xlim=c(min(X[,1],Y[,1]), max(X[,1],Y[,1])), ylim=c(min(X[,2],Y[,2]), max(X[,2],Y[,2])))
+  points(X, col=2)
+
+  # Test the null hypothesis is that X is from the distribution of Y's (or if it is an outlier).
+
+  # Case 1. The test vector is (X_1, X_2)
+  cset1 &lt;- curve_set(r=1:2, obs=as.vector(X), sim=t(Y))
+  res1 &lt;- global_envelope_test(cset1)
+  plot(res1)
+
+  # Case 2. The test vector is (X_1, X_2, (X_1-mean(Y_1))*(X_2-mean(Y_2))).
+  t3 &lt;- function(x, y) { (x[,1]-mean(y[,1]))*(x[,2]-mean(y[,2])) }
+  cset2 &lt;- curve_set(r=1:3, obs=c(X[,1],X[,2],t3(X,Y)), sim=rbind(t(Y), t3(Y,Y)))
+  res2 &lt;- global_envelope_test(cset2)
+  plot(res2)
+}
+</code></pre>
+
+
+</div>

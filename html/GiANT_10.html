@@ -1,0 +1,211 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>evaluateGeneSetUncertainty</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Quantify gene set uncertainty
+</h2>
+
+<h3>Description</h3>
+
+<p>A robustness measure that quantifies the uncertainty of a gene set  by performing a resampling experiment and can be used in the <code>robustness</code> parameter of <code>gsAnalysis</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">evaluateGeneSetUncertainty(
+	...,
+	dat,
+	geneSet,
+	analysis,
+	numSamplesUncertainty,
+	blockSize = 1,
+	k = seq(0.01, 0.99, by=0.01),
+	signLevel = 0.05,
+	preprocessGeneSet = FALSE,
+	cluster = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Additional parameters for the different steps of the analysis pipeline, depending on the concrete configuration supplied in <code>analysis</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dat</code></td>
+<td>
+
+<p>A numeric matrix of gene expression values for all analyzed genes. Here, each row corresponds to one gene, and each column corresponds to one sample. The rows must be named with the gene names used in the gene sets.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>geneSet</code></td>
+<td>
+
+<p>A vector containing the names of genes in a gene set. All genes set must correspond to the row names of <code>dat</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>analysis</code></td>
+<td>
+
+<p>The parameters of the analysis that is applied to the perturbed copies of the gene set. These parameters are described by an object of class <code>gsAnalysis</code> as returned by the function <code>gsAnalysis</code> or the predefined analysis descriptors in <code>predefinedAnalyses</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numSamplesUncertainty</code></td>
+<td>
+
+<p>The number of resampling experiments which should be applied to estimate the robustness of <code>geneSet</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>blockSize</code></td>
+<td>
+
+<p>Number of genes in one resampled block.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+
+<p>A <code>vector</code> of percentages of genes in the randomized gene sets that should be taken from the original gene set. The remaining genes are chosen randomly. For each value a resampling experiment is performed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>signLevel</code></td>
+<td>
+
+<p>The significance level for the significance assessment of the gene sets (defaults to <code>0.05</code>). 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>preprocessGeneSet</code></td>
+<td>
+
+<p>Specifies whether the gene sets in <code>geneSets</code> should be preprocessed or not. If set to <code>TRUE</code>, all genes that are not part of the data set (i.e. not in <code>rownames(dat)</code>) are removed from the gene sets.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cluster</code></td>
+<td>
+
+<p>If the analyses should be applied in parallel for the different values of <code>k</code>, this parameter must hold an initialized cluster as returned by <code>makeCluster</code>. If this parameter is <code>NULL</code>, the analyses are performed sequentially.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The uncertainty analysis repeatedly replaces parts of the original gene sets by random genes and calculating the gene set statistics for these randomized gene sets. This yields a distribution of gene set statistic values for slightly modified variants of the original gene set.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list (of class <code>uncertaintyResult</code>) with the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>uncertainty</code></td>
+<td>
+
+<p>The calculated stability of the original gene set.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>confidenceValues</code></td>
+<td>
+
+<p>A matrix of quantiles of <code>gssValues</code> (signLevel, 0.5, 1-signLevel). One row for each value in <code>k</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>uncertaintyEvaluations</code></td>
+<td>
+
+<p>A list with one entry per value in <code>k</code> containing the following elements: 
+</p>
+
+<ul>
+<li>
+<p> Quantiles of <code>gssValues</code>: signLevel, 0.5, 1-signLevel.
+</p>
+</li>
+<li>
+<p> gssValues: A vector of gene set statistic values, one for each randomly sampled gene set.
+</p>
+</li>
+<li>
+<p> uncertainGeneSets: A matrix containing all partially random gene sets.
+</p>
+</li>
+<li>
+<p> k: The percentage of genes in the randomized gene sets taken from the original gene set.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>signLevel</code></td>
+<td>
+
+<p>The significance level used for this analysis.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>originalGeneSetValues</code></td>
+<td>
+
+<p>Result of <code>geneSetAnalysis</code> for the original <code>geneSet</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>geneSetAnalysis</code>, <code>gsAnalysis</code>, <code>gls</code>, <code>transformation</code>, <code>gss</code>, <code>plot.uncertaintyResult</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(exampleData)
+
+  res &lt;- evaluateGeneSetUncertainty(
+  	# parameters for evaluateGeneSetUncertainty
+  	dat = countdata,
+  	geneSet = pathways[[1]],
+  	analysis = analysis.averageCorrelation(),
+  	numSamplesUncertainty = 10,
+  	k = seq(0.1,0.9, by=0.1),
+  	# additional parameters for analysis.averageCorrelation
+  	labs = labels,
+  	numSamples = 10)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,173 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gsbm_mcgd</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a Generalized Stochastic Block Model</h2>
+
+<h3>Description</h3>
+
+<p>Given an adjacency matrix with missing observations, the function <code>gsbm_mgcd</code>
+robustly estimates the probabilities of connections between nodes.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gsbm_mcgd(
+  A,
+  lambda1,
+  lambda2,
+  epsilon = 0.1,
+  U = NULL,
+  maxit = 100,
+  thresh = 1e-06,
+  S0 = NULL,
+  L0 = NULL,
+  R0 = NULL,
+  trace.it = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>A</code></td>
+<td>
+<p>nxn adjacency matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda1</code></td>
+<td>
+<p>regularization parameter for nuclear norm penalty (positive number)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda2</code></td>
+<td>
+<p>regularization parameter for 2,1-norm penalty (positive number)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epsilon</code></td>
+<td>
+<p>regularization parameter for the L2-norm penalty (positive number, if NULL, default method is applied)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>U</code></td>
+<td>
+<p>lower bound on nuclear norm (positive number, if NULL, default method is applied)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>maximum number of iterations (positive integer, if NULL, default method is applied)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thresh</code></td>
+<td>
+<p>convergence tolerance (positive number, if NULL, default method is applied)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S0</code></td>
+<td>
+<p>initial value for the sparse component (if NULL, default method is applied))</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L0</code></td>
+<td>
+<p>initial value for the low-rank component (if NULL, default method is applied)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R0</code></td>
+<td>
+<p>lower bound on nuclear norm of L0 (positive number, if NULL, default method is applied)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace.it</code></td>
+<td>
+<p>whether messages about convergence should be printed (boolean, if NULL, default is FALSE)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The estimate for the nxn matrix of probabilities of connections between nodes. It is
+given as the sum of a low-rank nxn matrix L, corresponding to connections between inlier
+nodes, and a column sparse nxn matrix S, corresponding to connections between outlier
+nodes and the rest of the network. The matrices L and S are such that
+</p>
+<p>E(A) = L - diag(L) + S + S'
+</p>
+<p>where E(A) is the expectation of the adjacency matrix, diag(L) is a nxn diagonal
+matrix with diagonal entries equal to those of L, and S' means S transposed.
+</p>
+<p>The return value is a list of components
+</p>
+
+<ul>
+<li>
+<p><code>A</code> the adjacency matrix.
+</p>
+</li>
+<li>
+<p><code>L</code> estimate for the low-rank component.
+</p>
+</li>
+<li>
+<p><code>S</code> estimate for the column-sparse component.
+</p>
+</li>
+<li>
+<p><code>objective</code> the value of the objective function.
+</p>
+</li>
+<li>
+<p><code>R</code> a bound on the nuclear norm of the low-rank component.
+</p>
+</li>
+<li>
+<p><code>iter</code> number of iterations between convergence of the objective function.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Draw a 50x50 adjacency matrix
+# Generalized SBM with 2 communities and 2 outliers
+# Create low-rank matrix L
+L &lt;- matrix(0,50,50) # low-rank component
+L[1:25, 1:25] &lt;- 0.6 # connection probabilities within community 1
+L[1:25, 26:48] &lt;- 0.1 # connection probabilities between communities 1 and 2
+L[26:48, 1:25] &lt;- 0.1 # connection probabilities between communities 1 and 2
+L[26:48, 26:48] &lt;- 0.6 # connection probabilities within community 2
+
+# Create column-sparse matrix S
+S &lt;- matrix(0,50,50) # column sparse component
+S[49:50,1:48] &lt;- 0.6 # connection probabilties between outliers and inliers
+
+# Draw connections and create the adjacency matrix
+undir &lt;- rbinom(n=50*(50-1)/2, size=1, prob=(L+S+t(S))[upper.tri(L+S+t(S))]) # draw edges
+A &lt;- matrix(0,50,50)
+A[upper.tri(A)] &lt;- undir
+A &lt;- (A+t(A))
+
+# Estimate the probabilities of connection
+lambda1 &lt;- 7
+lambda2 &lt;- 7
+res &lt;- gsbm_mcgd(A, lambda1, lambda2)
+</code></pre>
+
+
+</div>

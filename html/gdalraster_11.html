@@ -1,0 +1,107 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>buildVRT</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Build a GDAL virtual raster from a list of datasets</h2>
+
+<h3>Description</h3>
+
+<p><code>buildVRT()</code> is a wrapper of the <code>gdalbuildvrt</code> command-line
+utility for building a VRT (Virtual Dataset) that is a mosaic of the list
+of input GDAL datasets
+(see <a href="https://gdal.org/programs/gdalbuildvrt.html">https://gdal.org/programs/gdalbuildvrt.html</a>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">buildVRT(vrt_filename, input_rasters, cl_arg = NULL, quiet = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>vrt_filename</code></td>
+<td>
+<p>Character string. Filename of the output VRT.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>input_rasters</code></td>
+<td>
+<p>Character vector of input raster filenames.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl_arg</code></td>
+<td>
+<p>Optional character vector of command-line arguments to
+<code>gdalbuildvrt</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>Logical scalar. If <code>TRUE</code>, a progress bar will not be
+displayed. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Several command-line options are described in the GDAL documentation at the
+URL above. By default, the input files are considered as tiles of a larger
+mosaic and the VRT file has as many bands as one of the input files.
+Alternatively, the <code>-separate</code> argument can be used to put each input
+raster into a separate band in the VRT dataset.
+</p>
+<p>Some amount of checks are done to assure that all files that will be put in
+the resulting VRT have similar characteristics: number of bands,
+projection, color interpretation.... If not, files that do not match the
+common characteristics will be skipped. (This is true in the default
+mode for virtual mosaicing, and not when using the <code>-separate</code> option).
+</p>
+<p>In a virtual mosaic, if there is spatial overlap between
+input rasters then the order of files appearing in the list of
+sources matter: files that are listed at the end are the ones
+from which the data will be fetched. Note that nodata will be taken into
+account to potentially fetch data from less priority datasets.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Logical indicating success (invisible <code>TRUE</code>).
+An error is raised if the operation fails.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>rasterToVRT()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># build a virtual 3-band RGB raster from individual Landsat band files
+b4_file &lt;- system.file("extdata/sr_b4_20200829.tif", package="gdalraster")
+b5_file &lt;- system.file("extdata/sr_b5_20200829.tif", package="gdalraster")
+b6_file &lt;- system.file("extdata/sr_b6_20200829.tif", package="gdalraster")
+band_files &lt;- c(b6_file, b5_file, b4_file)
+vrt_file &lt;- file.path(tempdir(), "storml_b6_b5_b4.vrt")
+buildVRT(vrt_file, band_files, cl_arg = "-separate")
+ds &lt;- new(GDALRaster, vrt_file)
+ds$getRasterCount()
+plot_raster(ds, nbands=3, main="Landsat 6-5-4 (vegetative analysis)")
+ds$close()
+
+vsi_unlink(vrt_file)
+</code></pre>
+
+
+</div>

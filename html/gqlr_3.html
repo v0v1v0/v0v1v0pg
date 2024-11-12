@@ -1,0 +1,172 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>execute_request</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Execute GraphQL server response</h2>
+
+<h3>Description</h3>
+
+<p>Executes a GraphQL server request with the provided request.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">execute_request(
+  request,
+  schema,
+  operation_name = NULL,
+  variables = list(),
+  initial_value = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>request</code></td>
+<td>
+<p>a valid GraphQL string</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>schema</code></td>
+<td>
+<p>a character string (to be used along side <code>initial_value</code>)
+or a schema object created from <code>gqlr_schema</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>operation_name</code></td>
+<td>
+<p>name of request operation to execute. If not value is
+provided it will use the operation in the request string. If more than one
+operations exist, an error will be produced.  See
+<a href="https://graphql.github.io/graphql-spec/October2016/#GetOperation()">https://graphql.github.io/graphql-spec/October2016/#GetOperation()</a></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variables</code></td>
+<td>
+<p>a named list containing variable values.
+<a href="https://graphql.github.io/graphql-spec/October2016/#sec-Language.Variables">https://graphql.github.io/graphql-spec/October2016/#sec-Language.Variables</a></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial_value</code></td>
+<td>
+<p>default value for executing requests.  This value can
+either be provided and/or combined with the resolve method of the query
+root type or mutation root type.  The value provided should be a named list
+of the field name (key) and a value matching that field name type.  The
+value may be a function that returns a value of the field name type.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p><a href="https://graphql.github.io/graphql-spec/October2016/#sec-Execution">https://graphql.github.io/graphql-spec/October2016/#sec-Execution</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# bare bones
+schema &lt;- gqlr_schema("
+  type Person {
+    name: String
+    friends: [Person]
+  }
+  schema {
+    query: Person
+  }
+")
+
+data &lt;- list(
+  name = "Barret",
+  friends = list(
+    list(name = "Ryan", friends = list(list(name = "Bill"), list(name = "Barret"))),
+    list(name = "Bill", friends = list(list(name = "Ryan")))
+  )
+)
+
+ans &lt;- execute_request("{ name }", schema, initial_value = data)
+ans$as_json()
+
+execute_request("
+  {
+    name
+    friends {
+      name
+      friends {
+        name
+        friends {
+          name
+        }
+      }
+    }
+  }",
+  schema,
+  initial_value = data
+)$as_json()
+
+
+
+
+
+
+# Using resolve method to help with recursion
+people &lt;- list(
+  "id_Barret" = list(name = "Barret", friends = list("id_Ryan", "id_Bill")),
+  "id_Ryan" = list(name = "Ryan", friends = list("id_Barret", "id_Bill")),
+  "id_Bill" = list(name = "Bill", friends = list("id_Ryan"))
+)
+schema &lt;- gqlr_schema("
+    type Person {
+      name: String
+      friends: [Person]
+    }
+    schema {
+      query: Person
+    }
+  ",
+  Person = list(
+    resolve = function(name, schema, ...) {
+      if (name %in% names(people)) {
+        people[[name]]
+      } else {
+        NULL
+      }
+    }
+  )
+)
+
+ans &lt;- execute_request("{ name }", schema, initial_value = "id_Barret")
+ans$as_json()
+
+execute_request("
+  {
+    name
+    friends {
+      name
+      friends {
+        name
+        friends {
+          name
+        }
+      }
+    }
+  }",
+  schema,
+  initial_value = "id_Barret"
+)$as_json()
+
+</code></pre>
+
+
+</div>

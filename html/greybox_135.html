@@ -1,0 +1,264 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ro</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Rolling Origin</h2>
+
+<h3>Description</h3>
+
+<p>The function does rolling origin for any forecasting function
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ro(data, h = 10, origins = 10, call, value = NULL, ci = FALSE,
+  co = TRUE, silent = TRUE, parallel = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data vector or ts object with the response variable passed to the
+function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h</code></td>
+<td>
+<p>The forecasting horizon.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>origins</code></td>
+<td>
+<p>The number of rolling origins.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The call that is passed to the function. The call must be in quotes.
+Example: <code>"forecast(ets(data),h)"</code>. Here <code>data</code> shows where the data is
+and <code>h</code> defines where the horizon should be passed in the <code>call</code>. Some
+hidden parameters can also be specified in the call. For example, parameters
+<code>counti</code>, <code>counto</code> and <code>countf</code> are used in the inner loop
+and can be used for the regulation of exogenous variables sizes. See examples
+for the details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>value</code></td>
+<td>
+<p>The variable or set of variables returned by the <code>call</code>.
+For example, <code>mean</code> for functions of <code>forecast</code> package. This can
+also be a vector of variables. See examples for the details. If the parameter
+is <code>NULL</code>, then all the values from the call are returned (could be really
+messy!). Note that if your function returns a list with matrices, then ro will
+return an array. If your function returns a list, then you will have a list of
+lists in the end. So it makes sense to understand what you want to get before
+running the function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci</code></td>
+<td>
+<p>The parameter defines if the in-sample window size should be constant.
+If <code>TRUE</code>, then with each origin one observation is added at the end of
+series and another one is removed from the beginning.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>co</code></td>
+<td>
+<p>The parameter defines whether the holdout sample window size should
+be constant. If <code>TRUE</code>, the rolling origin will stop when less than
+<code>h</code> observations are left in the holdout.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>silent</code></td>
+<td>
+<p>If <code>TRUE</code>, nothing is printed out in the console.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>If <code>TRUE</code>, then the model fitting is done in parallel.
+WARNING! Packages <code>foreach</code> and either <code>doMC</code> (Linux and Mac only)
+or <code>doParallel</code> are needed in order to run the function in parallel.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>This is temporary and is needed in order to capture "silent"
+parameter if it is provided.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function produces rolling origin forecasts using the <code>data</code> and a
+<code>call</code> passed as parameters. The function can do all of that either in
+serial or in parallel, but it needs <code>foreach</code> and either <code>doMC</code>
+(Linux only) or <code>doParallel</code> packages installed in order to do the latter.
+</p>
+<p>This is a dangerous function, so be careful with the call that you pass to
+it, and make sure that it is well formulated before the execution. Also, do not
+forget to provide the value that needs to be returned or you might end up with
+very messy results.
+</p>
+<p>For more details and more examples of usage, please see vignette for the function.
+In order to do that, just run the command: <code>vignette("ro","greybox")</code>
+</p>
+
+
+<h3>Value</h3>
+
+<p>Function returns the following variables:
+</p>
+
+<ul>
+<li>
+<p><code>actuals</code> - the data provided to the function.
+</p>
+</li>
+<li>
+<p><code>holdout</code> - the matrix of actual values corresponding to the
+produced forecasts from each origin.
+</p>
+</li>
+<li>
+<p><code>value</code> - the matrices / array / lists with the produced data
+from each origin. Name of each object corresponds to the names in the
+parameter <code>value</code>.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Yves Sagaert
+</p>
+<p>Ivan Svetunkov, <a href="mailto:ivan@svetunkov.ru">ivan@svetunkov.ru</a>
+</p>
+
+
+<h3>References</h3>
+
+
+<ul><li>
+<p> Tashman, (2000) Out-of-sample tests of forecasting accuracy:
+an analysis and review International Journal of Forecasting, 16,
+pp. 437-450. <a href="https://doi.org/10.1016/S0169-2070%2800%2900065-0">doi:10.1016/S0169-2070(00)00065-0</a>.
+</p>
+</li></ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+y &lt;- rnorm(100,0,1)
+ourCall &lt;- "predict(arima(x=data,order=c(0,1,1)),n.ahead=h)"
+# NOTE that the "data" needs to be used in the call, not "y".
+# This way we tell the function, where "y" should be used in the call of the function.
+
+# The default call and values
+ourValue &lt;- "pred"
+ourRO &lt;- ro(y, h=5, origins=5, ourCall, ourValue)
+
+# We can now plot the results of this evaluation:
+plot(ourRO)
+
+# You can also use dolar sign
+ourValue &lt;- "$pred"
+# And you can have constant in-sample size
+ro(y, h=5, origins=5, ourCall, ourValue, ci=TRUE)
+
+# You can ask for several values
+ourValue &lt;- c("pred","se")
+# And you can have constant holdout size
+ro(y, h=5, origins=20, ourCall, ourValue, ci=TRUE, co=TRUE)
+
+#### The following code will give exactly the same result as above,
+#### but computed in parallel using all but 1 core of CPU:
+## Not run: ro(y, h=5, origins=20, ourCall, ourValue, ci=TRUE, co=TRUE, parallel=TRUE)
+
+#### If you want to use functions from forecast package, please note that you need to
+#### set the values that need to be returned explicitly. There are two options for this.
+# Example 1:
+## Not run: ourCall &lt;- "forecast(ets(data), h=h, level=95)"
+ourValue &lt;- c("mean", "lower", "upper")
+ro(y,h=5,origins=5,ourCall,ourValue)
+## End(Not run)
+
+# Example 2:
+## Not run: ourCall &lt;- "forecast(ets(data), h=h, level=c(80,95))"
+ourValue &lt;- c("mean", "lower[,1]", "upper[,1]", "lower[,2]", "upper[,2]")
+ro(y,h=5,origins=5,ourCall,ourValue)
+## End(Not run)
+
+#### A more complicated example using the for loop and
+#### several time series
+x &lt;- matrix(rnorm(120*3,0,1), 120, 3)
+
+## Form an array for the forecasts we will produce
+## We will have 4 origins with 6-steps ahead forecasts
+ourForecasts &lt;- array(NA,c(6,4,3))
+
+## Define models that need to be used for each series
+ourModels &lt;- list(c(0,1,1), c(0,0,1), c(0,1,0))
+
+## This call uses specific models for each time series
+ourCall &lt;- "predict(arima(data, order=ourModels[[i]]), n.ahead=h)"
+ourValue &lt;- "pred"
+
+## Start the loop. The important thing here is to use the same variable 'i' as in ourCall.
+for(i in 1:3){
+    ourData &lt;- x[,i]
+    ourForecasts[,,i] &lt;- ro(data=ourData,h=6,origins=4,call=ourCall,
+                            value=ourValue,co=TRUE,silent=TRUE)$pred
+}
+
+## ourForecasts array now contains rolling origin forecasts from specific
+## models.
+
+##### An example with exogenous variables
+x &lt;- rnorm(100,0,1)
+xreg &lt;- matrix(rnorm(200,0,1),100,2,dimnames=list(NULL,c("x1","x2")))
+
+## 'counti' is used to define in-sample size of xreg,
+## 'counto' - the size of the holdout sample of xreg
+
+ourCall &lt;- "predict(arima(x=data, order=c(0,1,1), xreg=xreg[counti,,drop=FALSE]),
+            n.ahead=h, newxreg=xreg[counto,,drop=FALSE])"
+ourValue &lt;- "pred"
+ro(x,h=5,origins=5,ourCall,ourValue)
+
+##### Poisson regression with alm
+x &lt;- rpois(100,2)
+xreg &lt;- cbind(x,matrix(rnorm(200,0,1),100,2,dimnames=list(NULL,c("x1","x2"))))
+ourCall &lt;- "predict(alm(x~., data=xreg[counti,,drop=FALSE], distribution='dpois'),
+                    newdata=xreg[counto,,drop=FALSE])"
+ourValue &lt;- "mean"
+testRO &lt;- ro(xreg[,1],h=5,origins=5,ourCall,ourValue,co=TRUE)
+plot(testRO)
+
+## 'countf' is used to take xreg of the size corresponding to the whole
+## sample on each iteration
+## This is useful when working with functions from smooth package.
+## The following call will return the forecasts from es() function of smooth.
+## Not run: ourCall &lt;- "es(data=data, h=h, xreg=xreg[countf,,drop=FALSE])"
+ourValue &lt;- "forecast"
+ro(x,h=5,origins=5,ourCall,ourValue)
+## End(Not run)
+
+</code></pre>
+
+
+</div>

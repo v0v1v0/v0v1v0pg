@@ -1,0 +1,140 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemMoney_3_2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A General Equilibrium Model with Money</h2>
+
+<h3>Description</h3>
+
+<p>A general equilibrium model with money as a medium of exchange and a means of payment.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemMoney_3_2(
+  dstl,
+  supply.labor = 100,
+  supply.money = 300,
+  names.commodity = c("product", "labor", "money"),
+  names.agent = c("firm", "household"),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dstl</code></td>
+<td>
+<p>the demand structure tree list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>supply.labor</code></td>
+<td>
+<p>the supply of labor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>supply.money</code></td>
+<td>
+<p>the supply of money.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names.commodity</code></td>
+<td>
+<p>names of commodities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names.agent</code></td>
+<td>
+<p>names of agents.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be to be passed to the function sdm2.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A general equilibrium model with 3 commodities (i.e. product, labor,
+and money) and 2 agents (i.e. a firm and a household).
+To produce, the firm needs product, labor and money.
+The household only consumes the product. But money is also needed to buy the product.
+The household supplies labor and money. <br></p>
+<p>In the calculation results, the price of the currency is the interest per unit of currency (i.e., the rental price).
+It should be noted that the unit of currency can be arbitrarily selected.
+For example, a unit of currency may be two dollars or ten dollars.
+The rental price divided by the interest rate is the asset price of 1 unit of the currency.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A general equilibrium (see <code>sdm2</code>)
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#### Leontief-type firm
+interest.rate &lt;- 0.25
+vm &lt;- 1 # the velocity of money
+
+dst.Leontief.firm &lt;- node_new("output",
+  type = "FIN", rate = c(1, interest.rate / vm),
+  "cc1", "money"
+)
+node_set(dst.Leontief.firm, "cc1",
+  type = "Leontief", a = c(0.6, 0.2),
+  "product", "labor"
+)
+
+dst.household &lt;- node_new("utility",
+  type = "FIN", rate = c(1, interest.rate / vm),
+  "product", "money"
+)
+
+dstl.Leontief &lt;- list(dst.Leontief.firm, dst.household)
+
+ge.Leontief &lt;- gemMoney_3_2(dstl.Leontief)
+ge.Leontief$p
+
+## SCES-type firm
+dst.SCES.firm &lt;- Clone(dst.Leontief.firm)
+node_set(dst.SCES.firm, "cc1",
+  type = "SCES", alpha = 1, beta = c(0.6, 0.2),
+  es = 0 # es is the elasticity of substitution.
+)
+
+node_plot(dst.SCES.firm, TRUE)
+
+dstl.SCES &lt;- list(dst.SCES.firm, dst.household)
+
+ge.SCES &lt;- gemMoney_3_2(dstl.SCES)
+ge.SCES$p
+p.money &lt;- ge.SCES$p
+p.money["money"] &lt;- p.money["money"] / interest.rate
+p.money &lt;- p.money / p.money["money"] # prices in terms of the asset price of the currency
+p.money
+
+## The price of money is the interest rate.
+## The other prices are in terms of the asset price of the currency.
+gemMoney_3_2(dstl.SCES,
+             numeraire = c("money" = interest.rate)
+)
+
+</code></pre>
+
+
+</div>

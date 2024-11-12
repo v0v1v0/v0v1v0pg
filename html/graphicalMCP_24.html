@@ -1,0 +1,204 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>graph_create</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create the initial graph for a multiple comparison procedure</h2>
+
+<h3>Description</h3>
+
+<p>A graphical multiple comparison procedure is represented by 1) a vector of
+initial hypothesis weights <code>hypotheses</code>, and 2) a matrix of initial
+transition weights <code>transitions</code>. This function creates the initial graph
+object using hypothesis weights and transition weights.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">graph_create(hypotheses, transitions, hyp_names = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>hypotheses</code></td>
+<td>
+<p>A numeric vector of hypothesis weights in a graphical
+multiple comparison procedure. Must be a vector of values between 0 &amp; 1
+(inclusive). The length should match the row and column lengths of
+<code>transitions</code>. The sum of hypothesis weights should not exceed 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transitions</code></td>
+<td>
+<p>A numeric matrix of transition weights between hypotheses
+in a graphical multiple comparison procedure. Must be a square matrix of
+values between 0 &amp; 1 (inclusive). The row and column lengths should match
+the length of <code>hypotheses</code>. Each row (Transition weights leaving a
+hypothesis) can sum to no more than 1. The diagonal entries (Transition
+weights from a hypothesis to itself) must be all 0s.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hyp_names</code></td>
+<td>
+<p>(Optional) A character vector of hypothesis names. If not
+provided, names from <code>hypotheses</code> and <code>transitions</code> will be used. If names
+are not specified, hypotheses will be named sequentially as H1, H2, .......</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An S3 object of class <code>initial_graph</code> with a list of 2 elements:
+</p>
+
+<ul>
+<li>
+<p> Hypothesis weights <code>hypotheses</code>.
+</p>
+</li>
+<li>
+<p> Transition weights <code>transitions</code>.
+</p>
+</li>
+</ul>
+<h3>Validation of inputs</h3>
+
+<p>Inputs are also validated to make sure of the validity of the graph:
+</p>
+
+<ul>
+<li>
+<p> Hypothesis weights <code>hypotheses</code> are numeric.
+</p>
+</li>
+<li>
+<p> Transition weights <code>transitions</code> are numeric.
+</p>
+</li>
+<li>
+<p> Length of <code>hypotheses</code> and dimensions of <code>transitions</code> match.
+</p>
+</li>
+<li>
+<p> Hypothesis weights <code>hypotheses</code> must be non-negative and sum to no more
+than 1.
+</p>
+</li>
+<li>
+<p> Transition weights <code>transitions</code>:
+</p>
+
+<ul>
+<li>
+<p> Values must be non-negative.
+</p>
+</li>
+<li>
+<p> Rows must sum to no more than 1.
+</p>
+</li>
+<li>
+<p> Diagonal entries must be all 0.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> Hypothesis names <code>hyp_names</code> override names in <code>hypotheses</code> or
+<code>transitions</code>.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Bretz, F., Maurer, W., Brannath, W., and Posch, M. (2009). A graphical
+approach to sequentially rejective multiple test procedures.
+<em>Statistics in Medicine</em>, 28(4), 586-604.
+</p>
+<p>Bretz, F., Posch, M., Glimm, E., Klinglmueller, F., Maurer, W., and
+Rohmeyer, K. (2011). Graphical approaches for multiple comparison
+procedures using weighted Bonferroni, Simes, or parametric tests.
+<em>Biometrical Journal</em>, 53(6), 894-913.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>graph_update()</code> for the updated graph after hypotheses being deleted
+from the initial graph.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># A graphical multiple comparison procedure with two primary hypotheses (H1
+# and H2) and two secondary hypotheses (H3 and H4)
+# See Figure 1 in Bretz et al. (2011).
+hypotheses &lt;- c(0.5, 0.5, 0, 0)
+transitions &lt;- rbind(
+  c(0, 0, 1, 0),
+  c(0, 0, 0, 1),
+  c(0, 1, 0, 0),
+  c(1, 0, 0, 0)
+)
+hyp_names &lt;- c("H11", "H12", "H21", "H22")
+g &lt;- graph_create(hypotheses, transitions, hyp_names)
+g
+
+# Explicit names override names in `hypotheses` (with a warning)
+hypotheses &lt;- c(h1 = 0.5, h2 = 0.5, h3 = 0, h4 = 0)
+transitions &lt;- rbind(
+  c(0, 0, 1, 0),
+  c(0, 0, 0, 1),
+  c(0, 1, 0, 0),
+  c(1, 0, 0, 0)
+)
+g &lt;- graph_create(hypotheses, transitions, hyp_names)
+g
+
+# Use names in `transitions`
+hypotheses &lt;- c(0.5, 0.5, 0, 0)
+transitions &lt;- rbind(
+  H1 = c(0, 0, 1, 0),
+  H2 = c(0, 0, 0, 1),
+  H3 = c(0, 1, 0, 0),
+  H4 = c(1, 0, 0, 0)
+)
+g &lt;- graph_create(hypotheses, transitions)
+g
+
+# Unmatched names in `hypotheses` and `transitions` (with an error)
+hypotheses &lt;- c(h1 = 0.5, h2 = 0.5, h3 = 0, h4 = 0)
+transitions &lt;- rbind(
+  H1 = c(0, 0, 1, 0),
+  H2 = c(0, 0, 0, 1),
+  H3 = c(0, 1, 0, 0),
+  H4 = c(1, 0, 0, 0)
+)
+## Not run: 
+g &lt;- graph_create(hypotheses, transitions)
+
+## End(Not run)
+
+# When names are not specified, hypotheses are numbered sequentially as
+# H1, H2, ...
+hypotheses &lt;- c(0.5, 0.5, 0, 0)
+transitions &lt;- rbind(
+  c(0, 0, 1, 0),
+  c(0, 0, 0, 1),
+  c(0, 1, 0, 0),
+  c(1, 0, 0, 0)
+)
+g &lt;- graph_create(hypotheses, transitions)
+g
+</code></pre>
+
+
+</div>

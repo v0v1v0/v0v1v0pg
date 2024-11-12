@@ -1,0 +1,201 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mapdist</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute map distances using Google</h2>
+
+<h3>Description</h3>
+
+<p>Compute map distances using Google's Distance Matrix API. Note: To use
+Google's Distance Matrix API, you must first enable the API in the Google
+Cloud Platform Console. See <code>register_google()</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mapdist(
+  from,
+  to,
+  mode = c("driving", "walking", "bicycling", "transit"),
+  output = c("simple", "all"),
+  urlonly = FALSE,
+  override_limit = FALSE,
+  ext = "com",
+  inject = "",
+  ...
+)
+
+distQueryCheck()
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>from</code></td>
+<td>
+<p>name of origin addresses in a data frame (vector accepted), or a
+data frame with from and to columns</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>to</code></td>
+<td>
+<p>name of destination addresses in a data frame (vector accepted)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mode</code></td>
+<td>
+<p>driving, bicycling, walking, or transit</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output</code></td>
+<td>
+<p>amount of output</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>urlonly</code></td>
+<td>
+<p>return only the url?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>override_limit</code></td>
+<td>
+<p>override the current query count
+(.google_distance_query_times)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ext</code></td>
+<td>
+<p>top level domain domain extension (e.g. "com", "co.nz")</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inject</code></td>
+<td>
+<p>character string to add to the url</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>...</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>if parameters from and to are specified as geographic coordinates,
+they are reverse geocoded with revgeocode.  note that the google maps api
+limits to 2500 element queries a day.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a data frame (output="simple") or all of the geocoded information
+(output="all")
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>David Kahle <a href="mailto:david@kahle.io">david@kahle.io</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><a href="https://developers.google.com/maps/documentation/distance-matrix/">https://developers.google.com/maps/documentation/distance-matrix/</a>,
+<a href="https://developers.google.com/maps/documentation/distance-matrix/overview/">https://developers.google.com/maps/documentation/distance-matrix/overview/</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run:  requires Google API key, see ?register_google
+
+## basic usage
+########################################
+
+mapdist("waco, texas", "houston, texas")
+
+
+# many from, single to
+from &lt;- c("houston, texas", "dallas")
+to &lt;- "waco, texas"
+mapdist(from, to)
+mapdist(from, to, mode = "bicycling")
+mapdist(from, to, mode = "walking")
+
+
+# tibble of from's, vector of to's
+# (with a data frame, remember stringsAsFactors = FALSE)
+tibble(
+  "from" = c("houston", "houston", "dallas"),
+    "to" = c("waco", "san antonio", "houston")
+) %&gt;% mapdist()
+
+
+# distance matrix
+library("tidyverse")
+c("Hamburg, Germany", "Stockholm, Sweden", "Copenhagen, Denmark") %&gt;%
+  list(., .) %&gt;%
+  set_names(c("from", "to")) %&gt;%
+  cross_df() %&gt;%
+  mapdist() -&gt; distances
+
+distances
+
+distances %&gt;%
+  select(from, to, km) %&gt;%
+  spread(from, km)
+
+
+
+
+
+## other examples
+########################################
+
+# many from, single to with addresses
+from &lt;- c(
+  "1600 Amphitheatre Parkway, Mountain View, CA",
+  "3111 World Drive Walt Disney World, Orlando, FL"
+)
+to &lt;- "1600 Pennsylvania Avenue, Washington DC"
+mapdist(from, to)
+
+
+# mode = "transit
+from &lt;- "st lukes hospital houston texas"
+to &lt;- "houston zoo, houston texas"
+mapdist(from, to, mode = "transit")
+
+
+
+
+
+## geographic coordinates are accepted as well
+########################################
+(wh &lt;- as.numeric(geocode("the white house, dc")))
+(lm &lt;- as.numeric(geocode("lincoln memorial washington dc")))
+mapdist(wh, lm, mode = "walking")
+
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

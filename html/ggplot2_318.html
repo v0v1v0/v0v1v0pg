@@ -1,0 +1,179 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>layer_stats</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Layer statistical transformations</h2>
+
+<h3>Description</h3>
+
+<p>In ggplot2, a plot is constructed by adding layers to it. A layer consists
+of two important parts: the geometry (geoms), and statistical transformations
+(stats). The 'stat' part of a layer is important because it performs a
+computation on the data before it is displayed. Stats determine <em>what</em> is
+displayed, not <em>how</em> it is displayed.
+</p>
+<p>For example, if you add <code>stat_density()</code> to a plot, a kernel density
+estimation is performed, which can be displayed with the 'geom' part of a
+layer. For many <code style="white-space: pre;">⁠geom_*()⁠</code> functions, <code>stat_identity()</code> is used,
+which performs no extra computation on the data.
+</p>
+
+
+<h3>Specifying stats</h3>
+
+<p>There are five ways in which the 'stat' part of a layer can be specified.
+</p>
+<div class="sourceCode r"><pre># 1. The stat can have a layer constructor
+stat_density()
+
+# 2. A geom can default to a particular stat
+geom_density() # has `stat = "density"` as default
+
+# 3. It can be given to a geom as a string
+geom_line(stat = "density")
+
+# 4. The ggproto object of a stat can be given
+geom_area(stat = StatDensity)
+
+# 5. It can be given to `layer()` directly:
+layer(
+  geom = "line",
+  stat = "density",
+  position = "identity"
+)
+</pre></div>
+<p>Many of these ways are absolutely equivalent. Using
+<code>stat_density(geom = "line")</code> is identical to using
+<code>geom_line(stat = "density")</code>. Note that for <code>layer()</code>, you need to
+provide the <code>"position"</code> argument as well. To give stats as a string, take
+the function name, and remove the <code>stat_</code> prefix, such that <code>stat_bin</code>
+becomes <code>"bin"</code>.
+</p>
+<p>Some of the more well known stats that can be used for the <code>stat</code> argument
+are: <code>"density"</code>, <code>"bin"</code>,
+<code>"count"</code>, <code>"function"</code> and
+<code>"smooth"</code>.
+</p>
+
+
+<h3>Paired geoms and stats</h3>
+
+<p>Some geoms have paired stats. In some cases, like <code>geom_density()</code>, it is
+just a variant of another geom, <code>geom_area()</code>, with slightly different
+defaults.
+</p>
+<p>In other cases, the relationship is more complex. In the case of boxplots for
+example, the stat and the geom have distinct roles. The role of the stat is
+to compute the five-number summary of the data. In addition to just
+displaying the box of the five-number summary, the geom also provides display
+options for the outliers and widths of boxplots. In such cases, you cannot
+freely exchange geoms and stats: using <code>stat_boxplot(geom = "line")</code> or
+<code>geom_area(stat = "boxplot")</code> give errors.
+</p>
+<p>Some stats and geoms that are paired are:
+</p>
+
+<ul>
+<li> <p><code>geom_violin()</code> and <code>stat_ydensity()</code>
+</p>
+</li>
+<li> <p><code>geom_histogram()</code> and <code>stat_bin()</code>
+</p>
+</li>
+<li> <p><code>geom_contour()</code> and <code>stat_contour()</code>
+</p>
+</li>
+<li> <p><code>geom_function()</code> and <code>stat_function()</code>
+</p>
+</li>
+<li> <p><code>geom_bin_2d()</code> and <code>stat_bin_2d()</code>
+</p>
+</li>
+<li> <p><code>geom_boxplot()</code> and <code>stat_boxplot()</code>
+</p>
+</li>
+<li> <p><code>geom_count()</code> and <code>stat_sum()</code>
+</p>
+</li>
+<li> <p><code>geom_density()</code> and <code>stat_density()</code>
+</p>
+</li>
+<li> <p><code>geom_density_2d()</code> and <code>stat_density_2d()</code>
+</p>
+</li>
+<li> <p><code>geom_hex()</code> and <code>stat_binhex()</code>
+</p>
+</li>
+<li> <p><code>geom_quantile()</code> and <code>stat_quantile()</code>
+</p>
+</li>
+<li> <p><code>geom_smooth()</code> and <code>stat_smooth()</code>
+</p>
+</li>
+</ul>
+<h3>Using computed variables</h3>
+
+<p>As mentioned above, the role of stats is to perform computation on the data.
+As a result, stats have 'computed variables' that determine compatibility
+with geoms. These computed variables are documented in the
+<strong>Computed variables</strong> sections of the documentation, for example in
+<code>?stat_bin</code>. While more thoroughly documented
+in <code>after_stat()</code>, it should briefly be mentioned that these computed stats
+can be accessed in <code>aes()</code>.
+</p>
+<p>For example, the <code>?stat_density</code> documentation states that,
+in addition to a variable called <code>density</code>, the stat computes a variable
+named <code>count</code>. Instead of scaling such that the area integrates to 1, the
+<code>count</code> variable scales the computed density such that the values
+can be interpreted as counts. If <code>stat_density(aes(y = after_stat(count)))</code>
+is used, we can display these count-scaled densities instead of the regular
+densities.
+</p>
+<p>The computed variables offer flexibility in that arbitrary geom-stat pairings
+can be made. While not necessarily recommended, <code>geom_line()</code> <em>can</em> be paired
+with <code>stat = "boxplot"</code> if the line is instructed on how to use the boxplot
+computed variables:
+</p>
+<div class="sourceCode r"><pre>ggplot(mpg, aes(factor(cyl))) +
+  geom_line(
+    # Stage gives 'displ' to the stat, and afterwards chooses 'middle' as
+    # the y-variable to display
+    aes(y = stage(displ, after_stat = middle),
+        # Regroup after computing the stats to display a single line
+        group = after_stat(1)),
+    stat = "boxplot"
+  )
+</pre></div>
+
+
+<h3>Under the hood</h3>
+
+<p>Internally, stats are represented as <code>ggproto</code> classes that
+occupy a slot in a layer. All these classes inherit from the parental
+<code>Stat</code> ggproto object that orchestrates how stats work. Briefly, stats
+are given the opportunity to perform computation either on the layer as a
+whole, a facet panel, or on individual groups. For more information on
+extending stats, see the <strong>Creating a new stat</strong> section after
+running <code>vignette("extending-ggplot2")</code>. Additionally, see the <strong>New stats</strong>
+section of the
+<a href="https://ggplot2-book.org/extensions.html#new-stats">online book</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>For an overview of all stat layers, see the
+<a href="https://ggplot2.tidyverse.org/reference/index.html#stats">online reference</a>.
+</p>
+<p>How computed aesthetics work.
+</p>
+<p>Other layer documentation: 
+<code>layer()</code>,
+<code>layer_geoms</code>,
+<code>layer_positions</code>
+</p>
+
+
+</div>

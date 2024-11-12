@@ -1,0 +1,189 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gcs_upload</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Upload a file of arbitrary type</h2>
+
+<h3>Description</h3>
+
+<p>Upload up to 5TB
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gcs_upload(
+  file,
+  bucket = gcs_get_global_bucket(),
+  type = NULL,
+  name = deparse(substitute(file)),
+  object_function = NULL,
+  object_metadata = NULL,
+  predefinedAcl = c("private", "bucketLevel", "authenticatedRead",
+    "bucketOwnerFullControl", "bucketOwnerRead", "projectPrivate", "publicRead",
+    "default"),
+  upload_type = c("simple", "resumable")
+)
+
+gcs_upload_set_limit(upload_limit = 5000000L)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>data.frame, list, R object or filepath (character) to upload file</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bucket</code></td>
+<td>
+<p>bucketname you are uploading to</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>MIME type, guessed from file extension if NULL</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name</code></td>
+<td>
+<p>What to call the file once uploaded. Default is the filepath</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object_function</code></td>
+<td>
+<p>If not NULL, a <code>function(input, output)</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object_metadata</code></td>
+<td>
+<p>Optional metadata for object created via gcs_metadata_object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predefinedAcl</code></td>
+<td>
+<p>Specify user access to object. Default is 'private'. Set to 'bucketLevel' for buckets with bucket level access enabled.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upload_type</code></td>
+<td>
+<p>Override automatic decision on upload type</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upload_limit</code></td>
+<td>
+<p>Upload limit in bytes</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>When using <code>object_function</code> it expects a function with two arguments:
+</p>
+
+<ul>
+<li> <p><code>input</code> The object you supply in file to write from
+</p>
+</li>
+<li> <p><code>output</code> The filename you write to
+</p>
+</li>
+</ul>
+<p>By default the <code>upload_type</code> will be 'simple' if under 5MB, 'resumable' if over 5MB.  Use gcs_upload_set_limit to modify this boundary - you may want it smaller on slow connections, higher on faster connections.
+'Multipart' upload is used if you provide a <code>object_metadata</code>.
+</p>
+<p>If <code>object_function</code> is NULL and <code>file</code> is not a character filepath,
+the defaults are:
+</p>
+
+<ul>
+<li>
+<p> file's class is <code>data.frame</code> - write.csv
+</p>
+</li>
+<li>
+<p> file's class is <code>list</code> - toJSON
+</p>
+</li>
+</ul>
+<p>If <code>object_function</code> is not NULL and <code>file</code> is not a character filepath,
+then <code>object_function</code> will be applied to the R object specified
+in <code>file</code> before upload. You may want to also use <code>name</code> to ensure the correct
+file extension is used e.g. <code>name = 'myobject.feather'</code>
+</p>
+<p>If <code>file</code> or <code>name</code> argument contains folders e.g. <code>/data/file.csv</code> then
+the file will be uploaded with the same folder structure e.g. in a <code>/data/</code> folder.
+Use <code>name</code> to override this.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If successful, a metadata object
+</p>
+
+
+<h3>scopes</h3>
+
+<p>Requires scopes <code>https://www.googleapis.com/auth/devstorage.read_write</code>
+or <code>https://www.googleapis.com/auth/devstorage.full_control</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+
+## set global bucket so don't need to keep supplying in future calls
+gcs_global_bucket("my-bucket")
+
+## by default will convert dataframes to csv
+gcs_upload(mtcars)
+
+## mtcars has been renamed to mtcars.csv
+gcs_list_objects()
+
+## to specify the name, use the name argument
+gcs_upload(mtcars, name = "my_mtcars.csv")
+
+## when looping, its best to specify the name else it will take
+## the deparsed function call e.g. X[[i]]
+my_files &lt;- list.files("my_uploads")
+lapply(my_files, function(x) gcs_upload(x, name = x))
+
+## you can supply your own function to transform R objects before upload
+f &lt;- function(input, output){
+  write.csv2(input, file = output)
+}
+
+gcs_upload(mtcars, name = "mtcars_csv2.csv", object_function = f)
+
+# upload to a bucket with bucket level ACL set
+gcs_upload(mtcars, predefinedAcl = "bucketLevel")
+
+# modify boundary between simple and resumable uploads
+# default 5000000L is 5MB
+gcs_upload_set_limit(1000000L)
+
+## End(Not run)
+
+
+
+</code></pre>
+
+
+</div>

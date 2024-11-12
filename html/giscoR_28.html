@@ -1,0 +1,193 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gisco_get_grid</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get grid cells covering covering Europe for various resolutions</h2>
+
+<h3>Description</h3>
+
+<p>These datasets contain grid cells covering the European land
+territory, for various resolutions from 1km to 100km. Base statistics such
+as population figures are provided for these cells.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gisco_get_grid(
+  resolution = "20",
+  spatialtype = c("REGION", "POINT"),
+  cache_dir = NULL,
+  update_cache = FALSE,
+  verbose = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>resolution</code></td>
+<td>
+<p>Resolution of the grid cells on kms. Available values are
+<code>"1"</code>, <code>"2"</code>, <code>"5"</code>, <code>"10"</code>, <code>"20"</code>, <code>"50"</code>, <code>"100"</code>. See <strong>Details</strong>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spatialtype</code></td>
+<td>
+<p>Select one of <code>"REGION"</code> or <code>"POINT"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cache_dir</code></td>
+<td>
+<p>A path to a cache directory. See <strong>About caching</strong>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>update_cache</code></td>
+<td>
+<p>A logical whether to update cache. Default is <code>FALSE</code>.
+When set to <code>TRUE</code> it would force a fresh download of the source
+<code>.geojson</code> file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical, displays information. Useful for debugging,
+default is <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Files are distributed on EPSG:3035.
+</p>
+<p>The file sizes range is from 428Kb (<code>resolution = "100"</code>)
+to 1.7Gb <code>resolution = "1"</code>. For resolutions 1km and 2km you would
+need to confirm the download.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>POLYGON/POINT</code> <code>sf</code> object.
+</p>
+
+
+<h3>About caching</h3>
+
+<p>You can set your <code>cache_dir</code> with <code>gisco_set_cache_dir()</code>.
+</p>
+<p>Sometimes cached files may be corrupt. On that case, try re-downloading
+the data setting <code>update_cache = TRUE</code>.
+</p>
+<p>If you experience any problem on download, try to download the
+corresponding <code>.geojson</code> file by any other method and save it on your
+<code>cache_dir</code>. Use the option <code>verbose = TRUE</code> for debugging the API query.
+</p>
+<p>For a complete list of files available check gisco_db.
+</p>
+
+
+<h3>Note</h3>
+
+<p>There are specific downloading provisions, please see
+<a href="https://ec.europa.eu/eurostat/web/gisco/geodata/grids">https://ec.europa.eu/eurostat/web/gisco/geodata/grids</a>
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>dieghernan, <a href="https://github.com/dieghernan/">https://github.com/dieghernan/</a>
+</p>
+
+
+<h3>Source</h3>
+
+<p><a href="https://ec.europa.eu/eurostat/web/gisco/geodata/grids">https://ec.europa.eu/eurostat/web/gisco/geodata/grids</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+grid &lt;- gisco_get_grid(resolution = 20)
+
+# If downloaded correctly proceed
+
+if (!is.null(grid)) {
+  library(dplyr)
+
+  grid &lt;- grid %&gt;%
+    mutate(popdens = TOT_P_2021 / 20)
+
+  breaks &lt;- c(0, 0.1, 100, 500, 1000, 5000, 10000, Inf)
+
+  # Cut groups
+  grid &lt;- grid %&gt;%
+    mutate(popdens_cut = cut(popdens,
+      breaks = breaks,
+      include.lowest = TRUE
+    ))
+
+  cut_labs &lt;- prettyNum(breaks, big.mark = " ")[-1]
+  cut_labs[1] &lt;- "0"
+  cut_labs[7] &lt;- "&gt; 10 000"
+
+  pal &lt;- c("black", hcl.colors(length(breaks) - 2,
+    palette = "Spectral",
+    alpha = 0.9
+  ))
+
+  library(ggplot2)
+
+  ggplot(grid) +
+    geom_sf(aes(fill = popdens_cut), color = NA, linewidth = 0) +
+    coord_sf(
+      xlim = c(2500000, 7000000),
+      ylim = c(1500000, 5200000)
+    ) +
+    scale_fill_manual(
+      values = pal, na.value = "black",
+      name = "people per sq. kilometer",
+      labels = cut_labs,
+      guide = guide_legend(
+        direction = "horizontal",
+        nrow = 1
+      )
+    ) +
+    theme_void() +
+    labs(
+      title = "Population density in Europe (2021)",
+      subtitle = "Grid: 20 km.",
+      caption = gisco_attributions()
+    ) +
+    theme(
+      text = element_text(colour = "white"),
+      plot.background = element_rect(fill = "grey2"),
+      plot.title = element_text(hjust = 0.5),
+      plot.subtitle = element_text(hjust = 0.5, face = "bold"),
+      plot.caption = element_text(
+        color = "grey60", hjust = 0.5, vjust = 0,
+        margin = margin(t = 5, b = 10)
+      ),
+      legend.position = "bottom",
+      legend.title.position = "top",
+      legend.text.position = "bottom",
+      legend.key.height = unit(0.5, "lines"),
+      legend.key.width = unit(1, "lines")
+    )
+}
+
+
+</code></pre>
+
+
+</div>

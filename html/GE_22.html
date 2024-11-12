@@ -1,0 +1,173 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemCanonicalDynamicMacroeconomic_3_2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A Canonical Dynamic Macroeconomic General Equilibrium Model (see Torres, 2016)</h2>
+
+<h3>Description</h3>
+
+<p>A canonical dynamic macroeconomic general equilibrium model (see Torres, 2016, Table 2.1 and 2.2).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemCanonicalDynamicMacroeconomic_3_2(
+  discount.factor = 0.97,
+  depreciation.rate = 0.06,
+  beta.prod.firm = 0.35,
+  beta.prod.consumer = 0.4,
+  policy.supply = NULL,
+  policy.technology = NULL,
+  policy.price = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>discount.factor</code></td>
+<td>
+<p>the intertemporal discount factor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>depreciation.rate</code></td>
+<td>
+<p>the physical depreciation rate of capital stock.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.prod.firm</code></td>
+<td>
+<p>the share parameter of the product in the Cobb-Douglas production function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.prod.consumer</code></td>
+<td>
+<p>the share parameter of the product in the Cobb-Douglas period utility function.
+This parameter represents the individual's preferences regarding consumption-leisure decisions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>policy.supply</code></td>
+<td>
+<p>a policy function or a policy function list which adjusts the supplies.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>policy.technology</code></td>
+<td>
+<p>a policy function or a policy function list which adjusts the technology.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>policy.price</code></td>
+<td>
+<p>a policy function or a policy function list which adjusts the prices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be to be passed to the function sdm2.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A general equilibrium model with 3 commodities (i.e. product, labor and equity shares)
+and 2 agents (i.e. a firm and a consumer). Labor is the numeraire.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A general equilibrium (see <code>sdm2</code>).
+</p>
+
+
+<h3>References</h3>
+
+<p>Torres, Jose L. (2016, ISBN: 9781622730452) Introduction to Dynamic Macroeconomic General Equilibrium Models (Second Edition). Vernon Press.
+</p>
+<p>Li Xiangyang (2018, ISBN: 9787302497745) Dynamic Stochastic General Equilibrium (DSGE) Model: Theory, Methodology, and Dynare Practice. Tsinghua University Press. (In Chinese)
+</p>
+
+
+<h3>See Also</h3>
+
+<p>The spot market clearing path (alias instantaneous equilibrium path) can be computed with the function <code>policyMarketClearingPrice</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+gemCanonicalDynamicMacroeconomic_3_2()
+
+#### a spot market clearing path (alias instantaneous equilibrium path)
+ge &lt;- gemCanonicalDynamicMacroeconomic_3_2(
+  policy.price = policyMarketClearingPrice,
+  ts = TRUE,
+  maxIteration = 1,
+  numberOfPeriods = 100,
+  z0 = c(50, 100)
+)
+
+par(mfrow = c(1, 2))
+matplot(ge$ts.z, type = "o", pch = 20)
+matplot(ge$ts.p, type = "o", pch = 20)
+
+#### technology change in a market-clearing path
+policyTechnologyChange &lt;- function(time, A) {
+  alpha &lt;- 1.2 # The original value is 1.
+  time.win &lt;- c(50, 50)
+  discount.factor &lt;- 0.97
+  depreciation.rate &lt;- 0.06
+  beta.prod.firm  &lt;- 0.35
+  return.rate &lt;- 1 / discount.factor - 1
+
+  if (time &gt;= time.win[1] &amp;&amp; time &lt;= time.win[2]) {
+    A[[1]]$func &lt;- function(p) {
+      result &lt;- CD_A(
+        alpha, rbind(beta.prod.firm , 1 - beta.prod.firm , 0),
+        c(p[1] * (return.rate + depreciation.rate), p[2:3])
+      )
+      result[3] &lt;- p[1] * result[1] * return.rate / p[3]
+      result
+    }
+  }
+}
+
+ge &lt;- gemCanonicalDynamicMacroeconomic_3_2(
+  policy.technology = policyTechnologyChange,
+  policy.price = policyMarketClearingPrice,
+  ts = TRUE,
+  maxIteration = 1,
+  numberOfPeriods = 100,
+  z0 = c(50, 100)
+)
+
+par(mfrow = c(1, 2))
+matplot(ge$ts.z, type = "o", pch = 20)
+matplot(ge$ts.p, type = "o", pch = 20)
+
+#### an example on page 46 of Li Xiangyang (2018)
+ge &lt;- gemCanonicalDynamicMacroeconomic_3_2(
+  discount.factor = 0.99,
+  depreciation.rate = 0.025,
+  beta.prod.firm  = 0.36,
+  beta.prod.consumer = 1
+)
+
+</code></pre>
+
+
+</div>

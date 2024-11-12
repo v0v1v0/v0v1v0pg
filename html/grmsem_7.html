@@ -1,0 +1,353 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>grmsem.fit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>grmsem model fitting function</h2>
+
+<h3>Description</h3>
+
+<p>This function fits a grmsem model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">grmsem.fit(
+  ph,
+  G,
+  A.v.free = NULL,
+  E.v.free = NULL,
+  A.v.startval = NULL,
+  E.v.startval = NULL,
+  LogL = FALSE,
+  estSE = FALSE,
+  cores = 1,
+  model = "Cholesky",
+  compl.ph = FALSE,
+  printest = FALSE,
+  cluster = "PSOCK",
+  optim = "optim",
+  verbose = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ph</code></td>
+<td>
+<p>phenotype file as R dataframe, even for single vectors (columns: k phenotypes, rows: ni individuals in same order as G). No default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+<p>GRM matrix as provided by the grm.input or grm.bin.input.R function. Use the same order of individuals as in ph. No default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A.v.free</code></td>
+<td>
+<p>vector of free parameters for genetic factor loadings (free:1, not-free:0). Default NULL, all parameters are estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>E.v.free</code></td>
+<td>
+<p>vector of free parameters for residual factor loadings (free:1, not-free:0). Default NULL, all parameters are estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A.v.startval</code></td>
+<td>
+<p>vector of starting values for genetic factor loadings. Default NULL, all starting values are generated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>E.v.startval</code></td>
+<td>
+<p>vector of starting values for residual factor loadings. Default NULL, all starting values are generated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LogL</code></td>
+<td>
+<p>estimation of the loglikelihood using optim BFGS (TRUE/FALSE). Default FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estSE</code></td>
+<td>
+<p>estimation of standard errors by recalculating the Hessian matrix. Default FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>number of cores for multi-threaded calculations (numeric). Default 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>grmsem model selection. Options: "Cholesky", "IP", "IPC", "DS". Default "Cholesky".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compl.ph</code></td>
+<td>
+<p>listwise complete observations across all phenotypes (all NA are excluded). Default FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>printest</code></td>
+<td>
+<p>print output of the model.fit function including estimates (printest.txt) that can be used as starting values. Default FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cluster</code></td>
+<td>
+<p>cluster type. Options: "PSOCK", "FORK". Default "PSOCK".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optim</code></td>
+<td>
+<p>optimisation function from stats or optimParallel libraries. Options: "optim", "optimParallel". Default "optim".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>additional model fit information: (i) phenotype vector, (ii) n of GRM and corresponding I matrix when data are missing, (iii) Hessian if <code>estSE</code> <code>TRUE</code>. Default FALSE.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>grmsem models estimate genetic (A) and residual (E) variance/covariance of quantitative traits (AE model), where E in GRM-based methods can capture both, shared and unique residual influences. 
+The estimation of parameters and their SEs is performed with the function <code>grmsem.fit</code>. 
+Specifically, the loglikelihood is estimated with <code>stats::optim</code> and the BFGS (Broyden-Fletcher-Goldfarb-Shannon) approach and the variance/covariance matrix of estimated parameters 
+with <code>numDeriv::hessian</code>. The statistical significance of estimated parameters is assessed using a Wald test, assuming multivariate normality. 
+</p>
+<p><code>grmsem.fit</code> allows fitting different models describing the underlying multivariate genetic architecture of quantitative traits, 
+as captured by a genetic-relationship-matrix (GRM), using structural equation modelling (SEM) techniques and a maximum likelihood approach. 
+The user can fit multiple predefined model structures to the data. A Cholesky decomposition, Independent Pathway, 
+and hybrid Independent Pathway/Cholesky models can be fitted by setting the <code>model</code> option to <code>Cholesky</code>, <code>IP</code> or <code>IPC</code>, respectively. 
+In addition, the Cholesky model can be re-parametrised as Direct Symmetric model, 
+estimating genetic and residual covariances directly, using the <code>model</code> option <code>DS</code>. Each model can be adapted by the user by setting free parameters (<code>A.v.free</code> and <code>E.v.free</code> options) and starting values (<code>A.v.startval</code> and  <code>E.v.startval</code> 
+options). 
+</p>
+<p>Input parameters are returned as <code>model.in</code> list object. Output from the maximum likelihood estimation is also given as 
+list <code>model.fit</code> and the fitted grmsem model with estimated parameters and SEs is returned as dataframe <code>model.out</code>. 
+The returned <code>grmsem.fit</code> object can be used to estimate genetic and residual covariance and correlations (<code>grmsem.var</code> function), bivariate heritabilities (<code>grmsem.biher</code> function), 
+and factorial co-heritabilities and co-environmentalities (<code>grmsem.fcoher</code> function). All estimated parameters of the fitted grmsem model can also be standardised using the function <code>grmsem.stpar</code>.
+</p>
+<p>Listwise complete observations can be selected with the option <code>compl.ph</code>=<code>TRUE</code>. Otherwise, <code>grmsem.fit</code> fits, like GREML, all available data to the model 
+with the default option <code>compl.ph</code> <code>FALSE</code>. Using the option <code>LogL</code>=<code>FALSE</code>, the user can check the model input parameters and formula without a 
+maximum likelihood estimation. Using the option <code>estSE</code>=<code>FALSE</code>, the user can carry out a maximum likelihood estimation without the estimation of SEs for 
+estimated parameters that require calculating the Hessian. Note that <code>grmsem.fit</code> should preferably be run in parallel, by setting the <code>cores</code> option to the required number of cores.
+</p>
+<p>When <code>grmsem.fit</code> is called with <code>LogL</code> <code>TRUE</code>, the user will see also the iterations of the <code>stats::optim</code> loglikelihood estimation, which are not included in the exported grmsem.fit list object.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>grmsem.fit</code> returns a grmsem.fit list object consisting of:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>model.in</code></td>
+<td>
+<p>list of input parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>matrix of the model specification</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.fit</code></td>
+<td>
+<p>list output of the maximum likelihood estimation, if <code>LogL</code> <code>TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.out</code></td>
+<td>
+<p>dataframe of fitted grmsem model with estimated parameters and SEs, if <code>estSE</code> <code>TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>VCOV</code></td>
+<td>
+<p>variance/covariance matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>number of phenotypes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>total number of observations across all phenotypes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.obs</code></td>
+<td>
+<p>number of observations per phenotype</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.ind</code></td>
+<td>
+<p>number of individuals with at least one phenotype</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>type of grmsem model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ph.nms</code></td>
+<td>
+<p>vector of phenotype names</p>
+</td>
+</tr>
+</table>
+<p><code>model.in</code> list of input parameters:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>part</code></td>
+<td>
+<p>a - genetic, e - residual parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>label</code></td>
+<td>
+<p>parameter label</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>value</code></td>
+<td>
+<p>starting values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>freepar</code></td>
+<td>
+<p>free parameters</p>
+</td>
+</tr>
+</table>
+<p><code>model.fit</code> list output of the maximum likelihood estimation:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>optimisation</code></td>
+<td>
+<p>output via optim()</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimates</code></td>
+<td>
+<p>estimated parameters: factor loadings for 'Cholesky', 'IP' and 'IPC' models, but variance components for 'DS'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LL</code></td>
+<td>
+<p>loglikelihood</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>calls</code></td>
+<td>
+<p>optim() calls</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convergence</code></td>
+<td>
+<p>optim() convergence</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>message</code></td>
+<td>
+<p>optim() message</p>
+</td>
+</tr>
+</table>
+<p><code>model.out</code> data.frame of fitted grmsem model:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>label</code></td>
+<td>
+<p>parameter label</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimates</code></td>
+<td>
+<p>estimated parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gradient</code></td>
+<td>
+<p>gradient</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se</code></td>
+<td>
+<p>SE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Z</code></td>
+<td>
+<p>Z (Wald)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>p (Wald)</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">#Set up a Cholesky model: Model formula and total number of parameters
+#ph.small is a trivariate phenotype file for 100 individuals in the same order as G.small
+#nrow = 100, ncol = 3
+#(runtime should be less than one minute)
+out &lt;- grmsem.fit(ph.small, G.small, LogL = FALSE, estSE = FALSE)
+
+#Run a Cholesky model:
+out &lt;- grmsem.fit(ph.small, G.small, LogL = TRUE, estSE = TRUE)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,276 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gamVineStructureSelect</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Structure selection and estimation of a GAM-Vine model.</h2>
+
+<h3>Description</h3>
+
+<p>This function select the structure and estimates the parameter(s) of a
+Generalized Additive model
+(GAM) Vine model, where GAMs for individual edges are specified either for
+the copula parameter or Kendall's tau.
+It solves the maximum penalized likelihood estimation for the copula families
+supported in this package by reformulating each Newton-Raphson iteration as
+a generalized ridge regression, which is solved using
+the <code>mgcv</code> package.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gamVineStructureSelect(
+  udata,
+  lin.covs = NULL,
+  smooth.covs = NULL,
+  simplified = TRUE,
+  type = 0,
+  familyset = NA,
+  rotations = TRUE,
+  familycrit = "AIC",
+  treecrit = "tau",
+  level = 0.05,
+  trunclevel = NA,
+  tau = TRUE,
+  method = "FS",
+  tol.rel = 0.001,
+  n.iters = 10,
+  parallel = FALSE,
+  verbose = FALSE,
+  select.once = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>udata</code></td>
+<td>
+<p>A matrix or data frame containing the data in [0,1]^d.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lin.covs</code></td>
+<td>
+<p>A matrix or data frame containing the parametric (i.e.,
+linear) covariates (default: <code>lin.covs = NULL</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smooth.covs</code></td>
+<td>
+<p>A matrix or data frame containing the non-parametric
+(i.e., smooth) covariates (default: <code>smooth.covs = NULL</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simplified</code></td>
+<td>
+<p>If <code>TRUE</code> (default), then a simplified vine is fitted
+(which is possible only if there are exogenous covariates). If <code>FALSE</code>,
+then a non-simplified vine is fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p><code>type = 0</code> (default) for a R-Vine and <code>type = 1</code> for a
+C-Vine.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>familyset</code></td>
+<td>
+<p>An integer vector of pair-copula families to select from
+(the independence copula MUST NOT be specified in this vector unless one
+wants to fit an independence vine!).
+Not listed copula families might be included to better handle
+limit cases. If <code>familyset = NA</code> (default), selection among all
+possible families is performed. Coding of pair-copula families:
+<code>1</code> Gaussian,
+<code>2</code> Student t,
+<code>5</code> Frank,
+<code>301</code> Double Clayton type I (standard and rotated 90 degrees),
+<code>302</code> Double Clayton type II (standard and rotated 270 degrees),
+<code>303</code> Double Clayton type III (survival and rotated 90 degrees),
+<code>304</code> Double Clayton type IV (survival and rotated 270 degrees),
+<code>401</code> Double Gumbel type I (standard and rotated 90 degrees),
+<code>402</code> Double Gumbel type II (standard and rotated 270 degrees),
+<code>403</code> Double Gumbel type III (survival and rotated 90 degrees),
+<code>404</code> Double Gumbel type IV (survival and rotated 270 degrees).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rotations</code></td>
+<td>
+<p>If <code>TRUE</code>, all rotations of the families in familyset
+are included.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>familycrit</code></td>
+<td>
+<p>Character indicating the criterion for bivariate copula
+selection. Possible choices: <code>familycrit = 'AIC'</code> (default) or
+<code>'BIC'</code>, as in <code>BiCopSelect</code> from the
+<code>VineCopula</code> package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>treecrit</code></td>
+<td>
+<p>Character indicating how pairs are selected in each tree.
+<code>treecrit = "tau"</code> uses the maximum spanning tree of the Kendall's tau
+(i.e., the tree of maximal overall dependence), <code>treecrit = "rho"</code>
+uses the Spearman's rho.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>Numerical; Passed to <code>gamBiCopSelect</code>, it is the
+significance level of the test for removing individual
+predictors (default: <code>level = 0.05</code>) for each conditional pair-copula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trunclevel</code></td>
+<td>
+<p>Integer; level of truncation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p><code>TRUE</code> (default) for a calibration function specified for
+Kendall's tau or <code>FALSE</code> for a calibration function specified
+for the Copula parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p><code>'NR'</code> for Newton-Raphson
+and  <code>'FS'</code> for Fisher-scoring (default).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol.rel</code></td>
+<td>
+<p>Relative tolerance for <code>'FS'</code>/<code>'NR'</code> algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.iters</code></td>
+<td>
+<p>Maximal number of iterations for
+<code>'FS'</code>/<code>'NR'</code> algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p><code>TRUE</code> (default) for parallel selection of copula
+family at each edge or <code>FALSE</code> for the sequential version.
+for the Copula parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p><code>TRUE</code> if informations should be printed during the
+estimation and <code>FALSE</code> (default) for a silent version.
+from <code>mgcv</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>select.once</code></td>
+<td>
+<p>if <code>TRUE</code> the GAM structure is only selected once,
+for the family that appears first in <code>familyset</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>gamVineSeqFit</code> returns a <code>gamVine-class</code> object.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gamVineSeqFit</code>,<code>gamVineCopSelect</code>,
+<code>gamVine-class</code>, <code>gamVineSimulate</code> and
+<code>gamBiCopSelect</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">require(VineCopula)
+set.seed(0)
+
+
+## An example with a 3-dimensional GAM-Vine
+
+# Sample size
+n &lt;- 1e3
+
+# Define a R-vine tree structure matrix
+d &lt;- 3
+Matrix &lt;- c(2, 3, 1, 0, 3, 1, 0, 0, 1)
+Matrix &lt;- matrix(Matrix, d, d)
+nnames &lt;- paste("x", 1:d, sep = "")
+
+# Copula families for each edge
+fam &lt;- c(301, 401, 1)
+
+# Parameters for the first tree (two unconditional copulas)
+par &lt;- c(1, 2)
+
+# Pre-allocate the GAM-Vine model list
+count &lt;- 1
+model &lt;- vector(mode = "list", length = d * (d - 1) / 2)
+
+# The first tree contains only the two unconditional copulas
+for (i in 1:(d - 1)) {
+  model[[count]] &lt;- list(family = fam[count], par = par[count], par2 = 0)
+  count &lt;- count + 1
+}
+
+# The second tree contains a unique conditional copula
+# In this first example, we take a linear calibration function (10*x-5)
+
+# Set-up a dummy dataset
+tmp &lt;- data.frame(u1 = runif(1e2), u2 = runif(1e2), x1 = runif(1e2))
+
+# Set-up an arbitrary linear model for the calibration function
+model[[count]] &lt;- gamBiCopFit(tmp, ~x1, fam[count])$res
+
+# Update the coefficients of the model
+attr(model[[count]], "model")$coefficients &lt;- c(-5, 10)
+
+# Define gamVine object
+GVC &lt;- gamVine(Matrix = Matrix, model = model, names = nnames)
+GVC
+## Not run: 
+# Simulate new data
+simData &lt;- data.frame(gamVineSimulate(n, GVC))
+colnames(simData) &lt;- nnames
+
+# Fit data using sequential estimation assuming true model known
+summary(fitGVC &lt;- gamVineSeqFit(simData, GVC))
+
+# Fit data using structure selection and sequential estimation
+summary(fitGVC2 &lt;- gamVineStructureSelect(simData, simplified = FALSE))
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

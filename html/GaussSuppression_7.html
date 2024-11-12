@@ -1,0 +1,125 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ChainedSuppression</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Repeated GaussSuppression  with forwarding of previous results</h2>
+
+<h3>Description</h3>
+
+<p><code>AdditionalSuppression</code> is called several times. Each time with all previous  results as <code>suppressedData</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ChainedSuppression(..., withinArg = NULL)
+
+ChainedSuppressionHi(..., hierarchies)
+
+ChainedSuppressionHi1(..., hierarchies)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments to <code>AdditionalSuppression</code>/<code>GaussSuppressionFromData</code> that are kept constant.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>withinArg</code></td>
+<td>
+<p>A list of named lists. Arguments to <code>AdditionalSuppression</code>/<code>GaussSuppressionFromData</code> that are not kept constant.
+List elements with suppressed data are also allowed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hierarchies</code></td>
+<td>
+<p>In the wrapper <code>ChainedSuppressionHi</code>, this argument will be used to generate the
+<code>withinArg</code> to <code>ChainedSuppression</code> with the same length (see examples).
+Then, element number <code>i</code> of <code>withinArg</code> is <code>list(hierarchies = hierarchies[1:i])</code>.
+In the similar wrapper, <code>ChainedSuppressionHi1</code>, <code>withinArg</code> has always two elements:
+<code>list(hierarchies = hierarchies[1])</code> and
+<code>list(hierarchies = hierarchies)</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>List of data frames. The wrappers, <code>ChainedSuppressionHi</code> and <code>ChainedSuppressionHi1</code>,
+return a single data frame, which is the last list item.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+z1 &lt;- SSBtoolsData("z1")
+z2 &lt;- SSBtoolsData("z2")
+z2b &lt;- z2[3:5]
+names(z2b)[1] &lt;- "region"
+
+# As GaussSuppressionFromData when a single element within withinArg
+a1 &lt;- ChainedSuppression(z1, 1:2, 3, maxN = 5)
+a2 &lt;- ChainedSuppression(z1, withinArg = list(list(dimVar = 1:2, freqVar = 3, maxN = 5)))
+identical(a1, a2[[1]])
+
+# b[[3]] include results from b[[1]] and b[[2]]
+b &lt;- ChainedSuppression(z1, freqVar = 3, withinArg = list(
+       list(dimVar = 1,   maxN = 55), 
+       list(dimVar = 2,   maxN = 55), 
+       list(dimVar = 1:2, maxN = 5)))
+
+# d[[2]] is same as b1 in AdditionalSuppression examples
+d &lt;- ChainedSuppression(withinArg = list(
+       list(data = z1,  dimVar = 1:2, freqVar = 3, maxN = 5), 
+       list(data = z2,  dimVar = 1:4, freqVar = 5, maxN = 1)))
+
+# Common variable names important. 
+# Therefore kostragr renamed to region in z2b. 
+f &lt;- ChainedSuppression(withinArg = list(
+       list(data = z1,  dimVar = 1:2, freqVar = 3, maxN = 5), 
+       list(data = z2b, dimVar = 1:2, freqVar = 3, maxN = 5), 
+       list(data = z2,  dimVar = 1:4, freqVar = 5, maxN = 1)))
+
+# Parameters so that only suppressions are forwarded. 
+# This is first iteration in linked tables by iterations. 
+e &lt;- ChainedSuppression(withinArg = list(
+       list(data = z1,  dimVar = 1:2, freqVar = 3, maxN = 5), 
+       list(data = z2b, dimVar = 1:2, freqVar = 3, maxN = 5), 
+       list(data = z2,  dimVar = 1:4, freqVar = 5, maxN = 1)), 
+       makeForced = FALSE, forceNotPrimary = FALSE)
+       
+# "A" "annet"/"arbeid" could be suppressed here, but not in f since f[[1]]      
+e[[3]][which(e[[3]]$suppressed != f[[3]]$suppressed), ]  
+
+
+#### Demonstrate SuppressionByChainedHierarchies
+
+dimLists &lt;- SSBtools::FindDimLists(z2[, 4:1])
+
+
+# Two ways of doing the same calculations
+g1 &lt;- ChainedSuppressionHi(z2, c(1, 3), 5, maxN = 1, hierarchies = dimLists)
+g1b &lt;-  ChainedSuppression(z2, c(1, 3), 5, maxN = 1, withinArg = list(
+         list(hierarchies = dimLists[1]),
+         list(hierarchies = dimLists[1:2]),
+         list(hierarchies = dimLists[1:3])))[[3]]      
+       
+# Results different after combining hierarchies      
+g2 &lt;- ChainedSuppressionHi(z2, c(1, 3), 5, maxN = 1, 
+         hierarchies = SSBtools::AutoHierarchies(dimLists))        
+       
+# In this case, the same results can be obtained by:         
+g3 &lt;- ChainedSuppressionHi1(z2, c(1, 3), 5, maxN = 1, hierarchies = dimLists)        
+       
+</code></pre>
+
+
+</div>

@@ -1,0 +1,217 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cv.glmtlp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Cross-validation for glmtlp</h2>
+
+<h3>Description</h3>
+
+<p>Performs k-fold cross-validation for l0, l1, or TLP-penalized regression models 
+over a grid of values for the regularization parameter <code>lambda</code> 
+(if <code>penalty="l0"</code>) or <code>kappa</code> (if <code>penalty="l0"</code>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cv.glmtlp(X, y, ..., seed = NULL, nfolds = 10, obs.fold = NULL, ncores = 1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>input matrix, of dimension <code>nobs</code> x <code>nvars</code>, as in 
+<code>glmtlp</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>response, of length nobs, as in <code>glmtlp</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments that can be passed to <code>glmtlp</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>the seed for reproduction purposes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nfolds</code></td>
+<td>
+<p>number of folds; default is 10. The smallest value allowable 
+is <code>nfolds=3</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obs.fold</code></td>
+<td>
+<p>an optional vector of values between 1 and <code>nfolds</code>
+identifying what fold each observation is in. If supplied, <code>nfolds</code> can
+be missing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>number of cores utilized; default is 1. If greater than 1, 
+then <code>doParallel::foreach</code> will be used to fit each fold; if equal to 
+1, then for loop will be used to fit each fold. Users don't have to register 
+parallel clusters outside.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function calls <code>glmtlp</code> <code>nfolds</code>+1 times; the first call to get the
+<code>lambda</code> or <code>kappa</code> sequence, and then the rest to compute 
+the fit with each of the folds omitted. The cross-validation error is based 
+on deviance (check here for more details). The error is accumulated over the 
+folds, and the average error and standard deviation is computed. 
+</p>
+<p>When <code>family = "binomial"</code>, the fold assignment (if not provided by 
+the user) is generated in a stratified manner, where the ratio of 0/1 outcomes 
+are the same for each fold.
+</p>
+
+
+<h3>Value</h3>
+
+<p>an object of class <code>"cv.glmtlp"</code> is returned, which is a list
+with the ingredients of the cross-validation fit. 
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the function call</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv.mean</code></td>
+<td>
+<p>The mean cross-validated error - a vector of length
+<code>length(kappa)</code> if <code>penalty = "l0"</code> and <code>length{lambda}</code> 
+otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv.se</code></td>
+<td>
+<p>estimate of standard error of <code>cv.mean</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>a fitted glmtlp object for the full data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idx.min</code></td>
+<td>
+<p>the index of the <code>lambda</code> or <code>kappa</code> sequence that 
+corresponding to the smallest cv mean error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kappa</code></td>
+<td>
+<p>the values of <code>kappa</code> used in the fits, available when 
+<code>penalty = 'l0'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kappa.min</code></td>
+<td>
+<p>the value of <code>kappa</code> that gives the minimum 
+<code>cv.mean</code>, available when <code>penalty = 'l0'</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>the values of <code>lambda</code> used in the fits.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.min</code></td>
+<td>
+<p>value of <code>lambda</code> that gives minimum <code>cv.mean</code>,  
+available when penalty is 'l1' or 'tlp'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>null.dev</code></td>
+<td>
+<p>null deviance of the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obs.fold</code></td>
+<td>
+<p>the fold id for each observation used in the CV.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Chunlin Li, Yu Yang, Chong Wu
+<br> Maintainer: Yu Yang <a href="mailto:yang6367@umn.edu">yang6367@umn.edu</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Shen, X., Pan, W., &amp; Zhu, Y. (2012). 
+<em>Likelihood-based selection and sharp parameter estimation. 
+Journal of the American Statistical Association, 107(497), 223-232.</em>
+<br> Shen, X., Pan, W., Zhu, Y., &amp; Zhou, H. (2013). 
+<em>On constrained and regularized high-dimensional regression. 
+Annals of the Institute of Statistical Mathematics, 65(5), 807-832.</em>
+<br> Li, C., Shen, X., &amp; Pan, W. (2021). 
+<em>Inference for a Large Directed Graphical Model with Interventions. 
+arXiv preprint arXiv:2110.03805.</em>
+<br> Yang, Y., &amp; Zou, H. (2014). 
+<em>A coordinate majorization descent algorithm for l1 penalized learning. 
+Journal of Statistical Computation and Simulation, 84(1), 84-95.</em>
+<br> Two R package Github: <em>ncvreg</em> and <em>glmnet</em>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>glmtlp</code> and <code>plot</code>, <code>predict</code>, and <code>coef</code>
+methods for <code>"cv.glmtlp"</code> objects.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Gaussian
+X &lt;- matrix(rnorm(100 * 20), 100, 20)
+y &lt;- rnorm(100)
+cv.fit &lt;- cv.glmtlp(X, y, family = "gaussian", penalty = "l1", seed=2021)
+
+# Binomial
+X &lt;- matrix(rnorm(100 * 20), 100, 20)
+y &lt;- sample(c(0,1), 100, replace = TRUE)
+cv.fit &lt;- cv.glmtlp(X, y, family = "binomial", penalty = "l1", seed=2021)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,356 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mlegc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Maximum Likelihood Estimation in Gaussian Copula Models for Geostatistical Count Data</h2>
+
+<h3>Description</h3>
+
+<p>Computes the  maximum likelihood estimates. Two methods are implemented. If
+<code>method = 'GHK'</code> then the maximum simulated likelihood estimates are computed, if
+<code>method = 'GQT'</code> then the maximum surrogate likelihood estimates are computed.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mlegc(y, x = NULL, locs, marginal, corr, effort = 1, longlat = FALSE,
+  distscale = 1, method = "GHK", corrpar0 = NULL, ghkoptions = list(nrep
+  = c(100, 1000), reorder = FALSE, seed = 12345))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>a non-negative integer vector of response with its length equals to the number of sampling locations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a numeric matrix or data frame of covariates,
+with its number of rows equals to the number of sampling locations.
+If no covariates then <code>x = NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>locs</code></td>
+<td>
+<p>a numeric matrix or data frame of <em>n-D</em> points with row denoting points.
+The first column is <em>x</em> or longitude, the second column is <em>y</em> or latitude.
+The number of locations is equal to the number of rows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginal</code></td>
+<td>
+<p>an object of class <code>marginal.gc</code> specifying the marginal distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corr</code></td>
+<td>
+<p>an object of class <code>corr.gc</code> specifying the correlation function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effort</code></td>
+<td>
+<p>the sampling effort. For binomial marginal it is the size parameter (number of trials).
+See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>longlat</code></td>
+<td>
+<p>if FALSE, use Euclidean distance, if TRUE use great circle distance. The default is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distscale</code></td>
+<td>
+<p>a numeric scaling factor for computing distance. If original distance is in kilometers, then
+<code>distscale = 1000</code> will convert it to meters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>two methods are implemented. If
+<code>method = 'GHK'</code> then the maximum simulated likelihood estimates are computed, if
+<code>method = 'GQT'</code> then the maximum surrogate likelihood estimates are computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corrpar0</code></td>
+<td>
+<p>the starting value of correlation parameter in the optimization procedure.
+If <code>corrpar0 = NULL</code> then
+initial range is set to be half of the median distance in distance matrix and initial nugget
+(if <code>nugget = TRUE</code>) is 0.2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ghkoptions</code></td>
+<td>
+<p>a list of three elements that only need to be specified if <code>method = 'GHK'</code>.
+</p>
+<p><code>nrep</code> is the Monte Carlo size of the importance sampling algorithm for likelihood approximation.
+It can be a vector with increasing positive integers so that the model is
+fitted with a sequence of different Monte Carlo sizes, and the starting
+values for optimization are taken from the previous fitting.
+The default value is 100 for the first optimization and 1000 for the second and definitive optimization.
+</p>
+<p><code>reorder</code> indicates whether the integral will be reordered every iteration in computation
+according to the algorithm in Gibson, etal (1994), default is FALSE.
+</p>
+<p><code>seed</code>  is the seed of the pseudorandom generator used in Monte Carlo simulation.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This program implemented one simulated likelihood method via sequential importance
+sampling (see Masarotto and Varin 2012), which is same as the method implemented in package
+<code>gcmr</code> (Masarotto and Varin 2016) except an antithetic variable is used. It also implemented
+one surrogate likelihood method via distributional transform (see Kazianka and Pilz 2010), which is
+generally faster.
+</p>
+<p>The argument <code>effort</code> is the sampling effort (known). It can be used to consider the heterogeneity
+of the measurement time or area at different locations.
+The default is 1 for all locations. See Han and De Oliveira (2016) for more details.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class "mlegc" with the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>MLE</code></td>
+<td>
+<p>the maximum likelihood estimate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>the design matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nug</code></td>
+<td>
+<p>1 if <code>nugget = TRUE</code>, 0 if <code>nugget = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nreg</code></td>
+<td>
+<p>number of regression parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log.lik</code></td>
+<td>
+<p>the value of the maximum log-likelihood.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>AIC</code></td>
+<td>
+<p>the Akaike information criterion.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>AICc</code></td>
+<td>
+<p>the AICc information criterion; essentially AIC with a greater penalty for extra parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BIC</code></td>
+<td>
+<p> the Bayesian information criterion.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kmarg</code></td>
+<td>
+<p>number of marginal parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par.df</code></td>
+<td>
+<p>number of parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>number of observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>D</code></td>
+<td>
+<p>the distance matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optlb</code></td>
+<td>
+<p>lower bound in optimization.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optub</code></td>
+<td>
+<p>upper bound in optimization.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian</code></td>
+<td>
+<p>the hessian matrix evaluated at the final estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>args</code></td>
+<td>
+<p>arguments passed in function evaluation.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Zifei Han <a href="mailto:hanzifei1@gmail.com">hanzifei1@gmail.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Han, Z. and De Oliveira, V. (2016) On the correlation structure of Gaussian
+copula models for geostatistical count data.
+<em>Australian and New Zealand Journal of Statistics, 58:47-69</em>.
+</p>
+<p>Kazianka, H. and Pilz, J. (2010)
+Copula-based geostatistical modeling of continuous and discrete data including covariates.
+<em>Stoch Environ Res Risk Assess 24:661-673</em>.
+</p>
+<p>Masarotto, G. and Varin, C. (2012)
+Gaussian copula marginal regression.
+<em>Electronic Journal of Statistics 6:1517-1549</em>.
+<a href="https://projecteuclid.org/euclid.ejs/1346421603">https://projecteuclid.org/euclid.ejs/1346421603</a>.
+</p>
+<p>Masarotto, G. and Varin C. (2017). Gaussian Copula Regression in R. <em>Journal of Statistical Software</em>, <b>77</b>(8), 1–26. doi: <a href="https://doi.org/10.18637/jss.v077.i08">10.18637/jss.v077.i08</a>.
+</p>
+<p>Han, Z. and De Oliveira, V. (2018) gcKrig: An R Package for the Analysis of Geostatistical Count Data Using Gaussian Copulas.
+<em>Journal of Statistical Software</em>, <b>87</b>(13), 1–32. doi: <a href="https://doi.org/10.18637/jss.v087.i13">10.18637/jss.v087.i13</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gcmr</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## Fit a Simulated Dataset with 100 locations
+grid &lt;- seq(0.05, 0.95, by = 0.1)
+xloc &lt;- expand.grid(x = grid, y = grid)[,1]
+yloc &lt;- expand.grid(x = grid, y = grid)[,2]
+
+set.seed(123)
+simData1 &lt;- simgc(locs = cbind(xloc,yloc), sim.n = 1,
+                    marginal = negbin.gc(mu = exp(1+xloc), od = 1),
+                    corr = matern.gc(range = 0.4, kappa = 0.5, nugget = 0))
+
+simFit1 &lt;- mlegc(y = simData1$data, x = xloc, locs = cbind(xloc,yloc),
+                 marginal = negbin.gc(link = 'log'),
+                 corr = matern.gc(kappa = 0.5, nugget = FALSE), method = 'GHK')
+
+simFit2 &lt;- mlegc(y = simData1$data, x = xloc, locs = cbind(xloc,yloc),
+                 marginal = negbin.gc(link = 'log'),
+                 corr = matern.gc(kappa = 0.5, nugget = FALSE), method = 'GQT')
+#summary(simFit1);summary(simFit2)
+#plot(simFit1);plot(simFit2)
+
+
+
+## Time consuming examples
+## Fit a real dataset with 70 sampling locations.
+data(Weed95)
+weedobs &lt;- Weed95[Weed95$dummy==1, ]
+weedpred &lt;- Weed95[Weed95$dummy==0, ]
+Weedfit1 &lt;- mlegc(y = weedobs$weedcount, x = weedobs[,4:5], locs = weedobs[,1:2],
+                     marginal = poisson.gc(link='log'),
+                     corr = matern.gc(kappa = 0.5, nugget = TRUE),
+                     method = 'GHK')
+summary(Weedfit1)
+plot(Weedfit1)
+
+
+## Fit a real dataset with 256 locations
+data(LansingTrees)
+Treefit1 &lt;- mlegc(y = LansingTrees[,3], x = LansingTrees[,4], locs = LansingTrees[,1:2],
+                  marginal = negbin.gc(link = 'log'),
+                  corr = matern.gc(kappa = 0.5, nugget = FALSE), method = 'GHK')
+summary(Treefit1)
+plot(Treefit1)
+
+# Try to use GQT method
+Treefit2&lt;- mlegc(y = LansingTrees[,3], x = LansingTrees[,4],
+                locs = LansingTrees[,1:2], marginal = poisson.gc(link='log'),
+                corr = matern.gc(kappa = 0.5, nugget = TRUE), method = 'GQT')
+summary(Treefit2)
+plot(Treefit2)
+
+## Fit a real dataset with randomized locations
+data(AtlanticFish)
+Fitfish &lt;- mlegc(y = AtlanticFish[,3], x = AtlanticFish[,4:6], locs = AtlanticFish[,1:2],
+                   longlat = TRUE, marginal = negbin.gc(link='log'),
+                   corr = matern.gc(kappa = 0.5, nugget = TRUE), method = 'GHK')
+summary(Fitfish)
+
+## Fit a real dataset with binomial counts; see Masarotto and Varin (2016).
+library(gcmr)
+data(malaria)
+malariax &lt;- data.frame(netuse = malaria$netuse,
+                       green = malaria$green/100,
+                       phc = malaria$phc)
+Fitmalaria &lt;- mlegc(y = malaria$cases, x = malariax, locs = malaria[,1:2],
+                    marginal = binomial.gc(link='logit'), corrpar0 = 1.5,
+                    corr = matern.gc(kappa = 0.5, nugget = FALSE),
+                    distscale = 0.001, effort = malaria$size, method = 'GHK')
+summary(Fitmalaria)
+
+
+## Fit a real spatial binary dataset with 333 locations using probit link
+data(OilWell)
+Oilest1 &lt;- mlegc(y = OilWell[,3], x = NULL, locs = OilWell[,1:2],
+                 marginal = binomial.gc(link = 'probit'),
+                 corr = matern.gc(nugget = TRUE), method = 'GHK')
+summary(Oilest1)
+plot(Oilest1, col = 2)
+
+## End(Not run)
+
+
+
+
+</code></pre>
+
+
+</div>

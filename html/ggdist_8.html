@@ -1,0 +1,163 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>auto_partial</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Automatic partial function application in ggdist</h2>
+
+<h3>Description</h3>
+
+<p>Several <span class="pkg">ggdist</span> functions support <em>automatic partial application</em>: when called,
+if all of their required arguments have not been provided, the function returns a
+modified version of itself that uses the arguments passed to it so far as defaults.
+Technically speaking, these functions are essentially "Curried" with respect to
+their required arguments, but I think "automatic partial application" gets
+the idea across more clearly.
+</p>
+<p>Functions supporting automatic partial application include:
+</p>
+
+<ul>
+<li>
+<p> The <code>point_interval()</code> family, such as <code>median_qi()</code>, <code>mean_qi()</code>,
+<code>mode_hdi()</code>, etc.
+</p>
+</li>
+<li>
+<p> The <code>smooth_</code> family, such as <code>smooth_bounded()</code>, <code>smooth_unbounded()</code>,
+<code>smooth_discrete()</code>, and <code>smooth_bar()</code>.
+</p>
+</li>
+<li>
+<p> The <code>density_</code> family, such as <code>density_bounded()</code>, <code>density_unbounded()</code> and
+<code>density_histogram()</code>.
+</p>
+</li>
+<li>
+<p> The align family.
+</p>
+</li>
+<li>
+<p> The breaks family.
+</p>
+</li>
+<li>
+<p> The bandwidth family.
+</p>
+</li>
+<li>
+<p> The blur family.
+</p>
+</li>
+</ul>
+<p>Partial application makes it easier to supply custom parameters to these
+functions when using them inside other functions, such as geoms and stats.
+For example, smoothers for <code>geom_dots()</code> can be supplied in one of three
+ways:
+</p>
+
+<ul>
+<li>
+<p> as a suffix: <code>geom_dots(smooth = "bounded")</code>
+</p>
+</li>
+<li>
+<p> as a function: <code>geom_dots(smooth = smooth_bounded)</code>
+</p>
+</li>
+<li>
+<p> as a partially-applied function with options:
+<code>geom_dots(smooth = smooth_bounded(kernel = "cosine"))</code>
+</p>
+</li>
+</ul>
+<p>Many other common arguments for <span class="pkg">ggdist</span> functions work similarly; e.g.
+<code>density</code>, <code>align</code>, <code>breaks</code>, <code>bandwidth</code>, and <code>point_interval</code> arguments.
+</p>
+<p>These function families (except <code>point_interval()</code>) also support passing
+waivers to their optional arguments: if <code>waiver()</code> is passed to any
+of these arguments, their default value (or the most
+recently-partially-applied non-<code>waiver</code> value) is used instead.
+</p>
+<p>Use the <code>auto_partial()</code> function to create new functions that support
+automatic partial application.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">auto_partial(f, name = NULL, waivable = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>f</code></td>
+<td>
+<p>A function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name</code></td>
+<td>
+<p>A character string giving the name of the function, to be used
+when printing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>waivable</code></td>
+<td>
+<p>logical: if <code>TRUE</code>, optional arguments that get
+passed a <code>waiver()</code> will keep their default value (or whatever
+non-<code>waiver</code> value has been most recently partially applied for that
+argument).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A modified version of <code>f</code> that will automatically be partially
+applied if all of its required arguments are not given.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1234)
+x = rnorm(100)
+
+# the first required argument, `x`, of the density_ family is the vector
+# to calculate a kernel density estimate from. If it is not provided, the
+# function is partially applied and returned as-is
+density_unbounded()
+
+# we could create a new function that uses half the default bandwidth
+density_half_bw = density_unbounded(adjust = 0.5)
+density_half_bw
+
+# we can overwrite partially-applied arguments
+density_quarter_bw_trimmed = density_half_bw(adjust = 0.25, trim = TRUE)
+density_quarter_bw_trimmed
+
+# when we eventually call the function and provide the required argument
+# `x`, it is applied using the arguments we have "saved up" so far
+density_quarter_bw_trimmed(x)
+
+# create a custom automatically partially applied function
+f = auto_partial(function(x, y, z = 3) (x + y) * z)
+f()
+f(1)
+g = f(y = 2)(z = 4)
+g
+g(1)
+
+# pass waiver() to optional arguments to use existing values
+f(z = waiver())(1, 2)  # uses default z = 3
+f(z = 4)(z = waiver())(1, 2)  # uses z = 4
+</code></pre>
+
+
+</div>

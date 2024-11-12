@@ -1,0 +1,93 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get_logistic</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Logistic Growth</h2>
+
+<h3>Description</h3>
+
+<p>Calculates logistic growth for population based on formula Nt=K*(N0*exp(r*time))/(K+N0*(exp(r*time)-1)
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get_logistic(time, N0, r, K)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>The time steps corresponding to each observation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N0</code></td>
+<td>
+<p>Initial Population Size</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>Growth rate</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>Carying Capacity</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>population size N for each time steps as a vector
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># load Gause competition data
+data(gause_1934_science_f02_03)
+# extract monoculture data for P.c.
+Pcmono&lt;-gause_1934_science_f02_03[gause_1934_science_f02_03$Treatment=="Pc",]
+
+# calculate lag and per-capita growth
+lagged_data_Pc &lt;- get_lag(x=Pcmono$Volume_Species1,
+                          time = Pcmono$Day)
+Pcmono$dNNdt_Pc &lt;- percap_growth(x=lagged_data_Pc$x, laggedx=lagged_data_Pc$laggedx,
+                                 dt=lagged_data_Pc$dt)
+
+# fit linear model to get dNNdt ~ r + s*N
+mod_Pc&lt;-lm(dNNdt_Pc~Volume_Species1, Pcmono)
+rsn_pars&lt;-coef(mod_Pc)
+
+# transform into logistic growth parameters
+logistic_pars&lt;-c(r=unname(rsn_pars["(Intercept)"]),
+     K=unname(-rsn_pars["(Intercept)"]/rsn_pars["Volume_Species1"]))
+
+#fit with nls, using linear model estimates as starting values for parameters
+nls_mod&lt;-nls(Volume_Species1~get_logistic(time = Day, N0, r, K),
+             data=Pcmono,
+             start=c(N0=unname(Pcmono$Volume_Species1[which.min(Pcmono$Day)]),
+             r=unname(logistic_pars["r"]), K=unname(logistic_pars["K"])))
+summary(nls_mod)
+
+# plot results
+plot(Volume_Species1~Day, Pcmono, type="b", ylab="P. caudatum Volume")
+timesq&lt;-seq(0, 30, length=100)
+Ntest&lt;-get_logistic(time = timesq, N0=coef(nls_mod)["N0"], r=coef(nls_mod)["r"],
+       K=coef(nls_mod)["K"])
+
+lines(timesq, Ntest, col="red")
+</code></pre>
+
+
+</div>

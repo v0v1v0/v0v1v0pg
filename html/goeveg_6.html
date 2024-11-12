@@ -1,0 +1,133 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>merge_taxa</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Merge taxa with identical names</h2>
+
+<h3>Description</h3>
+
+<p>The function offers a simple way to merge taxa with identical names in a vegetation table, e.g. due to necessary harmonization of the taxon level, to combine taxa of different layers or to remove duplicates.
+The original cover-abundance scales are maintained.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">merge_taxa(
+  vegtable,
+  scale = "percentage",
+  layers = "FALSE",
+  method = "independent",
+  clean_matrix = FALSE,
+  backtransform = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>vegtable</code></td>
+<td>
+<p>Data frame with samples in columns and taxa in rows. Taxon names must be in the first column.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>Cover-abundance scale(s) of data. Default is percentage cover (values between 0 and 100) (<code>"percentage"</code>). Alternatively it can be one of the included scales in <code>scale_tabs</code> (e.g. <code>"braun.blanquet"</code>) or a custom scale defined as data frame following the same format.
+You can also provide a vector of the same length as the number of samples, to define individual scales (from <code>scale_tabs</code>) for each sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>layers</code></td>
+<td>
+<p>A logical evaluation to <code>TRUE</code> or <code>FALSE</code> <em>(default)</em> indicating whether vegetation layers are to be included with layer information stored in the second column.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Choice of method to combine cover. <code>"independent"</code> <em>(default)</em> or <code>"exclusive"</code>. See details for methods.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clean_matrix</code></td>
+<td>
+<p>A logical evaluation to <code>TRUE</code> or <code>FALSE</code> <em>(default)</em> indicating whether taxa that do not occur (i.e. sum of abundances is zero) or samples that are empty (i.e. do not have any taxa present) are to be removed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>backtransform</code></td>
+<td>
+<p>A logical evaluation to <code>TRUE</code> <em>(default)</em> or <code>FALSE</code> indicating whether cover-abundance values should be back-transformed into their original cover-abundance scale or left as percentage cover.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A data frame based on <code>vegtable</code> with merged taxa.
+</p>
+
+
+<h3>Details</h3>
+
+<p>The format required for this function is a data frame with samples in columns and taxa in rows, which corresponds to the export format of vegetation tables from Turboveg (Hennekens &amp; Schaminee 2001).
+Taxon names must be in the first column of the table (not row names as these do not allow duplicates).
+If vegetation layers are to be included, layer information must be stored in the second column of the table. Taxa will then be merged only within the defined layers.
+</p>
+<p>If a cover-abundance scale from <code>scale_tabs</code> is defined, all cover-abundance values will be transformed into percentage cover for the merging process, and then back-transformed into the original cover-abundance scale.
+</p>
+<p>When combining cover values there are two possibilities following Fischer (2014) and Tichý &amp; Holt (2011).
+</p>
+
+<ul>
+<li> <p><code>method = "independent" </code> <em>(default)</em> assumes that covers can overlap and that they do so independently of each other (e.g. individuals of the lower layer are growing beneath individuals of the upper layer).
+In case of two layers the sum of the cover of layer 1 and layer 2 is the sum of the covers minus the overlap. ($p1 + p2- p1 * p2)
+Usually the choice when merging the same taxon from different (sub-)layers.
+</p>
+</li>
+<li> <p><code>method = "exclusive" </code> assumes the covers are mutually exclusive, cover values will be simply summed up (e.g. individuals grow side by side).
+Usually the chouce when merging within layers, e.g. aggregating distinct taxa.
+</p>
+</li>
+</ul>
+<p>Percentage cover values will eventually be truncated to 100
+</p>
+<p>You may use the function <code>trans_matrix</code> to easily transpose the resulting vegetation table into a statistically analyzable species matrix.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Friedemann von Lampe (<a href="mailto:fvonlampe@uni-goettingen.de">fvonlampe@uni-goettingen.de</a>)
+</p>
+
+
+<h3>References</h3>
+
+<p>Fischer, H. S. (2015): On the combination of species cover values from different vegetation layers.
+<em>Applied Vegetation Science</em>, <strong>18</strong>: 169–170. <a href="https://doi.org/10.1111/avsc.12130">doi:10.1111/avsc.12130</a>
+</p>
+<p>Tichý, L. &amp; Holt, J. (2011): JUICE. Program for management, analysis and classification of ecological data. Vegetation Science Group, Masaryk University Brno, CZ.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Merge taxa with identical names without any layer information
+# Transpose table to required format
+schedenveg.t &lt;- data.frame(species = names(schedenveg), t(schedenveg))
+# Add two duplicated taxa
+schedenveg.t &lt;- rbind(schedenveg.t, schedenveg.t[c(55, 61), ])
+
+# Merge duplicated taxa using default 'independent' method
+schedenveg.merged &lt;- merge_taxa(schedenveg.t, scale = "percentage")
+
+</code></pre>
+
+
+</div>

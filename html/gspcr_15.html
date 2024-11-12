@@ -1,0 +1,267 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cv_gspcr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Cross-validation of Generalized Principal Component Regression</h2>
+
+<h3>Description</h3>
+
+<p>Use K-fold cross-validation to decide on the number of principal components and the threshold value for GSPCR.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cv_gspcr(
+  dv,
+  ivs,
+  fam = c("gaussian", "binomial", "poisson", "baseline", "cumulative")[1],
+  thrs = c("LLS", "PR2", "normalized")[1],
+  nthrs = 10L,
+  npcs_range = 1L:3L,
+  K = 5,
+  fit_measure = c("F", "LRT", "AIC", "BIC", "PR2", "MSE")[1],
+  max_features = ncol(ivs),
+  min_features = 1,
+  oneSE = TRUE,
+  save_call = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dv</code></td>
+<td>
+<p>numeric vector or factor of dependent variable values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ivs</code></td>
+<td>
+<p><code class="reqn">n \times p</code> data.frame of independent variables (factors allowed)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fam</code></td>
+<td>
+<p>character vector of length 1 storing the description of the error distribution and link function to be used in the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thrs</code></td>
+<td>
+<p>character vector of length 1 storing the type of threshold to be used (see below for available options)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nthrs</code></td>
+<td>
+<p>numeric vector of length 1 storing the number of threshold values to be used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>npcs_range</code></td>
+<td>
+<p>numeric vector defining the numbers of principal components to be used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>numeric vector of length 1 storing the number of folds for the K-fold cross-validation procedure</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit_measure</code></td>
+<td>
+<p>character vector of length 1 indicating the type of fit measure to be used in the cross-validation procedure</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_features</code></td>
+<td>
+<p>numeric vector of length 1 indicating the maximum number of features that can be selected</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_features</code></td>
+<td>
+<p>numeric vector of length 1 indicating the minimum number of features that should be selected</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>oneSE</code></td>
+<td>
+<p>logical value indicating whether the results with the 1se rule should be saved</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_call</code></td>
+<td>
+<p>logical value indicating whether the call should be saved and returned in the results</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The variables in <code>ivs</code> do not need to be standardized beforehand as the function handles scaling appropriately based on the measurement levels of the data.
+</p>
+<p>The <code>fam</code> argument is used to define which model will be used when regressing the dependent variable on the principal components:
+</p>
+
+<ul>
+<li> <p><code>gaussian</code>: fits a linear regression model (continuous dv)
+</p>
+</li>
+<li> <p><code>binomial</code>: fits a logistic regression model (binary dv)
+</p>
+</li>
+<li> <p><code>poisson</code>: fits a poisson regression model (count dv)
+</p>
+</li>
+<li> <p><code>baseline</code>: fits a baseline-category logit model (nominal dv, using <code>nnet::multinom()</code>)
+</p>
+</li>
+<li> <p><code>cumulative</code>: fits a proportional odds logistic regression (ordinal dv, using <code>MASS::polr()</code>)
+</p>
+</li>
+</ul>
+<p>The <code>thrs</code> argument defines the bivariate association-threshold measures used to determine the active set of predictors for a SPCR analysis.
+The following association measures are supported (measurement levels allowed reported between brackets):
+</p>
+
+<ul>
+<li> <p><code>LLS</code>: simple GLM regression likelihoods (any dv with any iv)
+</p>
+</li>
+<li> <p><code>PR2</code>: Cox and Snell generalized R-squared is computed for the GLMs between <code>dv</code> and every column in <code>ivs</code>. Then, the square root of these values is used to obtain the threshold values. For more information about the computation of the Cox and Snell R2 see the help file for <code>cp_gR2()</code>. When using this measure for simple linear regressions (with continuous <code>dv</code> and <code>ivs</code>) is equivalent to the regular R-squared. Therefore, it can be thought of as equivalent to the bivariate correlations between <code>dv</code> and <code>ivs</code>. (any dv with any iv)
+</p>
+</li>
+<li> <p><code>normalized</code>: normalized correlation based on <code>superpc::superpc.cv()</code> (continuous dv with continuous ivs)
+</p>
+</li>
+</ul>
+<p>The <code>fit_measure</code> argument defines which fit measure should be used within the cross-validation procedure.
+The supported measures are:
+</p>
+
+<ul>
+<li> <p><code>F</code>: F-statistic computed with <code>cp_F()</code> (continuous dv)
+</p>
+</li>
+<li> <p><code>LRT</code>: likelihood-ratio test statistic computed with <code>cp_LRT()</code> (any dv)
+</p>
+</li>
+<li> <p><code>AIC</code>: Akaike's information criterion computed with <code>cp_AIC()</code> (any dv)
+</p>
+</li>
+<li> <p><code>BIC</code>: bayesian information criterion computed with <code>cp_BIC()</code> (any dv)
+</p>
+</li>
+<li> <p><code>PR2</code>: Cox and Snell generalized R-squared computed with <code>cp_gR2()</code> (any dv)
+</p>
+</li>
+<li> <p><code>MSE</code>: Mean squared error compute with <code>MLmetrics::MSE()</code> (continuous dv)
+</p>
+</li>
+</ul>
+<p>Details regarding the 1 standard error rule implemented here can be found in the documentation for the function <code>cv_choose()</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Object of class <code>gspcr</code>, which is a list containing:
+</p>
+
+<ul>
+<li> <p><code>solution</code>: a list containing the number of PCs that was selected (Q), the threshold value used, and the resulting active set for both the <code>standard</code> and <code>oneSE</code> solutions
+</p>
+</li>
+<li> <p><code>sol_table</code>: data.frame reporting the threshold number, value, and the number of PCs identified by the procedure
+</p>
+</li>
+<li> <p><code>thr</code>: vector of threshold values of the requested type used for the K-fold cross-validation procedure
+</p>
+</li>
+<li> <p><code>thr_cv</code>: numeric vector of length 1 indicating the threshold number that was selected by the K-fold cross-validation procedure using the default decision rule
+</p>
+</li>
+<li> <p><code>thr_cv_1se</code>: numeric vector of length 1 indicating the threshold number that was selected by the K-fold cross-validation procedure using the 1-standard-error rule
+</p>
+</li>
+<li> <p><code>Q_cv</code>: numeric vector of length 1 indicating the number of PCs that was selected by the K-fold cross-validation procedure using the default decision rule
+</p>
+</li>
+<li> <p><code>Q_cv_1se</code>: numeric vector of length 1 indicating the number of PCs that was selected by the K-fold cross-validation procedure using the 1-standard-error rule
+</p>
+</li>
+<li> <p><code>scor</code>: <code class="reqn">npcs \times nthrs</code> matrix of fit-measure scores averaged across the K folds
+</p>
+</li>
+<li> <p><code>scor_lwr</code>: <code class="reqn">npcs \times nthrs</code> matrix of fit-measure score lower bounds averaged across the K folds
+</p>
+</li>
+<li> <p><code>scor_upr</code>: <code class="reqn">npcs \times nthrs</code> matrix of fit-measure score upper bounds averaged across the K folds
+</p>
+</li>
+<li> <p><code>pred_map</code>: matrix of <code class="reqn">p \times nthrs</code> logical values indicating which predictors were active for every threshold value used
+</p>
+</li>
+<li> <p><code>gspcr_call</code>: the function call
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Edoardo Costantini, 2023
+</p>
+
+
+<h3>References</h3>
+
+<p>Bair, E., Hastie, T., Paul, D., &amp; Tibshirani, R. (2006). Prediction by supervised principal components. Journal of the American Statistical Association, 101(473), 119-137.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Example input values
+dv &lt;- mtcars[, 1]
+ivs &lt;- mtcars[, -1]
+thrs &lt;- "PR2"
+nthrs &lt;- 5
+fam &lt;- "gaussian"
+npcs_range &lt;- 1:3
+K &lt;- 3
+fit_measure &lt;- "F"
+max_features &lt;- ncol(ivs)
+min_features &lt;- 1
+oneSE &lt;- TRUE
+save_call &lt;- TRUE
+
+# Example usage
+out_cont &lt;- cv_gspcr(
+  dv = GSPCRexdata$y$cont,
+  ivs = GSPCRexdata$X$cont,
+  fam = "gaussian",
+  nthrs = 5,
+  npcs_range = 1:3,
+  K = 3,
+  fit_measure = "F",
+  thrs = "normalized",
+  min_features = 1,
+  max_features = ncol(GSPCRexdata$X$cont),
+  oneSE = TRUE,
+  save_call = TRUE
+)
+
+</code></pre>
+
+
+</div>

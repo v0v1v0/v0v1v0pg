@@ -1,0 +1,177 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pathInc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Incidence of paths from a common origin: overlap and non-overlap</h2>
+
+<h3>Description</h3>
+
+<p>Calculate the overlap and non-overlap of paths departing from a common origin.
+Two algorithms are available: random walk and randomised shortest paths.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pathInc(x, origin, from, to, theta, weight, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>transition matrix of class <code>Transition*</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>origin</code></td>
+<td>
+<p>coordinates of the origin (one point location,
+SpatialPoints, matrix or numeric class)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>from</code></td>
+<td>
+<p>coordinates of the destinations
+(SpatialPoints, matrix or numeric class)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>to</code></td>
+<td>
+<p>second set of coordinates of the destinations (can be missing)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>value &gt; 0 and &lt; 20 (randomised shortest paths) or
+missing (random walk)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight</code></td>
+<td>
+<p>matrix – Reciprocals of the non-zero values are used as weights.
+If missing, reciprocals of the transition matrix are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments passed to methods. See Details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This is a complex wrapper function that calculates to what extent dispersal
+routes overlap or do not overlap.
+</p>
+<p>First, the function calculates the trajectories for all "from" and "to"
+locations, starting from a single "origin" location. These trajectories can
+either be based on random walks or randomised shortest paths (giving a value
+to theta).
+</p>
+<p>Then, for all unique pairs of trajectories, it calculates the extent to
+which these trajectories overlap or diverge. These values are given back
+to the user as a list of (distance) matrices.
+</p>
+<p>If only "from" coordinates are given, the function calculates symmetric
+distance matrices for all combinations of points in "from". If both "from"
+and "to" coordinates are given, the function calculates a matrix of values
+with rows for all locations in "from" and columns for all locations in "to".
+</p>
+<p>Overlap is currently calculated as the minimum values of each pair of
+trajectories compared. Non-overlap uses the following formula:
+Nonoverlap = max(0,max(a,b)*(1-min(a,b))-min(a,b))
+(see van Etten and Hijmans 2010). See the last example to learn
+how to use an alternative function.
+</p>
+
+
+<h3>Value</h3>
+
+<p>list of dist objects or list of matrices
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Jacob van Etten. Implementation of randomised shortest paths
+based on Matlab code by Marco Saerens.
+</p>
+
+
+<h3>References</h3>
+
+<p>McRae B.H., B.G. Dickson, and T. Keitt. 2008.
+Using circuit theory to model connectivity in ecology,
+evolution, and conservation. Ecology 89:2712-2724.
+</p>
+<p>Saerens M., L. Yen, F. Fouss, and Y. Achbany. 2009.
+Randomized shortest-path problems: two related models.
+Neural Computation, 21(8):2363-2404.
+</p>
+<p>van Etten, J., and R.J. Hijmans. 2010. A geospatial modelling
+approach integrating archaeobotany and genetics to trace the
+origin and dispersal of domesticated plants. PLoS ONE 5(8): e12060.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library("raster")
+library("sp")
+
+# Create TransitionLayer
+r &lt;- raster(ncol=36,nrow=18)
+r &lt;- setValues(r,rep(1,times=ncell(r)))
+tr &lt;- transition(r,mean,directions=4)
+
+# Two different types of correction are required
+trR &lt;- geoCorrection(tr, type="r", multpl=FALSE)
+trC &lt;- geoCorrection(tr, type="c", multpl=FALSE)
+
+# Create TransitionStack
+ts &lt;- stack(trR, trR)
+
+# Points for origin and coordinates between which to calculate path (non)overlaps
+sP0 &lt;- SpatialPoints(cbind(0,0))
+sP1 &lt;- SpatialPoints(cbind(c(65,5,-65),c(-55,35,-35)))
+
+# Randomised shortest paths
+# rescaling is needed: exp(-theta * trC) should give reasonable values
+# divide by median of the non-zero values
+trC &lt;- trC / median(transitionMatrix(trC)@x)
+pathInc(trC, origin=sP0, from=sP1, theta=2)
+
+# Random walk
+pathInc(trR, origin=sP0, from=sP1)
+
+# TransitionStack as weights
+pathInc(trR, origin=sP0, from=sP1, weight=ts)
+
+# Demonstrate use of an alternative function
+#The current default is to take the minimum of each pair of layers
+
+altoverlap &lt;- function(a, b)
+{
+  aV &lt;- as.vector(a[,rep(1:ncol(a), each=ncol(b))])
+  bV &lt;- as.vector(b[,rep(1:ncol(b), times=ncol(a))])
+  result &lt;- matrix(aV * bV, nrow = nrow(a), ncol=ncol(a)*ncol(b))
+  return(result)
+}
+
+pathInc(trR, origin=sP0, from=sP1, weight=ts, functions=list(altoverlap))
+
+</code></pre>
+
+
+</div>

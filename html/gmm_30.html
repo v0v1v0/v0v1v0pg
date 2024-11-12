@@ -1,0 +1,157 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getLamb</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Solving for the Lagrange multipliers of Generalized Empirical Likelihood (GEL) </h2>
+
+<h3>Description</h3>
+
+<p>It computes the vector of Lagrange multipliers, which maximizes the GEL objective function, using an iterative Newton method.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getLamb(gt, l0, type = c("EL","ET","CUE", "ETEL", "HD","ETHD","RCUE"),
+        tol_lam = 1e-7, maxiterlam = 100, 
+	tol_obj = 1e-7, k = 1, method = c("nlminb", "optim", "iter", "Wu"),
+        control = list())
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>gt</code></td>
+<td>
+<p>A <code class="reqn">n \times q</code> matrix with typical element <code class="reqn">g_i(\theta,x_t)</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>l0</code></td>
+<td>
+<p>Vector of starting values for lambda</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>"EL" for empirical likelihood, "ET" for exponential tilting,
+"CUE" for continuous updated estimator, and "HD" for Hellinger
+Distance. See details for "ETEL" and "ETHD". "RCUE" is a restricted
+version of "CUE" in which the probabilities are bounded below by
+zero. In that case, an analytical Kuhn-Tucker method is used to find
+the solution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_lam</code></td>
+<td>
+<p>Tolerance for <code class="reqn">\lambda</code> between two iterations. The
+algorithm stops when <code class="reqn">\|\lambda_i -\lambda_{i-1}\|</code> reaches
+<code>tol_lam</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiterlam</code></td>
+<td>
+<p>The algorithm stops if there is no convergence after
+"maxiterlam" iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_obj</code></td>
+<td>
+<p>Tolerance for the gradiant of the objective function. The
+algorithm returns a non-convergence message if <code class="reqn">\max(|gradiant|)</code>
+does not reach <code>tol_obj</code>. It helps the <code>gel</code> algorithm to
+select the right space to look for <code class="reqn">\theta</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>It represents the ratio k1/k2, where
+<code class="reqn">k1=\int_{-\infty}^{\infty} k(s)ds</code> and
+<code class="reqn">k2=\int_{-\infty}^{\infty} k(s)^2 ds</code>. See Smith(2004).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>The iterative procedure uses a Newton method for solving
+the FOC. It i however recommended to use <code>optim</code> or
+<code>nlminb</code>. If type is set to "EL" and method to "optim",
+<code>constrOptim</code> is called to prevent <code class="reqn">log(1-gt'\lambda)</code>
+from producing NA. The gradient and hessian is provided to
+<code>nlminb</code> which speed up the convergence. The latter is therefore
+the default value. "Wu" is for "EL" only. It uses the algorithm of Wu
+(2005). The value of <code>method</code> is ignored for "CUE" because in
+that case, the analytical solution exists.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>Controls to send to <code>optim</code>,
+<code>nlminb</code> or <code>constrOptim</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p> It solves
+the problem <code class="reqn">\max_{\lambda} \frac{1}{n}\sum_{t=1}^n
+\rho(gt'\lambda)</code>. For the type "ETEL", it is only used by
+<code>gel</code>. In that case <code class="reqn">\lambda</code> is obtained by maximizing
+<code class="reqn">\frac{1}{n}\sum_{t=1}^n \rho(gt'\lambda)</code>, using
+<code class="reqn">\rho(v)=-\exp{v}</code> (so ET) and <code class="reqn">\theta</code> by minimizing the same
+equation but with <code class="reqn">\rho(v)-\log{(1-v)}</code>. To avoid NA's,
+<code>constrOptim</code> is used with the restriction <code class="reqn">\lambda'g_t
+&lt; 1</code>. The type "ETHD" is experimental and proposed by Antoine-Dovonon
+(2015). The paper is not yet available.  </p>
+
+
+<h3>Value</h3>
+
+<p>lambda: A <code class="reqn">q\times 1</code> vector of Lagrange multipliers which solve the system of equations given above.
+<code>conv</code>: Details on the type of convergence.
+</p>
+
+
+<h3>References</h3>
+
+<p>Newey, W.K. and Smith, R.J. (2004), Higher Order Properties of GMM and 
+Generalized Empirical Likelihood Estimators. <em>Econometrica</em>, <b>72</b>, 219-255.
+</p>
+<p>Smith, R.J. (2004), GEL Criteria for Moment Condition Models. <em>Working paper, CEMMAP</em>.
+</p>
+<p>Wu, C. (2005), Algorithms and R codes for the pseudo empirical
+likelihood method in survey sampling.
+<em>Survey Methodology</em>, <b>31</b>(2), page 239.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">g &lt;- function(tet,x)
+	{
+	n &lt;- nrow(x)
+	u &lt;- (x[7:n] - tet[1] - tet[2]*x[6:(n-1)] - tet[3]*x[5:(n-2)])
+	f &lt;- cbind(u, u*x[4:(n-3)], u*x[3:(n-4)], u*x[2:(n-5)], u*x[1:(n-6)])
+	return(f)
+	}
+n = 500
+phi&lt;-c(.2, .7)
+thet &lt;- 0.2
+sd &lt;- .2
+x &lt;- matrix(arima.sim(n = n, list(order = c(2, 0, 1), ar = phi, ma = thet, sd = sd)), ncol = 1)
+gt &lt;- g(c(0,phi),x)
+getLamb(gt, type = "EL",method="optim")
+</code></pre>
+
+
+</div>

@@ -1,0 +1,402 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gimmeSEM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Group iterative multiple model estimation.</h2>
+
+<h3>Description</h3>
+
+<p>This function identifies structural equation models for each
+individual that consist of both group-level and individual-level paths.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gimmeSEM(data        = NULL,
+         out         = NULL,
+         sep         = NULL,
+         header      = NULL,
+         ar          = TRUE,
+         plot        = TRUE,
+         subgroup    = FALSE,
+         sub_feature = "lag &amp; contemp",
+         sub_method = "Walktrap",
+         sub_sim_thresh    = "lowest", 
+         confirm_subgroup = NULL,
+         paths       = NULL,
+         exogenous = NULL,
+         outcome   = NULL,
+         conv_vars   = NULL,
+         conv_length = 16, 
+         conv_interval = 1,
+         mult_vars   = NULL,
+         mean_center_mult = FALSE,
+         standardize = FALSE,
+         groupcutoff = .75,
+         subcutoff   = .75,
+         diagnos     = FALSE, 
+         ms_allow         = FALSE,
+         ms_tol           = 1e-5,
+         lv_model         = NULL, 
+         lv_estimator     = "miiv",     
+         lv_scores        = "regression",       
+         lv_miiv_scaling  = "first.indicator", 
+         lv_final_estimator = "miiv",
+         lasso_model_crit    = NULL, 
+         hybrid = FALSE,
+         VAR = FALSE,
+         dir_prop_cutoff =0,
+         ordered = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The path to the directory where the data files are located,
+or the name of the list containing each individual's time series. Each file
+or matrix must contain one matrix for each individual containing a T (time)
+by p (number of variables) matrix where the columns represent variables and
+the rows represent time. Individuals must have the same variables (p)
+but can have different lengths of observations (T).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>out</code></td>
+<td>
+<p>The path to the directory where the results will be stored
+(optional). If specified,
+a copy of output files will be replaced in directory. If directory at
+specified path does not exist, it will be created.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sep</code></td>
+<td>
+<p>The spacing of the data files. Follows R convention.
+"" indicates space-delimited, backslash 
+"t" indicates tab-delimited, "," indicates comma delimited. Only necessary
+to specify if reading data in from physical directory.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>header</code></td>
+<td>
+<p>Logical. Indicate TRUE for data files with a header. Only
+necessary to specify if reading data in from physical directory.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ar</code></td>
+<td>
+<p>Logical. If TRUE, begins search for group model with
+autoregressive (AR) paths freed for estimation. If ms_allow=TRUE, it is recommended
+to set ar=FALSE.  Multiple solutions are unlikely to be found when ar=TRUE.  Defaults to TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>Logical. If TRUE, graphs depicting relations among variables
+of interest will automatically be 
+created. Solid lines represent contemporaneous relations (lag 0) and dashed lines reflect 
+lagged relations (lag 1). For individual-level plots, red paths represent positive weights
+and blue paths represent negative weights. Width of paths corresponds to estimated path weight.
+For the group-level plot, black represents group-level paths, grey represents
+individual-level paths, and (if subgroup = TRUE)
+green represents subgroup-level paths. For the group-level plot,
+the width of the edge corresponds to the count. Defaults to TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subgroup</code></td>
+<td>
+<p>Logical. If TRUE, subgroups are generated based on
+similarities in model features using the <code>walktrap.community</code>
+function from the <code>igraph</code> package. When ms_allow=TRUE, subgroup
+should be set to FALSE.  Defaults to FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sub_feature</code></td>
+<td>
+<p>Option to indicate feature(s) used to subgroup individuals. Defaults to
+"lag &amp; contemp" for lagged and contemporaneous, which is the original method. Can use 
+"lagged" or "contemp" to subgroup solely on features related to lagged and contemporaneous 
+relations, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sub_method</code></td>
+<td>
+<p>Community detection method used to cluster individuals into subgroups. Options align 
+with those available in the igraph package: "Walktrap" (default), "Infomap", "Louvain", "Edge Betweenness", 
+"Label Prop", "Fast Greedy", "Leading Eigen", and "Spinglass".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sub_sim_thresh</code></td>
+<td>
+<p>Threshold for inducing sparsity in similarity matrix. Options are: the percent of edges 
+in the similarity matrix to set to zero (e.g., .25 would set the lower quartile), "lowest" (default) subtracts 
+the minimum value from all values, and "search" searches across thresholds to arrive at one providing highest modularity.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>confirm_subgroup</code></td>
+<td>
+<p>Dataframe. Option only available when subgroup = TRUE. Dataframe should contain two columns. The first
+column should specify file labels (the name of the data files without file extension), 
+and the second should contain integer values (beginning at 1) 
+specifying the subgroup membership for each individual.
+function from the <code>igraph</code> package. Defaults to TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>paths</code></td>
+<td>
+<p><code>lavaan</code>-style syntax containing paths with which
+to begin model estimation (optional). That is, Y~X indicates that Y
+is regressed on X, or X predicts Y. Paths can also be set to a specific value for estimation using <code>lavaan</code>-style syntax 
+(e.g., 'V4 ~ 0.5*V3'), or set to 0 so that they will not be estimated 
+(e.g., 'V4 ~ 0*V3'). If no header is used, then variables should be referred to with V followed (with no separation)
+by the column number. If a header is used, variables should be referred to using variable names.
+To reference lag variables, "lag" should be added to the end of the variable
+name with no separation. Defaults to NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exogenous</code></td>
+<td>
+<p>Vector of variable names to be treated as exogenous (optional).
+That is, exogenous variable X can predict Y but cannot be predicted by Y.
+If no header is used, then variables should be referred to with V followed
+(with no separation) by the column number.  If a header is used, variables should be referred 
+to using variable names. The default for exogenous variables is that lagged effects of the exogenous 
+variables are not included in the model search.  If lagged paths are wanted, "&amp;lag" should be added to the end of the variable
+name with no separation. Defaults to NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome</code></td>
+<td>
+<p>Vector of variable names to be treated as outcome (optional). This is a variable
+that can be predicted by others but cannot predict. If no header is used, then variables should be referred to with V followed
+(with no separation) by the column number.  If a header is used, variables should be referred 
+to using variable names.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conv_vars</code></td>
+<td>
+<p>Vector of variable names to be convolved via smoothed Finite Impulse 
+Response (sFIR). Note, conv_vars are not not automatically considered exogenous variables.
+To treat conv_vars as exogenous use the exogenous argument. Variables listed in conv_vars 
+must be binary variables. You cannot do lagged variables. If there is missing data in the endogenous variables their values 
+will be imputed for the convolution operation only. Defaults to NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conv_length</code></td>
+<td>
+<p>Expected response length in seconds. For functional MRI BOLD, 16 seconds (default) is typical
+for the hemodynamic response function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conv_interval</code></td>
+<td>
+<p>Interval between data acquisition. Currently conv_length/conv_interval must be an integer. For 
+fMRI studies, this is the repetition time. Defaults to 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mult_vars</code></td>
+<td>
+<p>Vector of variable names to be multiplied to explore bilinear/modulatory
+effects (optional). All multiplied variables will be treated as exogenous (X can predict
+Y but cannot be predicted by Y). Within the vector, multiplication of two variables should be
+indicated with an asterik (e.g. V1*V2). If no header is used, variables should be referred to with 
+V followed by the column number (with no separation). If a header is used, each variable should be
+referred to using variable names. If multiplication with the lag 1 of a variable is desired, the 
+variable name should be followed by "lag" with no separation (e.g. V1*V2lag).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean_center_mult</code></td>
+<td>
+<p>Logical. If TRUE, the variables indicated in mult_vars will be mean-centered
+before being multiplied together. Defaults to FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standardize</code></td>
+<td>
+<p>Logical. If TRUE, all variables will be standardized to have a mean of zero and a
+standard deviation of one. Defaults to FALSE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groupcutoff</code></td>
+<td>
+<p>Cutoff value for group-level paths. Defaults to .75,
+indicating that a path must be significant across 75% of individuals to be
+included as a group-level path.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subcutoff</code></td>
+<td>
+<p>Cutoff value for subgroup- level paths. Defaults to .75,
+indicating that a path must be significant across at least 75% of the
+individuals in a subgroup to be considered a subgroup-level path.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>diagnos</code></td>
+<td>
+<p>Logical. If TRUE provides internal output for diagnostic purposes. Defaults to FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ms_allow</code></td>
+<td>
+<p>Logical. If TRUE provides multiple solutions when more than one path has identical 
+modification index values.  When ms_allow=TRUE, it is recommended
+to set ar=FALSE.  Multiple solutions are unlikely to be found when ar=TRUE.  Additionally,
+subgroup should be set to FALSE.  Output files for individuals with multiple solutions will represent the last solution 
+found for the individual, not necessarily the best solution for the individual.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ms_tol</code></td>
+<td>
+<p>Precision used when evaluating similarity of modification indices when ms_allow = TRUE.  We recommend
+that ms_tol not be greater than the default, especially when standardize=TRUE.     
+Defaults to 1e-5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lv_model</code></td>
+<td>
+<p>Invoke latent variable modeling by providing the measurement model syntax here. lavaan
+conventions are used for relating observed variables to factors. Defaults to NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lv_estimator</code></td>
+<td>
+<p>Estimator used for factor analysis. Options are "miiv" (default), "pml" (pseudo-ML) or "svd".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lv_scores</code></td>
+<td>
+<p>Method used for estimating latent variable scores from parameters obtained from the factor analysis 
+when lv_model is not NULL. Options are: "regression" (Default), "bartlett".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lv_miiv_scaling</code></td>
+<td>
+<p>Type of scaling indicator to use when "miiv" selected for lv_estimator. Options are
+"first.indicator" (Default; the first observed variable in the measurement equation is used), "group" 
+(best one for the group), or "individual" (each individual has the best one for them according to R2).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lv_final_estimator</code></td>
+<td>
+<p>Estimator for final estimations. "miiv" (Default) or "pml" (pseudo-ML).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lasso_model_crit</code></td>
+<td>
+<p>When not null, invokes multiLASSO approach for the GIMME model search procedure. Arguments 
+indicate the model selection criterion to use for model selection: 'bic' (select on BIC), 'aic', 'aicc', 'hqc', 'cv' (cross-validation).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hybrid</code></td>
+<td>
+<p>Logical. If TRUE, enables hybrid-VAR models where both directed contemporaneous paths and contemporaneous
+covariances among residuals are candidate relations in the search space. Defaults to FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>VAR</code></td>
+<td>
+<p>Logical.  If true, VAR models where contemporaneous covariances among residuals are candidate relations in the 
+search space.  Defaults to FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dir_prop_cutoff</code></td>
+<td>
+<p>Option to require that the directionality of a relation has to be higher than the reverse direction for a prespecified proportion of indivdiuals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ordered</code></td>
+<td>
+<p>A character vector containing the names of all ordered categorical variables in the model.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Output is a list of results if saved as an object and/or files printed to a directory if the "out" argument is used.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Zachary Fisher, Kathleen Gates, &amp; Stephanie Lane
+</p>
+
+
+<h3>References</h3>
+
+<p>Gates, K.M. &amp; Molenaar, P.C.M. (2012). Group search algorithm
+recovers effective connectivity maps for individuals
+in homogeneous and heterogeneous samples. NeuroImage, 63, 310-319.
+</p>
+<p>Lane, S.T. &amp; Gates, K.M. (2017). Automated selection of robust
+individual-level structural equation models for time series data.
+Structural Equation Modeling.
+</p>
+<p>Adriene M. Beltz &amp; Peter C. M. Molenaar (2016) Dealing 
+with Multiple Solutions in Structural Vector Autoregressive Models, 
+Multivariate Behavioral Research, 51:2-3, 357-373.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> ## Not run: 
+paths &lt;- 'V2 ~ V1
+          V3 ~ V4lag'
+
+fit &lt;- gimmeSEM(data     = simData,
+                out      = "C:/simData_out",
+                subgroup = TRUE, 
+                paths    = paths)
+
+print(fit, mean = TRUE)
+print(fit, subgroup = 1, mean = TRUE)
+print(fit, file = "group_1_1", estimates = TRUE)
+print(fit, subgroup = 2, fitMeasures = TRUE)
+plot(fit, file = "group_1_1")
+ 
+## End(Not run)
+</code></pre>
+
+
+</div>

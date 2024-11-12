@@ -1,0 +1,146 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Pr_</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Probability expressions in ggdist aesthetics</h2>
+
+<h3>Description</h3>
+
+<p><strong>Experimental</strong> probability-like expressions that can be used in place of
+some <code>after_stat()</code> expressions in aesthetic assignments in <span class="pkg">ggdist</span> stats.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">Pr_(x)
+
+p_(x)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Bare (unevaluated) expressions. See <strong>Details</strong>.</p>
+</td>
+</tr></table>
+<h3>Details</h3>
+
+<p><code>Pr_()</code> and <code>p_()</code> are an <strong>experimental</strong> mini-language for specifying aesthetic values
+based on probabilities and probability densities derived from distributions
+supplied to <span class="pkg">ggdist</span> stats (e.g., in <code>stat_slabinterval()</code>,
+<code>stat_dotsinterval()</code>, etc.). They generate expressions that use <code>after_stat()</code>
+and the computed variables of the stat (such as <code>cdf</code> and <code>pdf</code>; see e.g.
+the <strong>Computed Variables</strong> section of <code>stat_slabinterval()</code>) to compute
+the desired probabilities or densities.
+</p>
+<p>For example, one way to map the density of a distribution onto the <code>alpha</code>
+aesthetic of a slab is to use <code>after_stat(pdf)</code>:
+</p>
+<div class="sourceCode"><pre>ggplot() +
+  stat_slab(aes(xdist = distributional::dist_normal(), alpha = after_stat(pdf)))
+</pre></div>
+<p><span class="pkg">ggdist</span> probability expressions offer an alternative, equivalent syntax:
+</p>
+<div class="sourceCode"><pre>ggplot() +
+  stat_slab(aes(xdist = distributional::dist_normal(), alpha = !!p_(x)))
+</pre></div>
+<p>Where <code>p_(x)</code> is the probability density function. The use of <code style="white-space: pre;">⁠!!⁠</code> is
+necessary to splice the generated expression into the <code>aes()</code> call; for
+more information, see quasiquotation.
+</p>
+
+
+<h3>Probability expressions</h3>
+
+<p>Probability expressions consist of a call to <code>Pr_()</code> or <code>p_()</code> containing
+a small number of valid combinations of operators and variable names.
+</p>
+<p>Valid variables in probability expressions include:
+</p>
+
+<ul>
+<li> <p><code>x</code>, <code>y</code>, or <code>value</code>: values along the <code>x</code> or <code>y</code> axis. <code>value</code> is the
+orientation-neutral form.
+</p>
+</li>
+<li> <p><code>xdist</code>, <code>ydist</code>, or <code>dist</code>: distributions mapped along the <code>x</code> or <code>y</code>
+axis. <code>dist</code> is the orientation-neutral form. <code>X</code> and <code>Y</code> can also be
+used as synonyms for <code>xdist</code> and <code>ydist</code>.
+</p>
+</li>
+<li> <p><code>interval</code>: the smallest interval containing the current <code>x</code>/<code>y</code> value.
+</p>
+</li>
+</ul>
+<p><code>Pr_()</code> generates expressions for probabilities, e.g. cumulative distribution
+functions (CDFs). Valid operators inside <code>Pr_()</code> are:
+</p>
+
+<ul>
+<li> <p><code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code>: generates values of the cumulative distribution
+function (CDF) or complementary CDF by comparing one of {<code>x</code>, <code>y</code>, <code>value</code>}
+to one of {<code>xdist</code>, <code>ydist</code>, <code>dist</code>, <code>X</code>, <code>Y</code>}. For example, <code>Pr_(xdist &lt;= x)</code>
+gives the CDF and <code>Pr_(xdist &gt; x)</code> gives the CCDF.
+</p>
+</li>
+<li> <p><code>%in%</code>: currently can only be used with <code>interval</code> on the right-hand side:
+gives the probability of {<code>x</code>, <code>y</code>, <code>value</code>} (left-hand side) being in the
+smallest interval the stat generated that contains the value; e.g.
+<code>Pr_(x %in% interval)</code>.
+</p>
+</li>
+</ul>
+<p><code>p_()</code> generates expressions for probability density functions or probability mass
+functions (depending on if the underlying distribution is continuous or
+discrete). It currently does not allow any operators in the expression, and
+must be passed one of <code>x</code>, <code>y</code>, or <code>value</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>The <em>Computed Variables</em> section of <code>stat_slabinterval()</code> (especially
+<code>cdf</code> and <code>pdf</code>) and the <code>after_stat()</code> function.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(ggplot2)
+library(distributional)
+
+df = data.frame(
+  d = c(dist_normal(2.7, 1), dist_lognormal(1, 1/3)),
+  name = c("normal", "lognormal")
+)
+
+# map density onto alpha of the fill
+ggplot(df, aes(y = name, xdist = d)) +
+  stat_slabinterval(aes(alpha = !!p_(x)))
+
+# map CCDF onto thickness (like stat_ccdfinterval())
+ggplot(df, aes(y = name, xdist = d)) +
+  stat_slabinterval(aes(thickness = !!Pr_(xdist &gt; x)))
+
+# map containing interval onto fill
+ggplot(df, aes(y = name, xdist = d)) +
+  stat_slabinterval(aes(fill = !!Pr_(x %in% interval)))
+
+# the color scale in the previous example is not great, so turn the
+# probability into an ordered factor and adjust the fill scale.
+# Though, see also the `level` computed variable in `stat_slabinterval()`,
+# which is probably easier to use to create this style of chart.
+ggplot(df, aes(y = name, xdist = d)) +
+  stat_slabinterval(aes(fill = ordered(!!Pr_(x %in% interval)))) +
+  scale_fill_brewer(direction = -1)
+
+</code></pre>
+
+
+</div>

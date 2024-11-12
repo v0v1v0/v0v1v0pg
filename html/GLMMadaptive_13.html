@@ -1,0 +1,117 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Continuation Ratio Set-Up</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Functions to Set-Up Data for a Continuation Ratio Mixed Model
+</h2>
+
+<h3>Description</h3>
+
+<p>Data set-up and calculation of marginal probabilities from a continuation ratio model
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cr_setup(y, direction = c("forward", "backward"))
+
+cr_marg_probs(eta, direction = c("forward", "backward"))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>a numeric vector denoting the ordinal response variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>direction</code></td>
+<td>
+<p>character string specifying the direction of the continuation ratio 
+model; <code>"forward"</code> corresponds to a discrete hazard function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta</code></td>
+<td>
+<p>a numeric matrix of the linear predictor, with columns corresponding to the 
+different levels of the ordinal response.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>Function <code>cr_setup()</code> is based on the <code>cr.setup()</code> function from package 
+<b>rms</b>.</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Dimitris Rizopoulos <a href="mailto:d.rizopoulos@erasmusmc.nl">d.rizopoulos@erasmusmc.nl</a>
+</p>
+<p>Frank Harrell
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">n &lt;- 300 # number of subjects
+K &lt;- 8 # number of measurements per subject
+t_max &lt;- 15 # maximum follow-up time
+
+# we constuct a data frame with the design: 
+# everyone has a baseline measurment, and then measurements at random follow-up times
+DF &lt;- data.frame(id = rep(seq_len(n), each = K),
+                 time = c(replicate(n, c(0, sort(runif(K - 1, 0, t_max))))),
+                 sex = rep(gl(2, n/2, labels = c("male", "female")), each = K))
+
+# design matrices for the fixed and random effects
+X &lt;- model.matrix(~ sex * time, data = DF)[, -1]
+Z &lt;- model.matrix(~ 1, data = DF)
+
+thrs &lt;- c(-1.5, 0, 0.9) # thresholds for the different ordinal categories
+betas &lt;- c(-0.25, 0.24, -0.05) # fixed effects coefficients
+D11 &lt;- 0.48 # variance of random intercepts
+D22 &lt;- 0.1 # variance of random slopes
+
+# we simulate random effects
+b &lt;- cbind(rnorm(n, sd = sqrt(D11)), rnorm(n, sd = sqrt(D22)))[, 1, drop = FALSE]
+# linear predictor
+eta_y &lt;- drop(X %*% betas + rowSums(Z * b[DF$id, , drop = FALSE]))
+# linear predictor for each category
+eta_y &lt;- outer(eta_y, thrs, "+")
+# marginal probabilities per category
+mprobs &lt;- cr_marg_probs(eta_y)
+# we simulate ordinal longitudinal data
+DF$y &lt;- unname(apply(mprobs, 1, sample, x = ncol(mprobs), size = 1, replace = TRUE))
+
+# If you want to simulate from the backward formulation of the CR model, you need to
+# change `eta_y &lt;- outer(eta_y, thrs, "+")` to `eta_y &lt;- outer(eta_y, rev(thrs), "+")`,
+# and `mprobs &lt;- cr_marg_probs(eta_y)` to `mprobs &lt;- cr_marg_probs(eta_y, "backward")`
+
+#################################################
+
+# prepare the data
+# If you want to fit the CR model under the backward formulation, you need to change
+# `cr_vals &lt;- cr_setup(DF$y)` to `cr_vals &lt;- cr_setup(DF$y, "backward")`
+cr_vals &lt;- cr_setup(DF$y)
+cr_data &lt;- DF[cr_vals$subs, ]
+cr_data$y_new &lt;- cr_vals$y
+cr_data$cohort &lt;- cr_vals$cohort
+
+# fit the model
+fm &lt;- mixed_model(y_new ~ cohort + sex * time, random = ~ 1 | id, 
+                  data = cr_data, family = binomial())
+
+summary(fm)
+</code></pre>
+
+
+</div>

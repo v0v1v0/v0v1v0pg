@@ -1,0 +1,144 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemEquityShare_3_3</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A General Equilibrium Model with Equity Shares</h2>
+
+<h3>Description</h3>
+
+<p>A general equilibrium model with equity shares and dividend.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemEquityShare_3_3(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+dst.firm &lt;- node_new("output",
+                     type = "FIN",
+                     rate = c(1, dividend.rate = 0.25),
+                     "cc1", "equity.share"
+)
+node_set(dst.firm, "cc1",
+         type = "CD",
+         alpha = 2, beta = c(0.5, 0.5),
+         "prod", "lab"
+)
+
+dst.laborer &lt;- node_new("util",
+                        type = "Leontief",  a = 1,
+                        "prod"
+)
+
+dst.shareholder &lt;- Clone(dst.laborer)
+
+ge &lt;- sdm2(
+  A = list(dst.firm, dst.laborer, dst.shareholder),
+  B = diag(c(1, 0, 0)),
+  S0Exg = {
+    S0Exg &lt;- matrix(NA, 3, 3)
+    S0Exg[2, 2] &lt;- S0Exg[3, 3] &lt;- 100
+    S0Exg
+  },
+  names.commodity = c("prod", "lab", "equity.share"),
+  names.agent = c("firm", "laborer", "shareholder"),
+  numeraire = "prod"
+)
+
+ge$p # The third component is the dividend per unit of share.
+ge$DV
+ge$SV
+
+## Set the growth rate to 0.03.
+ge &lt;- sdm2(
+  A = list(dst.firm, dst.laborer, dst.shareholder),
+  B = diag(c(1, 0, 0)),
+  S0Exg = {
+    S0Exg &lt;- matrix(NA, 3, 3)
+    S0Exg[2, 2] &lt;- S0Exg[3, 3] &lt;- 100
+    S0Exg
+  },
+  names.commodity = c("prod", "lab", "equity.share"),
+  names.agent = c("firm", "laborer", "shareholder"),
+  numeraire = "prod",
+  GRExg = 0.03
+)
+
+ge$z
+ge$p
+
+#### an equivalent intertemporal model.
+gr &lt;- 0.03 # the growth rate of the labor supply
+Gamma.beta &lt;- 0.8 # the subjective discount factor
+np &lt;- 5 # the number of economic periods
+y1 &lt;- 100 # the initial product supply
+
+n &lt;- 2 * np - 1 # the number of commodity kinds
+m &lt;- np # the number of agent kinds
+
+names.commodity &lt;- c(paste0("prod", 1:np), paste0("lab", 1:(np - 1)))
+names.agent &lt;- c(paste0("firm", 1:(np - 1)), "consumer")
+
+# the exogenous supply matrix.
+S0Exg &lt;- S0Exg &lt;- matrix(NA, n, m, dimnames = list(names.commodity, names.agent))
+S0Exg[paste0("lab", 1:(np - 1)), "consumer"] &lt;- 100 * (1 + gr)^(0:(np - 2))
+S0Exg["prod1", "consumer"] &lt;- y1
+
+# the output coefficient matrix.
+B &lt;- matrix(0, n, m, dimnames = list(names.commodity, names.agent))
+for (k in 1:(np - 1)) {
+  B[paste0("prod", k + 1), paste0("firm", k)] &lt;- 1
+}
+
+dstl.firm &lt;- list()
+for (k in 1:(np - 1)) {
+  dstl.firm[[k]] &lt;- node_new(
+    "prod",
+    type = "CD",
+    alpha = 2, beta = c(0.5, 0.5),
+    paste0("prod", k), paste0("lab", k)
+  )
+}
+
+dst.consumer &lt;- node_new(
+  "util",
+  type = "CES", es = 1,
+  alpha = 1,  beta = prop.table(Gamma.beta^(1:np)),
+  paste0("prod", 1:np)
+)
+
+ge &lt;- sdm2(
+  A = c(dstl.firm, dst.consumer),
+  B = B,
+  S0Exg = S0Exg,
+  names.commodity = names.commodity,
+  names.agent = names.agent,
+  numeraire = "prod1",
+  policy = makePolicyHeadTailAdjustment(gr = gr, np = np)
+)
+
+ge$z
+growth_rate(ge$z[1:4])
+ge$p[6:9] / ge$p[1:4]
+addmargins(ge$D, 2)
+addmargins(ge$S, 2)
+
+</code></pre>
+
+
+</div>

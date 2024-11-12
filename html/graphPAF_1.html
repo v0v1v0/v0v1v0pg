@@ -1,0 +1,117 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>automatic_fit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Automatic fitting of probability models in a pre-specified Bayesian network.</h2>
+
+<h3>Description</h3>
+
+<p>Main effects models are fit by default.  For continuous variables, lm is used, for binary (numeric 0/1 variables), glm is used and for factor valued variables polr is used.  For factors, ensure that the factor levels are ordered by increasing levels of risk.  If interactions are required for certain models, it is advisable to populate the elements of model_list separately.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">automatic_fit(
+  data,
+  parent_list,
+  node_vec,
+  prev = NULL,
+  common = "",
+  spline_nodes = c(),
+  df_spline_nodes = 3
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame. A data frame containing variables used for fitting the models.  Must contain all variables used in fitting</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parent_list</code></td>
+<td>
+<p>A list.  The ith element is the vector of variable names that are direct causes of ith variable in node_vec</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>node_vec</code></td>
+<td>
+<p>A vector corresponding to the nodes in the Bayesian network.  This must be specified from root to leaves - that is ancestors in the causal graph for a particular node are positioned before their descendants.  If this condition is false the function will return an error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prev</code></td>
+<td>
+<p>Prevalence of disease.  Set to NULL for cohort or cross sectional studies</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>common</code></td>
+<td>
+<p>character text for part of the model formula that doesn't involve any variable in node_vec.  Useful for specifying confounders involved in all models automatically</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spline_nodes</code></td>
+<td>
+<p>Vector of continuous variable names that are fit as splines (when involved as parents).  Natural splines are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df_spline_nodes</code></td>
+<td>
+<p>How many degrees of freedom for each spline (Default 3).  At the moment, this can not be specified separately for differing variables.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list of fitted models corresponding to node_vec and parent_vec.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># More complicated example (slower to run)
+library(splines)
+parent_exercise &lt;- c("education")
+parent_diet &lt;- c("education")
+parent_smoking &lt;- c("education")
+parent_alcohol &lt;- c("education")
+parent_stress &lt;- c("education")
+parent_high_blood_pressure &lt;- c("education","exercise","diet",
+"smoking","alcohol","stress")
+parent_lipids &lt;- c("education","exercise","diet","smoking",
+"alcohol","stress")
+parent_waist_hip_ratio &lt;- c("education","exercise","diet","smoking",
+"alcohol","stress")
+parent_early_stage_heart_disease &lt;- c("education","exercise","diet",
+"smoking","alcohol","stress","lipids","waist_hip_ratio","high_blood_pressure")
+parent_diabetes &lt;- c("education","exercise","diet","smoking","alcohol",
+"stress","lipids","waist_hip_ratio","high_blood_pressure")
+parent_case &lt;- c("education","exercise","diet","smoking","alcohol","stress",
+"lipids","waist_hip_ratio","high_blood_pressure","early_stage_heart_disease","diabetes")
+parent_list &lt;- list(parent_exercise,parent_diet,parent_smoking,
+parent_alcohol,parent_stress,parent_high_blood_pressure,
+parent_lipids,parent_waist_hip_ratio,parent_early_stage_heart_disease,
+parent_diabetes,parent_case)
+node_vec=c("exercise","diet","smoking","alcohol","stress","high_blood_pressure",
+"lipids","waist_hip_ratio","early_stage_heart_disease",
+"diabetes","case")
+
+model_list=automatic_fit(data=stroke_reduced, parent_list=parent_list,
+node_vec=node_vec, prev=.0035,common="region*ns(age,df=5)+
+sex*ns(age,df=5)", spline_nodes = c("waist_hip_ratio","lipids","diet"))
+
+</code></pre>
+
+
+</div>

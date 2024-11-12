@@ -1,0 +1,88 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>trafficfam3</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Draft of family for traffic example</h2>
+
+<h3>Description</h3>
+
+<p>Fix four distributional assumptions and supply derivatives. Use gamma for
+speed data. Use negative binomial for count data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">trafficfam3(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Not used.</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>A bamlss family object.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Construct data
+set.seed(123)
+# Number of subjects
+n &lt;- 10
+
+# Number of observations
+ni &lt;- 3
+
+# Covariate vector
+x &lt;- rep(rnorm(n), each = ni)
+t &lt;- rep(c(0, 0.5, 1), times = n)
+
+# Additive predictor
+eta_1 &lt;- eta_2 &lt;- eta_3 &lt;- eta_4 &lt;- t + 0.5*x
+
+# Outcomes
+y1 &lt;- rnbinom(n*ni, exp(eta_1), 0.3)
+y2 &lt;- rnbinom(n*ni, exp(eta_2), 0.4)
+y3 &lt;- rgamma(n*ni, shape = 0.3, scale = exp(eta_3) / 0.3)
+y4 &lt;- rgamma(n*ni, shape = 0.4, scale = exp(eta_4) / 0.4)
+
+# Data format
+dat &lt;- data.frame(
+   id = factor(rep(seq_len(n), each = ni)),
+   y = c(y1, y2, y3, y4),
+   dim = factor(rep(c(1:4), each = n*ni)),
+   t = t,
+   x = x,
+   fpc = 1
+)
+
+# Specify formula
+f &lt;- list(
+  gm(y, dim) ~ t + x,
+  sigma1 ~ 1,
+  mu2 ~ t + x,
+  sigma2 ~ 1,
+  mu3 ~ t + x,
+  sigma3 ~ 1,
+  mu4 ~ t + x,
+  sigma4 ~ 1,
+  Lambda ~ -1 + s(id, by = fpc, bs = "re")
+)
+
+# Model
+b &lt;- bamlss(f, family = trafficfam3, n.iter = 20, burnin = 10,
+            data = dat)
+</code></pre>
+
+
+</div>

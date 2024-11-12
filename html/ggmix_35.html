@@ -1,0 +1,130 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.ggmix_fit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Make predictions from a <code>ggmix_fit</code> object</h2>
+
+<h3>Description</h3>
+
+<p>Similar to other predict methods, this functions predicts fitted
+values, coefficients and more from a fitted <code>ggmix_fit</code> object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'ggmix_fit'
+predict(
+  object,
+  newx,
+  s = NULL,
+  type = c("link", "response", "coefficients", "all", "nonzero", "individual"),
+  covariance,
+  ...
+)
+
+## S3 method for class 'ggmix_fit'
+coef(object, s = NULL, type, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>Fitted <code>ggmix_fit</code> model object from the
+<code>ggmix</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newx</code></td>
+<td>
+<p>matrix of values for <code>x</code> at which predictions are to be
+made. Do not include the intercept. Must be a matrix. This argument is not
+used for <code>type = c("coefficients","nonzero","all")</code>. This matrix must
+have the same number of columns originally supplied to the
+<code>ggmix</code> fitting function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s</code></td>
+<td>
+<p>Value(s) of the penalty parameter <code>lambda</code> at which predictions
+are required. Default is the entire sequence used to create the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Type of prediction required. Type <code>"link"</code> gives the fitted
+values <code class="reqn">X \beta</code>. Type <code>"response"</code> is equivalent to type
+<code>"link"</code>. Type <code>"coefficients"</code> computes the coefficients at the
+requested values for <code>s</code> and returns the regression coefficients only,
+including the intercept. Type <code>"all"</code> returns both the regression
+coefficients and variance components at the requested value of <code>s</code>.
+Type <code>"nonzero"</code> returns a 1 column matrix of the the nonzero fixed
+effects, as well as variance components for each value of <code>s</code>. If more
+than one <code>s</code> is provided, then <code>"nonzero"</code> will return a list of
+1 column matrices. Default: "link"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariance</code></td>
+<td>
+<p>covariance between test and training individuals. if there
+are q testing individuals and N-q training individuals, then this
+covariance matrix is q x (N-q)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments to pass to predict function</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>s</code> is the new vector at which predictions are requested. If
+<code>s</code> is not in the lambda sequence used for fitting the model, the
+predict function will use linear interpolation to make predictions. The new
+values are interpolated using a fraction of predicted values from both left
+and right lambda indices. <code>coef(...)</code> is equivalent to
+<code>predict(ggmix_fit, type="coefficients",...)</code>. To get individual level
+predictions at each value of lambda, you must provide the lambda sequence
+to the s argument. You can pass either a ggmix_fit or ggmix_gic object. See
+examples for more details.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The object returned depends on type.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data("admixed")
+fitlmm &lt;- ggmix(x = admixed$xtrain, y = admixed$ytrain,
+                kinship = admixed$kin_train,
+                estimation = "full")
+bicGGMIX &lt;- gic(fitlmm,
+                an = log(length(admixed$ytrain)))
+plot(bicGGMIX)
+coef(bicGGMIX, s = "lambda.min")
+yhat_test &lt;- predict(bicGGMIX, s="lambda.min",
+                     newx = admixed$xtest, type = "individual",
+                     covariance = admixed$kin_test_train)
+cor(yhat_test, admixed$ytest)
+yhat_test_population &lt;- predict(bicGGMIX, s="lambda.min",
+                                newx = admixed$xtest,
+                                type = "response")
+</code></pre>
+
+
+</div>

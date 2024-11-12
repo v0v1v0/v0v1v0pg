@@ -1,0 +1,311 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>glmmTMB</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit Models with TMB</h2>
+
+<h3>Description</h3>
+
+<p>Fit a generalized linear mixed model (GLMM) using Template Model Builder (TMB).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">glmmTMB(
+  formula,
+  data = NULL,
+  family = gaussian(),
+  ziformula = ~0,
+  dispformula = ~1,
+  weights = NULL,
+  offset = NULL,
+  contrasts = NULL,
+  na.action,
+  se = TRUE,
+  verbose = FALSE,
+  doFit = TRUE,
+  control = glmmTMBControl(),
+  REML = FALSE,
+  start = NULL,
+  map = NULL,
+  sparseX = NULL,
+  priors = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>combined fixed and random effects formula, following lme4 syntax.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>data frame (tibbles are OK) containing model variables. Not required, but strongly recommended; if <code>data</code> is not specified, downstream methods such as prediction with new data (<code>predict(fitted_model, newdata = ...)</code>) will fail. If it is necessary to call <code>glmmTMB</code> with model variables taken from the environment rather than from a data frame, specifying <code>data=NULL</code> will suppress the warning message.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>a family function, a character string naming a family function, or the result of a call to a family function (variance/link function) information. See <code>family</code> for a generic discussion of families or <code>family_glmmTMB</code> for details of <code>glmmTMB</code>-specific families.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ziformula</code></td>
+<td>
+<p>a <em>one-sided</em> (i.e., no response variable) formula for zero-inflation combining fixed and random effects: the default <code>~0</code> specifies no zero-inflation. Specifying <code>~.</code> sets the zero-inflation formula identical to the right-hand side of <code>formula</code> (i.e., the conditional effects formula); terms can also be added or subtracted. <strong>When using <code>~.</code> as the zero-inflation formula in models where the conditional effects formula contains an offset term, the offset term will automatically be dropped</strong>. The zero-inflation model uses a logit link.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dispformula</code></td>
+<td>
+<p>a <em>one-sided</em> formula for dispersion combining fixed and random effects: the default <code>~1</code> specifies the standard dispersion given any family. The argument is ignored for families that do not have a dispersion parameter. For an explanation of the dispersion parameter for each family, see <code>sigma</code>. The dispersion model uses a log link. In Gaussian mixed models, <code>dispformula=~0</code> fixes the residual variance to be 0 (actually a small non-zero value), forcing variance into the random effects. The precise value can be controlled via <code>control=glmmTMBControl(zero_dispval=...)</code>; the default value is <code>sqrt(.Machine$double.eps)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>weights, as in <code>glm</code>. Not automatically scaled to have sum 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>offset for conditional model (only).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>an optional list, e.g., <code>list(fac1="contr.sum")</code>. See the <code>contrasts.arg</code> of <code>model.matrix.default</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>a function that specifies how to handle observations
+containing <code>NA</code>s.  The default action (<code>na.omit</code>,
+inherited from the 'factory fresh' value of
+<code>getOption("na.action")</code>) strips any observations with any
+missing values in any variables. Using <code>na.action = na.exclude</code>
+will similarly drop observations with missing values while fitting the model,
+but will fill in <code>NA</code> values for the predicted and residual
+values for cases that were excluded during the fitting process
+because of missingness.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se</code></td>
+<td>
+<p>whether to return standard errors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>whether progress indication should be printed to the console.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>doFit</code></td>
+<td>
+<p>whether to fit the full model, or (if FALSE) return the preprocessed data and parameter objects, without fitting the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>control parameters, see <code>glmmTMBControl</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>REML</code></td>
+<td>
+<p>whether to use REML estimation rather than maximum likelihood.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>starting values, expressed as a list with possible components <code>beta</code>, <code>betazi</code>, <code>betadisp</code> (fixed-effect parameters for conditional, zero-inflation, dispersion models); <code>b</code>, <code>bzi</code>, <code>bdisp</code> (conditional modes for conditional, zero-inflation, and dispersion models); <code>theta</code>, <code>thetazi</code>, <code>thetadisp</code> (random-effect parameters, on the standard deviation/Cholesky scale, for conditional, z-i, and disp models); <code>psi</code> (extra family parameters, e.g., shape for Tweedie models).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>map</code></td>
+<td>
+<p>a list specifying which parameter values should be fixed to a constant value rather than estimated. <code>map</code> should be a named list containing factors corresponding to a subset of the internal parameter names (see <code>start</code> parameter). Distinct factor values are fitted as separate parameter values, <code>NA</code> values are held fixed: e.g., <code>map=list(beta=factor(c(1,2,3,NA)))</code> would fit the first three fixed-effect parameters of the conditional model and fix the fourth parameter to its starting value. In general, users will probably want to use <code>start</code> to specify non-default starting values for fixed parameters. See <code>MakeADFun</code> for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sparseX</code></td>
+<td>
+<p>a named logical vector containing (possibly) elements named "cond", "zi", "disp" to indicate whether fixed-effect model matrices for particular model components should be generated as sparse matrices, e.g. <code>c(cond=TRUE)</code>. Default is all <code>FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>priors</code></td>
+<td>
+<p>a data frame of priors, in a similar format to that accepted by the <code>brms</code> package; see <code>priors</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+<ul>
+<li>
+<p> Binomial models with more than one trial (i.e., not binary/Bernoulli) can either be specified in the form <code>prob ~ ..., weights = N</code>, or in the more typical two-column matrix <code>cbind(successes,failures)~...</code> form.
+</p>
+</li>
+<li>
+<p> Behavior of <code>REML=TRUE</code> for Gaussian responses matches <code>lme4::lmer</code>. It may also be useful in some cases with non-Gaussian responses (Millar 2011). Simulations should be done first to verify.
+</p>
+</li>
+<li>
+<p> Because the <code>df.residual</code> method for <code>glmmTMB</code> currently counts the dispersion parameter, users should multiply this value by <code>sqrt(nobs(fit) / (1+df.residual(fit)))</code> when comparing with <code>lm</code>.
+</p>
+</li>
+<li>
+<p> Although models can be fitted without specifying a <code>data</code> argument, its use is strongly recommended; drawing model components from the global environment, or using <code>df$var</code> notation within model formulae, can lead to confusing (and sometimes hard-to-detect) errors.
+</p>
+</li>
+<li>
+<p> By default, vector-valued random effects are fitted with unstructured (general symmetric positive definite) variance-covariance matrices. Structured variance-covariance matrices can be specified in the form <code>struc(terms|group)</code>, where <code>struc</code> is one of
+</p>
+
+<ul>
+<li> <p><code>diag</code> (diagonal, heterogeneous variance)
+</p>
+</li>
+<li> <p><code>ar1</code> (autoregressive order-1, homogeneous variance)
+</p>
+</li>
+<li> <p><code>cs</code> (compound symmetric, heterogeneous variance)
+</p>
+</li>
+<li> <p><code>ou</code> (* Ornstein-Uhlenbeck, homogeneous variance)
+</p>
+</li>
+<li> <p><code>exp</code> (* exponential autocorrelation)
+</p>
+</li>
+<li> <p><code>gau</code> (* Gaussian autocorrelation)
+</p>
+</li>
+<li> <p><code>mat</code> (* Matérn process correlation)
+</p>
+</li>
+<li> <p><code>toep</code> (* Toeplitz)
+</p>
+</li>
+<li> <p><code>rr</code> (reduced-rank/factor-analytic model)
+</p>
+</li>
+<li> <p><code>homdiag</code> (diagonal, homogeneous variance)
+</p>
+</li>
+<li> <p><code>propto</code> (* proportional to user-specified variance-covariance matrix)
+</p>
+</li>
+</ul>
+<p>Structures marked with * are experimental/untested. See <code>vignette("covstruct", package = "glmmTMB")</code> for more information.
+</p>
+</li>
+<li>
+<p> For backward compatibility, the <code>family</code> argument can also be specified as a list comprising the name of the distribution and the link function (e.g. <code>list(family="binomial", link="logit")</code>). However, <strong>this alternative is now deprecated</strong>; it produces a warning and will be removed at some point in the future. Furthermore, certain capabilities such as Pearson residuals or predictions on the data scale will only be possible if components such as <code>variance</code> and <code>linkfun</code> are present, see <code>family</code>.
+</p>
+</li>
+<li>
+<p> Smooths taken from the <code>mgcv</code> package can be included in <code>glmmTMB</code> formulas using <code>s</code>; these terms will appear as additional components in both the fixed and the random-effects terms. This functionality is <em>experimental</em> for now. We recommend using <code>REML=TRUE</code>. See <code>s</code> for details of specifying smooths (and <code>smooth2random</code> and the appendix of Wood (2004) for technical details).
+</p>
+</li>
+</ul>
+<h3>Note</h3>
+
+<p>For more information about the <span class="pkg">glmmTMB</span> package, see Brooks et al. (2017) and the <code>vignette(package="glmmTMB")</code> collection. For the underlying <span class="pkg">TMB</span> package that performs the model estimation, see Kristensen et al. (2016).
+</p>
+
+
+<h3>References</h3>
+
+<p>Brooks, M. E., Kristensen, K., van Benthem, K. J., Magnusson, A., Berg, C. W., Nielsen, A., Skaug, H. J., Mächler, M. and Bolker, B. M. (2017). glmmTMB balances speed and flexibility among packages for zero-inflated generalized linear mixed modeling. <em>The R Journal</em>, <b>9</b>(2), 378–400.
+</p>
+<p>Kristensen, K., Nielsen, A., Berg, C. W., Skaug, H. and Bell, B. (2016). TMB: Automatic differentiation and Laplace approximation. <em>Journal of Statistical Software</em>, <b>70</b>, 1–21.
+</p>
+<p>Millar, R. B. (2011). <em>Maximum Likelihood Estimation and Inference: With Examples in R, SAS and ADMB.</em> Wiley, New York.
+Wood, S. N. (2004) Stable and Efficient Multiple Smoothing Parameter Estimation for Generalized Additive Models. <em>Journal of the American Statistical Association</em> <b>99</b>(467): 673–86. <a href="https://doi.org/10.1198/016214504000000980">doi:10.1198/016214504000000980</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+(m1 &lt;- glmmTMB(count ~ mined + (1|site),
+  zi=~mined,
+  family=poisson, data=Salamanders))
+summary(m1)
+##' ## Zero-inflated negative binomial model
+(m2 &lt;- glmmTMB(count ~ spp + mined + (1|site),
+  zi=~spp + mined,
+  family=nbinom2, data=Salamanders))
+
+## Hurdle Poisson model
+(m3 &lt;- glmmTMB(count ~ spp + mined + (1|site),
+  zi=~spp + mined,
+  family=truncated_poisson, data=Salamanders))
+
+## Binomial model
+data(cbpp, package="lme4")
+(bovine &lt;- glmmTMB(cbind(incidence, size-incidence) ~ period + (1|herd),
+  family=binomial, data=cbpp))
+
+## Dispersion model
+sim1 &lt;- function(nfac=40, nt=100, facsd=0.1, tsd=0.15, mu=0, residsd=1)
+{
+  dat &lt;- expand.grid(fac=factor(letters[1:nfac]), t=1:nt)
+  n &lt;- nrow(dat)
+  dat$REfac &lt;- rnorm(nfac, sd=facsd)[dat$fac]
+  dat$REt &lt;- rnorm(nt, sd=tsd)[dat$t]
+  dat$x &lt;- rnorm(n, mean=mu, sd=residsd) + dat$REfac + dat$REt
+  dat
+}
+set.seed(101)
+d1 &lt;- sim1(mu=100, residsd=10)
+d2 &lt;- sim1(mu=200, residsd=5)
+d1$sd &lt;- "ten"
+d2$sd &lt;- "five"
+dat &lt;- rbind(d1, d2)
+m0 &lt;- glmmTMB(x ~ sd + (1|t), dispformula=~sd, data=dat)
+fixef(m0)$disp
+c(log(5), log(10)-log(5)) # expected dispersion model coefficients
+
+
+## Using 'map' to fix random-effects SD to 10
+m1_map &lt;- update(m1, map=list(theta=factor(NA)),
+                 start=list(theta=log(10)))
+VarCorr(m1_map)
+
+## smooth terms
+data("Nile")
+ndat &lt;- data.frame(time = c(time(Nile)), val = c(Nile))
+sm1 &lt;- glmmTMB(val ~ s(time), data = ndat,
+               REML = TRUE, start = list(theta = 5))
+plot(val ~ time, data = ndat)
+lines(ndat$time, predict(sm1))
+
+## reduced-rank model
+m1_rr &lt;- glmmTMB(abund ~ Species + rr(Species + 0|id, d = 1),
+                              data = spider_long)
+
+</code></pre>
+
+
+</div>

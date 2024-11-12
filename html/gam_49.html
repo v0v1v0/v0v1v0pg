@@ -1,0 +1,202 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>step.Gam</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Stepwise model builder for GAM</h2>
+
+<h3>Description</h3>
+
+<p>Builds a GAM model in a step-wise fashion. For each "term" there is an
+ordered list of alternatives, and the function traverses these in a greedy
+fashion. Note: this is NOT a method for <code>step</code>, which used to be a
+generic, so must be invoked with the full name.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">step.Gam(
+  object,
+  scope,
+  scale,
+  direction = c("both", "backward", "forward"),
+  trace = TRUE,
+  keep = NULL,
+  steps = 1000,
+  parallel = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class <code>Gam</code> or any of it's inheritants.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scope</code></td>
+<td>
+<p>defines the range of models examined in the step-wise search.
+It is a list of formulas, with each formula corresponding to a term in the
+model. Each of these formulas specifies a "regimen" of candidate forms in
+which the particular term may enter the model. For example, a term formula
+might be <code>~1+ Income + log(Income) + s(Income)</code>. This means that
+<code>Income</code> could either appear not at all, linearly, linearly in its
+logarithm, or as a smooth function estimated nonparametrically. A <code>1</code>
+in the formula allows the additional option of leaving the term out of the
+model entirely.  Every term in the model is described by such a term
+formula, and the final model is built up by selecting a component from each
+formula.
+</p>
+<p>As an alternative more convenient for big models, each list can have instead
+of a formula a character vector corresponding to the candidates for that
+term. Thus we could have <code>c("1","x","s(x,df=5")</code> rather than
+<code>~1+x+s(x,df=5)</code>.
+</p>
+<p>The supplied model <code>object</code> is used as the starting model, and hence
+there is the requirement that one term from each of the term formulas be
+present in <code>formula(object)</code>. This also implies that any terms in
+<code>formula(object)</code> <em>not</em> contained in any of the term formulas will
+be forced to be present in every model considered. The function
+<code>gam.scope</code> is helpful for generating the scope argument for a large
+model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>an optional argument used in the definition of the AIC
+statistic used to evaluate models for selection. By default, the scaled
+Chi-squared statistic for the initial model is used, but if forward
+selection is to be performed, this is not necessarily a sound choice.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>direction</code></td>
+<td>
+<p>The mode of step-wise search, can be one of <code>"both"</code>,
+<code>"backward"</code>, or <code>"forward"</code>, with a default of <code>"both"</code>. If
+<code>scope</code> is missing, the default for <code>direction</code> is "both".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>If <code>TRUE</code> (the default), information is printed during the
+running of <code>step.Gam()</code>. This is an encouraging choice in general,
+since <code>step.Gam()</code> can take some time to compute either for large
+models or when called with an an extensive <code>scope=</code> argument. A simple
+one line model summary is printed for each model selected. This argument can
+also be given as the binary <code>0</code> or <code>1</code>. A value <code>trace=2</code>
+gives a more verbose trace.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep</code></td>
+<td>
+<p>A filter function whose input is a fitted <code>Gam</code> object, and
+anything else passed via ..., and whose output is arbitrary. Typically
+<code>keep()</code> will select a subset of the components of the object and
+return them. The default is not to keep anything.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>steps</code></td>
+<td>
+<p>The maximum number of steps to be considered. The default is
+1000 (essentially as many as required). It is typically used to stop the
+process early.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>If <code>TRUE</code>, use parallel <code>foreach</code> to fit each
+trial run.  Must register parallel before hand, such as <code>doMC</code> or
+others.  See the example below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to be passed on to <code>keep</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The step-wise-selected model is returned, with up to two additional
+components. There is an <code>"anova"</code> component corresponding to the steps
+taken in the search, as well as a <code>"keep"</code> component if the
+<code>keep=</code> argument was supplied in the call.
+</p>
+<p>We describe the most general setup, when <code>direction = "both"</code>. At any
+stage there is a current model comprising a single term from each of the
+term formulas supplied in the <code>scope=</code> argument. A series of models is
+fitted, each corrresponding to a formula obtained by moving each of the
+terms one step up or down in its regimen, relative to the formula of the
+current model. If the current value for any term is at either of the extreme
+ends of its regimen, only one rather than two steps can be considered. So if
+there are <code>p</code> term formulas, at most <code>2*p - 1</code> models are
+considered. A record is kept of all the models ever visited (hence the
+<code>-1</code> above), to avoid repetition. Once each of these models has been
+fit, the "best" model in terms of the AIC statistic is selected and defines
+the step. The entire process is repeated until either the maximum number of
+steps has been used, or until the AIC criterion can not be decreased by any
+of the eligible steps.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Written by Trevor Hastie, following closely the design in the
+"Generalized Additive Models" chapter (Hastie, 1992) in Chambers and Hastie
+(1992).
+</p>
+
+
+<h3>References</h3>
+
+<p>Hastie, T. J. (1992) <em>Generalized additive models.</em> Chapter
+7 of <em>Statistical Models in S</em> eds J. M. Chambers and T. J. Hastie,
+Wadsworth &amp; Brooks/Cole.
+</p>
+<p>Hastie, T. and Tibshirani, R. (1990) <em>Generalized Additive Models.</em>
+London: Chapman and Hall.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gam.scope</code>,<code>step</code>,<code>glm</code>,
+<code>gam</code>, <code>drop1</code>, <code>add1</code>,
+<code>anova.Gam</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(gam.data)
+Gam.object &lt;- gam(y~x+z, data=gam.data)
+step.object &lt;-step.Gam(Gam.object, scope=list("x"=~1+x+s(x,4)+s(x,6)+s(x,12),"z"=~1+z+s(z,4)))
+## Not run: 
+# Parallel
+require(doMC)
+registerDoMC(cores=2)
+step.Gam(Gam.object, scope=list("x"=~1+x+s(x,4)+s(x,6)+s(x,12),"z"=~1+z+s(z,4)),parallel=TRUE)
+
+## End(Not run)
+
+
+</code></pre>
+
+
+</div>

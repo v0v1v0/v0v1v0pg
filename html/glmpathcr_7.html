@@ -1,0 +1,346 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>glmpathcr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fit Penalized Continuation Ratio Model
+</h2>
+
+<h3>Description</h3>
+
+<p>This function fits a penalized backward (default) or forward continuation ratio model using the glmpath framework.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">glmpathcr(x, y, data, method="backward", weight = rep(1, n), offset = rep(0, n), 
+lambda2 = 1e-05, max.steps = 10 * min(n, m), max.norm = 100 * m, 
+min.lambda = (if (m &gt;= n) 1e-06 else 0), max.vars = Inf, max.arclength = Inf, 
+frac.arclength = 1, add.newvars = 1, bshoot.threshold = 0.1, relax.lambda = 1e-08, 
+standardize = TRUE, function.precision = 3e-13, eps = .Machine$double.eps, trace = FALSE, 
+nopenalty=NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a matrix of predictor variables</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>ordinal response</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>optional; list that includes <code>x</code> and <code>y</code> components</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>select between fitting a backward (default) versus a forward continuation ratio model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight</code></td>
+<td>
+<p>an optional vector of weights for observations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>an optional vector of offset. If a column of <code>x</code> is used as offset, the corresponding column must be removed from <code>x</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda2</code></td>
+<td>
+<p>regularization parameter for the L2 norm of the coefficients. Default is <code>1e-5</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.steps</code></td>
+<td>
+<p>an optional bound for the number of steps to be taken. Default is <code>10 * min{nrow(x), ncol(x)}</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.norm</code></td>
+<td>
+<p>an optional bound for the L1 norm of the coefficients. Default is <code>100 * ncol(x)</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min.lambda</code></td>
+<td>
+<p>an optional (lower) bound for the size of <code class="reqn">\lambda</code>. Default is 0 for <code>ncol(x) &lt; nrow(x)</code> cases and <code>1e-6</code> otherwise</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.vars</code></td>
+<td>
+<p>an optional bound for the number of active variables. Default is <code>Inf</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.arclength</code></td>
+<td>
+<p>an optional bound for arc length (L1 norm) of a step. If <code>max.arclength</code> is extremely small, an exact nonlinear path is produced. Default is <code>Inf</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>frac.arclength</code></td>
+<td>
+<p>Under the default setting, the next step size is computed so that the active set changes right at the next value of <code class="reqn">\lambda</code>. When <code>frac.arclength</code> is assigned some fraction between 0 and 1, the step size is decreased by the factor of <code>frac.arclength</code> in arc length. If <code>frac.arclength=0.2</code>, the step length is adjusted so that the active set would change after five smaller steps. Either <code>max.arclength</code> or <code>frac.arclength</code> can be used to force the path to be more accurate. Default is <code>1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>add.newvars</code></td>
+<td>
+<p><code>add.newvars</code> candidate variables (that are currently not in the active set) are used in the corrector step as potential active variables. Default is <code>1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bshoot.threshold</code></td>
+<td>
+<p>If the absolute value of a coefficient is larger than <code>bshoot.threshold</code> at the first corrector step it becomes nonzero (therefore when <code class="reqn">\lambda</code> is considered to have been decreased too far), <code class="reqn">\lambda</code> is increased again. i.e. A backward distance in <code class="reqn">\lambda</code> that makes the coefficient zero is computed. Default is <code>0.1</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>relax.lambda</code></td>
+<td>
+<p>A variable joins the active set if |l(<code class="reqn">\beta</code>)| &gt; <code class="reqn">\lambda</code>*(1-relax.lambda). Default is <code>1e-8</code>. If no variable joins the active set even after many (&gt;20) steps, the user should increase <code>relax.lambda</code> to <code>1e-7</code> or <code>1e-6</code>, but not more than that. This adjustment is sometimes needed because of the numerical precision/error propagation problems. In general, the paths are less accurate with relaxed lambda.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standardize</code></td>
+<td>
+<p>If <code>TRUE</code>, predictors are standardized to have a unit variance</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>function.precision</code></td>
+<td>
+<p><code>function.precision</code> parameter used in the internal solver. Default is <code>3e-13</code>. The algorithm is faster, but less accurate with relaxed, larger function precision</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>effective zero</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>If <code>TRUE</code>, the algorithm prints out its progress</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nopenalty</code></td>
+<td>
+<p>a set of indices for the predictors that are not subject to the L1 penalty</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>glmpathcr</code> function is largely borrowed from the <span class="pkg">glmpath</span> package and differs only in that (1) the ordinal dataset is first restructured to represent the K-1 conditionally independent likelihoods and (2) the family is specified to be binomial and the <code>nopenalty.subset</code> is specified to be the thresholds for the ordinal classes.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>glmpathcr</code> object is returned.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>vector of <code class="reqn">\lambda</code> values for which the exact coefficients are computed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda2</code></td>
+<td>
+<p><code class="reqn">\lambda_2</code> used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>step.length</code></td>
+<td>
+<p>vector of step lengths in <code class="reqn">\lambda</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>core</code></td>
+<td>
+<p>matrix of l(<code class="reqn">\beta</code>) values (derivatives of the log-likelihood)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>new.df</code></td>
+<td>
+<p>vector of degrees of freedom (to be used in the plot function)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>vector of degrees of freedom at each step</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deviance</code></td>
+<td>
+<p>vector of deviance computed at each step</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aic</code></td>
+<td>
+<p>vector of AIC values from fitted logistic regression on restructured data; use <code>summary</code> for AIC from continuation ratio model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bic</code></td>
+<td>
+<p>vector of BIC values from fitted logistic regression on restructured data; use <code>summary</code> for AIC from continuation ratio model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b.predictor</code></td>
+<td>
+<p>matrix of coefficient estimates from the predictor steps</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b.corrector</code></td>
+<td>
+<p>matrix of coefficient estimates from the corrector steps</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>new.A</code></td>
+<td>
+<p>vector of boolean values indicating the steps at which the active set changed (to be used in the plot/predict functions)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>actions</code></td>
+<td>
+<p>actions taken at each step</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>means</code></td>
+<td>
+<p>means of the columns of x</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sdx</code></td>
+<td>
+<p>standard deviations of the columns of x</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xnames</code></td>
+<td>
+<p>column names of x</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>family used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight</code></td>
+<td>
+<p>weights used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>offset used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nopenalty.subset</code></td>
+<td>
+<p>nopenalty.subset used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standardize</code></td>
+<td>
+<p>TRUE if the predictors were standardized before fitting</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>the matrix of predictor variables used in fitting the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>the ordinal outcome</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>either <code>forward</code> of <code>backward</code> method</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>For further details about the fitting algorithm, see the <span class="pkg">glmpath</span> package.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Kellie J. Archer
+</p>
+
+
+<h3>References</h3>
+
+<p>Ralf Bender and Axel Benner (2000) Calculating ordinal regression models in SAS and S-Plus. Biometrical Journal 42, 677–699.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>See also as <code>predict.glmpathcr</code>, <code>coef.glmpathcr</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(diabetes)
+x &lt;- diabetes[, 2:dim(diabetes)[2]]
+y &lt;- diabetes$y
+fit &lt;- glmpathcr(x, y)
+</code></pre>
+
+
+</div>

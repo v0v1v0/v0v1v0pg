@@ -1,0 +1,184 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pick</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Pick bins and seqs by name or position</h2>
+
+<h3>Description</h3>
+
+<p>Pick which bins and seqs to show and in what order. Uses
+<code>dplyr::select()</code>-like syntax, which means unquoted genome names, positional
+arguments and <a href="https://tidyselect.r-lib.org/reference/language.html">selection helpers</a>, such as
+<code>tidyselect::starts_with()</code> are supported. Renaming is not supported.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pick(x, ...)
+
+pick_seqs(x, ..., .bins = everything())
+
+pick_seqs_within(x, ..., .bins = everything())
+
+pick_by_tree(x, tree, infer_bin_id = .data$label)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>gggenomes object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>bins/seqs to pick, select-like expression.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.bins</code></td>
+<td>
+<p>scope for positional arguments, select-like expression, enclose
+multiple arguments with <code>c()</code>!</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tree</code></td>
+<td>
+<p>a phylogenetic tree in ggtree::ggtree or <code>ape::ape-package</code>-"phylo" format.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infer_bin_id</code></td>
+<td>
+<p>an expression to extract bin_ids from the tree data.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Use the dots to select bins or sequences (depending on function suffix), and
+the <code>.bins</code> argument to set the scope for positional arguments. For example,
+<code>pick_seqs(1)</code> will pick the first sequence from the first bin, while
+<code>pick_seqs(1, .bins=3)</code> will pick the first sequence from the third bin.
+</p>
+
+
+<h3>Value</h3>
+
+<p>gggenomes object with selected bins and seqs.
+</p>
+<p>gggenomes object with selected seqs.
+</p>
+<p>gggenomes object with selected seqs.
+</p>
+<p>gggenomes object with seqs selected by tree order.
+</p>
+
+
+<h3>Functions</h3>
+
+
+<ul>
+<li> <p><code>pick()</code>: pick bins by bin_id, positional argument (start at top)
+or select-helper.
+</p>
+</li>
+<li> <p><code>pick_seqs()</code>: pick individual seqs seq_id, positional argument (start at
+top left) or select-helper.
+</p>
+</li>
+<li> <p><code>pick_seqs_within()</code>: pick individual seqs but only modify bins containing those
+seqs, keep rest as is.
+</p>
+</li>
+<li> <p><code>pick_by_tree()</code>: align bins with the leaves in a given phylogenetic tree.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">s0 &lt;- tibble::tibble(
+  bin_id = c("A", "B", "B", "B", "C", "C", "C"),
+  seq_id = c("a1", "b1", "b2", "b3", "c1", "c2", "c3"),
+  length = c(1e4, 6e3, 2e3, 1e3, 3e3, 3e3, 3e3)
+)
+
+p &lt;- gggenomes(seqs = s0) + geom_seq(aes(color = bin_id), size = 3) +
+  geom_bin_label() + geom_seq_label() +
+  expand_limits(color = c("A", "B", "C"))
+p
+
+# remove
+p %&gt;% pick(-B)
+
+# select and reorder, by ID and position
+p %&gt;% pick(C, 1)
+
+# use helper function
+p %&gt;% pick(starts_with("B"))
+
+# pick just some seqs
+p %&gt;% pick_seqs(1, c3)
+
+# pick with .bin scope
+p %&gt;% pick_seqs(3:1, .bins = C)
+
+# change seqs in some bins, but keep rest as is
+p %&gt;% pick_seqs_within(3:1, .bins = B)
+
+# same w/o scope, unaffected bins remain as is
+p %&gt;% pick_seqs_within(b3, b2, b1)
+
+# Align sequences with and plot next to a phylogenetic tree
+library(patchwork) # arrange multiple plots
+library(ggtree) # plot phylogenetic trees
+
+# load and plot a phylogenetic tree
+emale_mcp_tree &lt;- read.tree(ex("emales/emales-MCP.nwk"))
+t &lt;- ggtree(emale_mcp_tree) + geom_tiplab(align = TRUE, size = 3) +
+  xlim(0, 0.05) # make room for labels
+
+p &lt;- gggenomes(seqs = emale_seqs, genes = emale_genes) +
+  geom_seq() + geom_seq() + geom_bin_label()
+
+# plot next to each other, but with
+# different order in tree and genomes
+t + p + plot_layout(widths = c(1, 5))
+
+# reorder genomes to match tree order
+# with a warning caused by mismatch in y-scale expansions
+t + p %&gt;% pick_by_tree(t) + plot_layout(widths = c(1, 5))
+
+# extra genomes are dropped with a notification
+emale_seqs_more &lt;- emale_seqs
+emale_seqs_more[7, ] &lt;- emale_seqs_more[6, ]
+emale_seqs_more$seq_id[7] &lt;- "One more genome"
+p &lt;- gggenomes(seqs = emale_seqs_more, genes = emale_genes) +
+  geom_seq() + geom_seq() + geom_bin_label()
+t + p %&gt;% pick_by_tree(t) + plot_layout(widths = c(1, 5))
+
+try({
+  # no shared ids will cause an error
+  p &lt;- gggenomes(seqs = tibble::tibble(seq_id = "foo", length = 1)) +
+    geom_seq() + geom_seq() + geom_bin_label()
+  t + p %&gt;% pick_by_tree(t) + plot_layout(widths = c(1, 5))
+
+  # extra leafs in tree will cause an error
+  emale_seqs_fewer &lt;- slice_head(emale_seqs, n = 4)
+  p &lt;- gggenomes(seqs = emale_seqs_fewer, genes = emale_genes) +
+    geom_seq() + geom_seq() + geom_bin_label()
+  t + p %&gt;% pick_by_tree(t) + plot_layout(widths = c(1, 5))
+})
+
+</code></pre>
+
+
+</div>

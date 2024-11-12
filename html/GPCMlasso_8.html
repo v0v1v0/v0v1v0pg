@@ -1,0 +1,118 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tenseness_small</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Subset of tenseness data from the Freiburg Complaint Checklist</h2>
+
+<h3>Description</h3>
+
+<p>Data from the Freiburg Complaint Checklist. 
+The data contain 5 items (out of 8) corresponding to the scale <em>Tenseness</em> for a subset of 200 participants of the 
+standardization sample of the Freiburg Complaint Checklist.
+</p>
+
+
+<h3>Format</h3>
+
+<p>A data frame containing data from the Freiburg Complaint Checklist a subset of 200 observations. 
+The complete data set with 1847 observations can be found in <code>tenseness</code>.
+All items refer to the scale <em>Tenseness</em> and are measured on a 5-point Likert scale where low numbers 
+correspond to low frequencies or low intensitites of the respective complaint and vice versa. 
+</p>
+ 
+<dl>
+<dt>Clammy_hands</dt>
+<dd>
+<p>Do you have clammy hands?</p>
+</dd>
+<dt>Sweat_attacks</dt>
+<dd>
+<p>Do you have sudden attacks of sweating?</p>
+</dd>
+<dt>Clumsiness</dt>
+<dd>
+<p>Do you notice that you behave clumsy?</p>
+</dd>
+<dt>Wavering_hands</dt>
+<dd>
+<p>Are your hands wavering frequently, e.g. when lightning a cigarette or when holding a cup?</p>
+</dd>
+<dt>Restless_hands</dt>
+<dd>
+<p>Do you notice that your hands are restless?</p>
+</dd>
+<dt>Gender</dt>
+<dd>
+<p>Gender of the person</p>
+</dd>
+<dt>Age</dt>
+<dd>
+<p>Age of the person</p>
+</dd>
+</dl>
+<h3>Source</h3>
+
+<p>ZPID (2013). PsychData of the Leibniz Institute for Psychology Information ZPID. Trier: Center for Research Data in Psychology.
+</p>
+<p>Fahrenberg, J. (2010). Freiburg Complaint Checklist [Freiburger Beschwerdenliste (FBL)]. Goettingen, Hogrefe.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GPCMlasso</code>, <code>ctrl_GPCMlasso</code>, <code>trait.posterior</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(tenseness_small)
+
+## formula for simple model without covariates
+form.0 &lt;- as.formula(paste("cbind(",paste(colnames(tenseness_small)[1:5],collapse=","),")~0"))
+
+######
+## fit simple RSM where loglikelihood and score function are evaluated parallel on 2 cores
+rsm.0 &lt;- GPCMlasso(form.0, tenseness_small, model = "RSM", 
+control= ctrl_GPCMlasso(cores=2))
+rsm.0
+
+## Not run: 
+## formula for model with covariates (and DIF detection)
+form &lt;- as.formula(paste("cbind(",paste(colnames(tenseness_small)[1:5],collapse=","),")~."))
+
+######
+## fit GPCM model with 10 different tuning parameters
+gpcm &lt;- GPCMlasso(form, tenseness_small, model = "GPCM", 
+                  control = ctrl_GPCMlasso(l.lambda = 10))
+gpcm
+plot(gpcm)
+pred.gpcm &lt;- predict(gpcm)
+trait.gpcm &lt;- trait.posterior(gpcm)
+
+######
+## fit RSM, detect differential step functioning (DSF)
+rsm.DSF &lt;- GPCMlasso(form, tenseness_small, model = "RSM", DSF = TRUE, 
+                     control = ctrl_GPCMlasso(l.lambda = 10))
+rsm.DSF
+plot(rsm.DSF)
+
+## create binary data set
+tenseness_small_binary &lt;- tenseness_small
+tenseness_small_binary[,1:5][tenseness_small[,1:5]&gt;1] &lt;- 2
+
+######
+## fit and cross-validate Rasch model
+set.seed(1860)
+rm.cv &lt;- GPCMlasso(form, tenseness_small_binary, model = "RM", cv = TRUE, 
+                   control = ctrl_GPCMlasso(l.lambda = 10))
+rm.cv
+plot(rm.cv)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

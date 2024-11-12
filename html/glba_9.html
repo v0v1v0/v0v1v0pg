@@ -1,0 +1,398 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>lba</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Specify and fit lba models. 
+</h2>
+
+<h3>Description</h3>
+
+<p>Specification of lba models with explanatory variables on the parameters. Models are fitted
+using full information maximum likelihood. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">lba(rt, response, data, weights, 
+sddr = ~1, 
+sp = ~1, 
+bound = ~1, 
+nond = ~1, 
+drift = ~1, 
+scaling = "sum", 
+loglink = c(FALSE, FALSE, FALSE, FALSE), 
+sdstart=0.1,
+startpars, 
+fixed = NULL,
+method = "L-BFGS-B",
+hessian = FALSE,
+lower = -Inf,
+upper = Inf,
+fit=TRUE,
+debug=FALSE) 
+
+## S3 method for class 'lba'
+logLik(object, ...)
+## S3 method for class 'lba'
+print(x, ...)
+## S3 method for class 'lba'
+summary(object, ...)
+
+tablba(object)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>rt</code></td>
+<td>
+<p>The name of the response time variable in data.frame 'data'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response</code></td>
+<td>
+<p>The name of the response time variable in data.frame 'data'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data.frame containing the variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Optional case weights.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sddr</code></td>
+<td>
+<p>The model for the standard deviation of the drift rate, see Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sp</code></td>
+<td>
+<p>The model for the start point parameter, see Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bound</code></td>
+<td>
+<p>The model for the boundary parameter, see Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nond</code></td>
+<td>
+<p>The model for the non-decision time, see Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drift</code></td>
+<td>
+<p>The model for the drift rate parameter, see Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scaling</code></td>
+<td>
+<p>Options for making the model identifiable; options are 
+"sum" or "fixedSD".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loglink</code></td>
+<td>
+<p>Wheter parameters (sddr, sp, nond, and bound) should be
+fitted using a log link function (to avoid boundary estimation issues).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sdstart</code></td>
+<td>
+<p>Starting value of the standard deviation of the drift
+rates in case argument scaling uses option "fixedSD".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startpars</code></td>
+<td>
+<p>Vector of starting values for the parameters.  This is
+currently a required argument as no automatic starting values are
+available.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed</code></td>
+<td>
+<p>Logical; when startpars is given 'fixed' can be used to
+specify whether parameters should remain fixed during estimation;
+sometimes required for more stable estimation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Optimization method; passed to optim.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian</code></td>
+<td>
+<p>Logical; indicating whether the estimated hessian at the
+minimum; passed to optim.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower, upper</code></td>
+<td>
+<p>lower and upper boundaries for the parameters; only
+applicable with optimization method 'L-BFGS-B' is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>Logical; indicating whehter the model should be fit, ie, its
+parameters optimized or not.  Default is TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>debug</code></td>
+<td>
+<p>Logical, default is FALSE; prints out detailed information
+on submodels, parameters et cetera during optimization.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>a (fitted) lba model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a (fitted) lba model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>not currently in use.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The 5 sub-models of the LBA model can be specified using a formula.  Eg,
+<code>nond=~diff</code>, specifies a model in which the <code>nond</code>ecision time
+is modeled as function of <code>diff</code>iculty; <code>diff</code> may be a factor or
+numerical variable.
+</p>
+<p>Identification of the model is attained by having the drift rates for
+alternatives in <code>response</code> sum to unity or by having a fixed standard
+deviation of the drift rates.  These options are specified by scaling="sum"
+or scaling="fixedSD", respectively.  In the latter case, the value of the
+fixed standard deviation is assumed to be the first value of
+<code>startpars</code>.
+</p>
+<p>If <code>hessian</code> is set to TRUE, <code>optim</code> is used to get the Hessian
+at the maximum likelihood estimates of the parameters.  This is used in
+turn to compute standard errors.  The <code>summary</code> function pretty prints
+a table of parameter estimates, standard errors, z- and p-values.  The
+<code>summary</code> function also prints the separate sub-model specifications
+and the parameter estimates.  The <code>print</code> function prints basic
+information and a (named) vector of parameter estimates.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The <code>lba</code> function returns a list with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>pars</code></td>
+<td>
+<p>The values of fitted parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logl</code></td>
+<td>
+<p>The optimized log likelihood</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convergence</code></td>
+<td>
+<p>Convergence information from <code>optim</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian</code></td>
+<td>
+<p>Only included if <code>hessian</code> was set to TRUE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ses</code></td>
+<td>
+<p>Only included if <code>hessian</code> was set to TRUE and the hessian is non-singular</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed</code></td>
+<td>
+<p>Vector of logical's indicating whether parameters were fixed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>List of 5 sub-models of the LBA model, see Details above.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>npar</code></td>
+<td>
+<p>The number of parameters of the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>freepars</code></td>
+<td>
+<p>The number of freely estimated parameters of the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nobs</code></td>
+<td>
+<p>The number of observations, used in computing the BIC</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The (matched) call to the <code>lba</code> function</p>
+</td>
+</tr>
+</table>
+<p>Function <code>tablba</code> returns a <code>data.frame</code> with columns: 
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>value</code></td>
+<td>
+<p>The estimated (or fixed) parameter value</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se</code></td>
+<td>
+<p>The standard error of the parameter computed from the Hessian</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>z</code></td>
+<td>
+<p>The z-ratio of <code>value</code> and <code>se</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>The p-value associated with <code>z</code></p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Ingmar Visser
+</p>
+
+
+<h3>References</h3>
+
+<p>LBA models as in Brown and Heathcote, Cognitive science, 2008.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(bh08)
+
+# reduce the data set for faster runtimes
+bh1 &lt;- bh08[c(1:300,1001:1300,2001:2300),]
+
+# remove extreme RTs
+bh1 &lt;- bh1[bh1$rt&gt;.180&amp;bh1$rt&lt;2,]
+
+# starting values based on the quantile parameter 
+# estimates from Brown and Heathcote, 2008:
+# pars &lt;- c(.25,.3,.1,.2,.9,.75,.6)
+
+# fit the model with starting values
+pars &lt;- c(.25,.3,.1,.2,.9,.75,.6)
+m1 &lt;- lba(rt=rt,response=acc,drift=~diff-1,data=bh1,
+	startpars=pars)
+
+m1
+
+summary(m1)
+
+## Not run: 
+	# use random starting values instead
+	set.seed(2)
+	m1 &lt;- lba(rt=rt,response=acc,drift=~diff-1,data=bh08,
+	startpars=pars, hessian=TRUE)
+
+	summary(m1)
+	
+	# get the parameters
+	pp &lt;- m1$pars
+	# simulate some data from the model for the three conditions
+	set.seed(1)
+	dt1 &lt;- rlba(1000, b=pp[3]+pp[2], A=pp[2], vs=c(pp[5],1-pp[5]), 
+		s=pp[1], t0=pp[4], truncdrifts=TRUE)
+	dt2 &lt;- rlba(1000, b=pp[3]+pp[2], A=pp[2], vs=c(pp[6],1-pp[6]), 
+		s=pp[1], t0=pp[4], truncdrifts=TRUE)
+	dt3 &lt;- rlba(1000, b=pp[3]+pp[2], A=pp[2], vs=c(pp[7],1-pp[7]), 
+		s=pp[1], t0=pp[4], truncdrifts=TRUE)
+	dt &lt;- rbind(dt1,dt2,dt3)
+	dt$diff &lt;- gl(3,1000)
+	dt$resp &lt;- ifelse(dt$resp==2,0,1)
+	
+	# remove extreme RTs
+	dt &lt;- dt[dt$rt&gt;.180&amp;dt$rt&lt;2,]
+	
+	# refit the model with the simualted data
+	m1rf &lt;- lba(rt=rt,response=resp,drift=~diff-1,data=dt,startpars=pp)
+	
+	data(numpp1)
+	
+	set.seed(9)
+	m2 &lt;- lba(rt=rt,response=acc,drift=~diff+block,data=numpp1,
+	startpars=c(0.25,runif(4),0,0), scaling="fixedSD", 
+		sdstart=0.25, hessian=TRUE) 
+	tablba(m2) 
+	
+	
+## End(Not run)
+
+</code></pre>
+
+
+</div>

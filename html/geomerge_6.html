@@ -1,0 +1,225 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>geomerge</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Geospatial Data Integration
+</h2>
+
+<h3>Description</h3>
+
+<p>This function conducts a series of spatial joins for Geographic Information Systems (GIS) data. It integrates three of R's most commonly used GIS data classes - polygons, points and rasters. With flexible options for assignment rules and including the calculation of spatial and temporal lags, <code>geomerge</code> returns a spatial (panel) dataset in the form of a <code>SpatialPolygonsDataFrame</code> that users may import into any predictive statistical analysis.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">geomerge(...,target=NULL,time=NA,time.lag=TRUE,spat.lag=TRUE,
+             zonal.fun=sum, assignment="max(area)",population.data = NA,
+             point.agg = "cnt",t_unit="days",silent=FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>input datasets and, if provided, optional arguments. See Details.  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>target</code></td>
+<td>
+
+<p><code>SpatialPolygonsDataFrame</code> representing desired units of analysis. See Details. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+
+<p>temporal window for dynamic temporal binning of point data. Required format is <code>c(start_date, end_date, interval_length)</code>, each specified as String. Default = <kbd>NA</kbd>. See Details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time.lag</code></td>
+<td>
+
+<p>Boolean indicating whether or not first and second order temporal lag values of all variables are returned. Only affects dynamic point data integration. Default = <kbd>TRUE</kbd>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spat.lag</code></td>
+<td>
+
+<p>Boolean indicating whether or not first and second order spatial lag values of all variables are returned. Default = <kbd>TRUE</kbd>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zonal.fun</code></td>
+<td>
+
+<p>object of class <kbd>function</kbd> applied to values of <code>RasterLayer</code> when generating zonal statistics for each target polygon. Default = <kbd>sum</kbd>. See Details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>assignment</code></td>
+<td>
+
+<p>identification of either population- or area-weighting assignment rules when handling <code>SpatialPolygonsDataFrame</code> joins to <code>target</code>. Default = <kbd>"max(area)"</kbd>. See Details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>population.data</code></td>
+<td>
+
+<p>specifies data used for weighting if a population-based <code>assignment</code> rule is selected. See Details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>point.agg</code></td>
+<td>
+
+<p>specification of aggregation format for data of type <code>SpatialPointsDataFrame</code>. Default = <kbd>"cnt"</kbd>. See Details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t_unit</code></td>
+<td>
+
+<p>temporal unit used for dynamic point aggregation. Default = <kbd>"days"</kbd>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>silent</code></td>
+<td>
+
+<p>Boolean switch to suppress any (non-critical) warnings and messages. Default = <kbd>FALSE</kbd>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>geomerge</code> accepts any number of data inputs of the most common spatial data classes in R - <code>SpatialPolygonsDataFrame</code>, <code>SpatialPointsDataFrame</code>, and <code>RasterLayer</code>. The <code>target</code> they are merged to may be of any shape but must be a <code>SpatialPolygonsDataFrame</code>. The extent of each data input should at least match the extent of the <code>target</code>; if not, the package returns a warning. In order to perform accurate area calculations at any scale, <code>geomerge</code> projects any data geometry into WGS84. Input data (including <code>target</code>) not in WGS84 are automatically re-projected.
+</p>
+<p><code>geomerge</code> assumes that all inputs of type <code>SpatialPolygonsDataFrame</code> and <code>RasterLayer</code> are static and contemporary. If polygons or raster are changing, we advise to simply rerun <code>geomerge</code> for each interval in which data are static and contemporary. The package allows for dynamic integration of all inputs that are a <code>SpatialPointsDataFrame</code>, i.e., one can, for example, automatically generate the counts of events that occur within a specific unit of <code>target</code> within a specific time period. Further details are given below.
+</p>
+<p>If <code>SpatialPolygonsDataFrame</code> data are joined to <code>target</code>, they must contain only one column with the data of interest. The package also accepts the short-hand variable specification using the standard "$" notation to denote the selection of a specific variable from the <code>SpatialPolygonsDataFrame</code>. <code>RasterLayer</code> are by default single-valued. These data may be of class <kbd>factor</kbd> or <kbd>numeric</kbd>.
+</p>
+<p>If <code>SpatialPointsDataFrame</code> are joined to <code>target</code> they must have one column coding the variable of interest and, if points carry timestamps, dates must be given in a second column <kbd>timestamp</kbd> and formatted as a UTC date string with format <kbd>"YYYY-MM-DD"</kbd> or <kbd>"YYYY-MM-DD hh:mm:ss"</kbd>.
+</p>
+<p>In practice, our input logic implies that if more than one variable of interest are to be merged to <code>target</code>, statically or dynamically, each has to be separately entered as argument. Note that variable names in <code>target</code> derive from the name of the input data and it is therefore advised to use meaningful labels for input data.
+</p>
+<p>In merging <code>SpatialPolygonsDataFrame</code> values to units of analysis given by <code>target</code>, users have a choice among a number of different <code>assignment</code> rules based on area overlap and population size. Area-based assignment generally can take the values <kbd>"max(area)"</kbd> or <kbd>"min(area)"</kbd>, i.e., the value assigned to a given unit in <code>target</code> comes from that polygon in the <code>SpatialPolygonsDataFrame</code> with maximal or minimal area overlap respectively. If the value of interest is of class <kbd>numeric</kbd>, the user may also choose <kbd>"weighted(area)"</kbd>, i.e., the values is assigned as the area-weighted average of the values in all polygons intersecting a given unit in <code>target</code>.
+</p>
+<p>The assignment rules <kbd>"max(pop)"</kbd>, <kbd>"min(pop)"</kbd> and <kbd>"weighted(pop)"</kbd> (the latter again for <kbd>numeric</kbd> variables only) analogously use the population value given by <code>population.data</code> in overlapping areas as basis for assignment. If any of them is selected in the <code>assignment</code> argument, users must provide <code>population.data</code> as a <code>RasterLayer</code>. The geographical resolution of <code>population.data</code> should be the same or better than that of <code>target</code>. The zonal statistic used for population within overlapping polygons is <code>sum</code>.
+</p>
+<p>When a <code>SpatialPointsDataFrame</code> is merged to <code>target</code>, one of two operations can be performed. For <code>point.agg = "cnt"</code> the function calculates the sum of the number of locations that fall within each unit of <code>target</code>. For numerical variables of interest, <code>point.agg = "sum"</code> returns  the sum across for all values associated with points within each unit of <code>target</code>. If different aggregation formats are to be applied to different <code>SpatialPointsDataFrame</code> inputs, these have to be specified as a character vector, i.e., <code>point.agg = c("sum", "cnt")</code>, in the order of inputs.
+</p>
+<p>Values for inputs of type <code>SpatialPointsDataFrame</code> are either calculated statically across the entire frame if <code>time = NA</code> or dynamically within a given time period that can be specified using <code>time = c(start_date, end_date, interval_length)</code>. All three inputs must be Strings where <code>interval_length</code> is defined in multiples of <code>t_unit</code>. The default value is <code>t_unit = "days"</code>, the package also accepts inputs of <kbd>"secs"</kbd>, <kbd>"mins"</kbd>, <kbd>"hours"</kbd>, <kbd>"months"</kbd> or <kbd>"years"</kbd>.
+</p>
+<p>Zonal statistics are applied to objects of class <code>RasterLayer</code> that are joined to <code>target</code>. The specific operations are defined in the function call using the argument <code>zonal.fun</code> and each is added into the result. Any zonal statistics compatible with the <code>extract</code> function in <span class="pkg">terra</span> is accepted. Note that <code>geomerge</code> does not accept raster stacks. If you have raster stacks they must be separated and the layers integrated separately into the function. 
+</p>
+<p>If <code>spat.lag = TRUE</code> spatial lags of all <kbd>numeric</kbd> variables from a <code>SpatialPolygonsDataFrame</code> or <code>RasterLayer</code> joined to <code>target</code> polygons are returned using first and also second order neighboring weights matrices. The package assigns <code>target</code> polygons the mean value of units within each neighborhood. When dynamic point aggregation is run and <code>time.lag = TRUE</code>, <code>geomerge</code> returns the values of every target polygon, as well as its first and second order neighboring unit averages, separately, at time t-1 and t-2 defined by <code>interval</code> in the argument <code>time</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns an object of class <kbd>"geomerge"</kbd>.
+</p>
+<p>The functions <code>summary</code>, <code>print</code>, <code>plot</code> overload the standard outputs for objects of type <code>geomerge</code> providing summary information and and visualizations specific to the output object. An object of class <kbd>"geomerge"</kbd> is a list containing the following three components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p><code>SpatialPolygonsDataFrame</code> that contains all information merged with the <code>target</code> layer. Column names are assigned the name of the input data object separated by "." from a short description of the calculation, as well as modifiers such as ".1st" and ".2nd" for first- and second-order neighborhoods of <code>target</code>. In the case of dynamic point data aggregation, ".t_1" and ".t_2" are used to label first- and second-order temporal lags. For example, if <code>geomerge</code> is told to use a <code>SpatialPointsDataFrame</code> called <kbd>"vio"</kbd> to count incidents of conflict contained within units of <code>target</code>, the default output would include columns named <kbd>"vio.cnt"</kbd>, <kbd>"vio.cnt.t_1"</kbd>, <kbd>"vio.cnt.t_2"</kbd>, <kbd>"vio.cnt.1st"</kbd>, <kbd>"vio.cnt.1st.t_1"</kbd>, <kbd>"vio.cnt.1st.t_2"</kbd>, <kbd>"vio.cnt.2nd"</kbd>, <kbd>"vio.cnt.2nd.t_1"</kbd>, <kbd>"vio.cnt.2nd.t_2"</kbd>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inputData</code></td>
+<td>
+<p>List containing the spatial objects used as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameters</code></td>
+<td>
+<p>List containing information on all input parameters used during integration.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p><code>geomerge</code> exclusively merges data using the global WGS84 coordinate reference system (CRS) to ensure that areal statistics are accurate at all scales. If data are entered that are using a different and/or projected CRS, the tool automatically first transforms the data. This on-the-fly transformation, however, may be very slow and it is advised to always enter inputs in WGS84.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Karsten Donnay and Andrew M. Linke.
+</p>
+
+
+<h3>References</h3>
+
+<p>Andrew M. Linke, Karsten Donnay. (2017). "Scale Variability Misclassification: The Impact of Spatial Resolution on Effect Estimates in the Geographic Analysis of Foreign Aid and Conflict." Paper presented at the <em>International Studies Association Annual Meeting</em>, February 22-25 2017, Baltimore.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>geomerge-package</code>, <code>print.geomerge</code>, <code>plot.geomerge</code>, <code>summary.geomerge</code>, <code>generateGrid</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(geomerge)
+
+# 1) Simple static integration of polygon data
+output &lt;- geomerge(geoEPR,target=states,silent=TRUE)
+summary (output)
+
+
+# 2) Static integration for point, polygon, raster data
+output &lt;- geomerge(ACLED$EVENT_TYPE,AidData$project_id,geoEPR,
+		   gpw,na.rm=TRUE,target=states)
+summary(output)
+plot(output)
+
+# 3) Dynamic point data integration for numeric variables
+output &lt;- geomerge(ACLED$FATALITIES,AidData$commitme_1,geoEPR,
+		   target=states,time=c("2011-01-01", "2011-12-31","1"),
+		   t_unit='months',point.agg='sum')
+summary(output)
+plot(output)
+
+# 4) Population weighted assignment
+output &lt;- geomerge(geoEPR,target=states,assignment='max(pop)',
+		   population.data = gpw)
+summary(output)
+plot(output)
+
+</code></pre>
+
+
+</div>

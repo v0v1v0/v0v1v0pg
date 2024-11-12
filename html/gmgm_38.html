@@ -1,0 +1,165 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>prediction</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Perform predictive inference in a Gaussian mixture dynamic Bayesian network</h2>
+
+<h3>Description</h3>
+
+<p>This function performs predictive inference in a Gaussian mixture dynamic
+Bayesian network. For a sequence of <code class="reqn">T</code> time slices, this task consists
+in defining a time horizon <code class="reqn">h</code> such that at each time slice <code class="reqn">t</code>
+(for <code class="reqn">0 \le t \le T - h</code>), the state of the system at <code class="reqn">t + h</code> is
+estimated given all the data (the evidence) collected up to <code class="reqn">t</code>. Although
+the states at <code class="reqn">t + 1, \dots , t + h</code> are observed in the future, some
+information about them can be known a priori (such as contextual information
+or features controlled by the user). This "predicted" evidence can be taken
+into account when propagating the particles from <code class="reqn">t</code> to <code class="reqn">t + h</code> in
+order to improve the predictions. Predictive inference is performed by
+sequential importance resampling, which is a particle-based approximate
+method (Koller and Friedman, 2009).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">prediction(
+  gmdbn,
+  evid,
+  evid_pred = NULL,
+  nodes = names(gmdbn$b_1),
+  col_seq = NULL,
+  horizon = 1,
+  n_part = 1000,
+  max_part_sim = 1e+06,
+  min_ess = 1,
+  verbose = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>gmdbn</code></td>
+<td>
+<p>An object of class <code>gmdbn</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>evid</code></td>
+<td>
+<p>A data frame containing the evidence. Its columns must explicitly
+be named after nodes of <code>gmdbn</code> and can contain missing values (columns
+with no value can be removed).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>evid_pred</code></td>
+<td>
+<p>A data frame containing the "predicted" evidence. Its
+columns must explicitly be named after nodes of <code>gmdbn</code> and can contain
+missing values (columns with no value can be removed).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nodes</code></td>
+<td>
+<p>A character vector containing the inferred nodes (by default all
+the nodes of <code>gmdbn</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col_seq</code></td>
+<td>
+<p>A character vector containing the column names of <code>evid</code>
+and <code>evid_pred</code> that describe the observation sequence. If <code>NULL</code>
+(the default), all the observations belong to a single sequence. The
+observations of a same sequence must be ordered such that the <code class="reqn">t</code>th one
+is related to time slice <code class="reqn">t</code> (note that the sequences can have different
+lengths).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>horizon</code></td>
+<td>
+<p>A positive integer vector containing the time horizons for
+which predictive inference is performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_part</code></td>
+<td>
+<p>A positive integer corresponding to the number of particles
+generated for each observation sequence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_part_sim</code></td>
+<td>
+<p>An integer greater than or equal to <code>n_part</code>
+corresponding to the maximum number of particles that can be processed
+simultaneously. This argument is used to prevent memory overflow, dividing
+<code>evid</code> into smaller subsets that are handled sequentially.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_ess</code></td>
+<td>
+<p>A numeric value in [0, 1] corresponding to the minimum ESS
+(expressed as a proportion of <code>n_part</code>) under which the renewal step of
+sequential importance resampling is performed. If <code>1</code> (the default),
+this step is performed at each time slice.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>A logical value indicating whether subsets of <code>evid</code> and
+time slices in progress are displayed.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>If <code>horizon</code> has one element, a data frame with a structure
+similar to <code>evid</code> containing the predicted values of the inferred
+nodes and their observation sequences (if <code>col_seq</code> is not <code>NULL</code>).
+If <code>horizon</code> has two or more elements, a list of data frames (tibbles)
+containing these values for each time horizon.
+</p>
+
+
+<h3>References</h3>
+
+<p>Koller, D. and Friedman, N. (2009). <em>Probabilistic Graphical Models:
+Principles and Techniques</em>. The MIT Press.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>filtering</code>, <code>inference</code>,
+<code>smoothing</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+set.seed(0)
+data(gmdbn_air, data_air)
+evid &lt;- data_air
+evid$NO2[sample.int(7680, 1536)] &lt;- NA
+evid$O3[sample.int(7680, 1536)] &lt;- NA
+pred &lt;- prediction(gmdbn_air, evid, evid[, c("DATE", "TEMP", "WIND")],
+                   nodes = c("NO2", "O3"), col_seq = "DATE",
+                   horizon = c(1, 2), verbose = TRUE)
+
+</code></pre>
+
+
+</div>

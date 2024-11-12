@@ -1,0 +1,174 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ggetho</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prepare a ggplot object to represent behavioural data</h2>
+
+<h3>Description</h3>
+
+<p>This function summarises a variable of interest (y or z axis)
+in order to subsequently represent it over time (x axis)
+(using layers provided either by <code>ggplot2</code> or <code>ggetho</code>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ggetho(
+  data,
+  mapping,
+  summary_FUN = mean,
+  summary_time_window = mins(30),
+  time_wrap = NULL,
+  time_offset = 0,
+  multiplot = NULL,
+  multiplot_period = hours(24),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>behavr::behavr table containing the data and metadata</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mapping</code></td>
+<td>
+<p>default list of aesthetic mappings to use for plot</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>summary_FUN</code></td>
+<td>
+<p>method (function) used to summarise <code>variable</code> over time (typically, the mean)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>summary_time_window</code></td>
+<td>
+<p>width (in seconds) of the time window to compute a summary on</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_wrap</code></td>
+<td>
+<p>time (in seconds) used to wrap the data (see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_offset</code></td>
+<td>
+<p>time offset (i.e. phase, in seconds) when using <code>time_wrap</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>multiplot</code></td>
+<td>
+<p>integer, greater than two, or NULL, the default (see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>multiplot_period</code></td>
+<td>
+<p>the duration of the period when mutiplotting (see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments to be passed to <code>ggplot2::ggplot()</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>time_wrap</code> is typically used to express time relatively to the start of the the day.
+In other words, it can help be used to pull all days together in one representative day.
+In this case, <code>time_wrap = hours(24)</code>.
+Instead of representing data from the start of the day, it can be done from any offset, using <code>time_offset</code>.
+For instance,  <code>time_offset = hours(12)</code> puts the circadian reference (ZT0) in the middle of the plot.
+</p>
+<p>Multiplotting is a generalisation of double-plotting, triple-plotting...
+This type or representation is useful to understand periodic behaviours.
+When <code>multiplot</code> is <em>not</em> NULL, data is repeated as
+many time as its value, along the x axis.
+The y axis is then the period (typically the day) onset.
+It is possible to set duration of the period, which is typically 24 h to arbitrary values using the
+<code>multiplot_period</code> argument.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An initial ggplot object that can be further edited.
+</p>
+
+
+<h3>References</h3>
+
+
+<ul><li>
+<p> The relevant <a href="https://rethomics.github.io/ggetho.html#the-ggetho-function">rethomic tutorial section</a>
+</p>
+</li></ul>
+<h3>See Also</h3>
+
+
+<ul>
+<li> <p>stat_pop_etho to show population trend by aggregating individuals over time
+</p>
+</li>
+<li> <p>stat_tile_etho to show variable of interest as colour intensity
+</p>
+</li>
+<li> <p>stat_ld_annotations to show light and dark phases on the plot
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># We start by making a dataset with 4 animals
+metadata &lt;- data.table(id = sprintf("toy_experiment|%02d", 1:4),
+                   condition = c("A", "B"))
+dt &lt;- toy_activity_data(metadata, 3)
+# We build a plot object with **nothing inside** (just the axis)
+# we want to show proportion of time sleeping  on the y axis:
+pl &lt;- ggetho(dt, aes(y = asleep))
+pl
+# Sometimes, the variable of interest in not on the y axis, but on z axis (colour scale).
+# When we do not provide a y axis,
+# ggetho will make an ID fo each animal and display them on separate rows
+## Not run: 
+pl &lt;- ggetho(dt, aes(z = asleep))
+pl
+# this one is the same type, but it groups the animals by condition
+pl &lt;- ggetho(dt, aes(z = asleep, y = condition))
+pl
+# sorting with paste
+pl &lt;- ggetho(dt, aes(z = asleep,y = paste(condition, id)))
+pl
+# we want to summarise (wrap) data along a circadian day:
+pl &lt;- ggetho(dt, aes(y = asleep), time_wrap = hours(24))
+pl
+
+# double-plotted actogram:
+pl &lt;- ggetho(dt,
+              aes(z = moving),
+              multiplot = 2,
+              multiplot_period = hours(24))
+pl
+# then use `+ stat_tile_etho()` , or `+ stat_bar_tile_etho()`
+
+## End(Not run)
+</code></pre>
+
+
+</div>

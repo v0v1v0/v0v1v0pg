@@ -1,0 +1,177 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rgig</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> 
+Generator and Density of Generalized Inverse Gaussian (GIG) distribution.
+</h2>
+
+<h3>Description</h3>
+
+<p>Random variate generator for the Generalized Inverse Gaussian (GIG)
+distribution. The generator is especially designed for the varying
+parameter case, i.e., for sample size <code>n=1</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rgig(n=1, lambda, chi, psi)
+dgig(x, lambda, chi, psi, log = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Number of observations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>Shape parameter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chi</code></td>
+<td>
+<p>Shape and scale parameter. Must be nonnegative for positive lambda and positive else.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>psi</code></td>
+<td>
+<p>Shape and scale parameter. Must be nonnegative for negative lambda and positive else.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Argument of pdf</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log</code></td>
+<td>
+<p>If <code>TRUE</code> the logarithm of the density will be returned.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The package uses a parametrization for the GIG distribution where the
+density is proportional to
+</p>
+<p style="text-align: center;"><code class="reqn">f(x) = x^{\lambda-1} e^{-\frac{1}{2}(\chi/x+\psi x)}.</code>
+</p>
+
+<p>The parameters have to satisfy the conditions
+</p>
+<p style="text-align: center;"><code class="reqn">%
+    \begin{array}{l}
+    \lambda &gt; 0,\, \psi &gt; 0, \chi \geq 0, \quad\mbox{or} \\
+    \lambda = 0,\, \psi &gt; 0, \chi &gt; 0,    \quad\mbox{or}  \\
+    \lambda &lt; 0,\, \psi \geq 0, \chi &gt; 0.
+    \end{array}
+  </code>
+</p>
+
+<p>The generator is especially designed for the varying parameter case,
+i.e., for sample size <code>n=1</code>.
+</p>
+<p><strong>Note</strong> that the arguments <code>n</code>, <code>lambda</code>, <code>chi</code>,
+<code>psi</code> for these two <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> routines are assumed to be single values.
+If a vector is provided, then just the first value is used!
+</p>
+<p>For the generation of large samples more efficient algorithms exist.
+We recommend package <span class="pkg">Runuran</span>.
+The fast numeric inversion function <code>pinvd.new</code> is usable for GIG.
+It is about three times faster than <code>rgig</code> for large values of <code>n</code>.
+However, it requires a slow set-up and is therefore not useful for the
+varying parameter case.
+For the usage of the Runuran functions see the last example below.
+</p>
+<p>Routine <code>rgig</code> applies three different algorithms depending on
+the given parameters. When the density is T-concave (roughly spoken
+when <code class="reqn">\lambda\geq 1</code> or
+<code class="reqn">\psi\,\chi\geq 1/4</code>
+two variants of the Ratio-of-Uniforms method due to Lehner (1989) are 
+used. These are quite similar to the widely used algorithm by Dapunar
+but have a faster setup.
+When the density is not T-concave then a new algorithm with a
+uniformly rejection constant is used.
+(In the latter case Dagpunar's algorithm may become extremely slow or
+may sample from an invalid distribution.)
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>rgig</code> creates a random sample of size <code>n</code>. In case of
+invalid arguments the routine simply stops execution.
+</p>
+<p><code>dgig</code> evaluates the density of the GIG distribution.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Josef Leydold <a href="mailto:josef.leydold@wu.ac.at">josef.leydold@wu.ac.at</a> and
+Wolfgang Hörmann.
+</p>
+
+
+<h3>References</h3>
+
+
+<p>Wolfgang Hörmann and Josef Leydold (2013).
+Generating generalized inverse Gaussian random variates,
+Statistics and Computing 24, 547–557,
+DOI: 10.1007/s11222-013-9387-3
+</p>
+<p>J. S. Dagpunar (1989).
+An easily implemented generalised inverse Gaussian generator,
+Comm. Statist. B – Simulation Comput. 18, 703–710.
+</p>
+<p>Karl Lehner (1989).
+Erzeugung von Zufallszahlen für zwei exotische
+stetige Verteilungen,
+Diploma Thesis, 107 pp.,
+Technical University Graz, Austria
+(in German).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Draw a random sample
+x &lt;- rgig(n=10, lambda=0.5, chi=0.1, psi=2)
+
+## Evaluate the density
+x &lt;- dgig(0.3, lambda=0.5, chi=0.1, psi=2)
+
+## Create a random sample and create a histgram
+y &lt;- rgig(n=10^5,0.1,2,3)
+hist(y,breaks=100,freq=FALSE)
+xval &lt;- seq(0,max(y),0.01) # to add plot the corresponding density
+lines(xval,dgig(xval,0.1,2,3))
+
+## Not run: 
+## Use a fast method from package Runuran for large samples
+## (method PINV implements an approximate inversion method)
+library("Runuran")
+gen &lt;- pinvd.new(udgig(theta=0.2, psi=0.05, chi=0.05))
+x &lt;- ur(gen, 10^6)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

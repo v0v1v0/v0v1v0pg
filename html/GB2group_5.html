@@ -1,0 +1,247 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fitgroup.gb2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimation of the GB2 distribution from group data</h2>
+
+<h3>Description</h3>
+
+<p>The function <code>fitgroup.gb2</code> implements the estimation of the GB2 distribution from group
+data in form of income shares using the equally weighted minimum distance (EWMD) and the 
+optimally weighted minimum distance (OMD) estimators.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fitgroup.gb2(
+  y,
+  x = rep(1/length(y), length(y)),
+  gini.e,
+  pc.inc = NULL,
+  se.omd = FALSE,
+  se.ewmd = FALSE,
+  se.scale = FALSE,
+  N = NULL,
+  nrep = 10^3,
+  grid = 1:20,
+  rescale = 1000,
+  gini = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Vector of (non-cumulative) income shares expressed as decimals or percentage.
+At least four data points are required to estimate the parameters of the income distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Vector of population shares associated with the income shares provided by
+<code>y</code>. The default is a vector of equally sized population shares of the same length of
+<code>y</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gini.e</code></td>
+<td>
+<p>specifies the survey Gini index expressed as a decimal.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pc.inc</code></td>
+<td>
+<p>specifies an estimate of per capita income. If not provided, the weighting matrix
+cannot be computed, hence OMD estimates will not be reported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.omd</code></td>
+<td>
+<p>If <code>TRUE</code> and the argument <code>N</code> is not <code>NULL</code>, the standard errors
+of the shape parameters of the OMD estimates are computed using results from Beach and Davison(1983) and Hajargasht and
+Griffiths (2016).See Jorda et al. (2018) for details. By default, this argument is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.ewmd</code></td>
+<td>
+<p>If <code>TRUE</code> and the argument <code>N</code> is not <code>NULL</code>, the standard errors of the EWMD estimates
+are obtained using Monte Carlo simulation of random samples of size <code>N</code>. By default, this argument is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.scale</code></td>
+<td>
+<p>If <code>TRUE</code> and the argument <code>N</code> is not <code>NULL</code>, the standard error
+of the scale parameter of the OMD estimation is obtained by Monte Carlo simulation
+of random samples of size <code>N</code>. By default, this argument is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>Specifies the size of the sample from which the grouped data was generated. This
+information is required to compute the standard errors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nrep</code></td>
+<td>
+<p>Number of samples to be drawn in the Monte Carlo simulation of the standard error of
+the EWMD estimates and the scale parameter of the OMD estimation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+<p>A sequence of positive real numbers to be used as initial values using the
+algorithm developed by Jorda et al. (2018).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rescale</code></td>
+<td>
+<p>Rescalation factor of per capita income. Reescalation might help to invert
+the weight matrix when the scale is too large or too small. The argument <code>rescale</code> should be
+a positive real number which, by default, is set to 1000. The magnitude of this  factor is taken into account in the estimation of the scale parameter, so the provided estimate and its standard error are equivalent to those obtained with <code>rescale = 1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gini</code></td>
+<td>
+<p>if <code>TRUE</code>, reports an estimate of the Gini index using the EWMD estimator and, if
+possible, the OMD estimator.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The Generalised Beta of the Second Kind (GB2) is a general class of distributions that is
+acknowledged to provide an accurate fit to income data (McDonald 1984; McDonald and Mantrala,1995).
+The GB2 distribution can be defined in terms of the cumulative distribution function as follows:
+</p>
+<p style="text-align: center;"><code class="reqn"> F(x; a, b, p, q) = B(\frac{(x/b)^a}{1+(x/b)^a}; p; q); x &gt; 0,</code>
+</p>
+
+<p>where <code class="reqn">b</code> is the scale parameter and <code class="reqn">a, p, q</code> are the shape parameters that define the
+heaviness of the tail and the skewness of the distribution.
+</p>
+<p>The function <code>fitgroup.gb2</code> estimates the parameters of the GB2 distribution using grouped data in form of
+income shares. These data must have been generated by setting the proportion of observations in each
+group before sampling, so that the population proportions are fixed, whereas income shares are random
+variables. Examples of this type of data can be found in the largest datasets of grouped data,
+including The World Income Inequality Database (UNU-WIDER, 2017), PovcalNet (World Bank, 2018) or the World Wealth
+and Income Database (Alvaredo et al., 2018).
+</p>
+<p>For EWMD, numerical optimisation is achieved using the Levenberg-Marquardt Algorithm via <code>nlsLM</code>
+Conventionally, moment estimates of a restricted model are taken as initial values. A potential
+limitation of this method is that, as the dimensionality of the parameter
+space increases, it is more difficult to achieve global convergence. Although it seems quite intuitive that the moment
+estimates of the restricted model might be a good starting point, the optimization could converge to
+a local minimum, which might lead to inaccurate estimates of the parameters.
+</p>
+<p>To provide several non-arbitrary combinations of starting values, we propose to set one of the parameters equal to one
+so that, the GB2 distribution becomes one of its three particular cases: the Dagum, the Beta 2 and
+the Singh-Maddala distributions. Then, we define a sequence of numbers (provided by <code>grid</code>). For each value in this
+sequence, the moment estimate of one of the parameters is obtained using the survey Gini index,
+assuming that the other one is equal to the grid value. Using this procedure, we end up with three
+times as many combinations of initial values as values in the grid, which are used to obtain
+different sets of estimates, keeping the estimation with the smallest residual sum of squares.
+Although we cannot ensure that our estimates belong to the global minimum, this procedure
+covers a larger proportion of the parameter space than just using the moment estimates of a
+particular sub-model. See Jorda et al. (2018) for details.
+</p>
+<p>This method, however, does not provide
+an estimate for the scale parameter because the Lorenz curve is independent to scale. The scale
+parameter is estimated by equating the sample mean, specified by <code>pc.inc</code>, to the population
+mean of the GB2 distribution. Because EWMD does not use the optimal
+covariance matrix of the moment conditions, the standard errors of the parameters
+are obtained by Monte Carlo simulation. Please be aware that the estimation of the standard errors
+might take a long time, especially if the sample size is large.
+</p>
+<p><code>fitgroup.gb2</code> also implements a two-stage OMD estimator. In the first stage, EWMD estimates
+are obtained as described above, which are used to compute a first stage estimator
+of the weighting matrix. The weighting matrix is used in the second stage to obtain optimally
+weighted estimates of the parameters. The numerical optimisation is performed using
+<code>optim</code> with the BFGS method. If <code>optim</code> reports an error, the L-BFGS method
+is used. EWMD estimates are used as initial values for the optimisation algorithm. The OMD estimation
+incorporates the optimal weight matrix, thus making possible to derive the asymptotic standard
+errors of the parameters using results from Beach and Davison(1983) and Hajargasht and
+Griffiths (2016). As in the EWMD estimation, the scale parameter is obtained by matching the
+population mean of the GB2 distribution to the sample mean. Hence, the standard error of the scale
+parameter is estimated by Monte Carlo simulation.
+</p>
+<p>The Gini index of the GB2 distribution is computed using the function <code>gini.gb2</code>.
+If this function reports NA or 1, the Gini index is estimated by Monte
+Carlo simulation of 10^6 samples of size N = 10^6.
+</p>
+
+
+<h3>Value</h3>
+
+<p>the function <code>fitgroup.gb2</code> returns the following objects:
+</p>
+
+<ul>
+<li> <p><code>ewmd.estimation</code> Matrix containing the parameters of the GB2 distribution estimated
+by EWMD and, if <code>se.ewmd = TRUE</code>, their standard errors.
+</p>
+</li>
+<li> <p><code>ewmd.rss</code> Residual sum of squares of the EWMD estimation.
+</p>
+</li>
+<li> <p><code>omd.estimation</code> Matrix containing the parameters of the GB2 distribution estimated
+by OMD and, if <code>se.omd = TRUE</code>, their standard errors.
+</p>
+</li>
+<li> <p><code>omd.rss</code> Weighted residual sum of squares of the OMD estimation.
+</p>
+</li>
+<li> <p><code>gini.estimation</code> Vector with the survey Gini index and the estimated Gini
+indices using EWMD and OMD estimates whenever possible.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Alvaredo, F., A. Atkinson, T. Piketty, E. Saez, and G. Zucman. The World Wealth and Income Database.
+</p>
+<p>Beach, C.M. and R. Davidson (1983): Distribution-free statistical inference with
+Lorenz curves and income shares, <em>The Review of Economic Studies</em>, 50, 723 - 735.
+</p>
+<p>Hajargasht, G. and W.E. Griffiths (2016): Inference for Lorenz Curves, Tech. Rep.,
+The University of Melbourne.
+</p>
+<p>Jorda, V., Sarabia, J.M., &amp; Jäntti, M. (2018). Estimation of income inequality from grouped data.
+arXiv preprint arXiv:1808.09831.
+</p>
+<p>McDonald, J.B. (1984): Some Generalized Functions for the Size Distribution of Income,
+<em>Econometrica</em>, 52, 647 - 665.
+</p>
+<p>McDonald, J.B. and A. Mantrala (1995): The distribution of personal income: revisited,
+<em>Journal of Applied Econometrics</em>, 10, 201 - 204.
+</p>
+<p>UNU-WIDER (2018). World Income Inequality Database (WIID3.4).
+</p>
+<p>World Bank (2018). PovcalNet Data Base. Washington, DC: World Bank. <a href="http://iresearch.worldbank.org/PovcalNet/home.aspx">http://iresearch.worldbank.org/PovcalNet/home.aspx</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">fitgroup.gb2(y = c(9, 13, 17, 22, 39), gini.e = 0.29)
+
+</code></pre>
+
+
+</div>

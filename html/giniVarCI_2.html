@@ -1,0 +1,362 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fgini</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gini index, variances and confidence intervals in finite populations</h2>
+
+<h3>Description</h3>
+
+<p>Estimates the Gini index and computes variances and confidence intervals in finite populations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fgini(
+  y,
+  w,
+  method = 2L,
+  interval = NULL,
+  Pi = NULL,
+  Pij = NULL,
+  PiU,
+  alpha = 0.05,
+  B = 1000L,
+  na.rm = TRUE,
+  varformula = "SYG",
+  large.sample = FALSE
+)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A vector with the non-negative real numbers to be used for estimating the Gini index.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>A numeric vector with the survey weights to be used for estimating the Gini index, the variance and the confidence interval. This argument can be missing if argument <code>Pi</code> is provided. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>An integer between 1 and 5 selecting one of the 5 methods detailed below for estimating the Gini index in finite populations. The default method is <code>method = 2L</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interval</code></td>
+<td>
+<p>A character string specifying the type of variance estimation and confidence interval to be used. Possible values are <code>"zjackknife"</code>, <code>"zalinearization"</code>, <code>"zblinearization"</code> and <code>"pbootstrap"</code>. <code>interval = NULL</code> omits the computation of both variance and confidence interval. The default value is <code>interval = NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Pi</code></td>
+<td>
+<p>A numeric vector with the (sample) first inclusion probabilites to be used for estimating the Gini index, the variance and the confidence interval. This argument can be <code>NULL</code> if argument <code>w</code> is provided. The default value is <code>Pi = NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Pij</code></td>
+<td>
+<p>A numeric square matrix with the (sample) second (joint) inclusion probabilites to be used for the variance estimation and the confidence interval. The Hajek approximation is used when <code>Pij = NULL</code>. This argument is used when  <code>interval={"zjackknife", "zalinearization", "zblinearization"}</code>. The default value is <code>Pij = NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PiU</code></td>
+<td>
+<p>A numeric vector with the (population) first inclusion probabilites. This argument is only required when the Hartley-Rao expression for the variance estimation is selected (<code>varformula = "HR"</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>A single numeric value between 0 and 1. If <code>interval</code> is not <code>NULL</code>, the confidence level to be used for computing  the confidence interval for the Gini is <code>1-alpha</code>. Some authors call <code>alpha</code> the significance level. The default value is <code>alpha = 0.05</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+<p>A single integer specifying the number of bootstrap replicates. This argument is required when <code>interval = "pbootsptrap"</code>. The default value is <code>B = 1000L</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.rm</code></td>
+<td>
+<p>A 'TRUE/FALSE' logical value indicating whether <code>NA</code>'s should be removed before the computation proceeds. The default value is <code>na.rm = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varformula</code></td>
+<td>
+<p>A character string specifying the type of formula to be used for the variance estimator when <code>interval = {"zjackknife", "zalinearization", "zblinearization"}</code>. Possible values are <code>"HT"</code> (Hortvitz-Thompson), <code>"SYG"</code> (Sen-Yates-Grundy) and <code>"HR"</code> (Hartley-Rao). The default value is <code>varformula = "SYG"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>large.sample</code></td>
+<td>
+<p>A 'TRUE/FALSE' logical value indicating indicating whether the sample is large to apply a faster algorithm to sort the sample values in the computation of the Gini index. The default value is <code>large.sample = FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For a sample <code class="reqn">S</code>, with size <code class="reqn">n</code> and inclusion probabilities <code class="reqn">\pi_i=P(i\in S)</code> (argument <code>Pi</code>), derived from a finite population <code class="reqn">U</code>, with size <code class="reqn">N</code>, different formulations of the Gini index have been proposed in the literature. his function estimates the Gini index, variances and confidence intervals using various formulations. The different methods for estimating the Gini index are (see also Muñoz et al., 2023):
+</p>
+<p>\
+<code>Gini Index formulae.</code>
+</p>
+<p><code>method = 1</code> (Langel and Tillé, 2013)
+</p>
+<p style="text-align: center;"><code class="reqn"> \widehat{G}_{w1}= \displaystyle \frac{1}{2\widehat{N}^{2}\overline{y}_{w}}\sum_{i \in S}\sum_{j \in S}w_{i}w_{j}|y_{i}-y_{j}|,</code>
+</p>
+
+<p>where <code class="reqn">\widehat{N}=\sum_{i \in S}w_i</code>, <code class="reqn">\overline{y}_{w}=\widehat{N}^{-1}\sum_{i \in S}w_{i}y_{i}</code>, and <code class="reqn">w_i</code> are the survey weights. For example, the survey weights can be <code class="reqn">w_i=\pi_{i}^{-1}</code>. <code>w</code> or <code>Pi</code> must be provided, but not both. It is required that <code class="reqn">w_i = \pi_i^{-1}</code>, for <code class="reqn">i \in S</code>, when both <code>w</code> and <code>Pi</code> are provided.
+</p>
+<p><code>method = 2</code> (Alfons and Templ, 2012; Langel and Tillé, 2013)
+</p>
+<p style="text-align: center;"><code class="reqn"> \widehat{G}_{w2} =\displaystyle \frac{2\sum_{i \in S}w_{(i)}^{+}\widehat{N}_{(i)}y_{(i)} - \sum_{i \in S}w_{i}^{2}y_{i}  }{\widehat{N}^{2}\overline{y}_{w}}-1,</code>
+</p>
+
+<p>where <code class="reqn">y_{(i)}</code> are the values <code class="reqn">y_i</code> sorted in increasing order, <code class="reqn">w_{(i)}^{+}</code> are the values <code class="reqn">w_i</code> sorted according to the increasing order of the values <code class="reqn">y_i</code>, and <code class="reqn">\widehat{N}_{(i)}=\sum_{j=1}^{i}w_{(j)}^{+}</code>. Langel and Tillé (2013) show that <code class="reqn">\widehat{G}_{w1} = \widehat{G}_{w2}</code>.
+</p>
+<p><code>method = 3</code> (Berger, 2008)
+</p>
+<p style="text-align: center;"><code class="reqn"> \widehat{G}_{w3} = \displaystyle \frac{2}{\widehat{N}\overline{y}_{w}}\sum_{i \in S}w_{i}y_{i}\widehat{F}_{w}^{\ast}(y_{i})-1, </code>
+</p>
+
+<p>where
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{F}_{w}^{\ast}(t) = \displaystyle \frac{1}{\widehat{N}}\sum_{i \in S}w_{i}[\delta(y_i &lt; t) + 0.5\delta(y_i = t)] </code>
+</p>
+
+<p>is the smooth (mid-point) distribution function, and <code class="reqn">\delta(\cdot)</code> is the indicator variable that takes the value 1 when its argument is true, and the value 0 otherwise. It can be seen that <code class="reqn">\widehat{G}_{w2} = \widehat{G}_{w3}</code>.
+</p>
+<p><code>method = 4</code> (Berger and Gedik-Balay, 2020)
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{G}_{w4} = 1 - \displaystyle \frac{\overline{v}_{w}}{\overline{y}_{w}},</code>
+</p>
+
+<p>where <code class="reqn">\overline{v}_{w}=\widehat{N}^{-1}\sum_{i \in S}w_{i}v_{i}</code> and
+</p>
+<p style="text-align: center;"><code class="reqn">v_{i} = \displaystyle \frac{1}{\widehat{N} - w_{i}}\sum_{ \substack{j \in S\\ j\neq i}}\min(y_{i},y_{j}).</code>
+</p>
+
+<p><code>method = 5</code> (Lerman and Yitzhaki, 1989)
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{G}_{w5} = \displaystyle \frac{2}{\widehat{N}\overline{y}_{w}} \sum_{i \in S} w_{(i)}^{+}[y_{(i)} - \overline{y}_{w}]\left[ \widehat{F}_{w}^{LY}(y_{(i)}) - \overline{F}_{w}^{LY} \right], </code>
+</p>
+
+<p>where
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{F}_{w}^{LY}(y_{(i)}) = \displaystyle \frac{1}{\widehat{N}}\left(\widehat{N}_{(i-1)} + \frac{w_{(i)}^{+}}{2} \right) </code>
+</p>
+
+<p>and <code class="reqn">\overline{F}_{w}^{LY}=\widehat{N}^{-1}\sum_{i \in S}w_{(i)}^{+}\widehat{F}_{w}^{LY}(y_{(i)})</code>.
+</p>
+<p>\
+<code>Variances and confidence intervals.</code>
+</p>
+<p>For a given estimator <code class="reqn">\widehat{G}_{w}</code> and variable <code class="reqn">z</code>, the Horvitz-Thompson type variance estimator (Hortvitz and Thompson, 1952)
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{V}_{HT}(\widehat{G}_{w}) = \displaystyle \sum_{i\in S}\sum_{j\in S}\breve{\Delta}_{ij}w_{i}w_{j}z_{i}z_{j}</code>
+</p>
+
+<p>is computed when <code>varformula = "HT"</code>, where
+</p>
+<p style="text-align: center;"><code class="reqn">\breve{\Delta}_{ij}=\displaystyle \frac{\pi_{ij}-\pi_{i}\pi_{j}}{\pi_{ij}}</code>
+</p>
+
+<p>and <code class="reqn">\pi_{ij}</code> is the second (joint) inclusion probability of the individuals <code class="reqn">i</code> and <code class="reqn">j</code>, i.e., <code class="reqn">\pi_{ij}=P\{(i,j)\in S)\} </code> (argument <code>Pij</code>).
+</p>
+<p>The Sen-Yates-Grundy type variance estimator (Sen, 1953; Yates and Grundy, 1953)
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{V}_{SYG}(\widehat{G}_{w}) = - \displaystyle \frac{1}{2}\sum_{i\in S}\sum_{j\in S}\breve{\Delta}_{ij}(w_{i}z_i-w_{j}z_{j})^{2}</code>
+</p>
+<p> is computed when <code>varformula = "SYG"</code>, and the Hartley-Rao type variance estimator (Hartley and Rao, 1962) </p>
+<p style="text-align: center;"><code class="reqn">\widehat{V}_{HR}(\widehat{G}_{w}) = \displaystyle \frac{1}{n-1}\sum_{i\in S}\sum_{\substack{j \in S\\ j &lt; i}}\left(1-\pi_i-\pi_j + \frac{1}{n}\sum_{k\in U}\pi_{k}^{2} \right)(w_{i}z_i-w_{j}z_{j})^{2}</code>
+</p>
+<p> is computed when <code>varformula = "HR"</code>. Note that the The Horvitz-Thompson variance estimator can give negative values. We observe that both Horvitz-Thompson and Sen-Yates-Grundy variance estimators depend on second (joint) inclusion probabilities (argument <code>Pij</code>). The Hajek (1964) approximation </p>
+<p style="text-align: center;"><code class="reqn">\pi_{ij}\cong \pi_{i}\pi_{j}\left[1- \displaystyle \frac{(1-\pi_{i})(1-\pi_{j})}{\sum_{i \in S}(1-\pi_{i})} \right]</code>
+</p>
+<p> is used when the second (joint) inclusion probabilities are not available (<code>Pij = NULL</code>). Note that the Hajek approximation is suggested for large-entropy sampling designs, large samples, and large populations (see Tille 2006; Berger and Tille, 2009; Haziza et al., 2008; Berger, 2011). For instance, this approximation is not recomended for highly-stratified samples (Berger, 2005). The Hartley-Rao variance estimator requires the first inclusion probabilities at the population level (argument <code>PiU</code>). <code>zjakknife</code> computes the confidence interval based on the jackknife technique with critical values based on the Normal approximation. <code>zalinearization</code> and <code>zblinearization</code> compute the confidence intervals based on the linearization technique applied to the estimators
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{G}_{w}^{a} = \widehat{G}_{w1}</code>
+</p>
+
+<p>and
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{G}_{w}^{b} = \displaystyle \frac{2}{\widehat{N}\overline{y}_{w}}\sum_{i \in S}w_{i}y_{i}\widehat{F}_{w}(y_{i})-1,</code>
+</p>
+
+<p>respectively, where
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{F}_{w}(t)=\frac{1}{\widehat{N}}\sum_{i \in S}w_i\delta(y_i \leq t).</code>
+</p>
+<p> Critical values are also based on the Normal approximation. <code>pbootstrap</code> computes the variance using the rescaled bootstrap, and the confidence interval is constructed using the percentile method. The <b>vignette</b> <code>vignette("GiniVarInterval")</code> contains a detailed description of the various methods for variance estimation and confidence intervals for the Gini index.
+</p>
+<p>The following table summarises the various types of variances and confidence intervals that the function  <code>fgini</code> computes. The argument <code>varformula</code> only applies for the jackknife and linearization techniques (see Berger, 2008; Langel and Tillé, 2013).
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+<b>Interval</b>          </td>
+<td style="text-align: left;"> <b>Variance</b> </td>
+<td style="text-align: left;"> <b>Critical values</b>  </td>
+<td style="text-align: left;"> <b>References</b>
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+_______________     </td>
+<td style="text-align: left;"> ______________  </td>
+<td style="text-align: left;"> _________________ </td>
+<td style="text-align: left;"> _________________________</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>zjackknife</code>        </td>
+<td style="text-align: left;"> Jackknife     </td>
+<td style="text-align: left;"> Normal                </td>
+<td style="text-align: left;"> Berger (2008)</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>zalinearization</code>    </td>
+<td style="text-align: left;"> Linearization </td>
+<td style="text-align: left;"> Normal                </td>
+<td style="text-align: left;"> Langel and Tille (2013)</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>zblinearization</code>    </td>
+<td style="text-align: left;"> Linearization </td>
+<td style="text-align: left;"> Normal                </td>
+<td style="text-align: left;"> Berger (2008)</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>pBootstrap</code>        </td>
+<td style="text-align: left;"> Rescaled bootstrap     </td>
+<td style="text-align: left;"> Percentile bootstrap  </td>
+<td style="text-align: left;"> Berger and Gedik-Balay (2020) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>When <code>interval = NULL</code>, the function returns a single numeric value between 0 and 1 informing about the estimation of the Gini index. When <code>interval</code> is not <code>NULL</code>, the function returns a list with 3 components: a single numeric value with the estimation of the Gini index; a single numeric value with the variance estimation of the Gini index; and a vector of length two containing the lower and upper limits of the confidence interval for the Gini index.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Juan F Munoz <a href="mailto:jfmunoz@ugr.es">jfmunoz@ugr.es</a>
+</p>
+<p>Jose M Pavia <a href="mailto:pavia@uv.es">pavia@uv.es</a>
+</p>
+<p>Encarnacion Alvarez <a href="mailto:encarniav@ugr.es">encarniav@ugr.es</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Alfons, A., and Templ, M. (2012). Estimation of social exclusion indicators from complex surveys: The R package laeken. KU Leuven, Faculty of Business and Economics Working Paper.
+</p>
+<p>Berger, Y. G. (2005). Variance estimation with highly stratified sampling designs with unequal probabilities. Australian &amp; New Zealand Journal of Statistics, 47, 365–373.
+</p>
+<p>Berger, Y. G. (2008). A note on the asymptotic equivalence of jackknife and linearization variance estimation for the Gini Coefficient. Journal of Official Statistics, 24(4), 541-555.
+</p>
+<p>Berger, Y. G. (2011). Asymptotic consistency under large entropy sampling designs with unequal probabilities. Pakistan Journal of Statistics, 27, 407–426.
+</p>
+<p>Berger, Y. G. and Tillé, Y. (2009). Sampling with unequal probabilities. In Sample Surveys: Design, Methods and Applications (eds. D. Pfeffermann and C. R. Rao), 39–54. Elsevier, Amsterdam
+</p>
+<p>Berger, Y., and Gedik-Balay, I. (2020). Confidence intervals of Gini
+coefficient under unequal probability sampling. Journal of Official Statistics, 36(2), 237-249.
+</p>
+<p>Hajek, J. (1964). Asymptotic theory of rejective sampling with varying probabilities from a finite population. The Annals of Mathematical Statistics, 35, 4, 1491–1523.
+</p>
+<p>Hartley, H. O., and Rao, J. N. K. (1962). Sampling with unequal probabilities and without replacement. The Annals of Mathematical Statistics, 350-374.
+</p>
+<p>Haziza, D., Mecatti, F. and Rao, J. N. K. (2008). Evaluation of some approximate variance estimators under the Rao-Sampford unequal probability sampling design. Metron, LXVI, 91–108.
+</p>
+<p>Horvitz, D. G. and Thompson, D. J. (1952). A generalization of sampling without replacement from a finite universe. Journal of the American Statistical Association, 47, 663–685.
+</p>
+<p>Langel, M., and Tille, Y. (2013). Variance estimation of the Gini index: revisiting a result several times published. Journal of the Royal Statistical Society: Series A (Statistics in Society), 176(2), 521-540.
+</p>
+<p>Lerman, R. I., and Yitzhaki, S. (1989). Improving the accuracy of estimates of Gini coefficients. Journal of econometrics, 42(1), 43-47.
+</p>
+<p>Muñoz, J. F., Moya-Fernández, P. J., and Álvarez-Verdejo, E. (2023). Exploring and Correcting the Bias in the Estimation of the Gini Measure of Inequality. Sociological Methods &amp; Research. https://doi.org/10.1177/00491241231176847
+</p>
+<p>Sen, A. R. (1953). On the estimate of the variance in sampling with varying probabilities. Journal of the Indian Society of Agricultural Statistics, 5, 119–127.
+</p>
+<p>Tillé, Y. (2006). Sampling Algorithms. Springer, New York.
+</p>
+<p>Yates, F., and Grundy, P. M. (1953). Selection without replacement from within strata with probability proportional to size. Journal of the Royal Statistical Society B, 15, 253–261.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>fginindex</code>, <code>fcompareCI</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Income and weights (region 'Burgenland') from the 2006 Austrian EU-SILC (Package 'laeken').
+data(eusilc, package="laeken")
+y &lt;- eusilc$eqIncome[eusilc$db040 == "Burgenland"]
+w &lt;- eusilc$rb050[eusilc$db040 == "Burgenland"]
+
+# Estimation of the Gini index using 'method = 2' .
+fgini(y, w)
+
+
+y &lt;- c(30428.83, 14976.54, 18094.09, 29476.79, 20381.93, 6876.17,
+       10360.96, 8239.82, 29476.79, 32230.71)
+w &lt;- c(357.86, 480.99, 480.99, 476.01, 498.58, 498.58, 476, 498.58, 476.01, 476.01)
+
+# Gini index estimation and confidence interval using:
+ ## a: The method 2 for point estimation.
+ ## b: The method 'zjackknife' for variance estimation.
+ ## c: The Sen-Yates-Grundy type variance estimator.
+ ## d: The Hajek approximation for the joint inclusion probabilities.
+fgini(y, w, interval = "zjackknife")
+
+# Gini index estimation and confidence interval using:
+ ## a: The method 2 for point estimation.
+ ## b: The method 'zalinearization' for variance estimation.
+ ## c: The Sen-Yates-Grundy type variance estimator.
+ ## d: The Hajek approximation for the joint inclusion probabilities.
+fgini(y, w, interval = "zalinearization")
+
+# Gini index estimation and confidence interval using:
+ ## a: The method 3 for point estimation.
+ ## b: The method 'zblinearization' for variance estimation.
+ ## c: The Sen-Yates-Grundy type variance estimator.
+ ## d: The Hajek approximation for the joint inclusion probabilities.
+fgini(y, w, method = 3L, interval = "zblinearization")
+
+# Gini index estimation and confidence interval using:
+ ## a: The method 2 for point estimation.
+ ## b: The method 'pbootstrap' for variance estimation.
+ ## c: The percentile bootstrap method for the confidence interval.
+fgini(y, w, interval = "pbootstrap")
+</code></pre>
+
+
+</div>

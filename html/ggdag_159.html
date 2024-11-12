@@ -1,0 +1,125 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>time_ordered_coords</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a time-ordered coordinate data frame</h2>
+
+<h3>Description</h3>
+
+<p><code>time_ordered_coords()</code> is a helper function to create time-ordered DAGs.
+Pass the results to the <code>coords</code> argument of <code>dagify()</code>. If <code>.vars</code> if not
+specified, these coordinates will be determined automatically. If you want to
+be specific, you can also use a list or data frame. The default is to assume
+you want variables to go from left to right in order by time. Variables are
+spread along the y-axis using a simple algorithm to stack them. You can also
+work along the y-axis by setting <code>direction = "y"</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">time_ordered_coords(
+  .vars = NULL,
+  time_points = NULL,
+  direction = c("x", "y"),
+  auto_sort_direction = c("right", "left")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>.vars</code></td>
+<td>
+<p>A list of character vectors, where each vector represents a
+single time period. Alternatively, a data frame where the first column is
+the variable name and the second column is the time period.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_points</code></td>
+<td>
+<p>A vector of time points. Default is <code>NULL</code>, which creates
+a sequence from 1 to the number of variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>direction</code></td>
+<td>
+<p>A character string indicating the axis along which the
+variables should be time-ordered. Either "x" or "y". Default is "x".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>auto_sort_direction</code></td>
+<td>
+<p>If <code>.vars</code> is <code>NULL</code>: nodes will be placed as far
+<code>"left"</code> or <code>"right"</code> of in the graph as is reasonable. Default is right,
+meaning the nodes will be as close as possible in time to their
+descendants.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A tibble with three columns: <code>name</code>, <code>x</code>, and <code>y</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>dagify()</code>, <code>coords2df()</code>, <code>coords2list()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+dagify(
+  d ~ c1 + c2 + c3,
+  c1 ~ b1 + b2,
+  c3 ~ a,
+  b1 ~ a,
+  coords = time_ordered_coords()
+) %&gt;% ggdag()
+
+coords &lt;- time_ordered_coords(list(
+  # time point 1
+  "a",
+  # time point 2
+  c("b1", "b2"),
+  # time point 3
+  c("c1", "c2", "c3"),
+  # time point 4
+  "d"
+))
+
+dagify(
+  d ~ c1 + c2 + c3,
+  c1 ~ b1 + b2,
+  c3 ~ a,
+  b1 ~ a,
+  coords = coords
+) %&gt;% ggdag()
+
+# or use a data frame
+x &lt;- data.frame(
+  name = c("x1", "x2", "y", "z1", "z2", "z3", "a"),
+  time = c(1, 1, 2, 3, 3, 3, 4)
+)
+dagify(
+  z3 ~ y,
+  y ~ x1 + x2,
+  a ~ z1 + z2 + z3,
+  coords = time_ordered_coords(x)
+) %&gt;%
+  ggdag()
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,331 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plot_raster</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Display raster data</h2>
+
+<h3>Description</h3>
+
+<p><code>plot_raster()</code> displays raster data using base <code>graphics</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">plot_raster(
+  data,
+  xsize = NULL,
+  ysize = NULL,
+  nbands = 1,
+  max_pixels = 2.5e+07,
+  col_tbl = NULL,
+  maxColorValue = 1,
+  normalize = TRUE,
+  minmax_def = NULL,
+  minmax_pct_cut = NULL,
+  col_map_fn = NULL,
+  xlim = NULL,
+  ylim = NULL,
+  interpolate = TRUE,
+  asp = 1,
+  axes = TRUE,
+  main = "",
+  xlab = "x",
+  ylab = "y",
+  xaxs = "i",
+  yaxs = "i",
+  legend = FALSE,
+  digits = 2,
+  na_col = rgb(0, 0, 0, 0),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Either a <code>GDALRaster</code> object from which data will be read, or
+a numeric vector of pixel values arranged in left to right, top to
+bottom order, or a list of band vectors. If input is vector or list,
+the information in attribute <code>gis</code> will be used if present (see <code>read_ds()</code>),
+potentially ignoring values below for <code>xsize</code>, <code>ysize</code>, <code>nbands</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xsize</code></td>
+<td>
+<p>The number of pixels along the x dimension in <code>data</code>. If <code>data</code>
+is a <code>GDALRaster</code> object, specifies the size at which the raster will be
+read (used for argument <code>out_xsize</code> in <code>GDALRaster$read()</code>). By default,
+the entire raster will be read at full resolution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ysize</code></td>
+<td>
+<p>The number of pixels along the y dimension in <code>data</code>. If <code>data</code>
+is a <code>GDALRaster</code> object, specifies the size at which the raster will be
+read (used for argument <code>out_ysize</code> in <code>GDALRaster$read()</code>). By default,
+the entire raster will be read at full resolution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbands</code></td>
+<td>
+<p>The number of bands in <code>data</code>. Must be either 1 (grayscale) or
+3 (RGB). For RGB, <code>data</code> are interleaved by band.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_pixels</code></td>
+<td>
+<p>The maximum number of pixels that the function will
+attempt to display (per band). An error is raised if <code>(xsize * ysize)</code>
+exceeds this value. Setting to <code>NULL</code> turns off this check.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col_tbl</code></td>
+<td>
+<p>A color table as a matrix or data frame with four or five
+columns. Column 1 contains the numeric pixel values. Columns 2:4 contain
+the intensities of the red, green and blue primaries (<code>0:1</code> by default,
+or use integer <code>0:255</code> by setting <code>maxColorValue = 255</code>).
+An optional column 5 may contain alpha transparency values, <code>0</code> for fully
+transparent to <code>1</code> (or <code>maxColorValue</code>) for opaque (the default if column 5
+is missing). If <code>data</code> is a <code>GDALRaster</code> object, a built-in color table will
+be used automatically if one exists in the dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxColorValue</code></td>
+<td>
+<p>A number giving the maximum of the color values range
+in <code>col_tbl</code> (see above). The default is <code>1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normalize</code></td>
+<td>
+<p>Logical. <code>TRUE</code> to rescale pixel values so that their
+range is <code style="white-space: pre;">⁠[0,1]⁠</code>, normalized to the full range of the pixel data by default
+(<code>min(data)</code>, <code>max(data)</code>, per band). Ignored if <code>col_tbl</code> is used.
+Set <code>normalize</code> to <code>FALSE</code> if a color map function is used that
+operates on raw pixel values (see <code>col_map_fn</code> below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minmax_def</code></td>
+<td>
+<p>Normalize to user-defined min/max values (in terms of
+the pixel data, per band). For single-band grayscale, a numeric vector of
+length two containing min, max. For 3-band RGB, a numeric vector of length
+six containing b1_min, b2_min, b3_min, b1_max, b2_max, b3_max.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minmax_pct_cut</code></td>
+<td>
+<p>Normalize to a truncated range of the pixel data using
+percentile cutoffs (removes outliers). A numeric vector of length two giving
+the percentiles to use (e.g., <code>c(2, 98)</code>). Applied per band. Ignored if
+<code>minmax_def</code> is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col_map_fn</code></td>
+<td>
+<p>An optional color map function (default is
+<code>grDevices::gray</code> for single-band data or <code>grDevices::rgb</code> for 3-band).
+Ignored if <code>col_tbl</code> is used. Set <code>normalize</code> to <code>FALSE</code> if using a color
+map function that operates on raw pixel values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlim</code></td>
+<td>
+<p>Numeric vector of length two giving the x coordinate range.
+If <code>data</code> is a <code>GDALRaster</code> object, the default is the raster xmin, xmax in
+georeferenced coordinates, otherwise the default uses pixel/line
+coordinates (<code>c(0, xsize)</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ylim</code></td>
+<td>
+<p>Numeric vector of length two giving the y coordinate range.
+If <code>data</code> is a <code>GDALRaster</code> object, the default is the raster ymin, ymax in
+georeferenced coordinates, otherwise the default uses pixel/line
+coordinates (<code>c(ysize, 0)</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interpolate</code></td>
+<td>
+<p>Logical indicating whether to apply linear interpolation
+to the image when drawing (default <code>TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>asp</code></td>
+<td>
+<p>Numeric. The aspect ratio y/x (see <code>?plot.window</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>axes</code></td>
+<td>
+<p>Logical. <code>TRUE</code> to draw axes (the default).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>main</code></td>
+<td>
+<p>The main title (on top).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlab</code></td>
+<td>
+<p>Title for the x axis (see <code>?title</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ylab</code></td>
+<td>
+<p>Title for the y axis (see <code>?title</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xaxs</code></td>
+<td>
+<p>The style of axis interval calculation to be used for the x axis
+(see <code>?par</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yaxs</code></td>
+<td>
+<p>The style of axis interval calculation to be used for the y axis
+(see <code>?par</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>legend</code></td>
+<td>
+<p>Logical indicating whether to include a legend on the plot.
+Currently, legends are only supported for continuous data. A color table
+will be used if one is specified or the raster has a built-in color table,
+otherwise the value for <code>col_map_fn</code> will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>The number of digits to display after the decimal point in
+the legend labels when raster data are floating point.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na_col</code></td>
+<td>
+<p>Color to use for <code>NA</code> as a 7- or 9-character hexadecimal code.
+The default is transparent (<code>"#00000000"</code>, the return value of
+<code>rgb(0,0,0,0)</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other parameters to be passed to <code>plot.default()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p><code>plot_raster()</code> uses the function <code>graphics::rasterImage()</code> for plotting
+which is not supported on some devices (see <code>?rasterImage</code>).
+</p>
+<p>If <code>data</code> is an object of class <code>GDALRaster</code>, then <code>plot_raster()</code> will
+attempt to read the entire raster into memory by default (unless the number
+of pixels per band would exceed <code>max_pixels</code>).
+A reduced resolution overview can be read by setting <code>xsize</code>, <code>ysize</code>
+smaller than the raster size on disk.
+(If <code>data</code> is instead specified as a vector of pixel values, a reduced
+resolution overview would be read by setting <code>out_xsize</code> and <code>out_ysize</code>
+smaller than the raster region defined by <code>xsize</code>, <code>ysize</code> in a call to
+<code>GDALRaster$read()</code>).
+The GDAL_RASTERIO_RESAMPLING configuration option can be
+defined to override the default resampling (NEAREST) to one of BILINEAR,
+CUBIC, CUBICSPLINE, LANCZOS, AVERAGE or MODE, for example:
+</p>
+<pre>
+set_config_option("GDAL_RASTERIO_RESAMPLING", "BILINEAR")
+</pre>
+
+
+<h3>See Also</h3>
+
+<p><code>GDALRaster$read()</code>, <code>read_ds()</code>, <code>set_config_option()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Elevation
+elev_file &lt;- system.file("extdata/storml_elev.tif", package="gdalraster")
+ds &lt;- new(GDALRaster, elev_file)
+
+# grayscale
+plot_raster(ds, legend=TRUE, main="Storm Lake elevation (m)")
+
+# color ramp from user-defined palette
+elev_pal &lt;- c("#00A60E","#63C600","#E6E600","#E9BD3B",
+              "#ECB176","#EFC2B3","#F2F2F2")
+ramp &lt;- scales::colour_ramp(elev_pal, alpha=FALSE)
+plot_raster(ds, col_map_fn=ramp, legend=TRUE,
+            main="Storm Lake elevation (m)")
+
+ds$close()
+
+## Landsat band combination
+b4_file &lt;- system.file("extdata/sr_b4_20200829.tif", package="gdalraster")
+b5_file &lt;- system.file("extdata/sr_b5_20200829.tif", package="gdalraster")
+b6_file &lt;- system.file("extdata/sr_b6_20200829.tif", package="gdalraster")
+band_files &lt;- c(b6_file, b5_file, b4_file)
+
+r &lt;- vector("integer")
+for (f in band_files) {
+  ds &lt;- new(GDALRaster, f)
+  dm &lt;- ds$dim()
+  r &lt;- c(r, read_ds(ds))
+  ds$close()
+}
+
+plot_raster(r, xsize=dm[1], ysize=dm[2], nbands=3,
+            main="Landsat 6-5-4 (vegetative analysis)")
+
+## LANDFIRE Existing Vegetation Cover (EVC) with color map
+evc_file &lt;- system.file("extdata/storml_evc.tif", package="gdalraster")
+
+# colors from the CSV attribute table distributed by LANDFIRE
+evc_csv &lt;- system.file("extdata/LF20_EVC_220.csv", package="gdalraster")
+vat &lt;- read.csv(evc_csv)
+head(vat)
+vat &lt;- vat[,c(1,6:8)]
+
+ds &lt;- new(GDALRaster, evc_file)
+plot_raster(ds, col_tbl=vat, interpolate=FALSE,
+            main="Storm Lake LANDFIRE EVC")
+
+ds$close()
+</code></pre>
+
+
+</div>

@@ -1,0 +1,194 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>evgram</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Empirical (semi-)variogram</h2>
+
+<h3>Description</h3>
+
+<p><code>evgram</code> computes the empirical semivariogram of
+<code>data</code> based on the specified <code>formula</code>
+indicating the response and trend. See Details. The
+variogram is twice the semivariogram. If a trend is
+specified, then the semivariogram is constructed using
+the residuals of <code>lm(formula, data)</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">evgram(
+  formula,
+  data,
+  coordnames = NULL,
+  nbins = 10,
+  maxd = NULL,
+  angle = 0,
+  ndir = 1,
+  type = "standard",
+  npmin = 2,
+  longlat = FALSE,
+  verbose = TRUE,
+  invert = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A formula describing the relationship
+between the response and any covariates of interest,
+e.g., response ~ 1.  The variogram is computed for the
+residuals of the linear model <code>lm(formula, data)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A <code>data.frame</code>,
+<code>SpatialPointsDataFrame</code>,
+<code>SpatialPixelsDataFrame</code>, or
+<code>SpatialGridDataFrame</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordnames</code></td>
+<td>
+<p>The columns of <code>data</code> containing
+the spatial coordinates, provided as a formula (e.g.,
+<code>~ x + y</code>), column numbers (e.g., <code>c(1, 2)</code>),
+or column names (e.g., <code>c("x", "y")</code>). The default
+is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbins</code></td>
+<td>
+<p>The number of bins (tolerance regions) to
+use when estimating the empirical semivariogram.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxd</code></td>
+<td>
+<p>The maximum distance used when calculating
+the semivariogram.  Default is NULL, in which case half
+the maximum distance between coordinates is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>angle</code></td>
+<td>
+<p>A single value (in degrees) indicating the
+starting direction for a directional variogram.  The
+default is 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ndir</code></td>
+<td>
+<p>The number of directions for which to
+calculate a empirical semivariogram.  The default is 1,
+meaning calculate an omnidirectional semivariogram.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>The name of the estimator to use in the
+estimation process.  The default is <code>"standard"</code>, the
+typical method-of-moments estimator.  Other options
+include <code>"cressie"</code> for the robust Cressie-Hawkins
+estimator, and <code>"cloud"</code> for a semivariogram cloud
+based on the standard estimator.  If <code>"cloud"</code> is specified,
+the <code>nbins</code> argument is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>npmin</code></td>
+<td>
+<p>The minimum number of pairs of points to use
+in the semivariogram estimator.  For any bins with
+fewer points, the estimate for that bin is dropped.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>longlat</code></td>
+<td>
+<p>A logical indicating whether Euclidean
+(<code>FALSE</code>) or Great Circle distance (WGS84
+ellipsoid) (<code>longlat = TRUE</code>) should be used.
+Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical value indicating whether
+computation information should be printed. Default is
+<code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>invert</code></td>
+<td>
+<p>A logical value indicating whether the axes
+of the coordinates should be inverted (i.e., the x- and
+y-axis are switched). The default is <code>TRUE</code> to
+mimic results from other geostatistical R packages like
+<code>gstat</code>, <code>geoR</code>, and other software like
+<code>GSLIB</code> and <code>GeoEAS</code>. Set to <code>FALSE</code> to
+use the typical x- and y-axes.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Note that the directions may be different from other
+packages (e.g., <code>gstat</code> or <code>geoR</code> packages)
+because those packages calculate angles clockwise from
+the y-axis, which is a convention frequently seen in
+geostatistics (e.g., the GSLIB software library). If
+<code>invert = TRUE</code>, the directions should be the same.
+</p>
+<p>Computing the empirical semivariogram for the residuals
+of <code>lm(response ~ 1)</code> will produce identical results
+to simply computing the empirical semivariogram from the
+original response. However, if a trend is specified (the
+righthand side of ~ has non-trival covariates), then the
+empirical semivariogram of the residuals will differ
+from that of the original response.  A trend should be
+specified when the mean is non-stationary over the
+spatial domain.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns an <code>evgram</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Joshua French
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(co)
+v = evgram(Al ~ 1, co, ~ easting + northing)
+plot(v)
+v2 = evgram(Al ~ 1, co, c("easting", "northing"), angle = 22.5, ndir = 4)
+plot(v2)
+</code></pre>
+
+
+</div>

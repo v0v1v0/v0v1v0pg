@@ -1,0 +1,149 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>MaxContribution</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Find major contributions to aggregates</h2>
+
+<h3>Description</h3>
+
+<p>Assuming aggregates are calculated via a dummy matrix by
+<code>z = t(x) %*% y</code>,
+the <code>n</code> largest contributions are found (value or index) for each aggregate.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">MaxContribution(
+  x,
+  y,
+  n = 1,
+  decreasing = TRUE,
+  index = FALSE,
+  groups = NULL,
+  return2 = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A (sparse) dummy matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Vector of input values (contributors)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Number of contributors to be found</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>decreasing</code></td>
+<td>
+<p>Ordering parameter. Smallest contributors found when <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>index</code></td>
+<td>
+<p>Indices to <code>y</code> returned when TRUE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groups</code></td>
+<td>
+<p>When non-NULL, major contributions after aggregation within groups.
+Cannot be combined with <code>index = TRUE</code>.
+The missing group category is excluded.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return2</code></td>
+<td>
+<p>When <code>TRUE</code>, two matrices are returned, <code>value</code> and <code>id</code>.
+The latter contains indices when <code>group</code> is <code>NULL</code> and otherwise a character matrix of groups.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Matrix with lagest contributions in first column, second largest in second column and so on.
+Alternative output when using parameters <code>index</code> or <code>return2</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Øyvind Langsrud
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>ModelMatrix</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(SSBtools)
+
+z &lt;- SSBtoolsData("sprt_emp_withEU")
+z$age[z$age == "Y15-29"] &lt;- "young"
+z$age[z$age == "Y30-64"] &lt;- "old"
+
+a &lt;- ModelMatrix(z, formula = ~age + geo, crossTable = TRUE)
+
+cbind(as.data.frame(a$crossTable), MaxContribution(a$modelMatrix, z$ths_per, 1))
+cbind(a$crossTable, MaxContribution(a$modelMatrix, z$ths_per, 10))
+cbind(a$crossTable, MaxContribution(a$modelMatrix, z$ths_per, 10, index = TRUE))
+
+# Both types of output can be achieved with return2 = TRUE)
+identical(MaxContribution(a$modelMatrix, z$ths_per, 10, return2 = TRUE),
+          list(value =  MaxContribution(a$modelMatrix, z$ths_per, 10), 
+               id =  MaxContribution(a$modelMatrix, z$ths_per, 10, index = TRUE)))
+
+b &lt;- ModelMatrix(z[, -4], crossTable = TRUE, inputInOutput = c(TRUE, FALSE, TRUE))
+
+k &lt;- cbind(b$crossTable, MaxContribution(b$modelMatrix, z$ths_per, 10))
+
+gr18 &lt;- paste0("g", 1:18)                          # Each row is a group
+k18 &lt;- cbind(b$crossTable, MaxContribution(b$modelMatrix, z$ths_per, 10, groups = gr18))
+identical(k, k18) # TRUE
+
+gr9 &lt;- paste0("g", as.integer(10 * z$ths_per)%%10) # 9 groups from decimal
+k9 &lt;- cbind(b$crossTable, MaxContribution(b$modelMatrix, z$ths_per, 10, groups = gr9))
+
+k18[c(4, 13, 17, 33), ]
+k9[c(4, 13, 17, 33), ]
+
+# Group info obtained with return2 = TRUE
+k9_id &lt;- cbind(b$crossTable, MaxContribution(b$modelMatrix, z$ths_per, 10, groups = gr9, 
+                                             return2 = TRUE)$id)
+k9_id[c(4, 13, 17, 33), ]
+
+
+# Verify similarity
+z$y &lt;- z$ths_per + (1:nrow(z))/100  # to avoid equal values
+id1 &lt;- MaxContribution(b$modelMatrix, z$y, 10, index = TRUE)
+id1[!is.na(id1)] &lt;- paste0("g", id1[!is.na(id1)])
+mc2 &lt;- MaxContribution(b$modelMatrix, z$y, 10, groups = gr18, return2 = TRUE)
+id2 &lt;- mc2$id
+identical(id1, id2)
+
+</code></pre>
+
+
+</div>

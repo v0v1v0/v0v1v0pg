@@ -1,0 +1,154 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rasterFromRaster</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a raster from an existing raster as template</h2>
+
+<h3>Description</h3>
+
+<p><code>rasterFromRaster()</code> creates a new raster with spatial reference,
+extent and resolution taken from a template raster, without copying data.
+Optionally changes the format, number of bands, data type and nodata value,
+sets driver-specific dataset creation options, and initializes to a value.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rasterFromRaster(
+  srcfile,
+  dstfile,
+  fmt = NULL,
+  nbands = NULL,
+  dtName = NULL,
+  options = NULL,
+  init = NULL,
+  dstnodata = init
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>srcfile</code></td>
+<td>
+<p>Source raster filename.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dstfile</code></td>
+<td>
+<p>Output raster filename.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fmt</code></td>
+<td>
+<p>Output raster format name (e.g., "GTiff" or "HFA"). Will attempt
+to guess from the output filename if <code>fmt</code> is not specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbands</code></td>
+<td>
+<p>Number of output bands.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dtName</code></td>
+<td>
+<p>Output raster data type name. Commonly used types include
+<code>"Byte"</code>, <code>"Int16"</code>, <code>"UInt16"</code>, <code>"Int32"</code> and <code>"Float32"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>options</code></td>
+<td>
+<p>Optional list of format-specific creation options in a
+vector of "NAME=VALUE" pairs
+(e.g., <code>options = c("COMPRESS=LZW")</code> to set LZW compression
+during creation of a GTiff file).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p>Numeric value to initialize all pixels in the output raster.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dstnodata</code></td>
+<td>
+<p>Numeric nodata value for the output raster.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns the destination filename invisibly.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GDALRaster-class</code>, <code>create()</code>, <code>createCopy()</code>,
+<code>bandCopyWholeRaster()</code>, <code>translate()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># band 2 in a FARSITE landscape file has slope degrees
+# convert slope degrees to slope percent in a new raster
+lcp_file &lt;- system.file("extdata/storm_lake.lcp", package="gdalraster")
+ds_lcp &lt;- new(GDALRaster, lcp_file)
+ds_lcp$getMetadata(band=2, domain="")
+
+slpp_file &lt;- file.path(tempdir(), "storml_slpp.tif")
+opt = c("COMPRESS=LZW")
+rasterFromRaster(srcfile = lcp_file,
+                 dstfile = slpp_file,
+                 nbands = 1,
+                 dtName = "Int16",
+                 options = opt,
+                 init = -32767)
+ds_slp &lt;- new(GDALRaster, slpp_file, read_only=FALSE)
+
+# slpp_file is initialized to -32767 and nodata value set
+ds_slp$getNoDataValue(band=1)
+
+# extent and cell size are the same as lcp_file
+ds_lcp$bbox()
+ds_lcp$res()
+ds_slp$bbox()
+ds_slp$res()
+
+# convert slope degrees in lcp_file band 2 to slope percent in slpp_file
+# bring through LCP nodata -9999 to the output nodata value
+ncols &lt;- ds_slp$getRasterXSize()
+nrows &lt;- ds_slp$getRasterYSize()
+for (row in 0:(nrows-1)) {
+    rowdata &lt;- ds_lcp$read(band=2,
+                           xoff=0, yoff=row,
+                           xsize=ncols, ysize=1,
+                           out_xsize=ncols, out_ysize=1)
+    rowslpp &lt;- tan(rowdata*pi/180) * 100
+    rowslpp[rowdata==-9999] &lt;- -32767
+    dim(rowslpp) &lt;- c(1, ncols)
+    ds_slp$write(band=1, xoff=0, yoff=row, xsize=ncols, ysize=1, rowslpp)
+}
+
+# min, max, mean, sd
+ds_slp$getStatistics(band=1, approx_ok=FALSE, force=TRUE)
+
+ds_slp$close()
+ds_lcp$close()
+deleteDataset(slpp_file)
+</code></pre>
+
+
+</div>

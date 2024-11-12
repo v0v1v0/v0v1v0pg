@@ -1,0 +1,87 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>restore.library</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Restore default library of packages, undoing all changes made by groundhog</h2>
+
+<h3>Description</h3>
+
+<p>In a few seconds reverse changes made by groundhog to the default personal
+library (where R packages are usually installed into with <code>installed.packages()</code>).
+If you are just trying groundhog out for the first time,
+or you generally rely on base R's <code>library()</code> and want to use <code>groundhog.library()</code> sporadically
+then you may want to run <code>restore.library()</code> when you are done with your one-time use of groundhog.
+This will undo any and all changes made by <code>groundhog</code> to that library.
+In most circumstances, restoring a library takes a few seconds, even if the library
+has had 100s of package modifications.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">restore.library(days = 0)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>days</code></td>
+<td>
+<p>an optional numeric argument used to choose among alternative restore points.
+When <code>days</code> is set, groundhog restores the personal library to the  most recent restore point that
+is at least <code>days</code> days old. If <code>dais</code> is not set, groundhog restores to the most recent restore point overall.
+For example, if there are two restore points: one from today, and one from 7 days ago,
+running <code>restore.library()</code> would restore to the former, setting <code>days=3</code> would restore to the latter,
+and setting <code>days=8</code> would result in an error. <code>days = -1</code> restores to the oldest restore point available.</p>
+</td>
+</tr></table>
+<h3>Details</h3>
+
+<p>When groundhog installs a package, it installs it into groundhog's library
+(location of that library is obtainable with <code>get.groundhog.folder()</code>).
+Groundhog then immediately moves the installed package(s) (and their dependencies)
+to the default personal library (location of that library obtainable with: <code>.libPaths()[1]</code>).
+Altering the packages in the local folder is necessary for groundhog to work properly for two main reasons. First,
+R Studio often loads packages from that library before users run the code in a script, creating
+version conflicts that cannot be avoided when attempting to load other versions of those
+packages with <code>groundhog</code>. Second, R scripts often run processes in independent R sessions, for
+example when doing parallel processing. Those background processes will also look for
+packages in the default personal folder. Because the personal library can only hold
+one version of a given package, before moving new packages in, groundhog moves
+any existing other versions of those packages out, to another directory (a local archive).
+Those files are not deleted, just moved, making it easy and fast to recover.
+When the first change in the personal folder is made on a given calendar date,
+groundhog makes a list of all packages available in the personal folder before such change (saving
+a copy of the results from <code>installed.packages(.libPaths()[1])</code>), this saved file is referred to as a
+a 'restore point'. With <code>restore.library()</code> groundhog looks up a restore point, obtain the set of packages
+that used to be installed, and removes any packages <em>installed by groundhog</em> which are in the personal library
+but were not in that restore point; similarly, it moves back to the local library any packages <em>removed by groundhog</em>
+that were in the restore point but are not currently there. This process take a few seconds even for 100+ packages.
+Note that there is only one restore point per calendar date, so one effectively restores
+the personal library to how it was before <em>any</em> changes were made to it that day with groundhog.
+Restore points are saved permanently and can be restored at any point.
+The set of restore points available is stored in the hidden dataframe <code>.available.restore.points</code>.
+To choose among them use the <code>days</code> argument in <code>restore.library</code>. The default is to restore
+based on the most recent restore point, so if a user installs groundhog, tests it, and wants to
+undo all changes made by groundhog, the default behavior will achieve this goal.
+Note: restoring can take a few minutes if the groundhog folder is on a different
+drive from the default personal R library (e.g., two different hard drives) or if it is in Dropbox.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+restore.library()
+restore.library(7)
+restore.library(-1)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

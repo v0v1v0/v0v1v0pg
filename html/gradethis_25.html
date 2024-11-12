@@ -1,0 +1,184 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fail_if_code_feedback</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Signal a failing grade if mistakes are detected in the submitted code</h2>
+
+<h3>Description</h3>
+
+<p><code>fail_if_code_feedback()</code> uses <code>code_feedback()</code> to detect if there are
+differences between the user's submitted code and the solution code (if
+available). If the exercise does not have an associated solution, or if there
+are no detected differences between the user's and the solution code, no
+grade is returned.
+</p>
+<p>See <code>graded()</code> for more information on <span class="pkg">gradethis</span> grade-signaling
+functions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fail_if_code_feedback(
+  message = NULL,
+  user_code = .user_code,
+  solution_code = .solution_code_all,
+  ...,
+  env = parent.frame(),
+  hint = TRUE,
+  encourage = getOption("gradethis.fail.encourage", FALSE),
+  allow_partial_matching = getOption("gradethis.allow_partial_matching", TRUE)
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>message</code></td>
+<td>
+<p>A character string of the message to be displayed. In all
+grading helper functions other than <code>graded()</code>, <code>message</code> is a template
+string that will be processed with <code>glue::glue()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>user_code, solution_code</code></td>
+<td>
+<p>String containing user or solution code. By
+default, when used in <code>grade_this()</code>, .user_code is retrieved for the
+.user_code. <code>solution_code</code> may also be a list containing multiple
+solution variations, so by default in <code>grade_this()</code> .solution_code_all
+is found and used for <code>solution_code</code>. You may also use <code>.solution_code</code> if
+there is only one solution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Arguments passed on to <code>graded</code>
+</p>
+
+<dl>
+<dt><code>correct</code></dt>
+<dd>
+<p>A logical value of whether or not the checked code is correct.</p>
+</dd>
+<dt><code>type,location</code></dt>
+<dd>
+<p>The <code>type</code> and <code>location</code> of the feedback object
+provided to <span class="pkg">learnr</span>. See
+<a href="https://rstudio.github.io/learnr/exercises.html#Custom_checking">https://rstudio.github.io/learnr/exercises.html#Custom_checking</a> for more
+details.
+</p>
+<p><code>type</code> may be one of "auto", "success", "info", "warning", "error", or
+"custom".
+</p>
+<p><code>location</code> may be one of "append", "prepend", or "replace".</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>env</code></td>
+<td>
+<p>Environment used to standardize formals of the user and solution code.
+Defaults to retrieving .envir_result and .envir_solution from <code>parent.frame()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hint</code></td>
+<td>
+<p>Include a code feedback hint with the failing message? This
+argument only applies to <code>fail()</code> and <code>fail_if_equal()</code> and the message is
+added using the default options of <code>give_code_feedback()</code> and
+<code>maybe_code_feedback()</code>. The default value of <code>hint</code> can be set using
+<code>gradethis_setup()</code> or the <code>gradethis.fail.hint</code> option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>encourage</code></td>
+<td>
+<p>Include a random encouraging phrase with
+<code>random_encouragement()</code>? The default value of <code>encourage</code> can be set
+using <code>gradethis_setup()</code> or the <code>gradethis.fail.encourage</code> option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allow_partial_matching</code></td>
+<td>
+<p>A logical. If <code>FALSE</code>, the partial matching of
+argument names is not allowed and e.g. <code>runif(1, mi = 0)</code> will return a
+message indicating that the full formal name <code>min</code> should be used. The
+default is set via the <code>gradethis.allow_partial_matching</code> option, or by
+<code>gradethis_setup()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Signals an incorrect grade with feedback if there are differences
+between the submitted user code and the solution code. If solution code is
+not available, no grade is returned.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other grading helper functions: <code>graded()</code>, <code>pass()</code>, <code>fail()</code>,
+<code>pass_if()</code>, <code>fail_if()</code>, <code>pass_if_equal()</code>, <code>fail_if_equal()</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Suppose the exercise prompt is to generate 5 random numbers, sampled from
+# a uniform distribution between 0 and 1. In this exercise, you know that
+# you shouldn't have values outside of the range of 0 or 1, but you'll
+# otherwise need to check the submitted code to know that the student has
+# chosen the correct sampling function.
+
+grader &lt;-
+  # ```{r example-check}
+  grade_this({
+    fail_if(length(.result) != 5, "I expected 5 numbers.")
+    fail_if(
+      any(.result &lt; 0 | .result &gt; 1),
+      "I expected all numbers to be between 0 and 1."
+    )
+
+    # Specific checks passed, but now we want to check the code.
+    fail_if_code_feedback()
+
+    # All good!
+    pass()
+  })
+# ```
+
+.solution_code &lt;- "
+# ```{r example-check}
+  runif(5)
+# ```
+"
+
+# Not 5 numbers...
+grader(mock_this_exercise(runif(1), !!.solution_code))
+
+# Not within [0, 1]...
+grader(mock_this_exercise(rnorm(5), !!.solution_code))
+
+# Passes specific checks, but hard to tell so check the code...
+grader(mock_this_exercise(runif(5, 0.25, 0.75), !!.solution_code))
+grader(mock_this_exercise(rbinom(5, 1, 0.5), !!.solution_code))
+
+# Perfect!
+grader(mock_this_exercise(runif(n = 5), !!.solution_code))
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,164 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gtfs_traveltimes</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>gtfs_traveltimes</h2>
+
+<h3>Description</h3>
+
+<p>Travel times from a nominated station departing at a nominated time to every
+other reachable station in a system.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gtfs_traveltimes(
+  gtfs,
+  from,
+  start_time_limits,
+  day = NULL,
+  from_is_id = FALSE,
+  grep_fixed = TRUE,
+  route_pattern = NULL,
+  minimise_transfers = FALSE,
+  max_traveltime = 60 * 60,
+  quiet = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>gtfs</code></td>
+<td>
+<p>A set of GTFS data returned from extract_gtfs or, for more
+efficient queries, pre-processed with gtfs_timetable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>from</code></td>
+<td>
+<p>Name, ID, or approximate (lon, lat) coordinates of start station
+(as <code>stop_name</code> or <code>stop_id</code> entry in the <code>stops</code> table, or a vector of two
+numeric values).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start_time_limits</code></td>
+<td>
+<p>A vector of two integer values denoting the earliest
+and latest departure times in seconds for the traveltime values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>day</code></td>
+<td>
+<p>Day of the week on which to calculate route, either as an
+unambiguous string (so "tu" and "th" for Tuesday and Thursday), or a number
+between 1 = Sunday and 7 = Saturday. If not given, the current day will be
+used. (Not used if <code>gtfs</code> has already been prepared with
+gtfs_timetable.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>from_is_id</code></td>
+<td>
+<p>Set to <code>TRUE</code> to enable <code>from</code> parameter to specify entry
+in <code>stop_id</code> rather than <code>stop_name</code> column of the <code>stops</code> table (same as
+<code>from_to_are_ids</code> parameter of gtfs_route).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grep_fixed</code></td>
+<td>
+<p>If <code>FALSE</code>, match station names (when passed as character
+string) with <code>grep(..., fixed = FALSE)</code>, to allow use of <code>grep</code> expressions.
+This is useful to refine matches in cases where desired stations may match
+multiple entries.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>route_pattern</code></td>
+<td>
+<p>Using only those routes matching given pattern, for
+example, "^U" for routes starting with "U" (as commonly used for underground
+or subway routes. To negate the <code>route_pattern</code> – that is, to include all
+routes except those matching the pattern – prepend the value with "!"; for
+example "!^U" will include all services except those starting with "U". (This
+parameter is not used at all if <code>gtfs</code> has already been prepared with
+gtfs_timetable.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minimise_transfers</code></td>
+<td>
+<p>If <code>TRUE</code>, isochrones are calculated with
+minimal-transfer connections to each end point, even if those connections are
+slower than alternative connections with transfers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_traveltime</code></td>
+<td>
+<p>The maximal traveltime to search for, specified in
+seconds (with default of 1 hour). See note for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>Set to <code>TRUE</code> to suppress screen messages (currently just
+regarding timetable construction).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>data.frame</code> of travel times and required numbers of transfers to
+all stations reachable from the given <code>from</code> station. Additional columns
+include "start_time"  of connection, and information on destination stops
+including "id" numbers, names, and geographical coordinates.
+</p>
+
+
+<h3>Note</h3>
+
+<p>Higher values of <code>max_traveltime</code> will return traveltimes for greater
+numbers of stations, but may lead to considerably longer calculation times.
+For repeated usage, it is recommended to first establish a value sufficient
+to reach all or most stations desired for a particular query, rather than set
+<code>max_traveltime</code> to an arbitrarily high value.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other main: 
+<code>gtfs_route_headway()</code>,
+<code>gtfs_route()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Examples must be run on single thread only:
+nthr &lt;- data.table::setDTthreads (1)
+
+berlin_gtfs_to_zip ()
+f &lt;- file.path (tempdir (), "vbb.zip")
+g &lt;- extract_gtfs (f)
+g &lt;- gtfs_timetable (g)
+from &lt;- "Alexanderplatz"
+start_times &lt;- 12 * 3600 + c (0, 60) * 60 # 8:00-9:00
+res &lt;- gtfs_traveltimes (g, from, start_times)
+
+data.table::setDTthreads (nthr)
+</code></pre>
+
+
+</div>

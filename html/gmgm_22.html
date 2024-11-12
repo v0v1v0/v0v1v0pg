@@ -1,0 +1,126 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gmbn</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a Gaussian mixture Bayesian network</h2>
+
+<h3>Description</h3>
+
+<p>This function creates a Gaussian mixture Bayesian network as an object of S3
+class <code>gmbn</code>. A Bayesian network is a probabilistic graphical model that
+represents the conditional dependencies and independencies between random
+variables by a directed acyclic graph. It encodes a global joint distribution
+over the nodes, which decomposes into a product of local conditional
+distributions:
+</p>
+<p style="text-align: center;"><code class="reqn">p(X_1, \dots , X_n) = \prod_{i = 1}^n p(X_i | Pa(X_i))</code>
+</p>
+
+<p>where <code class="reqn">Pa(X_i)</code> is the set of parents of <code class="reqn">X_i</code> in the graph. In a
+Gaussian mixture Bayesian network, each local joint distribution over a node
+and its parents is described by a Gaussian mixture model, which means that
+the global distribution is a product of local conditional Gaussian mixture
+models (Davies and Moore, 2000). The <code>gmbn</code> class can be extended to the
+time factor by regarding the nodes as the state of the system at a given time
+slice <code class="reqn">t</code> (denoted by <code class="reqn">X^{(t)}</code>) and allowing them to have parents at
+previous time slices. This makes it possible to create a (<code class="reqn">k + 1</code>)-slice
+temporal Bayesian network that encodes the transition distribution
+<code class="reqn">p(X^{(t)} | X^{(t - 1)}, \dots , X^{(t - k)})</code> (Hulst, 2006). Finally,
+note that a Gaussian mixture Bayesian network can be created with functions
+<code>add_nodes</code> (by passing <code>NULL</code> as argument <code>gmgm</code>) and
+<code>add_arcs</code>, which allows to quickly initialize a <code>gmbn</code>
+object that can be passed to a learning function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gmbn(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Objects of class <code>gmm</code> describing the local joint
+distributions over the nodes and their parents. Each <code>gmm</code> object must
+be named after the node whose distribution it describes and contain variables
+named after this node and its parents. Two types of parents are accepted:
+other nodes (whose <code>gmm</code> objects must be defined) and instantiations of
+nodes at previous time slices (if the created <code>gmbn</code> object is a
+temporal Bayesian network). In the second case, the time lag must be added at
+the end of the variable name after a period <code>.</code> (e.g. the instantiation
+of a node <code>X</code> at time slice <code class="reqn">t - 1</code> is represented by the variable
+<code>X.1</code>).</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>A list of class <code>gmbn</code> containing the <code>gmm</code> objects passed
+as arguments.
+</p>
+
+
+<h3>References</h3>
+
+<p>Davies, S. and Moore, A. (2000). Mix-nets: Factored Mixtures of Gaussians in
+Bayesian Networks with Mixed Continuous And Discrete Variables. <em>In
+Proceedings of the 16th Conference on Uncertainty in Artificial
+Intelligence</em>, pages 168–175, Stanford, CA, USA.
+</p>
+<p>Hulst, J. (2006). <em>Modeling physiological processes with dynamic
+Bayesian networks</em>. Master's thesis, Delft University of Technology.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gmdbn</code>, <code>gmm</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(data_body)
+gmbn_1 &lt;- gmbn(
+  AGE = split_comp(add_var(NULL, data_body[, "AGE"]), n_sub = 3),
+  FAT = split_comp(add_var(NULL,
+                           data_body[, c("FAT", "GENDER", "HEIGHT", "WEIGHT")]),
+                   n_sub = 2),
+  GENDER = split_comp(add_var(NULL, data_body[, "GENDER"]), n_sub = 2),
+  GLYCO = split_comp(add_var(NULL, data_body[, c("GLYCO", "AGE", "WAIST")]),
+                     n_sub = 2),
+  HEIGHT = split_comp(add_var(NULL, data_body[, c("HEIGHT", "GENDER")])),
+  WAIST = split_comp(add_var(NULL,
+                             data_body[, c("WAIST", "AGE", "FAT", "HEIGHT",
+                                           "WEIGHT")]),
+                     n_sub = 3),
+  WEIGHT = split_comp(add_var(NULL, data_body[, c("WEIGHT", "HEIGHT")]),
+                      n_sub = 2)
+)
+
+library(dplyr)
+data(data_air)
+data &lt;- data_air %&gt;%
+  group_by(DATE) %&gt;%
+  mutate(NO2.1 = lag(NO2), O3.1 = lag(O3), TEMP.1 = lag(TEMP),
+         WIND.1 = lag(WIND)) %&gt;%
+  ungroup()
+gmbn_2 &lt;- gmbn(
+  NO2 = split_comp(add_var(NULL, data[, c("NO2", "NO2.1", "WIND")]), n_sub = 3),
+  O3 = split_comp(add_var(NULL,
+                          data[, c("O3", "NO2", "NO2.1", "O3.1", "TEMP",
+                                   "TEMP.1")]),
+                  n_sub = 3),
+  TEMP = split_comp(add_var(NULL, data[, c("TEMP", "TEMP.1")]), n_sub = 3),
+  WIND = split_comp(add_var(NULL, data[, c("WIND", "WIND.1")]), n_sub = 3)
+)
+
+</code></pre>
+
+
+</div>

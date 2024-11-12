@@ -1,0 +1,343 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pass_if_equal</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Signal a passing or failing grade if two values are equal</h2>
+
+<h3>Description</h3>
+
+<p><code>pass_if_equal()</code>, <code>fail_if_equal()</code>, and <code>fail_if_not_equal()</code>
+are three <code>graded()</code> helper functions
+that signal a passing or a failing grade
+based on the whether two values are equal.
+They are designed to easily compare
+the returned value of the student's submitted code
+with the value returned by the solution or another known value:
+</p>
+
+<ul>
+<li>
+<p> Each function finds and uses <code>.result</code> as the default for <code>x</code>,
+the first item in the comparison.
+<code>.result</code> is the last value returned from the user's submitted code.
+</p>
+</li>
+<li> <p><code>pass_if_equal()</code> additionally finds and uses <code>.solution</code> as the default
+expected value <code>y</code>.
+</p>
+</li>
+</ul>
+<p>See <code>graded()</code> for more information on <span class="pkg">gradethis</span> grade-signaling
+functions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pass_if_equal(
+  y = .solution,
+  message = getOption("gradethis.pass", "Correct!"),
+  x = .result,
+  ...,
+  env = parent.frame(),
+  tolerance = sqrt(.Machine$double.eps),
+  praise = getOption("gradethis.pass.praise", FALSE)
+)
+
+fail_if_equal(
+  y,
+  message = getOption("gradethis.fail", "Incorrect"),
+  x = .result,
+  ...,
+  env = parent.frame(),
+  tolerance = sqrt(.Machine$double.eps),
+  hint = getOption("gradethis.fail.hint", FALSE),
+  encourage = getOption("gradethis.fail.encourage", FALSE)
+)
+
+fail_if_not_equal(
+  y,
+  message = getOption("gradethis.fail", "Incorrect"),
+  x = .result,
+  ...,
+  env = parent.frame(),
+  tolerance = sqrt(.Machine$double.eps),
+  hint = getOption("gradethis.fail.hint", FALSE),
+  encourage = getOption("gradethis.fail.encourage", FALSE)
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The expected value against which <code>x</code> is compared using
+<code>gradethis_equal(x, y)</code>.
+</p>
+<p>In <code>pass_if_equal()</code>, if no value is provided, the exercise <code>.solution</code>
+(i.e. the result of evaluating the code in the exercise's <code style="white-space: pre;">⁠*-solution⁠</code>
+chunk) will be used for the comparison.
+</p>
+<p>If the exercise uses multiple solutions with <em>different results</em>, set
+<code>y = .solution_all</code>. In this case, <code>pass_if_equal()</code> will test each of the
+solutions and provide a passing grade if <code>x</code> matches <em>any</em> values contained
+in <code>y</code>. Note that if the exercise has multiple solutions but they all
+return the same result, it will be faster to use the default value of
+<code>y = .solution</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>message</code></td>
+<td>
+<p>A character string of the message to be displayed. In all
+grading helper functions other than <code>graded()</code>, <code>message</code> is a template
+string that will be processed with <code>glue::glue()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>First item in the comparison. By default, when used inside
+<code>grade_this()</code>, <code>x</code> is automatically assigned the value of <code>.result</code> — in
+other words the result of running the student's submitted code. <code>x</code> is not
+the first argument since you will often want to compare the final value of
+the student's submission against a specific value, <code>y</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to <code>graded()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>env</code></td>
+<td>
+<p>environment to evaluate the glue <code>message</code>. Most users of
+<span class="pkg">gradethis</span> will not need to use this argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tolerance</code></td>
+<td>
+<p>If non-<code>NULL</code>, used as threshold for ignoring small
+floating point difference when comparing numeric vectors. Using any
+non-<code>NULL</code> value will cause integer and double vectors to be compared
+based on their values, not their types, and will ignore the difference
+between <code>NaN</code> and <code>NA_real_</code>.
+</p>
+<p>It uses the same algorithm as <code>all.equal()</code>, i.e., first we generate
+<code>x_diff</code> and <code>y_diff</code> by subsetting <code>x</code> and <code>y</code> to look only locations
+with differences. Then we check that
+<code>mean(abs(x_diff - y_diff)) / mean(abs(y_diff))</code> (or just
+<code>mean(abs(x_diff - y_diff))</code> if <code>y_diff</code> is small) is less than
+<code>tolerance</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>praise</code></td>
+<td>
+<p>Include a random praising phrase with <code>random_praise()</code>? The
+default value of <code>praise</code> can be set using <code>gradethis_setup()</code> or the
+<code>gradethis.pass.praise</code> option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hint</code></td>
+<td>
+<p>Include a code feedback hint with the failing message? This
+argument only applies to <code>fail()</code> and <code>fail_if_equal()</code> and the message is
+added using the default options of <code>give_code_feedback()</code> and
+<code>maybe_code_feedback()</code>. The default value of <code>hint</code> can be set using
+<code>gradethis_setup()</code> or the <code>gradethis.fail.hint</code> option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>encourage</code></td>
+<td>
+<p>Include a random encouraging phrase with
+<code>random_encouragement()</code>? The default value of <code>encourage</code> can be set
+using <code>gradethis_setup()</code> or the <code>gradethis.fail.encourage</code> option.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a passing or failing grade if <code>x</code> and <code>y</code> are equal.
+</p>
+
+
+<h3>Functions</h3>
+
+
+<ul>
+<li> <p><code>pass_if_equal()</code>: Signal a <em>passing</em> grade only if <code>x</code> and <code>y</code> are
+equal.
+</p>
+</li>
+<li> <p><code>fail_if_equal()</code>: Signal a <em>failing</em> grade only if <code>x</code> and <code>y</code> are
+equal.
+</p>
+</li>
+<li> <p><code>fail_if_not_equal()</code>: Signal a <em>failing</em> grade if <code>x</code> and <code>y</code> are <em>not</em>
+equal.
+</p>
+</li>
+</ul>
+<h3>Comparing with Multiple Solutions</h3>
+
+<p>If your exercise includes multiple solutions that are variations of the same
+task — meaning that all solutions achieve the same result — you can call
+<code>pass_if_equal()</code> without changing any defaults to compare the result of the
+student's submission to the common solution result. After checking if any
+solution matches, you can perform additional checks or you can call <code>fail()</code>
+with the default message or with <code>hint = TRUE</code>. <code>fail()</code>
+will automatically provide code feedback for the most likely solution.
+</p>
+<p>By default, <code>pass_if_equal()</code> will compare .result with .solution, or the
+final value returned by the entire <code>-solution</code> chunk (in other words, the
+last solution). This default behavior covers both exercises with a single
+solution and exercises with multiple solutions that all return the same
+value.
+</p>
+<p>When your exercise has multiple solutions with <strong>different results</strong>,
+<code>pass_if_equal()</code> can compare the student's .result to each of the
+solutions in .solution_all, returning a passing grade when the result
+matches any of the values returned by the set of solutions. You can opt into
+this behavior by calling
+</p>
+<div class="sourceCode r"><pre>pass_if_equal(.solution_all)
+</pre></div>
+<p>Note that this causes <code>pass_if_equal()</code> to evaluate each of the solutions in
+the set, and may increase the computation time.
+</p>
+<p>Here's a small example. Suppose an exercise asks students to filter <code>mtcars</code>
+to include only cars with the same number of cylinders. Students are free to
+pick cars with 4, 6, or 8 cylinders, and so your <code>-solution</code> chunk would
+include this code (ignoring the <code>ex_solution</code> variable, the chunk would
+contain the code in the string below):
+</p>
+<div class="sourceCode r"><pre>ex_solution &lt;- "
+# four cylinders ----
+mtcars[mtcars$cyl == 4, ]
+
+# six cylinders ----
+mtcars[mtcars$cyl == 6, ]
+
+# eight cylinders ----
+mtcars[mtcars$cyl == 8, ]
+"
+</pre></div>
+<p>In the <code>-check</code> chunk, you'd call <code>grade_this()</code> and ask <code>pass_if_equal()</code> to
+compare the student's .result to .solution_all (all the solutions).
+</p>
+<div class="sourceCode r"><pre>ex_check &lt;- grade_this({
+  pass_if_equal(
+    y = .solution_all,
+    message = "The cars in your result all have {.solution_label}!"
+   )
+
+  fail()
+})
+</pre></div>
+<p>What happens when a student submits one of these solutions? This function
+below mocks the process of a student submitting an attempt.
+</p>
+<div class="sourceCode r"><pre>student_submits &lt;- function(code) {
+  withr::local_seed(42)
+  submission &lt;- mock_this_exercise(!!code, !!ex_solution)
+  ex_check(submission)
+}
+</pre></div>
+<p>If they submit code that returns one of the three possible solutions, they
+receive positive feedback.
+</p>
+<div class="sourceCode r"><pre>student_submits("mtcars[mtcars$cyl == 4, ]")
+#&gt; &lt;gradethis_graded: [Correct]
+#&gt;   The cars in your result all have four cylinders!
+#&gt; &gt;
+student_submits("mtcars[mtcars$cyl == 6, ]")
+#&gt; &lt;gradethis_graded: [Correct]
+#&gt;   The cars in your result all have six cylinders!
+#&gt; &gt;
+</pre></div>
+<p>Notice that the solution label appears in the feedback message. When
+<code>pass_if_equal()</code> picks a solution as correct, three variables are made
+available for use in the glue string provided to <code>message</code>:
+</p>
+
+<ul>
+<li> <p><code>.solution_label</code>: The heading label of the matching solution
+</p>
+</li>
+<li> <p><code>.solution_code</code>: The code of the matching solution
+</p>
+</li>
+<li> <p><code>.solution</code>: The value of the evaluated matching solution code
+</p>
+</li>
+</ul>
+<p>If the student submits incorrect code, <code>pass_if_equal()</code> defers to later
+grading code.
+</p>
+<div class="sourceCode r"><pre>student_submits("mtcars[mtcars$cyl &lt; 8, ]")
+#&gt; &lt;gradethis_graded: [Incorrect]
+#&gt;   Incorrect. In `mtcars[mtcars$cyl &lt; 8, ]`, I expected you to call `==`
+#&gt;   where you called `&lt;`. Please try again.
+#&gt; &gt;
+</pre></div>
+<p>Here, because <code>fail()</code> provides <code>code_feedback()</code> by default, and because
+<code>code_feedback()</code> is also aware of the multiple solutions for this exercise,
+the code feedback picks the <em>eight cylinders</em> solution and gives advice
+based on that particular solution.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other grading helper functions: <code>graded()</code>, <code>pass()</code>, <code>fail()</code>,
+<code>pass_if()</code>, <code>fail_if()</code>, <code>pass_if_equal()</code>, <code>fail_if_equal()</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Suppose our prompt is to find the cars in `mtcars` with 6 cylinders...
+
+grader &lt;-
+  # ```{r example-check}
+  grade_this({
+    # Automatically pass if .result equal to .solution
+    pass_if_equal()
+
+    fail_if_equal(mtcars[mtcars$cyl == 4, ], message = "Not four cylinders")
+    fail_if_equal(mtcars[mtcars$cyl == 8, ], message = "Not eight cylinders")
+
+    # Default to failing grade with feedback
+    fail()
+  })
+# ```
+
+.solution &lt;-
+  # ```{r example-solution}
+  mtcars[mtcars$cyl == 6, ]
+# ```
+
+# Correct!
+grader(mock_this_exercise(mtcars[mtcars$cyl == 6, ], !!.solution))
+
+# These fail with specific messages
+grader(mock_this_exercise(mtcars[mtcars$cyl == 4, ], !!.solution))
+grader(mock_this_exercise(mtcars[mtcars$cyl == 8, ], !!.solution))
+
+# This fails with default feedback message
+grader(mock_this_exercise(mtcars[mtcars$mpg == 8, ], !!.solution))
+</code></pre>
+
+
+</div>

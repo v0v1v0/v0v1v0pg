@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>singboost</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>SingBoost Boosting method</h2>
+
+<h3>Description</h3>
+
+<p>SingBoost is a Boosting method that can deal with complicated loss functions that do not allow for
+a gradient. SingBoost is based on L2-Boosting in its current implementation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">singboost(
+  D,
+  M = 10,
+  m_iter = 100,
+  kap = 0.1,
+  singfamily = Gaussian(),
+  best = 1,
+  LS = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>D</code></td>
+<td>
+<p>Data matrix. Has to be an <code class="reqn">n \times (p+1)-</code>dimensional data frame in the format <code class="reqn">(X,Y)</code>. The <code class="reqn">X-</code>part must not
+contain an intercept column containing only ones since this column will be added automatically.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>An integer between 2 and <code>m_iter</code>. Indicates that in every <code class="reqn">M-</code>th iteration, a singular iteration will be
+performed. Default is 10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m_iter</code></td>
+<td>
+<p>Number of SingBoost iterations. Default is 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kap</code></td>
+<td>
+<p>Learning rate (step size). Must be a real number in <code class="reqn">]0,1]</code>. Default is 0.1 It is recommended to use
+a value smaller than 0.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>singfamily</code></td>
+<td>
+<p>A Boosting family corresponding to the target loss function. See .<code>mboost</code> for families
+corresponding to standard loss functions. May also use the loss functions for ranking losses provided in this
+package. Default is <code>Gaussian()</code> for which SingBoost is just standard <code class="reqn">L_2-</code>Boosting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>best</code></td>
+<td>
+<p>Needed in the case of localized ranking. The parameter <code>K</code> of the localized ranking loss will be
+computed by <code class="reqn">best \cdot n</code> (rounded to the next larger integer). Warning: If a parameter <code>K</code> is inserted into the
+<code>LocRank</code> family, it will be ignored when executing SingBoost.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LS</code></td>
+<td>
+<p>If a <code>singfamily</code> object that is already provided by <code>mboost</code> is used, the respective Boosting algorithm
+will be performed in the singular iterations if <code>Ls</code> is set to <code>TRUE</code>. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Gradient Boosting algorithms require convexity and differentiability of the underlying loss function.
+SingBoost is a Boosting algorithm based on <code class="reqn">L_2-</code>Boosting that allows for complicated loss functions that do not
+need to satisfy these requirements. In fact, SingBoost alternates between standard <code class="reqn">L_2-</code>Boosting iterations and
+singular iterations where essentially an empirical gradient step is executed in the sense that the baselearner
+that performs best, evaluated in the complicated loss, is selected in the respective iteration. The implementation
+is based on <code>glmboost</code> from the package <code>mboost</code> and using the <code class="reqn">L_2-</code>loss in the singular iterations returns exactly the
+same coefficients as <code class="reqn">L_2-</code>Boosting.
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Selected variables</code></td>
+<td>
+<p>Names of the selected variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Coefficients</code></td>
+<td>
+<p>The selected coefficients as an <code class="reqn">(p+1)-</code>dimensional vector (i.e., including the zeroes).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Freqs</code></td>
+<td>
+<p>Selection frequencies and a matrix for intercept and coefficient paths, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>VarCoef</code></td>
+<td>
+<p>Vector of the non-zero coefficients.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Werner, T., Gradient-Free Gradient Boosting, PhD Thesis, Carl von Ossietzky University Oldenburg, 2020
+</p>
+<p>P. Bühlmann and B. Yu. Boosting with the l2 loss: Regression and Classification. Journal
+of the American Statistical Association, 98(462):324–339, 2003
+</p>
+<p>T. Hothorn, P. Bühlmann, T. Kneib, M. Schmid, and B. Hofner. mboost: Model-Based
+Boosting, 2017
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">{glmres&lt;-glmboost(Sepal.Length~.,iris)
+glmres
+attributes(varimp(glmres))$self
+attributes(varimp(glmres))$var
+firis&lt;-as.formula(Sepal.Length~.)
+Xiris&lt;-model.matrix(firis,iris)
+Diris&lt;-data.frame(Xiris[,-1],iris$Sepal.Length)
+colnames(Diris)[6]&lt;-"Y"
+coef(glmboost(Xiris,iris$Sepal.Length))
+singboost(Diris)
+singboost(Diris,LS=TRUE)}
+{glmres2&lt;-glmboost(Sepal.Length~Petal.Length+Sepal.Width:Species,iris)
+finter&lt;-as.formula(Sepal.Length~Petal.Length+Sepal.Width:Species-1)
+Xinter&lt;-model.matrix(finter,iris)
+Dinter&lt;-data.frame(Xinter,iris$Sepal.Length)
+singboost(Dinter)
+coef(glmres2)}
+{glmres3&lt;-glmboost(Xiris,iris$Sepal.Length,control=boost_control(mstop=250,nu=0.05))
+coef(glmres3)
+attributes(varimp(glmres3))$self
+singboost(Diris,m_iter=250,kap=0.05)
+singboost(Diris,LS=TRUE,m_iter=250,kap=0.05)}
+{glmquant&lt;-glmboost(Sepal.Length~.,iris,family=QuantReg(tau=0.75))
+coef(glmquant)
+attributes(varimp(glmquant))$self
+singboost(Diris,singfamily=QuantReg(tau=0.75),LS=TRUE)
+singboost(Diris,singfamily=QuantReg(tau=0.75),LS=TRUE,M=2)}
+{singboost(Diris,singfamily=Rank(),LS=TRUE)
+singboost(Diris,singfamily=Rank(),LS=TRUE,M=2)}
+</code></pre>
+
+
+</div>

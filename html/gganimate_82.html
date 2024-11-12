@@ -1,0 +1,139 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>transition_reveal</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Reveal data along a given dimension</h2>
+
+<h3>Description</h3>
+
+<p>This transition allows you to let data gradually appear, based on a given
+time dimension. In contrast to e.g. <code>transition_time()</code> <code>transition_reveal()</code>
+calculates intermediary values at exact positions instead of coercing raw
+values into the closest frame. It further keeps old data for path and polygon
+type layers so that they are gradually build up instead of being a set of
+disconnected segments as will happen when using <code>transition_time()</code> and
+<code>shadow_mark()</code> together.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">transition_reveal(along, range = NULL, keep_last = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>along</code></td>
+<td>
+<p>An unquoted expression giving the dimension to tween along. For
+a gradually revealing time series this should be set to the same as the <code>x</code>
+aesthetic.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>range</code></td>
+<td>
+<p>The time range to animate. If <code>NULL</code> it will be set to the range
+of <code>along</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep_last</code></td>
+<td>
+<p>For non-path/polygon layers should the last row be kept for
+subsequent frames.</p>
+</td>
+</tr>
+</table>
+<h3>Label variables</h3>
+
+<p><code>transition_reveal</code> makes the following variables available for string
+literal interpretation, in addition to the general ones provided by
+<code>animate()</code>:
+</p>
+
+<ul><li> <p><strong>frame_along</strong> gives the position on the along-dimension that the current
+frame corresponds to
+</p>
+</li></ul>
+<h3>Object permanence</h3>
+
+<p><code>transition_reveal</code> uses the group aesthetic of each layer to identify
+which rows in the input data correspond to the same graphic element and will
+therefore define a whole to be revealed over the animation.
+The group aesthetic, if not set, will be calculated from the interaction of all
+discrete aesthetics in the layer (excluding <code>label</code>), so it is often better
+to set it explicitly when animating, to make sure your data is interpreted in
+the right way. If the group aesthetic is not set, and no discrete aesthetics
+exists then all rows will have the same group.
+</p>
+
+
+<h3>Computed Variables</h3>
+
+<p>It is possible to use variables calculated by the statistic to define the
+transition. Simply inclose the variable in <code>stat()</code> in the same way as when
+using computed variables in aesthetics.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other transitions: 
+<code>transition_components()</code>,
+<code>transition_events()</code>,
+<code>transition_filter()</code>,
+<code>transition_layers()</code>,
+<code>transition_manual()</code>,
+<code>transition_null()</code>,
+<code>transition_states()</code>,
+<code>transition_time()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">anim &lt;- ggplot(airquality, aes(Day, Temp, group = Month)) +
+  geom_line() +
+  transition_reveal(Day)
+
+# Non-paths will only show the current position, not the history
+anim1 &lt;- ggplot(airquality, aes(Day, Temp, group = Month)) +
+  geom_line() +
+  geom_point(colour = 'red', size = 3) +
+  transition_reveal(Day)
+
+# Points can be kept by giving them a unique group and set `keep = TRUE` (the
+# default)
+anim2 &lt;- ggplot(airquality, aes(Day, Temp, group = Month)) +
+  geom_line() +
+  geom_point(aes(group = seq_along(Day))) +
+  geom_point(colour = 'red', size = 3) +
+  transition_reveal(Day)
+
+# Since ggplot2 3.4 geom_ribbon and geom_area has used stat_align
+# This stat is incompatible with transition_reveal when applied before
+# stats are calculated
+anim3 &lt;- ggplot(airquality, aes(Day, Temp, group = Month)) +
+  geom_area() +
+  transition_reveal(Day)
+
+# This can be fixed by either reverting to use stat_identity
+anim4 &lt;- ggplot(airquality, aes(Day, Temp, group = Month)) +
+  geom_area(stat = "identity") +
+  transition_reveal(Day)
+
+# Or by applying the transition after the stat
+anim5 &lt;- ggplot(airquality, aes(Day, Temp, group = Month)) +
+  geom_area() +
+  transition_reveal(after_stat(x))
+
+</code></pre>
+
+
+</div>

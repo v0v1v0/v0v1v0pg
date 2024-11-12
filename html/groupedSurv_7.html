@@ -1,0 +1,159 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>groupedSurvFam</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Compute the Efficient Score Statistic for the Frailty Model
+</h2>
+
+<h3>Description</h3>
+
+<p>A method to compute the efficient score statistic for a frailty model,
+accounting for family structure of related individuals (e.g., trios). The
+input data is assumed to be organized such that records for each family occur
+consecutively, and that records for offspring precede those for parents. The
+variance matrix for the random effects is assumed to be of the form
+<code>var*K</code>, where <code>K</code> is a matrix of kinship coefficients between
+family members. The following groupings are permitted: (Individual),
+(Offspring, Offspring), (Offspring, Parent), (Offspring, Parent, Parent), and
+(Offspring, Offspring, Parent, Parent). Other family structures have not been
+implemented. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  groupedSurvFam(x, fam_group, fam_role, alpha, var, gtime, delta, beta=0, nCores=1)  	
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Vector or <code>matrix</code> of numeric variables of interest for each sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fam_group</code></td>
+<td>
+<p>Vector of family IDs for each sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fam_role</code></td>
+<td>
+<p>Vector of indicators for the role within a family of each sample, i.e., {"Offspring","Mother","Father"}, or {"o","m","f"}.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Vector of baseline survival rates for each time interval.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var</code></td>
+<td>
+<p>Scalar for frailty variance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gtime</code></td>
+<td>
+<p>Vector of observed survival times for each sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>Vector of event indicators for each sample: 1 indicates observed event, 0 indicates censored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>Scalar for the fixed effect size. Default is 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nCores</code></td>
+<td>
+<p>Integer representing the number of cores to be used for multi-threaded computation. Default is 1.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Matrix of contributions of each family to the efficient score statistics of each variable of interest. Rows correspond to families, and columns correspond to the variables of interest.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Generate dummy data
+set.seed(111)
+n &lt;- 24
+
+# effect size
+beta &lt;- 0.3
+
+# covariate parameters
+theta &lt;- c(0.2, 0.2)
+
+# variable of interest
+MAF &lt;- 0.05
+x &lt;- matrix(rbinom(n, 2, MAF), ncol = 1)
+
+# covariate data (centered at 0)
+z1 &lt;- rnorm(n)
+z2 &lt;- rbinom(n, 1, 0.5) - 0.5
+Z  &lt;- matrix(cbind(z1, z2), ncol = 2)
+
+# continuous survival time
+lam0 &lt;- 1
+cmax &lt;- 3
+lami &lt;- lam0 * exp(x*beta + Z[,1]*theta[1]+Z[,2]*theta[2])
+stime &lt;- rexp(n, lami)
+ctime &lt;- runif(n, 0, cmax)
+delta &lt;- stime &lt; ctime
+otime &lt;- pmin(stime, ctime)
+
+# number of observation times
+ntps &lt;- 5
+
+# number of intervals
+r &lt;- ntps + 1
+
+# last observation time
+maxbreakq &lt;- 0.85
+maxbreak &lt;- qexp(maxbreakq, lam0)
+
+# grouped failure times
+breaks &lt;- (1:ntps) * (maxbreak/ntps)
+gtime &lt;- findInterval(otime, breaks) + 1
+delta[gtime == r] &lt;- FALSE
+dctime &lt;- findInterval(ctime, breaks) + 1
+delta[gtime == dctime] &lt;- FALSE
+delta &lt;- as.numeric(delta)
+
+# family-specific information
+m &lt;- n/3
+fam_role &lt;- rep(c("o","f","m"),m)
+fam_group &lt;- as.character(rep(1:m,rep(3,m)))
+
+# nuisance parameters
+#alpha &lt;- thetaEst(Z, gtime,delta)$alpha
+#var &lt;- 0.2
+
+# compute efficient score statistics
+#res   &lt;- groupedSurvFam(x, fam_group, fam_role, alpha, var, gtime, delta) 
+#res
+</code></pre>
+
+
+</div>

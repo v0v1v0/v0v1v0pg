@@ -1,0 +1,154 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>dfbeta.glmgee</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Dfbeta for Generalized Estimating Equations</h2>
+
+<h3>Description</h3>
+
+<p>Produces an approximation, better known as the <em>one-step approximation</em>,
+of the effect on the parameter estimates of deleting each cluster/observation in turn. This function also can produce
+an index plot of the Dfbeta Statistic for some parameters via the argument <code>coefs</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'glmgee'
+dfbeta(
+  model,
+  level = c("clusters", "observations"),
+  method = c("Preisser-Qaqish", "full"),
+  coefs,
+  identify,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>an object of class <em>glmgee</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>an (optional) character string indicating the level for which the Dfbeta statistic is required. The options are: cluster-level ("clusters") and observation-level ("observations"). As default, <code>level</code> is set to "clusters".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>an (optional) character string indicating the method of calculation for the <em>one-step approximation</em>. The options are: the <em>one-step approximation</em> described by Preisser and Qaqish (1996) in which the working-correlation matrix is assumed to be known ("Preisser-Qaqish"); and the "authentic" <em>one-step approximation</em> ("full"). As default, <code>method</code> is set to "Preisser-Qaqish".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coefs</code></td>
+<td>
+<p>an (optional) character string which (partially) match with the names of some parameters in the linear predictor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>identify</code></td>
+<td>
+<p>an (optional) integer indicating the number of clusters/observations to identify on the plot of the Dfbeta statistic. This is only appropriate if <code>coefs</code> is specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments passed to or from other methods. If <code>coefs</code> is specified then <code>...</code> may be used to include graphical parameters to customize the plot. For example,  <code>col</code>, <code>pch</code>, <code>cex</code>, <code>main</code>, <code>sub</code>, <code>xlab</code>, <code>ylab</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <em>one-step approximation</em> (with the <code>method</code> "full") of the estimates of the parameters in the linear
+predictor of a GEE when the <em>i</em>-th cluster is excluded from the dataset is given by the
+vector obtained as the result of the first iteration of the fitting algorithm of that GEE
+when it is performed using:  (1) a dataset in which the <em>i</em>-th cluster is excluded; and
+(2) a starting value which is the solution to the same GEE but based on the dataset inluding all clusters.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A matrix with so many rows as clusters/observations in the sample and so many
+columns as parameters in the linear predictor. For clusters, the <code class="reqn">i</code>-th row of that matrix corresponds to the
+difference between the estimates of the parameters in the linear predictor using all clustersand the <em>one-step approximation</em> of those estimates when the <em>i</em>-th cluster is excluded from the dataset.
+</p>
+
+
+<h3>References</h3>
+
+<p>Pregibon D. (1981). Logistic regression diagnostics. <em>The Annals of Statistics</em> 9, 705-724.
+</p>
+<p>Preisser J.S., Qaqish B.F. (1996) Deletion diagnostics for generalised estimating equations.
+<em>Biometrika</em> 83:551–562.
+</p>
+<p>Hammill B.G., Preisser J.S. (2006) A SAS/IML software program for GEE and regression diagnostics.
+<em>Computational Statistics &amp; Data Analysis</em> 51:1197-1212.
+</p>
+<p><a href="https://journal.r-project.org/articles/RJ-2023-056/">Vanegas L.H., Rondon L.M., Paula G.A. (2023) Generalized Estimating Equations using the new R package glmtoolbox.
+<em>The R Journal</em> 15:105-133.</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">###### Example 1: Effect of ozone-enriched atmosphere on growth of sitka spruces
+data(spruces)
+mod1 &lt;- size ~ poly(days,4) + treat
+fit1 &lt;- glmgee(mod1, id=tree, family=Gamma(log), corstr="AR-M-dependent", data=spruces)
+dfbs1 &lt;- dfbeta(fit1, method="full", coefs="treat", col="red", lty=1, lwd=1, col.lab="blue",
+         col.axis="blue", col.main="black", family="mono", cex=0.8, main="treat")
+
+### Calculation by hand of dfbeta for the tree labeled by "N1T01"
+onestep1 &lt;- glmgee(mod1, id=tree, family=Gamma(log), corstr="AR-M-dependent",
+            data=spruces, start=coef(fit1), subset=c(tree!="N1T01"), maxit=1)
+
+coef(fit1)-coef(onestep1)
+dfbs1[rownames(dfbs1)=="N1T01",]
+
+###### Example 2: Treatment for severe postnatal depression
+data(depression)
+mod2 &lt;- depressd ~ visit + group
+fit2 &lt;- glmgee(mod2, id=subj, family=binomial(logit), corstr="AR-M-dependent",
+               data=depression)
+
+dfbs2 &lt;- dfbeta(fit2, method="full", coefs="group" ,col="red", lty=1, lwd=1, col.lab="blue",
+         col.axis="blue", col.main="black", family="mono", cex=0.8, main="group")
+
+### Calculation by hand of dfbeta for the woman labeled by "18"
+onestep2 &lt;- glmgee(mod2, id=subj, family=binomial(logit), corstr="AR-M-dependent",
+            data=depression, start=coef(fit2), subset=c(subj!=18), maxit=1)
+
+coef(fit2)-coef(onestep2)
+dfbs2[rownames(dfbs2)==18,]
+
+###### Example 3: Treatment for severe postnatal depression (2)
+mod3 &lt;- dep ~ visit*group
+fit3 &lt;- glmgee(mod3, id=subj, family=gaussian(identity), corstr="AR-M-dependent",
+               data=depression)
+
+dfbs3 &lt;- dfbeta(fit3, method="full", coefs="visit:group" ,col="red", lty=1, lwd=1, col.lab="blue",
+         col.axis="blue", col.main="black", family="mono", cex=0.8, main="visit:group")
+
+### Calculation by hand of dfbeta for the woman labeled by "18"
+onestep3 &lt;- glmgee(mod3, id=subj, family=gaussian(identity), corstr="AR-M-dependent",
+            data=depression, start=coef(fit3), subset=c(subj!=18), maxit=1)
+
+coef(fit3)-coef(onestep3)
+dfbs3[rownames(dfbs3)==18,]
+
+</code></pre>
+
+
+</div>

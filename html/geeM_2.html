@@ -1,0 +1,275 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>geem</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fit Generalized Estimating Equations
+</h2>
+
+<h3>Description</h3>
+
+<p>Calculate coefficients and nuisance parameters using generalized estimating equations.  Link and Variance functions can be specified by the user.  Similar to <code>glm</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">geem(formula, id, waves=NULL, data = parent.frame(), family = gaussian,
+ corstr = "independence", Mv = 1, weights = NULL, corr.mat = NULL, init.beta = NULL,
+ init.alpha = NULL, init.phi = 1, scale.fix = FALSE, nodummy=FALSE, sandwich = TRUE, 
+ useP = TRUE, maxit = 20, tol = 1e-05)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+
+<p>a formula expression similar to that for <code>glm</code>, of the form <code>response~predictors</code>.  An offset is allowed, as in <code>glm</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+
+<p>a vector identifying the clusters. By default, data are assumed to be sorted such that observations in a cluster are in consecutive rows and higher numbered rows in a cluster are assumed to be later.  If NULL, then each observation is assigned its own cluster.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>waves</code></td>
+<td>
+
+<p>an integer vector identifying components of a cluster. For example, this could be a time ordering. If integers are skipped within a cluster, then dummy rows with weight 0 are added in an attempt to preserve the correlation structure (except if <code>corstr = "exchangeable"</code> or <code>"independent"</code>). This can be skipped by setting <code>nodummy=TRUE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>an optional data frame containing the variables in the model.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+
+<p>will determine the link and variance functions.  The argument can be one of three options: a <code>family</code> object, a character string, or a list of functions.
+</p>
+<p>For more information on how to use <code>family</code> objects, see <code>family</code>.
+</p>
+<p>If the supplied argument is a character string, then the string should correspond to one of the family objects.
+</p>
+<p>In order to define a link function, a list must be created with the components <code>(LinkFun, VarFun, InvLink, InvLinkDeriv)</code>, all of which are vectorized functions.  If the components in the list are not named as
+</p>
+<p><code>(LinkFun, VarFun, InvLink, InvLinkDeriv)</code>, then <code>geem</code> assumes that the functions are given in that order.  LinkFun and VarFun are the link and variance functions. InvLink and InvLinkDeriv are the inverse of the link function and the derivative of the inverse of the link function and so are decided by the choice of the link function.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corstr</code></td>
+<td>
+
+<p>a character string specifying the correlation structure.  Allowed structures are: <code>"independence"</code>, <code>"exchangeable"</code>, <code>"ar1"</code>, <code>"m-dependent"</code>, <code>"unstructured"</code>, <code>"fixed"</code>, and <code>"userdefined"</code>.  Any unique substring may be supplied.  If <code>"fixed"</code> or <code>"userdefined"</code>, then <code>corr.mat</code> must be specified.  If <code>"m-dependent"</code>, then <code>Mv</code> is relevant.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mv</code></td>
+<td>
+
+<p>for <code>"m-dependent"</code>, the value for <code>m</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+
+<p>A vector of weights for each observation.  If an observation has weight 0, it is excluded from the calculations of any parameters.  Observations with a <code>NA</code> anywhere (even in variables not included in the model) will be assigned a weight of 0.  Note that these weights are now the same as PROC GEE weights and not PROC GENMOD.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corr.mat</code></td>
+<td>
+
+<p>the correlation matrix for <code>"fixed"</code>.  Matrix should be symmetric with dimensions &gt;= the maximum cluster size.  If the correlation structure is <code>"userdefined"</code>, then this is a matrix describing which correlations are the same.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init.beta</code></td>
+<td>
+
+<p>an optional vector with the initial values of beta.  If not specified, then the intercept will be set to <code>InvLink(mean(response))</code>.  <code>init.beta</code> must be specified if not using an intercept.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init.alpha</code></td>
+<td>
+
+<p>an optional scalar or vector giving the initial values for the correlation.  If provided along with <code>Mv&gt;1</code> or <code>unstructured</code> correlation, then the user must ensure that the vector is of the appropriate length.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init.phi</code></td>
+<td>
+
+<p>an optional initial overdispersion parameter.  If not supplied, initialized to 1.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale.fix</code></td>
+<td>
+
+<p>if set to <code>TRUE</code>, then the scale parameter is fixed at the value of <code>init.phi</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nodummy</code></td>
+<td>
+
+<p>if set to <code>TRUE</code>, then dummy rows will not be added based on the values in <code>waves</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sandwich</code></td>
+<td>
+
+<p>if <code>TRUE</code>, calculate robust variance.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useP</code></td>
+<td>
+
+<p>if set to <code>FALSE</code>, do not use the n-p correction for dispersion and correlation estimates, as in Liang and Zeger. This can be useful when the number of observations is small, as subtracting p may yield 
+correlations greater than 1.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+
+<p>maximum number of iterations.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+
+<p>tolerance in calculation of coefficients.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Users may specify functions for link and variance functions, but the functions must be vectorized functions.  See <code>Vectorize</code> for an easy way to vectorize functions.  <code>Vectorize</code> should be used sparingly, however, as it can lead to fairly slow function calls.  Care must be taken to ensure that convergence is possible with non-standard functions.
+</p>
+<p>Offsets must be specified in the model formula, as in glm.
+</p>
+<p>For the <code>"userdefined"</code> correlation option, the function accepts a matrix with consecutive integers.  <code>geem</code> only looks at the upper triangle of the matrix.  Any entry given as 0 will be fixed at 0.  All entries given as 1 will be assumed to be the same as each other and will be assumed to be possibly different from entries with a 2, and so on.
+</p>
+<p>If observations are dropped because they have a weight of 0, then the denominator for the moment estimates of the correlation matrices are calculated using the number of non-zero Pearson residuals for the correlation structures <code>unstructured</code>, <code>userdefined</code> and <code>m-dependent</code> with <code>Mv&gt;1</code>.  Therefore residuals numerically equal to 0 may cause problems in the calculation of correlation parameters.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class "geem" representing the fit.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Lee McDaniel and Nick Henderson
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>glm</code>, <code>formula</code>, <code>family</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">### Generated Negative Binomial Data
+generatedata &lt;- function(beta,alpha,gamma,X,T,n)  {
+     mean.vec &lt;- exp(crossprod(t(X),beta))
+     y &lt;- matrix(0,nrow=n,ncol=T)
+     y[,1] &lt;- rnbinom(n,mu = mean.vec[1],size=mean.vec[1]/gamma)
+     for (i in 1:n)  {
+        for (t in 2:T)  {
+           innovation.mean &lt;- mean.vec[t] - alpha*(sqrt(mean.vec[t]*mean.vec[t-1]))
+           I &lt;- rnbinom(1,mu= innovation.mean,size= innovation.mean/gamma)           
+           first.shape &lt;- alpha*sqrt(mean.vec[t]*mean.vec[t-1])/gamma
+           second.shape &lt;- mean.vec[t-1]/gamma - first.shape
+           u &lt;- rbeta(1,shape1 = first.shape,shape2=second.shape)
+           a &lt;- rbinom(1,size=y[i,t-1],prob=u)
+           y[i,t] = a + I
+        }
+     }
+     longform &lt;- c(t(y))
+     print(apply(y,2,mean))
+     simdata &lt;- data.frame(count = longform, time = rep(X[,2],times=n),subject=rep(c(1:n),each=T))
+     return(simdata)
+}
+
+X &lt;- cbind(rep(1,5),c(-.5,-.25,0,.25,.5))
+testdat &lt;- generatedata(beta=c(1,.5),alpha=.2,gamma=.5,X=X,T=5,n=3000)
+far1 &lt;- geem(count~ time, id=subject ,data = testdat, family=poisson, 
+	corstr="ar1")
+
+### Ohio respiratory data from geepack
+if(require(geepack)){
+	data("ohio", package="geepack")
+	resplogit &lt;- geem(resp ~ age + smoke + age:smoke, id=id, data = ohio, family = binomial,
+	corstr = "m-dep" , Mv=1)
+  
+  LinkFun &lt;- function(arg){qcauchy(arg)}
+  InvLink &lt;- function(arg){pcauchy(arg)}
+  InvLinkDeriv &lt;- function(arg){dcauchy(arg)}
+  VarFun &lt;- function(arg){arg*(1-arg)}
+  FunList &lt;- list(LinkFun, VarFun, InvLink, InvLinkDeriv)
+  
+  respcauchit &lt;- geem(resp ~ age + smoke + age:smoke, id=id, data = ohio, family = FunList,
+  corstr = "m-dep" , Mv=1)
+}
+
+### Seizure data from geepack
+if(require(geepack)){
+	data("seizure", package="geepack")
+	seiz.l &lt;- reshape(seizure,
+	varying=list(c("base","y1", "y2", "y3", "y4")),
+		v.names="y", times=0:4, direction="long")
+		seiz.l &lt;- seiz.l[order(seiz.l$id, seiz.l$time),]
+		seiz.l$t &lt;- ifelse(seiz.l$time == 0, 8, 2)
+		seiz.l$x &lt;- ifelse(seiz.l$time == 0, 0, 1)
+
+	seiz &lt;- geem(y~ x + trt + x:trt+ offset(log(t)), id=id,data = seiz.l, 
+	family = poisson, corstr = "exchangeable")
+}
+
+</code></pre>
+
+
+</div>

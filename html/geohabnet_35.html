@@ -1,0 +1,226 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sean</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Sensitivity analysis across maps of habitat connectivity</h2>
+
+<h3>Description</h3>
+
+<p>This function performs a sensitivity analysis across different values of habitat connectivity
+for each location in a map.
+For each combination of selected parameters, an index of habitat connectivity is calculated.
+<code>sensitivity_analysis()</code> is a wrapper around <code>sean()</code> function.
+</p>
+
+<ul><li> <p><code>msean()</code> is a wrapper around <code>sean()</code> function.
+It has additional argument to specify maps which are calculated
+using <code>connectivity()</code> function. The maps are essentially the risk network.
+</p>
+</li></ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R">sean(
+  rast,
+  global = TRUE,
+  geoscale = NULL,
+  agg_methods = c("sum", "mean"),
+  dist_method = "geodesic",
+  link_threshold = 0,
+  hd_threshold = 0,
+  res = reso(),
+  inv_pl = inv_powerlaw(NULL, betas = c(0.5, 1, 1.5), mets = c("betweeness",
+    "NODE_STRENGTH", "Sum_of_nearest_neighbors", "eigenVector_centrAlitY"), we = c(50,
+    15, 15, 20), linkcutoff = -1),
+  neg_exp = neg_expo(NULL, gammas = c(0.05, 1, 0.2, 0.3), mets = c("betweeness",
+    "NODE_STRENGTH", "Sum_of_nearest_neighbors", "eigenVector_centrAlitY"), we = c(50,
+    15, 15, 20), linkcutoff = -1)
+)
+
+msean(
+  rast,
+  global = TRUE,
+  geoscale = NULL,
+  res = reso(),
+  ...,
+  outdir = tempdir()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>rast</code></td>
+<td>
+<p>Raster object which will be used in analysis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>global</code></td>
+<td>
+<p>Logical. <code>TRUE</code> if global analysis, <code>FALSE</code> otherwise.
+Default is <code>TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>geoscale</code></td>
+<td>
+<p>Numeric vector. Geographical coordinates
+in the form of c(Xmin, Xmax, Ymin, Ymax) which EPSG:4326 in coordinate reference system. If <code>geoscale</code> is NuLL,
+the extent is extracted from <code>rast</code>(SpatRaster) using <code>terra::ext()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>agg_methods</code></td>
+<td>
+<p>Character. One or both the values - SUM, MEAN.
+Aggregation strategy for scaling the input raster to the desired resolution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist_method</code></td>
+<td>
+<p>Character. The method to calculate the distance matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link_threshold</code></td>
+<td>
+<p>Numeric. A threshold value for link weight.
+All link weights that are below this threshold will be replaced with zero for the connectivity analysis.
+Link weights represent the relative likelihood of pathogen, pest,
+or invasive species movement between a pair of host locations,
+which is calculated using gravity models based on host density (or availability) and dispersal kernels.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hd_threshold</code></td>
+<td>
+<p>Numeric. A threshold value for host density.
+All locations with a host density below the selected threshold will be excluded from the connectivity analysis,
+which focuses the analysis on the most important locations.
+The values for the host density threshold can range between 0 and 1;
+if value is 1, all locations will be excluded from the analysis and 0 will include all locations in the analysis.
+Selecting a threshold for host density requires at least knowing what is the maximum value
+in the host density map to avoid excluding all locations in the analysis.
+if value is 1, all locations will be excluded from the analysis and 0 will include all locations in the analysis.
+Selecting a threshold for host density requires at least knowing what is the maximum value
+in the host density map to avoid excluding all locations in the analysis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res</code></td>
+<td>
+<p>Numeric. Resolution of the raster. Default is <code>reso()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inv_pl</code></td>
+<td>
+<p>List. A named list of parameters for inverse power law. See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>neg_exp</code></td>
+<td>
+<p>List. A named list of parameters for inverse negative exponential. See details.
+All locations with a host density below the selected threshold will be excluded from the connectivity analysis,
+which focuses the analysis on the most important locations.
+The values for the host density threshold can range between 0 and 1;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments passed to <code>sean()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outdir</code></td>
+<td>
+<p>Character. Output directory for saving raster in TIFF format.
+Default is <code>tempdir()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>When <code>global = TRUE</code>, <code>geoscale</code> is ignored and <code>global_scales()</code> is used by default.
+</p>
+<p>The functions <code>sean()</code> and <code>msean()</code> perform the same sensitivity analysis, but they differ in their return value.
+The return value of <code>msean()</code> is <code>GeoNetwork</code>,
+which contains the result from applying the <code>connectivity()</code> function on the habitat connectivity indexes.
+Essentially, the risk maps.
+</p>
+<p>If neither the inverse power law nor the negative exponential dispersal kernel is specified,
+the function will return an error.
+</p>
+<p>In <code>msean()</code>, three spatRasters are produced with the following values.
+For each location in the area of interest,
+the mean in habitat connectivity across selected parameters is calculated.
+For each location in the area of interest,
+the variance in habitat connectivity across selected parameters is calculated.
+For each location in the area of interest,
+the difference between the rank of habitat connectivity and the rank of host density is calculated.
+By default, each of these spatRasters is plotted for visualization.
+</p>
+
+
+<h3>Value</h3>
+
+<p>GeoRasters.
+</p>
+<p>GeoNetwork.
+</p>
+
+
+<h3>References</h3>
+
+<p>Yanru Xing, John F Hernandez Nopsa, Kelsey F Andersen, Jorge L Andrade-Piedra, Fenton D Beed,
+Guy Blomme, Mónica Carvajal-Yepes, Danny L Coyne, Wilmer J Cuellar, Gregory A Forbes,
+Jan F Kreuze, Jürgen Kroschel, P Lava Kumar, James P Legg, Monica Parker, Elmar Schulte-Geldermann,
+Kalpana Sharma, Karen A Garrett,
+<em>Global Cropland connectivity: A Risk Factor for Invasion and Saturation by Emerging Pathogens and Pests</em>,
+BioScience, Volume 70, Issue 9, September 2020, Pages 744–758,
+<a href="https://doi.org/10.1093/biosci/biaa067">doi:10.1093/biosci/biaa067</a>
+</p>
+<p>Hijmans R (2023). <em>terra: Spatial Data Analysis</em>.
+R package version 1.7-46, <a href="https://CRAN.R-project.org/package=terra">https://CRAN.R-project.org/package=terra</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Uses <code>connectivity()</code>
+</p>
+<p>Uses <code>msean()</code> <code>inv_powerlaw()</code> <code>neg_expo()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+avocado &lt;- cropharvest_rast("avocado", "monfreda")
+
+# global
+ri &lt;- sean(avocado) # returns a list of GeoRasters
+mri &lt;- msean(rast = avocado) # returns GeoNetwork object
+
+# non-global
+# geoscale is a vector of xmin, xmax, ymin, ymax
+
+# returns GeoRasters object
+ri &lt;- sean(avocado, global = FALSE, geoscale = c(-115, -75, 5, 32))
+ri
+
+# returns GeoNetwork object
+mri &lt;- msean(rast = avocado, global = FALSE, geoscale = c(-115, -75, 5, 32))
+mri
+
+</code></pre>
+
+
+</div>

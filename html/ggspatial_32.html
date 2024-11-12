@@ -1,0 +1,180 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>geom_spatial_segment</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Spatial line segments</h2>
+
+<h3>Description</h3>
+
+<p>While the implementation is slightly differrent, this function is
+intended to behave identically to <code>ggplot2::geom_segment()</code>. Use
+<code>great_circle = FALSE</code> and <code>detail = NULL</code> if you wish ignore the fact
+that the earth is round.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">geom_spatial_segment(
+  mapping = NULL,
+  data = NULL,
+  ...,
+  crs = NULL,
+  detail = waiver(),
+  great_circle = TRUE,
+  wrap_dateline = TRUE,
+  arrow = NULL,
+  lineend = "butt",
+  linejoin = "round",
+  na.rm = FALSE,
+  show.legend = NA,
+  inherit.aes = TRUE
+)
+
+StatSpatialSegment
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mapping</code></td>
+<td>
+<p>An aesthetic mapping created with <code>ggplot2::aes()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data frame or other object, coerced to a data.frame by <code>ggplot2::fortify()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Passed to the combined stat/geom as parameters or fixed aesthetics.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>crs</code></td>
+<td>
+<p>The crs of the x and y aesthetics, or NULL to use default lon/lat
+crs (with a message).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>detail</code></td>
+<td>
+<p>Passed to <code>sf::st_segmentize()</code>: the number of line segments
+per quadrant of the bounding box. Increase this number for a smoother
+projected bounding box.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>great_circle</code></td>
+<td>
+<p>If <code>TRUE</code>, use <code>lwgeom::st_geod_segmentize()</code>
+to connect the (x, y) and (xend, yend) with the shortest possible
+great circle along the earth.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wrap_dateline</code></td>
+<td>
+<p>When using <code>great_circle = TRUE</code>, using
+<code>wrap_dateline = TRUE</code> splits the great circle along the dateline.
+You may want to pass <code>FALSE</code> here if using <code>arrow</code> and a projection
+that wraps the dateline.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>arrow</code></td>
+<td>
+<p>An arrow specification as a call to <code>grid::arrow()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lineend</code></td>
+<td>
+<p>See <code>ggplot2::geom_segment()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linejoin</code></td>
+<td>
+<p>How corners should be joined</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.rm</code></td>
+<td>
+<p>Should missing aesthetic values be removed?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show.legend, inherit.aes</code></td>
+<td>
+<p>See <code>ggplot2::layer()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Format</h3>
+
+<p>An object of class <code>StatSpatialSegment</code> (inherits from <code>StatSpatialRect</code>, <code>Stat</code>, <code>ggproto</code>, <code>gg</code>) of length 3.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(ggplot2)
+
+# visualize flights from
+# Halifax -&gt; Anchorage -&gt; Berlin -&gt; Halifax
+cities &lt;- data.frame(
+  lon = c(-63.58595, 116.41214, 13.50, -149.75),
+  lat = c(44.64862, 40.19063, 52.51, 61.20),
+  city = c("Halifax", "Beijing", "Berlin", "Anchorage"),
+  city_to = c("Anchorage", "Beijing", "Berlin", "Halifax")
+)
+
+cities$lon_end &lt;- cities$lon[c(4, 3, 1, 2)]
+cities$lat_end &lt;- cities$lat[c(4, 3, 1, 2)]
+
+p &lt;- ggplot(cities, aes(lon, lat, xend = lon_end, yend = lat_end)) +
+  geom_spatial_point(crs = 4326)
+
+# by default, geom_spatial_segment() connects points
+# using the shortest distance along the face of the earth
+# wrapping at the date line
+p +
+  geom_spatial_segment(crs = 4326) +
+  coord_sf(crs = 3857)
+
+# to let the projection handle the dateline,
+# use `wrap_dateline = FALSE` (most useful for
+# when using `arrow`)
+p +
+  geom_spatial_segment(
+    wrap_dateline = FALSE,
+    arrow = grid::arrow(),
+    crs = 4326
+  ) +
+  coord_sf(crs = 3995)
+
+# to ignore the roundness of the earth, use
+# `great_circle = FALSE`
+p +
+  geom_spatial_segment(
+    great_circle = FALSE,
+    arrow = grid::arrow(),
+    crs = 4326
+  ) +
+  coord_sf(crs = 3995)
+
+</code></pre>
+
+
+</div>

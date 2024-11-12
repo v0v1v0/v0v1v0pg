@@ -1,0 +1,86 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>refit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Loss for a refitted (restricted) unpenalized model</h2>
+
+<h3>Description</h3>
+
+<p>Refits an unpenalized model restricted to the estimated edges, with <code>lambda1=0</code>, <code>lambda2=0</code> and <code>diagonal_multiplier=1</code>. Returns <code>Inf</code> if no unique solution exists (when the loss is unbounded from below or has infinitely many minimizers).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">refit(res, elts)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>res</code></td>
+<td>
+<p>A list of results returned by <code>get_results()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>elts</code></td>
+<td>
+<p>A list, elements necessary for calculations returned by <code>get_elts()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Currently the function only returns <code>Inf</code> when the maximum node degree is &gt;= the sample size, which is a sufficient and necessary condition for nonexistence of a unique solution with probability 1 if <code>symmetric != "symmetric"</code>. In practice it is also a sufficient and necessary condition for most cases and <code>symmetric == "symmetric"</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A number, the loss of the refitted model.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Examples are shown for Gaussian truncated to R+^p only. For other distributions
+#   on other types of domains, please refer to \code{gen()} or \code{get_elts()},
+#   as the way to call this function (\code{refit()}) is exactly the same in those cases.
+n &lt;- 50
+p &lt;- 30
+domain &lt;- make_domain("R+", p=p)
+h_hp &lt;- get_h_hp("min_pow", 1, 3)
+mu &lt;- rep(0, p)
+K &lt;- diag(p)
+dm &lt;- 1 + (1-1/(1+4*exp(1)*max(6*log(p)/n, sqrt(6*log(p)/n))))
+x &lt;- tmvtnorm::rtmvnorm(n, mean = mu, sigma = solve(K),
+       lower = rep(0, p), upper = rep(Inf, p), algorithm = "gibbs",
+       burn.in.samples = 100, thinning = 10)
+
+elts_gauss_np &lt;- get_elts(h_hp, x, setting="gaussian", domain=domain,
+                centered=FALSE, profiled=FALSE, diag=dm)
+res_nc_np &lt;- get_results(elts_gauss_np, symmetric="symmetric",
+               lambda1=0.35, lambda2=2, previous_res=NULL, is_refit=FALSE)
+refit(res_nc_np, elts_gauss_np)
+
+elts_gauss_p &lt;- get_elts(h_hp, x, setting="gaussian", domain=domain,
+               centered=FALSE, profiled=TRUE, diag=dm)
+res_nc_p &lt;- get_results(elts_gauss_p, symmetric="symmetric",
+              lambda1=0.35, lambda2=NULL, previous_res=NULL, is_refit=FALSE)
+refit(res_nc_p, elts_gauss_p)
+
+elts_gauss_c &lt;- get_elts(h_hp, x, setting="gaussian", domain=domain,
+            centered=TRUE, diag=dm)
+res_c &lt;- get_results(elts_gauss_c, symmetric="or", lambda1=0.35,
+           lambda2=NULL, previous_res=NULL, is_refit=FALSE)
+refit(res_c, elts_gauss_c)
+
+</code></pre>
+
+
+</div>

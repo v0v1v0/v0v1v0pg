@@ -1,0 +1,416 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gas_bootstrap</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bootstrap GAS Model</h2>
+
+<h3>Description</h3>
+
+<p>A function for bootstrapping coefficients of generalized autoregressive score (GAS) models of Creal et al. (2013) and Harvey (2013).
+Method <code>"parametric"</code> repeatedly simulates time series using the parametric model and re-estimates coefficients.
+Methods <code>"simple_block"</code>, <code>"moving_block"</code>, and <code>"stationary_block"</code> perform the standard variations of the circular block bootstrap.
+Instead of supplying arguments about the model, the function can be applied to the <code>gas</code> object obtained by the <code>gas()</code> function.
+The function enables parallelization.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gas_bootstrap(gas_object = NULL, method = "parametric", rep_boot = 1000L,
+  block_length = NULL, quant = c(0.025, 0.975), y = NULL, x = NULL,
+  distr = NULL, param = NULL, scaling = "unit", regress = "joint",
+  p = 1L, q = 1L, par_static = NULL, par_link = NULL,
+  par_init = NULL, lik_skip = 0L, coef_fix_value = NULL,
+  coef_fix_other = NULL, coef_fix_special = NULL,
+  coef_bound_lower = NULL, coef_bound_upper = NULL, coef_est = NULL,
+  optim_function = wrapper_optim_nloptr, optim_arguments = list(opts =
+  list(algorithm = "NLOPT_LN_NELDERMEAD", xtol_rel = 0, maxeval = 1e+06)),
+  parallel_function = NULL, parallel_arguments = list())
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>gas_object</code></td>
+<td>
+<p>An optional GAS estimate, i.e. a list of S3 class <code>gas</code> returned by function <code>gas()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>A method used for bootstrapping. Supported methods are <code>"parametric"</code>, <code>"simple_block"</code>, <code>"moving_block"</code>, and <code>"stationary_block"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rep_boot</code></td>
+<td>
+<p>A number of bootstrapping repetitions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>block_length</code></td>
+<td>
+<p>A length of blocks for methods <code>"simple_block"</code> and <code>"moving_block"</code>. A mean length of blocks for method <code>"stationary_block"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quant</code></td>
+<td>
+<p>A numeric vector of probabilities determining quantiles.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A time series. For univariate time series, a numeric vector or a matrix with a single column. For multivariate times series, a numeric matrix with observations in rows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Optional exogenous variables. For a single variable common for all time-varying parameters, a numeric vector. For multiple variables common for all time-varying parameters, a numeric matrix with observations in rows. For individual variables for each time-varying parameter, a list of numeric vectors or matrices in the above form. The number of observation must be equal to the number of observations of <code>y</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distr</code></td>
+<td>
+<p>A conditional distribution. See <code>distr()</code> for available distributions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>A parametrization of the conditional distribution. If <code>NULL</code>, default parametrization is used. See <code>distr()</code> for available parametrizations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scaling</code></td>
+<td>
+<p>A scaling function for the score. The supported scaling functions are the unit scaling (<code>scaling = "unit"</code>), the inverse of the Fisher information matrix scaling (<code>scaling = "fisher_inv"</code>), and the inverse square root of the Fisher information matrix scaling (<code>scaling = "fisher_inv_sqrt"</code>). The latter two scalings use the Fisher information for the time-varying parameters only. For the full Fisher information matrix for both time-varying and static parameters, there are the <code>"full_fisher_inv"</code> and <code>"full_fisher_inv_sqrt"</code> scalings. For the individual Fisher information for each parameter, there are the <code>"diag_fisher_inv"</code> and <code>"diag_fisher_inv_sqrt"</code> scalings. Note that when the parametrization is orthogonal (see <code>distr()</code>), there are no differences between these scaling variants.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>regress</code></td>
+<td>
+<p>A specification of the regression and dynamic equation with regard to exogenous variables. The supported specifications are exogenous variables and dynamics within the same equation (<code>regress = "joint"</code>) and separate equations for exogenous variables and dynamics in the fashion of regression models with dynamic errors (<code>regress = "sep"</code>). In a stationary model without exogenous variables, the two specifications are equivalent, although with differently parametrized intercept.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>A score order. For order common for all parameters, a numeric vector of length 1. For individual order for each parameter, a numeric vector of length equal to the number of parameters. Defaults to <code>1L</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q</code></td>
+<td>
+<p>An autoregressive order. For order common for all parameters, a numeric vector of length 1. For individual order for each parameter, a numeric vector of length equal to the number of parameters. Defaults to <code>1L</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par_static</code></td>
+<td>
+<p>An optional logical vector indicating static parameters. Overrides <code>x</code>, <code>p</code>, and <code>q</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par_link</code></td>
+<td>
+<p>An optional logical vector indicating whether the logarithmic/logistic link should be applied to restricted parameters in order to obtain unrestricted values. Defaults to applying the logarithmic/logistic link for time-varying parameters and keeping the original link for constant parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par_init</code></td>
+<td>
+<p>An optional numeric vector of initial values of time-varying parameters. For <code>NA</code> values or when <code>NULL</code>, set initial values to unconditional values of time-varying parameters. For example, in the case of GAS(1,1) model with <code>regress = "joint"</code>, to <code>omega / (1 - phi1)</code>. Not to be confused with starting values for the optimization <code>coef_start</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lik_skip</code></td>
+<td>
+<p>A numeric value specifying the number of skipped observations at the beginning of the time series or after <code>NA</code> values in the likelihood computation. Defaults to <code>0L</code>, i.e. the full likelihood. If <code>NULL</code>, it is selected as <code>max(p,q)</code>, i.e. the conditional likelihood.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef_fix_value</code></td>
+<td>
+<p>An optional numeric vector of values to which coefficients are to be fixed. <code>NA</code> values represent coefficients to be estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef_fix_other</code></td>
+<td>
+<p>An optional square numeric matrix of multiples of the estimated coefficients, which are to be added to the fixed coefficients. This allows the fixed coefficients to be linear combinations of the estimated coefficients. A coefficient given by row is fixed on coefficient given by column. By this logic, all rows corresponding to the estimated coefficients should contain only <code>NA</code> values. Furthermore, all columns corresponding to the fixed coefficients should also contain only <code>NA</code> values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef_fix_special</code></td>
+<td>
+<p>An optional character vector of predefined structures of <code>coef_fix_value</code> and <code>coef_fix_other</code>. Useful mainly for multidimensional models. Value <code>"panel_structure"</code> forces all regression, autoregression, and score coefficients to be the same for all time-varying parameters within their group. Value <code>"zero_sum_intercept"</code> forces all constant parameters to sum up to zero within their group. Value <code>"random_walk"</code> forces all autoregressive coefficients to be equal to one (should be used with caution due to nonstationarity; <code>par_init</code> must be specified). Multiple predefined structures can be used together. Also can be used in combination with custom <code>coef_fix_value</code> and <code>coef_fix_other</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef_bound_lower</code></td>
+<td>
+<p>An optional numeric vector of lower bounds on coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef_bound_upper</code></td>
+<td>
+<p>An optional numeric vector of upper bounds on coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef_est</code></td>
+<td>
+<p>A numeric vector of estimated coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optim_function</code></td>
+<td>
+<p>An optimization function. For suitable wrappers of common R optimization functions, see <code>wrappers_optim</code>. Can be set to <code>NULL</code> if the optimal solution should not be computed, which can be useful if the goal is only to evaluate the fit for the coefficients specified in argument <code>coef_start</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optim_arguments</code></td>
+<td>
+<p>An optional list of arguments to be passed to the optimization function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel_function</code></td>
+<td>
+<p>A parallelization function. For suitable wrappers of common R parallelization functions, see <code>wrappers_parallel</code>. Can be set to <code>NULL</code> if no parallelization is to be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel_arguments</code></td>
+<td>
+<p>An optional list of arguments to be passed to the optimization function.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>list</code> of S3 class <code>gas_bootstrap</code> with components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>data$y</code></td>
+<td>
+<p>The time series.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data$x</code></td>
+<td>
+<p>The exogenous variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$distr</code></td>
+<td>
+<p>The conditional distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$param</code></td>
+<td>
+<p>The parametrization of the conditional distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$scaling</code></td>
+<td>
+<p>The scaling function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$regress</code></td>
+<td>
+<p>The specification of the regression and dynamic equation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$t</code></td>
+<td>
+<p>The length of the time series.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$n</code></td>
+<td>
+<p>The dimension of the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$m</code></td>
+<td>
+<p>The number of exogenous variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$p</code></td>
+<td>
+<p>The score order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$q</code></td>
+<td>
+<p>The autoregressive order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$par_static</code></td>
+<td>
+<p>The static parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$par_link</code></td>
+<td>
+<p>The parameters with the logarithmic/logistic links.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$par_init</code></td>
+<td>
+<p>The initial values of the time-varying parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$lik_skip</code></td>
+<td>
+<p>The number of skipped observations at the beginning of the time series or after <code>NA</code> values in the likelihood computation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$coef_fix_value</code></td>
+<td>
+<p>The values to which coefficients are fixed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$coef_fix_other</code></td>
+<td>
+<p>The multiples of the estimated coefficients, which are added to the fixed coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$coef_fix_special</code></td>
+<td>
+<p>The predefined structures of <code>coef_fix_value</code> and <code>coef_fix_other</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$coef_bound_lower</code></td>
+<td>
+<p>The lower bounds on coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$coef_bound_upper</code></td>
+<td>
+<p>The upper bounds on coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$coef_est</code></td>
+<td>
+<p>The estimated coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootstrap$method</code></td>
+<td>
+<p>The method used for bootstrapping.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootstrap$coef_set</code></td>
+<td>
+<p>The bootstrapped sets of coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootstrap$coef_mean</code></td>
+<td>
+<p>The mean of bootstrapped coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootstrap$coef_vcov</code></td>
+<td>
+<p>The variance-covariance matrix of bootstrapped coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootstrap$coef_sd</code></td>
+<td>
+<p>The standard deviation of bootstrapped coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootstrap$coef_pval</code></td>
+<td>
+<p>The p-value of bootstrapped coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootstrap$coef_quant</code></td>
+<td>
+<p>The quantiles of bootstrapped coefficients.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>Supported generic functions for S3 class <code>gas_bootstrap</code> include <code>summary()</code>, <code>plot()</code>, <code>coef()</code>, and <code>vcov()</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Creal, D., Koopman, S. J., and Lucas, A. (2013). Generalized Autoregressive Score Models with Applications. <em>Journal of Applied Econometrics</em>, <strong>28</strong>(5), 777–795. doi: <a href="https://doi.org/10.1002/jae.1279">10.1002/jae.1279</a>.
+</p>
+<p>Harvey, A. C. (2013). <em>Dynamic Models for Volatility and Heavy Tails: With Applications to Financial and Economic Time Series</em>. Cambridge University Press. doi: <a href="https://doi.org/10.1017/cbo9781139540933">10.1017/cbo9781139540933</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gas()</code>
+<code>wrappers_parallel</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Load the Daily Toilet Paper Sales dataset
+data("toilet_paper_sales")
+y &lt;- toilet_paper_sales$quantity
+x &lt;- as.matrix(toilet_paper_sales[3:9])
+
+# Estimate GAS model based on the negative binomial distribution
+est_negbin &lt;- gas(y = y, x = x, distr = "negbin", regress = "sep")
+est_negbin
+
+# Bootstrap the model (can be time-consuming for a larger number of samples)
+boot_negbin &lt;- gas_bootstrap(est_negbin, rep_boot = 10)
+boot_negbin
+
+# Plot boxplot of bootstrapped coefficients
+plot(boot_negbin)
+
+</code></pre>
+
+
+</div>

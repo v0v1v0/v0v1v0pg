@@ -1,0 +1,136 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>xgb.simple</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get a simple XGBoost model fit (no tuning)</h2>
+
+<h3>Description</h3>
+
+<p>This fits a gradient boosting machine model using the XGBoost
+platform.  If uses a single set of hyperparameters that have sometimes been 
+reasonable so runs very fast.  For a better fit one can use xgb.tuned()
+which searches for a set of hyperparameters using the mlrMBO package
+which will generally provide a better fit but take much longer.  See xgb.tuned()
+for a description of the data format required for input.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">xgb.simple(
+  train.xgb.dat,
+  booster = "gbtree",
+  objective = "survival:cox",
+  eval_metric = NULL,
+  minimize = NULL,
+  seed = NULL,
+  folds = NULL,
+  doxgb = NULL,
+  track = 2
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>train.xgb.dat</code></td>
+<td>
+<p>The data to be used for training the XGBoost model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>booster</code></td>
+<td>
+<p>for now just "gbtree" (default)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>objective</code></td>
+<td>
+<p>one of "survival:cox" (default), "binary:logistic" or "reg:squarederror"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eval_metric</code></td>
+<td>
+<p>one of "cox-nloglik" (default), "auc", "rmse" or NULL.  Default
+of NULL will select an appropriate value based upon the objective value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minimize</code></td>
+<td>
+<p>whether the eval_metric is to be minimized or maximized</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>a seed for set.seed() to assure one can get the same results twice.  If NULL 
+the program will generate a random seed.  Whether specified or NULL, the seed is stored in the output
+object for future reference.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>folds</code></td>
+<td>
+<p>an optional list where each element is a vector of indexes for a 
+test fold.  Default is NULL.  If specified then doxgb$nfold is ignored as in xgb.cv().</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>doxgb</code></td>
+<td>
+<p>a list with parameters for passed to xgb.cv() including $nfold, $nrounds,
+and $early_stopping_rounds.  If not provided defaults will be used.  Defaults
+can be seen form the output object$doxgb element, again a list. In case not NULL, 
+the seed and folds option values override the $seed and $folds values in doxgb.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>track</code></td>
+<td>
+<p>0 (default) to not track progress, 2 to track progress.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a XGBoost model fit
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Walter K Kremers with contributions from Nicholas B Larson
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>xgb.tuned</code> , <code>nested.glmnetr</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Simulate some data for a Cox model 
+sim.data=glmnetr.simdata(nrows=1000, ncols=100, beta=NULL)
+Surv.xgb = ifelse( sim.data$event==1, sim.data$yt, -sim.data$yt )
+data.full &lt;- xgboost::xgb.DMatrix(data = sim.data$xs, label = Surv.xgb)
+# for this example we use a small number for folds_n and nrounds to shorten run time 
+xgbfit = xgb.simple( data.full, objective = "survival:cox")
+preds = predict(xgbfit, sim.data$xs)
+summary( preds ) 
+preds[1:8]
+
+
+</code></pre>
+
+
+</div>

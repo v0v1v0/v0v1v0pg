@@ -1,0 +1,142 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ogrinfo</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Retrieve information about a vector data source</h2>
+
+<h3>Description</h3>
+
+<p><code>ogrinfo()</code> is a wrapper of the <code>ogrinfo</code> command-line
+utility (see <a href="https://gdal.org/programs/ogrinfo.html">https://gdal.org/programs/ogrinfo.html</a>).
+This function lists information about an OGR-supported data source.
+It is also possible to edit data with SQL statements.
+Refer to the GDAL documentation at the URL above for a description of
+command-line arguments that can be passed in <code>cl_arg</code>.
+Requires GDAL &gt;= 3.7.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ogrinfo(
+  dsn,
+  layers = NULL,
+  cl_arg = as.character(c("-so", "-nomd")),
+  open_options = NULL,
+  read_only = TRUE,
+  cout = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dsn</code></td>
+<td>
+<p>Character string. Data source name (e.g., filename, database
+connection string, etc.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>layers</code></td>
+<td>
+<p>Optional character vector of layer names in the source
+dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl_arg</code></td>
+<td>
+<p>Optional character vector of command-line arguments for
+the <code>ogrinfo</code> command-line utility in GDAL (see URL above for
+reference). The default is <code>c("-so", "-nomd")</code> (see Note).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>open_options</code></td>
+<td>
+<p>Optional character vector of dataset open options.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>read_only</code></td>
+<td>
+<p>Logical scalar. <code>TRUE</code> to open the data source read-only
+(the default), or <code>FALSE</code> to open with write access.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cout</code></td>
+<td>
+<p>Logical scalar. <code>TRUE</code> to write info to the standard C output
+stream (the default). <code>FALSE</code> to suppress console output.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Invisibly, a character string containing information about the
+vector dataset, or empty string (<code>""</code>) in case of error.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The command-line argument <code>-so</code> provides a summary only, i.e., does not
+include details about every single feature of a layer.
+<code>-nomd</code> suppresses metadata printing. Some datasets may contain a lot of
+metadata strings.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>ogr2ogr()</code>, the ogr_manage utilities
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">src &lt;- system.file("extdata/ynp_fires_1984_2022.gpkg", package="gdalraster")
+
+# Requires GDAL &gt;= 3.7
+if (as.integer(gdal_version()[2]) &gt;= 3070000) {
+  # Get the names of the layers in a GeoPackage file.
+  ogrinfo(src)
+
+  # Summary of a layer
+  ogrinfo(src, "mtbs_perims")
+
+  # JSON format
+  args &lt;- c("-json", "-nomd")
+  json &lt;- ogrinfo(src, "mtbs_perims", args, cout = FALSE)
+  #info &lt;- jsonlite::fromJSON(json)
+
+  # Query an attribute to restrict the output of the features in a layer
+  args &lt;- c("-ro", "-nomd", "-where", "ig_year = 2020")
+  ogrinfo(src, "mtbs_perims", args)
+
+  # Copy to a temporary in-memory file that is writeable
+  src_mem &lt;- paste0("/vsimem/", basename(src))
+  vsi_copy_file(src, src_mem)
+  print(src_mem)
+
+  # Add a column to a layer
+  args &lt;- c("-sql", "ALTER TABLE mtbs_perims ADD burn_bnd_ha float")
+  ogrinfo(src_mem, cl_arg = args, read_only = FALSE)
+
+  # Update values of the column with SQL and specify a dialect
+  sql &lt;- "UPDATE mtbs_perims SET burn_bnd_ha = (burn_bnd_ac / 2.471)"
+  args &lt;- c("-dialect", "sqlite", "-sql", sql)
+  ogrinfo(src_mem, cl_arg = args, read_only = FALSE)
+
+  vsi_unlink(src_mem)
+}
+</code></pre>
+
+
+</div>

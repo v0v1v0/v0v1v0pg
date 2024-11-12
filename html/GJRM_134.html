@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>meps</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>MEPS data</h2>
+
+<h3>Description</h3>
+
+<p>2008 MEPS data.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">data(meps)
+</code></pre>
+
+
+<h3>Format</h3>
+
+ <p><code>meps</code> is a 18592 row data frame with the following columns 
+</p>
+
+<dl>
+<dt>bmi</dt>
+<dd>
+<p>body mass index.</p>
+</dd>
+<dt>age</dt>
+<dd>
+<p>age in years.</p>
+</dd>
+<dt>gender</dt>
+<dd>
+<p>equal to 1 if male.</p>
+</dd>
+<dt>race</dt>
+<dd>
+<p>levels: 2 white, 3 black, 4 native American, 5 others.</p>
+</dd>
+<dt>education</dt>
+<dd>
+<p>years of education.</p>
+</dd>
+<dt>health</dt>
+<dd>
+<p>levels: 5 excellent, 6 very good, 7 good, 8 fair, 9 poor.</p>
+</dd>
+<dt>limitation</dt>
+<dd>
+<p>equal to 1 if health limits physical activity.</p>
+</dd>
+<dt>region</dt>
+<dd>
+<p>levels: 2 northeast, 3 mid-west, 4 south, 5 west.</p>
+</dd>
+<dt>private</dt>
+<dd>
+<p>equal to 1 if individual has private health insurance.</p>
+</dd>
+<dt>visits.hosp</dt>
+<dd>
+<p>equal to 1 if at least one visit to hospital outpatient departments.</p>
+</dd>
+<dt>diabetes</dt>
+<dd>
+<p>equal to 1 if diabetic.</p>
+</dd>
+<dt>hypertension</dt>
+<dd>
+<p>equal to 1 if hypertensive.</p>
+</dd>
+<dt>hyperlipidemia</dt>
+<dd>
+<p>equal to 1 if hyperlipidemic.</p>
+</dd>
+<dt>income</dt>
+<dd>
+<p>income (000's).</p>
+</dd>
+</dl>
+<h3>Source</h3>
+
+<p>The data have been obtained from http://www.meps.ahrq.gov/. 
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run:  
+
+###################################################
+###################################################
+
+library("GJRM")
+data("meps", package = "GJRM") 
+
+###################################################
+# Bivariate brobit models with endogenous treatment
+###################################################
+
+treat.eq &lt;- private ~ s(bmi) + s(income) + s(age) + s(education) +
+                      as.factor(health) + as.factor(race) +
+                      as.factor(limitation) + as.factor(region) + 
+                      gender  + hypertension + hyperlipidemia + diabetes
+out.eq &lt;- visits.hosp ~ private + s(bmi) + s(income) + s(age) + 
+                        s(education) + as.factor(health) + 
+                        as.factor(race) + as.factor(limitation) + 
+                        as.factor(region) + gender + hypertension + 
+                        hyperlipidemia + diabetes
+
+f.list &lt;- list(treat.eq, out.eq) 
+mr     &lt;- c("probit", "probit")
+bpN    &lt;- gjrm(f.list, data = meps, margins = mr,                  model = "B")
+bpF    &lt;- gjrm(f.list, data = meps, margins = mr, copula = "F",    model = "B")
+bpC0   &lt;- gjrm(f.list, data = meps, margins = mr, copula = "C0",   model = "B")
+bpC180 &lt;- gjrm(f.list, data = meps, margins = mr, copula = "C180", model = "B")
+bpJ0   &lt;- gjrm(f.list, data = meps, margins = mr, copula = "J0",   model = "B")
+bpJ180 &lt;- gjrm(f.list, data = meps, margins = mr, copula = "J180", model = "B")
+bpG0   &lt;- gjrm(f.list, data = meps, margins = mr, copula = "G0",   model = "B")
+bpG180 &lt;- gjrm(f.list, data = meps, margins = mr, copula = "G180", model = "B")
+
+conv.check(bpJ0)
+
+AIC(bpN, bpF, bpC0, bpC180, bpJ0, bpJ180, bpG0, bpG180) 
+
+set.seed(1)
+summary(bpJ0)
+
+#dev.copy(postscript, "contplot.eps")
+#dev.off()
+
+par(mfrow = c(2, 2), mar = c(4.5, 4.5, 2, 2), 
+    cex.axis = 1.6, cex.lab = 1.6)
+plot(bpJ0, eq = 1, seWithMean = TRUE, scale = 0, shade = TRUE, 
+     pages = 1, jit = TRUE)
+
+#dev.copy(postscript, "spline1.eps")
+#dev.off() 
+
+par(mfrow = c(2, 2), mar = c(4.5, 4.5, 2, 2), 
+    cex.axis = 1.6, cex.lab = 1.6)
+plot(bpJ0, eq = 2, seWithMean = TRUE, scale = 0, shade = TRUE, 
+     pages = 1, jit = TRUE)
+
+#dev.copy(postscript, "spline2.eps")
+#dev.off() 
+
+set.seed(1)
+AT(bpJ0, nm.end = "private", hd.plot = TRUE, cex.axis = 1.5, 
+   cex.lab = 1.5, cex.main = 1.6)
+
+#dev.copy(postscript, "hd.plotAT.eps")
+#dev.off()
+
+AT(bpJ0, nm.end = "private", type = "univariate")
+
+AT(bpJ0, nm.end = "private", type = "naive")
+
+
+## End(Not run)
+
+#
+
+</code></pre>
+
+
+</div>

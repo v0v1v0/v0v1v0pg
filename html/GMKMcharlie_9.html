@@ -1,0 +1,153 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>KMppIniSparse</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Minkowski and spherical, deterministic and stochastic, multithreaded K-means++ initialization over sparse representation of data
+</h2>
+
+<h3>Description</h3>
+
+<p>Find suitable observations as initial centroids.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">KMppIniSparse(
+  X,
+  d,
+  K,
+  firstSelection = 1L,
+  minkP = 2,
+  stochastic = FALSE,
+  seed = 123,
+  maxCore = 7L,
+  verbose = TRUE
+  )
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>A list of size <code>N</code>, the number of observations. <code>X[[i]]</code> is a 2-column data frame. The 1st column is a sorted <strong>integer vector</strong> of the indexes of nonzero dimensions. Values in these dimensions are stored in the 2nd column as a <strong>numeric vector</strong>. Internally the algorithm sets a 32-bit <em>int</em> pointer to the beginning of the 1st column and a 64-bit <em>double</em> pointer to the beginning of the 2nd column, so it is critical that the input has the correct type.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+
+<p>An integer. The dimensionality of <code>X</code>. <code>d</code> MUST be no less than the maximum of all index vectors in <code>X</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+
+<p>An integer, the number of centroids.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>firstSelection</code></td>
+<td>
+
+<p>An integer, index of the observation selected as the first initial centroid in <code>X</code>. Should be no greater than <code>N</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minkP</code></td>
+<td>
+
+<p>A numeric value or a character string. If numeric, <code>minkP</code> is the power <code>p</code> in the definition of Minkowski distance. If character string, <code>"max"</code> implies Chebyshev distance, <code>"cosine"</code> implies cosine dissimilarity. Default 2.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stochastic</code></td>
+<td>
+
+<p>A boolean value. <code>TRUE</code> runs the stochastic K-means++ initialization by Arthur and Vassilvitskii (2007). Roughly speaking, the algorithm is stochastic in the sense that each of the remaining observations has a probability of being selected as the next centroid, and the probability is an increasing function of the minimal distance between this observation and the existing centroids. In the same context, the deterministic version selects as the next centroid with probability 1 the observation that has the longest minimal distance to the existing centroids.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+
+<p>Random seed if <code>stochastic</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxCore</code></td>
+<td>
+
+<p>An integer. The maximal number of threads to invoke. No more than the total number of logical processors on machine. Default 7.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>A boolean value. <code>TRUE</code> prints progress.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In each iteration, the distances between the newly selected centroid and all the other observations are computed with multiple threads. Scheduling is homemade for minimizing the overhead of thread communication.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An integer vector of size <code>K</code>. The vector contains the indexes of observations selected as the initial centroids.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">N = 2000L
+d = 3000L
+X = matrix(rnorm(N * d) + 2, nrow = d)
+# Fill many zeros in X:
+X = apply(X, 2, function(x) {
+  x[sort(sample(d, d * runif(1, 0.95, 0.99)))] = 0; x})
+# Get the sparse version of X.
+sparseX = GMKMcharlie::d2s(X)
+
+
+K = 30L
+seed = 123L
+# Time cost of finding the centroids via dense representation.
+# CRAN check allows only 2 threads. Increase `maxCore` for more speed.
+system.time({kmppViaDense = GMKMcharlie::KMppIni(
+  X, K, firstSelection = 1L, minkP = 2, stochastic = TRUE, seed = seed,
+  maxCore = 2L)})
+
+
+# Time cost of finding the initial centroids via sparse representation.
+system.time({kmppViaSparse = GMKMcharlie::KMppIniSparse(
+  sparseX, d, K, firstSelection = 1L, minkP = 2, stochastic = TRUE,
+  seed = seed, maxCore = 2L)})
+
+
+# Results should be identical.
+sum(kmppViaSparse - kmppViaDense)
+</code></pre>
+
+
+</div>

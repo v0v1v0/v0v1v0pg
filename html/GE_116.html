@@ -1,0 +1,113 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemTax_4_4</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some General Equilibrium Models with Endogenous Tax Rates</h2>
+
+<h3>Description</h3>
+
+<p>Some general equilibrium models with endogenous tax rates.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemTax_4_4(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+ge &lt;- sdm2(
+  A = function(state) {
+    a.firm &lt;- CD_A(alpha = 2, Beta = c(0.5, 0.5, 0, 0), state$p)
+    a.laborer &lt;- CD_A(alpha = 1, Beta = c(0.75, 0.25, 0, 0), state$p)
+    a.government &lt;- c(1, 0, 0, 0)
+    a.planner &lt;- c(0, 0, 2, 1)
+    cbind(a.firm, a.laborer, a.government, a.planner)
+  },
+  B = matrix(c(
+    1, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0
+  ), 4, 4, TRUE),
+  S0Exg = matrix(c(
+    NA, NA, NA, NA,
+    NA, NA, NA, 100,
+    NA, NA, NA, NA,
+    NA, NA, NA, NA
+  ), 4, 4, TRUE),
+  names.commodity = c("prod", "lab", "util1", "util2"),
+  names.agent = c("firm", "laborer", "government", "planner"),
+  numeraire = "prod"
+)
+
+ge$p
+ge$z
+addmargins(ge$D, 2)
+addmargins(ge$S, 2)
+addmargins(ge$DV)
+addmargins(ge$SV)
+
+#### an equivalent 2-by-2 model.
+dst.firm &lt;- node_new("output",
+  type = "CD",
+  alpha = 2, beta = c(0.5, 0.5),
+  "prod", "lab"
+)
+
+dst.planner &lt;- node_new("util",
+  type = "Leontief",
+  a = c(2, 1),
+  "util1", "util2"
+)
+
+node_set(dst.planner, "util1",
+  type = "CD",
+  alpha = 1, beta = c(0.75, 0.25),
+  "prod", "lab"
+)
+node_set(dst.planner, "util2",
+  type = "Leontief",
+  a = 1,
+  "prod"
+)
+
+ge &lt;- sdm2(
+  A = list(dst.firm, dst.planner),
+  B = matrix(c(
+    1, 0,
+    0, 0
+  ), 2, 2, TRUE),
+  S0Exg = matrix(c(
+    NA, NA,
+    NA, 100
+  ), 2, 2, TRUE),
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm", "planner"),
+  numeraire = "prod"
+)
+
+ge$p
+ge$z
+addmargins(ge$D, 2)
+addmargins(ge$S, 2)
+addmargins(ge$DV)
+addmargins(ge$SV)
+
+</code></pre>
+
+
+</div>

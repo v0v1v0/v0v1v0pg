@@ -1,0 +1,176 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get_dist</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Finds the distance of each element in a matrix x to the its boundary of the domain while fixing the others in the same row.</h2>
+
+<h3>Description</h3>
+
+<p>Finds the distance of each element in a matrix <code>x</code> to its boundary of the <code>domain</code> while fixing the others in the same row.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get_dist(x, domain)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An <code>n</code> by <code>p</code> matrix, the data matrix, where <code>n</code> is the sample size and <code>p</code> the dimension.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>domain</code></td>
+<td>
+<p>A list returned from <code>make_domain()</code> that represents the domain.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Returned matrix <code>dx</code> has its <code>i,j</code>-th component the distance of <code class="reqn">x_{i,j}</code> to the boundary of <code>domain</code>, assuming <code class="reqn">x_{i,-j}</code> are fixed. The matrix has the same size of <code>x</code> (<code>n</code> by <code>p</code>), or if <code>domain$type == "simplex"</code> and <code>x</code> has full dimension <code>p</code>, it has <code>p-1</code> columns.
+Returned matrix <code>dpx</code> contains the component-wise derivatives of <code>dx</code> in its components. That is, its <code>i,j</code>-th component is 0 if <code class="reqn">x_{i,j}</code> is unbounded or is bounded from both below and above or is at the boundary, or -1 if <code class="reqn">x_{i,j}</code> is closer to its lower boundary (or if its bounded from below but unbounded from above), or 1 otherwise.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list that contains <code>h(dist(x, domain))</code> and <code>h\'(dist(x, domain))</code>.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>dx</code></td>
+<td>
+<p>Coordinate-wise distance to the boundary.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dpx</code></td>
+<td>
+<p>Coordinate-wise derivative of <code>dx</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">n &lt;- 20
+p &lt;- 10
+eta &lt;- rep(0, p)
+K &lt;- diag(p)
+dm &lt;- 1 + (1-1/(1+4*exp(1)*max(6*log(p)/n, sqrt(6*log(p)/n))))
+
+# Gaussian on R^p:
+domain &lt;- make_domain("R", p=p)
+x &lt;- mvtnorm::rmvnorm(n, mean=solve(K, eta), sigma=solve(K))
+# Equivalently:
+
+x2 &lt;- gen(n, setting="gaussian", abs=FALSE, eta=eta, K=K, domain=domain, finite_infinity=100, 
+        xinit=NULL, burn_in=1000, thinning=100, verbose=FALSE)
+
+dist &lt;- get_dist(x, domain)
+# dx is all Inf and dpx is all 0 since each coordinate is unbounded with domain R
+c(all(is.infinite(dist$dx)), all(dist$dpx==0))
+
+# exp on R_+^p:
+domain &lt;- make_domain("R+", p=p)
+x &lt;- gen(n, setting="exp", abs=FALSE, eta=eta, K=K, domain=domain, finite_infinity=100, 
+       xinit=NULL, seed=2, burn_in=1000, thinning=100, verbose=FALSE)
+dist &lt;- get_dist(x, domain)
+# dx is x and dpx is 1; with domain R+, the distance of x to the boundary is just x itself
+c(max(abs(dist$dx - x))&lt;.Machine$double.eps^0.5, all(dist$dpx == 1))
+
+# Gaussian on sum(x^2) &gt; p with x allowed to be negative
+domain &lt;- make_domain("polynomial", p=p,
+       ineqs=list(list("expression"=paste("sum(x^2)&gt;", p), abs=FALSE, nonnegative=FALSE)))
+x &lt;- gen(n, setting="gaussian", abs=FALSE, eta=eta, K=K, domain=domain, finite_infinity=100, 
+       xinit=NULL, seed=2, burn_in=1000, thinning=100, verbose=FALSE)
+dist &lt;- get_dist(x, domain)
+quota &lt;- p - (rowSums(x^2) - x^2) # How much should xij^2 at least be so that sum(xi^2) &gt; p?
+# How far is xij from +/-sqrt(quota), if quota &gt;= 0?
+dist_to_bound &lt;- abs(x[quota &gt;= 0]) - abs(sqrt(quota[quota &gt;= 0]))
+max(abs(dist$dx[is.finite(dist$dx)] - dist_to_bound)) # Should be equal to our own calculations
+# dist'(x) should be the same as the sign of x
+all(dist$dpx[is.finite(dist$dx)] == sign(x[quota &gt;= 0]))
+# quota is negative &lt;-&gt; sum of x_{i,-j}^2 already &gt; p &lt;-&gt; xij unbounded
+#   given others &lt;-&gt; distance to boundary is Inf
+all(quota[is.infinite(dist$dx)] &lt; 0)
+
+# gamma on ([0, 1] v [2,3])^p
+domain &lt;- make_domain("uniform", p=p, lefts=c(0,2), rights=c(1,3))
+x &lt;- gen(n, setting="gamma", abs=FALSE, eta=eta, K=K, domain=domain,
+       xinit=NULL, seed=2, burn_in=1000, thinning=100, verbose=FALSE)
+dist &lt;- get_dist(x, domain)
+# If 0 &lt;= xij &lt;= 1, distance to boundary is min(x-0, 1-x)
+max(abs(dist$dx - pmin(x, 1-x))[x &gt;= 0 &amp; x &lt;= 1])
+# If 0 &lt;= xij &lt;= 1, dist'(xij) is 1 if it is closer to 0, or -1 if it is closer 1,
+#   assuming xij %in% c(0, 0.5, 1) with probability 0
+all((dist$dpx == 2 * (1-x &gt; x) - 1)[x &gt;= 0 &amp; x &lt;= 1])
+# If 2 &lt;= xij &lt;= 3, distance to boundary is min(x-2, 3-x)
+max(abs(dist$dx - pmin(x-2, 3-x))[x &gt;= 2 &amp; x &lt;= 3])
+# If 2 &lt;= xij &lt;= 3, dist'(xij) is 1 if it is closer to 2, or -1 if it is closer 3,
+#   assuming xij %in% c(2, 2.5, 3) with probability 0
+all((dist$dpx == 2 * (3-x &gt; x-2) - 1)[x &gt;= 2 &amp; x &lt;= 3])
+
+# a0.6_b0.7 on {x1 &gt; 1 &amp;&amp; 0 &lt; x2 &lt; 1 &amp;&amp; x3 &gt; 0 &amp;&amp; ... &amp;&amp; xp &gt; 0}
+domain &lt;- make_domain("polynomial", p=p, rule="1 &amp;&amp; 2 &amp;&amp; 3",
+       ineqs=list(list("expression"="x1&gt;1", abs=FALSE, nonnegative=TRUE),
+                      list("expression"="x2&lt;1", abs=FALSE, nonnegative=TRUE),
+                      list("expression"="exp(x)&gt;1.3", abs=FALSE, nonnegative=FALSE)))
+set.seed(1)
+xinit &lt;- c(1.5, 0.5, abs(stats::rnorm(p-2)) + log(1.3))
+x &lt;- gen(n, setting="ab_3/5_7/10", abs=FALSE, eta=eta, K=K, domain=domain,
+       finite_infinity=100, xinit=xinit, seed=2, burn_in=1000, thinning=100,
+       verbose=FALSE)
+dist &lt;- get_dist(x, domain)
+# x_{i1} has uniform bound [1, +Inf), so its distance to its boundary is x_{i1} - 1
+max(abs(dist$dx[,1] - (x[,1] - 1)))
+# x_{i2} has uniform bound [log(1.3), 1], so its distance to its boundary
+#   is min(x_{i2} - log(1.3), 1 - x_{i2})
+max(abs(dist$dx[,2] - pmin(x[,2] - log(1.3), 1 - x[,2])))
+# x_{ij} for j &gt;= 3 has uniform bound [log(1.3), +Inf), so its distance to its boundary
+#   is simply x_{ij} - log(1.3)
+max(abs(dist$dx[,3:p] - (x[,3:p] - log(1.3))))
+# dist\'(xi2) is 1 if it is closer to log(1.3), or -1 if it is closer 1,
+#   assuming x_{i2} %in% c(log(1.3), (1+log(1.3))/2, 1) with probability 0
+all((dist$dpx[,2] == 2 * (1 - x[,2] &gt; x[,2] - log(1.3)) - 1))
+# x_{ij} for j != 2 is bounded from below but unbounded from above, so dist\'(xij) is always 1
+all(dist$dpx[,-2] == 1)
+
+# log_log model on {x in R_+^p: sum_j j * xj &lt;= 1}
+domain &lt;- make_domain("polynomial", p=p,
+       ineqs=list(list("expression"=paste(paste(sapply(1:p,
+                           function(j){paste(j, "x", j, sep="")}), collapse="+"), "&lt;1"),
+                     abs=FALSE, nonnegative=TRUE)))
+x &lt;- gen(n, setting="log_log", abs=FALSE, eta=eta, K=K, domain=domain, finite_infinity=100, 
+       xinit=NULL, seed=2, burn_in=1000, thinning=100, verbose=FALSE)
+dist &lt;- get_dist(x, domain)
+# Upper bound for j * xij so that sum_j j * xij &lt;= 1
+quota &lt;- 1 - (rowSums(t(t(x) * 1:p)) - t(t(x) * 1:p))
+# Distance of xij to its boundary is min(xij - 0, quota_{i,j} / j - xij)
+max(abs(dist$dx - pmin((t(t(quota) / 1:p) - x), x)))
+
+# log_log model on the simplex with K having row and column sums 0 (Aitchison model)
+domain &lt;- make_domain("simplex", p=p)
+K &lt;- -cov_cons("band", p=p, spars=3, eig=1)
+diag(K) &lt;- diag(K) - rowSums(K) # So that rowSums(K) == colSums(K) == 0
+eigen(K)$val[(p-1):p] # Make sure K has one 0 and p-1 positive eigenvalues
+x &lt;- gen(n, setting="log_log_sum0", abs=FALSE, eta=eta, K=K, domain=domain,
+        xinit=NULL, seed=2, burn_in=1000, thinning=100, verbose=FALSE)
+# Note that dist$dx and dist$dpx only has p-1 columns -- excluding the last coordinate in x
+dist &lt;- get_dist(x, domain)
+# Upper bound for x_{i,j} so that x_{i,1} + ... + x_{i,p-1} &lt;= 1
+quota &lt;- 1 - (rowSums(x[,-p]) - x[,-p])
+# Distance of x_{i,j} to its boundary is min(xij - 0, quota_{i,j} - xij)
+max(abs(dist$dx - pmin(quota - x[,-p], x[,-p])))
+</code></pre>
+
+
+</div>

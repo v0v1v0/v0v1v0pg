@@ -1,0 +1,160 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>expandCategorical</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Expand Data Frame by Re-expressing Categorical Data as Counts </h2>
+
+<h3>Description</h3>
+
+<p>Expands the rows of a data frame by re-expressing observations of a
+categorical variable specified by <code>catvar</code>, such that the
+column(s) corresponding to <code>catvar</code> are replaced by a factor 
+specifying the possible categories for each observation and a vector
+of 0/1 counts over these categories.
+
+
+
+
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">expandCategorical(data, catvar, sep = ".", countvar = "count",
+                  idvar = "id", as.ordered = FALSE, group = TRUE) 
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p> a data frame. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>catvar</code></td>
+<td>
+<p> a character vector specifying factors in <code>data</code>
+whose interaction will form the basis of the expansion. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sep</code></td>
+<td>
+<p> a character string used to separate the concatenated
+values of <code>catvar</code> in the name of the new interaction factor. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>countvar</code></td>
+<td>
+<p> (optional) a character string to be used for the name
+of the new count variable. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idvar</code></td>
+<td>
+<p> (optional) a character string to be used for the name
+of the new factor identifying the original rows (cases). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>as.ordered</code></td>
+<td>
+<p> logical - whether the new interaction factor should
+be of class <code>"ordered"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>logical: whether or not to group individuals with common values
+over all covariates. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Each row of the data frame is replicated <code class="reqn">c</code> times, where <code class="reqn">c</code>
+is the number of levels of the interaction of the factors specified by
+<code>catvar</code>. In the expanded data frame, the columns specified by
+<code>catvar</code> are replaced by a factor specifying the <code class="reqn">r</code> possible
+categories for each case, named by the concatenated values of
+<code>catvar</code> separated by <code>sep</code>. The ordering of factor levels
+will be preserved in the creation of the new factor, but this factor
+will not be of class <code>"ordered"</code> unless the argument
+<code>as.ordered = TRUE</code>. A variable with name <code>countvar</code> is added
+to the data frame which is equal to 1 for the observed category in each
+case and 0 elsewhere. Finally a factor with name <code>idvar</code> is added
+to index the cases. </p>
+
+
+<h3>Value</h3>
+
+<p>The expanded data frame as described in Details.
+</p>
+
+
+<h3>Note</h3>
+
+<p>Re-expressing categorical data in this way allows a multinomial
+response to be modelled as a poisson response, see examples.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Heather Turner </p>
+
+
+<h3>References</h3>
+
+<p>Anderson, J. A. (1984) Regression and Ordered Categorical
+Variables. <em>J. R. Statist. Soc. B</em>, <b>46(1)</b>, 1-30.
+</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>gnm</code>, <code>multinom</code>,
+<code>reshape</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">### Example from help(multinom, package = "nnet")
+library(MASS)
+example(birthwt)
+library(nnet)
+bwt.mu &lt;- multinom(low ~ ., data = bwt)
+
+## Equivalent using gnm - include unestimable main effects in model so 
+## that interactions with low0 automatically set to zero, else could use
+## 'constrain' argument. 
+bwtLong &lt;- expandCategorical(bwt, "low", group = FALSE)
+bwt.po &lt;- gnm(count ~  low*(. - id), eliminate = id, data = bwtLong, family =
+              "poisson") 
+summary(bwt.po) # same deviance; df reflect extra id parameters
+
+### Example from ?backPain
+set.seed(1)
+summary(backPain)
+backPainLong &lt;- expandCategorical(backPain, "pain")
+
+## Fit models described in Table 5 of Anderson (1984)
+
+noRelationship &lt;- gnm(count ~ pain, eliminate = id,
+                      family = "poisson", data = backPainLong)
+
+oneDimensional &lt;- update(noRelationship,
+                         ~ . + Mult(pain, x1 + x2 + x3))
+</code></pre>
+
+
+</div>

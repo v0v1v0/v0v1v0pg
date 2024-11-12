@@ -1,0 +1,111 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>lambda_max</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Analytic solution for the minimum <code class="reqn">\lambda_{\mathbf{K}}</code> that gives the empty graph.</h2>
+
+<h3>Description</h3>
+
+<p>Analytic solution for the minimum <code class="reqn">\lambda_{\mathbf{K}}</code> that gives the empty graph. In the non-centered setting the bound is not tight, as it is such that both <code class="reqn">\mathbf{K}</code> and <code class="reqn">\boldsymbol{\eta}</code> are empty. The bound is also not tight if <code>symmetric == "and"</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">lambda_max(elts, symmetric, lambda_ratio = Inf)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>elts</code></td>
+<td>
+<p>A list, elements necessary for calculations returned by <code>get_elts()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>symmetric</code></td>
+<td>
+<p>A string. If equals <code>"symmetric"</code>, estimates the minimizer <code class="reqn">\mathbf{K}</code> over all symmetric matrices; if <code>"and"</code> or <code>"or"</code>, use the "and"/"or" rule to get the support.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda_ratio</code></td>
+<td>
+<p>A positive number (or <code>Inf</code>), the fixed ratio <code class="reqn">\lambda_{\mathbf{K}}</code> and <code class="reqn">\lambda_{\boldsymbol{\eta}}</code>, if <code class="reqn">\lambda_{\boldsymbol{\eta}}\neq 0</code> (non-profiled) in the non-centered setting.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A number, the smallest lambda that produces the empty graph in the centered case, or that gives zero solutions for <code class="reqn">\mathbf{K}</code> and <code class="reqn">\boldsymbol{\eta}</code> in the non-centered case. If <code>symmetric == "and"</code>, it is not a tight bound for the empty graph.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Examples are shown for Gaussian truncated to R+^p only. For other distributions
+#   on other types of domains, please refer to \code{gen()} or \code{get_elts()},
+#   as the way to call this function (\code{lambda_max()}) is exactly the same in those cases.
+n &lt;- 50
+p &lt;- 30
+domain &lt;- make_domain("R+", p=p)
+mu &lt;- rep(0, p)
+K &lt;- diag(p)
+x &lt;- tmvtnorm::rtmvnorm(n, mean = mu, sigma = solve(K),
+       lower = rep(0, p), upper = rep(Inf, p), algorithm = "gibbs",
+       burn.in.samples = 100, thinning = 10)
+
+dm &lt;- 1 + (1-1/(1+4*exp(1)*max(6*log(p)/n, sqrt(6*log(p)/n))))
+h_hp &lt;- get_h_hp("min_pow", 1, 3)
+elts_gauss_np &lt;- get_elts(h_hp, x, setting="gaussian", domain=domain,
+                centered=FALSE, profiled=FALSE, diag=dm)
+
+# Exact analytic solution for the smallest lambda such that K and eta are both zero,
+#  but not a tight bound for K ONLY
+lambda_max(elts_gauss_np, "symmetric", 2)
+# Use the upper bound as a starting point for numerical search
+test_lambda_bounds2(elts_gauss_np, "symmetric", lambda_ratio=2, lower = FALSE,
+     lambda_start = lambda_max(elts_gauss_np, "symmetric", 2))
+
+# Exact analytic solution for the smallest lambda such that K and eta are both zero,
+#  but not a tight bound for K ONLY
+lambda_max(elts_gauss_np, "or", 2)
+# Use the upper bound as a starting point for numerical search
+test_lambda_bounds2(elts_gauss_np, "or", lambda_ratio=2, lower = FALSE,
+     lambda_start = lambda_max(elts_gauss_np, "or", 2))
+
+# An upper bound, not tight.
+lambda_max(elts_gauss_np, "and", 2)
+# Use the upper bound as a starting point for numerical search
+test_lambda_bounds2(elts_gauss_np, "and", lambda_ratio=2, lower = FALSE,
+     lambda_start = lambda_max(elts_gauss_np, "and", 2))
+
+
+elts_gauss_p &lt;- get_elts(h_hp, x, setting="gaussian", domain=domain,
+              centered=FALSE, profiled=TRUE, diag=dm)
+# Exact analytic solution
+lambda_max(elts_gauss_p, "symmetric")
+# Numerical solution, should be close to the analytic solution
+test_lambda_bounds2(elts_gauss_p, "symmetric", lambda_ratio=Inf, lower = FALSE,
+     lambda_start = NULL)
+
+# Exact analytic solution
+lambda_max(elts_gauss_p, "or")
+# Numerical solution, should be close to the analytic solution
+test_lambda_bounds2(elts_gauss_p, "or", lambda_ratio=Inf, lower = FALSE,
+     lambda_start = NULL)
+
+# An upper bound, not tight
+lambda_max(elts_gauss_p, "and")
+# Use the upper bound as a starting point for numerical search
+test_lambda_bounds2(elts_gauss_p, "and", lambda_ratio=Inf, lower = FALSE,
+     lambda_start = lambda_max(elts_gauss_p, "and"))
+</code></pre>
+
+
+</div>

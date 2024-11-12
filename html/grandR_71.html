@@ -1,0 +1,181 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>FitKineticsGeneNtr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a kinetic model using the degradation rate transformed NTR posterior distribution.</h2>
+
+<h3>Description</h3>
+
+<p>Fit the standard mass action kinetics model of gene expression by maximum a posteriori on a model based on the NTR posterior.
+The fit takes only the NTRs into account and is completely independent on normalization, but it cannot be performed without assuming steady state.
+The parameters are fit per Condition.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">FitKineticsGeneNtr(
+  data,
+  gene,
+  slot = DefaultSlot(data),
+  time = Design$dur.4sU,
+  CI.size = 0.95,
+  transformed.NTR.MAP = TRUE,
+  exact.ci = FALSE,
+  total.fun = median
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A grandR object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gene</code></td>
+<td>
+<p>The gene for which to fit the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>slot</code></td>
+<td>
+<p>The data slot to take expression values from</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>The column in the column annotation table representing the labeling duration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CI.size</code></td>
+<td>
+<p>A number between 0 and 1 representing the size of the credible interval</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transformed.NTR.MAP</code></td>
+<td>
+<p>Use the transformed NTR MAP estimator instead of the MAP of the transformed posterior</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exact.ci</code></td>
+<td>
+<p>compute exact credible intervals (see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>total.fun</code></td>
+<td>
+<p>use this function to summarize the expression values (only relevant for computing the synthesis rate s)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The start of labeling for all samples should be the same experimental time point. The fit gets more precise with multiple samples from multiple
+labeling durations.
+</p>
+<p>The standard mass action kinetics model of gene expression arises from the following differential equation:
+</p>
+<p style="text-align: center;"><code class="reqn">df/dt = s - d  f(t)</code>
+</p>
+
+<p>This model assumes constant synthesis and degradation rates. Further assuming steady state allows to derive the function transforming from
+the NTR to the degradation rate d as <code class="reqn">d(ntr)=-1/t log(1-ntr)</code>. Furthermore, if the ntr is (approximately) beta distributed, it is possible to
+derive the distribution of the transformed random variable for the degradation rate (see Juerges et al., Bioinformatics 2018).
+</p>
+<p>This function primarily finds d by maximizing the degradation rate posterior distribution. For that, data does not have to be normalized,
+but this only works under steady-state conditions. The synthesis rate is then computed (under the assumption of steady state) as <code class="reqn">s=f0 \cdot d</code>
+</p>
+<p>The maximum-a-posteriori estimator is biased. Bias can be removed by a correction factor (which is done by default).
+</p>
+<p>By default the chi-squared approximation of the log-posterior function is used to compute credible intervals. If exact.ci is used, the
+posterior is integrated numerically.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A named list containing the model fit:
+</p>
+
+<ul>
+<li>
+<p>data: a data frame containing the observed value used for fitting
+</p>
+</li>
+<li>
+<p>Synthesis: the synthesis rate (in U/h, where U is the unit of the slot)
+</p>
+</li>
+<li>
+<p>Degradation: the degradation rate (in 1/h)
+</p>
+</li>
+<li>
+<p>Half-life: the RNA half-life (in h, always equal to log(2)/degradation-rate
+</p>
+</li>
+<li>
+<p>conf.lower: a vector containing the lower confidence bounds for Synthesis, Degradation and Half-life
+</p>
+</li>
+<li>
+<p>conf.upper: a vector containing the lower confidence bounds for Synthesis, Degradation and Half-life
+</p>
+</li>
+<li>
+<p>f0: The abundance at time 0 (in U)
+</p>
+</li>
+<li>
+<p>logLik: the log likelihood of the model
+</p>
+</li>
+<li>
+<p>rmse: the total root mean square error
+</p>
+</li>
+<li>
+<p>total: the total sum of all new and old RNA values used for fitting
+</p>
+</li>
+<li>
+<p>type: always "ntr"
+</p>
+</li>
+</ul>
+<p>If <code>Condition(data)</code> is not NULL, the return value is a named list (named according to the levels of <code>Condition(data)</code>), each
+element containing such a structure.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>FitKinetics, FitKineticsGeneLeastSquares, FitKineticsGeneLogSpaceLinear
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">sars &lt;- ReadGRAND(system.file("extdata", "sars.tsv.gz", package = "grandR"),
+                  design=c("Condition",Design$dur.4sU,Design$Replicate))
+sars &lt;- Normalize(sars)
+sars &lt;- subset(sars,columns=Condition=="Mock")
+FitKineticsGeneNtr(sars,"SRSF6")
+
+</code></pre>
+
+
+</div>

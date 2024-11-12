@@ -1,0 +1,121 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>optimFactory</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Function Factory for Optimization function with Unified Arguments</h2>
+
+<h3>Description</h3>
+
+<p>A function factory which returns a function with unified input arguments, and provides compatibility with the package <span class="pkg">optimParallel</span>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">optimFactory(optim.args = list(), hessian = FALSE, optimParallel.args = list())
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>optim.args</code></td>
+<td>
+<p>A named list of optional settings for optim. See <code>optim</code> for documentation of valid arguments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian</code></td>
+<td>
+<p>A logical which specifies whether the hessian matrix is to be returned with the output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimParallel.args</code></td>
+<td>
+<p>A named list which is passed to <code>optimParallel</code> from the <span class="pkg">optimParallel</span> package. See details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function factory <code>optimFactory()</code> returns a function of the form <code>function(par, fn, gr = NULL, ..., lower, upper)</code>. It is intended to replace calls to <code>optim</code> or <code>optimParallel</code> by wrapping both functions. By default, it returns a function that corresponds to <code>optim</code> with default arguments.
+</p>
+<p>To use optimParallel, users may specify the following arguments in optimParallel.args:
+</p>
+
+<dl>
+<dt>num_cores (default = <code>NULL</code>)</dt>
+<dd>
+<p>The number of cores to use during numerical optimization. Is NULL by default, which corresponds to using <code>stats::optim</code>. When <code>num_cores</code> is a numeric value, the actual number of cores is set to <code>min(detectCores()-1, num_cores)</code> to avoid accidentally overloading the user's system.</p>
+</dd>
+<dt>forward (default = <code>FALSE</code>)</dt>
+<dd>
+<p>A logical value which controls whether <code>optimParallel</code> should use central difference approximation of the gradient (<code>FALSE</code>) or forward difference approximation (<code>TRUE</code>).</p>
+</dd>
+<dt>loginfo (default = <code>FALSE</code>)</dt>
+<dd>
+<p>A logical value which controls whether <code>optimParallel</code> should return additional information about the optimization process. See <code>optimParallel</code>.</p>
+</dd>
+</dl>
+<h3>Value</h3>
+
+<p>A function of the form <code>function(par, fn, gr = NULL, ..., lower, upper)</code> which returns the output obtained from calls to <code>optim</code> or <code>optimParallel</code>
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Thomas Caspar Fischer</p>
+
+
+<h3>References</h3>
+
+<p>Hadley Wickham (2015) <em>Advanced R</em>, CRC Press.
+Florian Gerber and Reinhard Furrer (2019) optimParallel: An R package providing a parallel version of the L-BFGS-B optimization method, <em>The R Journal</em>, <b>11</b>(1), 352–358
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>optim</code> and
+<code>optimParallel</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(GeneralizedWendland)
+library(optimParallel)
+
+set.seed(43)
+n &lt;- 50
+range &lt;- 0.4
+dist_max &lt;- 2
+theta  &lt;- c(range, 1, 1, 0, 0)
+
+locs &lt;- data.frame(x = runif(n, 0, sqrt(dist_max)),
+                   y = runif(n, 0, sqrt(dist_max)))
+dmat  &lt;- spam::nearest.dist(locs, locs, delta = dist_max)
+Sigma &lt;- cov.wendland(h = dmat, theta = theta)
+y &lt;- c(spam::rmvnorm(1, Sigma = Sigma))
+
+init_parameters   &lt;- c(0.7, 2, 0, 2, 2)
+lower_constraints &lt;- c(0.1, 0.1, 0, 0, 0)
+upper_constraints &lt;- c(sqrt(2), 2, 2, 2, 2)
+
+mleFunction &lt;- mleFactory(covariance = cov.wendland)
+(mle_result &lt;- mleFunction(y = y, distmat = dmat, init_parameters = init_parameters,
+                       theta_llim = lower_constraints, theta_ulim = upper_constraints))
+
+mleFunctionPar &lt;- mleFactory(covariance = cov.wendland, optimParallel.args = list(num_cores = 2))
+(mle_result_par &lt;- mleFunctionPar(y = y, distmat = dmat, init_parameters = init_parameters,
+                       theta_llim = lower_constraints, theta_ulim = upper_constraints))
+
+</code></pre>
+
+
+</div>

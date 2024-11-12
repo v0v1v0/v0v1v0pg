@@ -1,0 +1,166 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ggsdc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Visualise seasonal decomposition</h2>
+
+<h3>Description</h3>
+
+<p>Creates a four-facet plot of seasonal decomposition showing observed, trend, seasonal and random components
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ggsdc(data, mapping, frequency = NULL, method = c("stl", "decompose",
+  "seas"), start = NULL, s.window, type = c("additive", "multiplicative"),
+  index.ref = NULL, index.basis = 100, facet.titles = c("observed",
+  "trend", "seasonal", "irregular"))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>dataset to use for plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mapping</code></td>
+<td>
+<p>List of aesthetic mappings.  Must include x and y, and optionally
+can include colour/color</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>frequency</code></td>
+<td>
+<p>frequency of the period of the time series eg 12 = monthly</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>function to use for performing the seasonal decomposition. stl
+and decompose are functions in the <code>stats</code> package; <code>seas</code> is access
+to the <code>seats</code> program from X-13-SEATS-ARIMA via the <code>seasonal</code> package</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>starting time for the data; only needed if <code>method = 'seas'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s.window</code></td>
+<td>
+<p>parameter to pass to <code>stl()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>parameter to pass to <code>decompose()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>index.ref</code></td>
+<td>
+<p>if not NULL, a vector of integers indicating which elements of
+the beginning of each series to use as a reference point for converting to an index.  
+If NULL, no conversion takes place and the data are presented on the original scale.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>index.basis</code></td>
+<td>
+<p>if index.ref is not NULL, the basis point for converting
+to an index, most commonly 100 or 1000.  See examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>facet.titles</code></td>
+<td>
+<p>a vector in the order of <code>observed</code>, <code>trend</code>, <code>seasonal</code> and <code>irregular</code> 
+for the titles of the four facets of the decomposition.  Make sure you get the order right...</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function takes a data frame and performs seasonal decomposition
+on the variable mapped to the y aesthetic, grouped by the variable (if any)
+mapped to the colour or color aesthetic.  This allows the user to perform
+the equivalent of plot(stats::decompose(x)) but in the ggplot2 environment for themes,
+polishing etc; and to overlay decompositions on the same graphic; and with the 
+X13-SEATS-ARIMA seasonal decomposition (so far only with default settings).
+</p>
+<p>The "seasonal" component can be either multiplicative (in which case it will
+in a small range of values around one) or additive (in which case it will be
+on the scale of the original data), depending on the settings.
+</p>
+
+
+<h3>Value</h3>
+
+<p>an object of class ggplot with four facets
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>decompose</code>, <code>stl</code>, <code>seas</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># sample time series data in data frame
+ap_df &lt;- tsdf(AirPassengers)
+
+ggsdc(ap_df, aes(x = x, y = y), method = "decompose") +
+   geom_line()
+   
+ggsdc(ap_df, aes(x = x, y = y), method = "decompose", 
+      type = "multiplicative") +
+   geom_line(colour = "blue", size = 2) +
+   theme_light(8)
+
+ggsdc(ap_df, aes(x = x, y = y), method = "stl", s.window = 7) +
+   labs(x = "", y = "Air passenger numbers") +
+   geom_point()
+   
+## Not run:       
+ggsdc(ldeaths_df, aes(x = YearMon, y = deaths, colour = sex), method = "seas") +
+      geom_line()
+      
+serv &lt;- subset(nzbop, Account == "Current account" &amp; 
+            Category %in% c("Services; Exports total", "Services; Imports total"))
+ggsdc(serv, aes(x = TimePeriod, y = Value, colour = Category),
+      method = "seas", start = c(1971, 2), frequency = 4) +
+   geom_line()
+
+## End(Not run)
+
+ggsdc(ldeaths_df, aes(x = YearMon, y = deaths, colour = sex), s.window = 7, 
+   index.ref = 1:12, index.basis = 1000) +
+   geom_line() +
+   ylab("Lung deaths index (average month in 1974 = 1000)")
+      
+bop &lt;- subset(nzbop, Account == "Current account" &amp; !Balance)
+ggsdc(bop, aes(x = TimePeriod, y = Value, colour = Category), frequency = 4, 
+   method = "decomp", type = "multiplicative") +
+      geom_line() 
+      
+ggsdc(bop, aes(x = TimePeriod, y = Value, colour = Category), frequency = 4, s.window = 7) +
+      geom_line() 
+</code></pre>
+
+
+</div>

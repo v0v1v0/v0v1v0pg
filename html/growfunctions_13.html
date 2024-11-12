@@ -1,0 +1,374 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gpdpgrow</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian non-parametric dependent Gaussian process model for time-indexed functional data</h2>
+
+<h3>Description</h3>
+
+<p>Estimates a collection of time-indexed functions with Gaussian process (GP) formulations 
+where a Dirichlet process mixture allows sub-groupings of the functions to share the same 
+GP covariance parameters.  The GP formulation supports any number of additive GP covariance terms,
+expressing either or both of multiple trend and seasonality.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gpdpgrow(
+  y,
+  ipr,
+  time_points,
+  gp_cov,
+  sn_order,
+  jitter,
+  gp_shape,
+  gp_rate,
+  noise_shape,
+  noise_rate,
+  dp_shape,
+  dp_rate,
+  M_init,
+  lower,
+  upper,
+  sub_size,
+  w_star,
+  w,
+  n.iter,
+  n.burn,
+  n.thin,
+  n.tune,
+  progress,
+  b_move,
+  cluster,
+  s
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A multivariate continuous response, specified as an <em>N x T</em> matrix, where <code>N</code>
+denotes the number of functions and <code>T</code>, the number of time points per function. Intermittent 
+missing-at-random values are allowed and will be estimated from the posterior
+predictive distribution.  Missing cells should be denoted with <code>NA</code>.  The sampling of
+missing values requires co-sampling the functions, <code>bb</code>, while these functions are 
+marginalized out for sampling under the case of no missing data.  So the sampler will run
+more slowly in the case of intermittent missingness.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ipr</code></td>
+<td>
+<p>An optional input vector of inclusion probabilities for each observation unit in the case
+the observed data were acquired through an informative sampling design, so that unbiased
+inference about the population requires adjustments to the observed sample.  Defaults to
+<code>ipr = rep(1,nrow(y))</code> indicating an iid sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_points</code></td>
+<td>
+<p>Inputs a vector of common time points at which the collections of functions were
+observed (with the possibility of intermittent missingness).  The length of <code>time_points</code>
+should be equal to the number of columns in the data matrix, <code>y</code>.  Defaults to 
+<code>time_points = 1:ncol(y)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gp_cov</code></td>
+<td>
+<p>A vector of length <code>L</code> to select the covariance function for each of
+<code>L</code> terms. Allowed inputs are <code>c("rq","se","sn")</code>, where "rq" denotes the 
+rational quadratic covariance function, "se", the square exponential, and "sn", seasonality.
+The seasonality covariance is a quasi-periodic multiplicative combination of a fixed length-
+scale periodic covariance kernel (where the period length is specified in 'sn_order') and
+a squared exponential kernel (of varying length-scale) to allow the periodicity in the seasonal
+term to evolve.  e.g. If 4 terms are wanted - 2 trend terms with "se" and 2 seasonality terms, the input would be
+<code>gp_cov = c("se","se","sn","sn")</code>. Defaults to <code>gp_cov = "rq"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sn_order</code></td>
+<td>
+<p>A vector of length <code>L_s</code>, the number of terms in <code>gp_cov</code> where <code>"sn"</code>
+is selected, that denotes the seasonality order for each term; e.g. if the two "sn" terms above 
+are for 3 and 12 month seasonality, respectively, for monthly data, then 
+<code>sn_order = c(3,12)</code>. Defaults to <code>sn_order = NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>jitter</code></td>
+<td>
+<p>A scalar numerical value added to the diagonal elements of the T x T GP covariance 
+matrix to stabilize computation.  Defaults to <code>jitter = 0.01</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gp_shape</code></td>
+<td>
+<p>The shape parameter of the Gamma base distribution for the DP prior on
+the P x N matrix of GP covariance parameters (where P 
+denotes the number of parameters for each of the N experimental units).
+Defaults to <code>gp_shape = 1</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gp_rate</code></td>
+<td>
+<p>The rate parameter of the Gamma base distribution on GP covariance parameters. 
+Defaults to <code>gp_rate = 1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>noise_shape</code></td>
+<td>
+<p>The shape parameter of the Gamma base distribution on <code>tau_e</code>, the
+model noise precision parameter. Defaults to <code>noise_shape = 3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>noise_rate</code></td>
+<td>
+<p>The rate parameter of the Gamma base distribution on <code>tau_e</code>, the model
+noise precision parameter.  Defaults to <code>noise_rate = 1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dp_shape</code></td>
+<td>
+<p>The shape parameter for the Gamma prior on the DP concentration parameter, 
+<code>conc</code>. Defaults to <code>dp_shape = 1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dp_rate</code></td>
+<td>
+<p>The rate parameter for the Gamma prior on the DP concentration parameter, 
+<code>conc</code>. Defaults to <code>dp_rate = 1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M_init</code></td>
+<td>
+<p>Starting number of clusters of <code>nrow(y)</code> units to initialize sampler.
+Defaults to <code>M_init = nrow(y)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>The lower end of the range to be used in conditionally sampling the GP covariance 
+parameters (<code>kappa,tau_e</code>) in the slice sampler.  Defaults to <code>lower = 0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>The upper end of the range to be used in conditionally sampling the GP covariance
+parameters (<code>kappa,tau_e</code>) in the slice sampler.  Defaults to <code>upper = 1e10</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sub_size</code></td>
+<td>
+<p>Integer vector whose length, <code>n</code>, equals the number of progressively coarser
+GP covariance matrices to use for tempered sampling steps in an alternative space to sample the
+GP covariance parameters.  Each entry denotes the number of sub-sample time points in <code>T</code>
+to draw under a latin hypercube design from the <em>N x T</em> data matrix, <code>y</code> to employ
+for that distribution; for example, suppose <code>T = 300</code>.  <code>sub_size = c(100,50)</code>, 
+would randomly select first <code>100</code> and then <code>50</code> time points from <code>y</code> to use
+for each of the <code>n = 2</code> distributions.  Defaults to 
+<code>sub_size = c(floor(0.25*T),floor(0.1*T))</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w_star</code></td>
+<td>
+<p>Integer value denoting the number of cluster locations to sample ahead of 
+observations in the auxiliary Gibbs sampler used to sample the number of clusters
+and associated cluster assignments.  A higher value reduces samplin auto-correlation, but
+increases computational burden.  Defaults to <code>w_star = 2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>Numeric value denoting the step width used to construct the interval from
+which to draw a sample for each GP covariance parameter in the slice sampler.  This
+value is adaptively updated in the sampler tuning stage for each parameter to be equal
+to the difference in the 0.95 and 0.05 sample quantiles for each of 5 block updates.
+Defaults to <code>w = 1.5</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.iter</code></td>
+<td>
+<p>Total number of MCMC iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.burn</code></td>
+<td>
+<p>Number of MCMC iterations to discard.
+<code>gpdpgrow</code> will return <code>(n.iter - n.burn)</code> posterior samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.thin</code></td>
+<td>
+<p>Gap between successive sampling iterations to save.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.tune</code></td>
+<td>
+<p>Number of iterations (before ergodic chain instantiated) to adapt <code>w</code>, separately,
+for each covariance term, <code>p = 1,...,P</code>.  Sets each <code>w_p</code> to lie in the 90 percent credible 
+interval computed from the tuning sample (that is divided into 5 blocks so that <code>w_p</code> is 
+successively updated in each block of runs).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress</code></td>
+<td>
+<p>A boolean value denoting whether to display a progress bar during model execution.
+Defaults to <code>progress = TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_move</code></td>
+<td>
+<p>A boolean value denoting whether to sample the GP function, <code>bb</code>, in <em>T x 1</em>
+Gibbs steps <code>b_move = TRUE</code> or through elliptical slice sampling.  
+Defaults to <code>b_move = TRUE</code>. Only used in the case there is any intermittent missingness;
+otherwise <code>bb</code> is marginalized out of the sampler and post-sampled from the its predictive
+distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cluster</code></td>
+<td>
+<p>A boolean value denoting whether to employ DP mix model over set of GP functions or
+to just use GP model with no clustering of covariance function parameters.  
+Defaults to <code>cluster = TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s</code></td>
+<td>
+<p>An <em>N x 1</em> integer vector that inputs a fixed clustering, rather than sampling it.
+Defaults to <code>s = NULL</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>S3 <code>gpdpgrow</code> object, for which many methods are available to return and view results.  Generic functions applied
+to an object, <code>res</code> of class <code>gpdpgrow</code>, includes:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>samples(res)</code></td>
+<td>
+<p> contains (<code>n.iter - n.burn</code>) posterior sampling iterations 
+for every model parameter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resid(res)</code></td>
+<td>
+<p> contains the model residuals.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>The intended focus for this package are data composed of observed noisy functions (each of 
+length <code>T</code>) for a set of experimental units where the functions may express dependence
+among the experimental units
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Terrance Savitsky <a href="mailto:tds151@gmail.com">tds151@gmail.com</a> Daniell Toth <a href="mailto:danielltoth@yahoo.com">danielltoth@yahoo.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>T. D. Savitsky and D. Toth (2014) Bayesian Non-parametric Models for Collections of Time-
+indexed Functions. submitted to: JRSS Series A (Statistics in Society).
+</p>
+<p>T. D. Savitsky (2014) Bayesian Non-parametric Functional Mixture
+Estimation for Time-indexed data. submitted to: Annals of Applied Statistics.
+</p>
+<p>T. D. Savitsky (2014) Bayesian Non-Parametric Mixture Estimation for Time-Indexed Functional
+Data for <code>R</code>. Submitted to: Journal of Statistical Software.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gmrfdpgrow</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">{
+library(growfunctions)
+
+## load the monthly employment count data for a collection of 
+## U.S. states from the Current 
+## Population Survey (cps)
+data(cps)
+## subselect the columns of N x T, y, associated with 
+## the years 2011 - 2013
+## to examine the state level employment 
+## levels during the "great recession"
+y_short   &lt;- cps$y[,(cps$yr_label %in% c(2011:2013))]
+
+## uses default setting of a single "rational quadratic" covariance
+## run for 500 iterations, with half discarded as burn-in to 
+## obtain a more useful result.
+res_gp               &lt;- gpdpgrow(y = y_short, 
+                                 n.iter = 4, 
+                                 n.burn = 1, 
+                                 n.thin = 1, 
+                                 n.tune = 0)  
+
+## Two plots of estimated functions, 
+## 1. faceted by cluster 
+## 2. fitted functions vs noisy observations
+## first plot will plot estimated denoised function, 
+## bb_i, for a single (randomly-selected) "state"
+fit_plots_gp        &lt;- cluster_plot( object = res_gp,  
+                           units_name = "state", 
+                           units_label = cps$st, 
+                           single_unit = TRUE, 
+                           credible = TRUE )
+## second plot will randomly select 6 states 
+## and plot their estimated denoised functions, bb_i.
+## with setting "single_unit = FALSE". 
+## (Option "num_plot" may be set to plot 
+## any integer number of 
+## randomly-selected units.)
+fit_plots_gp        &lt;- cluster_plot( object = res_gp,  
+                                     units_name = "state", 
+                                     units_label = cps$st, 
+                                     single_unit = FALSE, 
+                                     credible = TRUE )
+
+}
+</code></pre>
+
+
+</div>

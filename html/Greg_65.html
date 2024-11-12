@@ -1,0 +1,153 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simpleRmsAnova</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A simpler latex output of the latex.anova.rms</h2>
+
+<h3>Description</h3>
+
+<p>The original problem is that the anova default function
+output is very detailed and cause a complaint in Sweave/knitr that
+\hbox is overfull. It basically changes capitalized TOTAL,
+TOTAL INTERACTION and TOTAL NONLINEAR INTERACTION into lower
+case letters. It also deletes the (Factor + Higher Order Factors).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">simpleRmsAnova(
+  anova_output,
+  subregexps,
+  digits = 4,
+  pval_lim.sig = 10^-4,
+  rowlabel = "",
+  ...
+)
+
+## S3 method for class 'simpleRmsAnova'
+print(x, html = TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>anova_output</code></td>
+<td>
+<p>An object from the <code>anova()</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subregexps</code></td>
+<td>
+<p>A 2 column matrix with sub() regular expressions
+to search for and their substitutions. The regular expression
+should be located in column 1 and the substitution in column
+2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Number of digits in using the round</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pval_lim.sig</code></td>
+<td>
+<p>The threshold before setting "&lt;", default is &lt; 0.0001</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rowlabel</code></td>
+<td>
+<p>The label of the rows</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Passed on to latex() or htmlTable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>The output object from the SimpleRmsAnova function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>html</code></td>
+<td>
+<p>If HTML output through the htmlTable should be used
+instead of traditional latex() function</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>void See the latex() function
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># ** Borrowed code from the lrm example **
+
+# Fit a logistic model containing predictors age, blood.pressure, sex
+# and cholesterol, with age fitted with a smooth 5-knot restricted cubic
+# spline function and a different shape of the age relationship for males
+# and females.
+
+library(rms)
+n &lt;- 1000 # define sample size
+set.seed(17) # so can reproduce the results
+age &lt;- rnorm(n, 50, 10)
+blood.pressure &lt;- rnorm(n, 120, 15)
+cholesterol &lt;- rnorm(n, 200, 25)
+sex &lt;- factor(sample(c("female", "male"), n, TRUE))
+label(age) &lt;- "Age" # label is in Hmisc
+label(cholesterol) &lt;- "Total Cholesterol"
+label(blood.pressure) &lt;- "Systolic Blood Pressure"
+label(sex) &lt;- "Sex"
+units(cholesterol) &lt;- "mg/dl" # uses units.default in Hmisc
+units(blood.pressure) &lt;- "mmHg"
+
+# To use prop. odds model, avoid using a huge number of intercepts by
+# grouping cholesterol into 40-tiles
+
+# Specify population model for log odds that Y = 1
+L &lt;- .4 * (sex == "male") + .045 * (age - 50) +
+     (log(cholesterol - 10) - 5.2) * (-2 * (sex == "female") + 2 * (sex == "male"))
+# Simulate binary y to have Prob(y = 1) = 1/[1+exp(-L)]
+y &lt;- ifelse(runif(n) &lt; plogis(L), 1, 0)
+cholesterol[1:3] &lt;- NA # 3 missings, at random
+
+ddist &lt;- datadist(age, blood.pressure, cholesterol, sex)
+options(datadist = "ddist")
+
+fit_lrm &lt;- lrm(y ~ blood.pressure + sex * (age + rcs(cholesterol, 4)),
+     x = TRUE, y = TRUE
+)
+
+a_out &lt;- anova(fit_lrm,
+     dec.F = 1,
+     ss = FALSE
+)
+
+simpleRmsAnova(a_out,
+     subregexps = rbind(
+          c("age", "Age"),
+          c("cholesterol", "Cholesterol"),
+          c("sex", "Sex")
+     ),
+     caption = "Anova output for a logistic regression model"
+)
+</code></pre>
+
+
+</div>

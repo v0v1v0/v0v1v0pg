@@ -1,0 +1,297 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>find_MAP</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Find the Maximum A Posteriori Estimation</h2>
+
+<h3>Description</h3>
+
+<p>Use one of the optimization algorithms to find the permutation that
+maximizes a posteriori probability based on observed data.
+Not all optimization algorithms will always find the MAP, but they try
+to find a significant value. More information can be found in
+the "<strong>Possible algorithms to use as optimizers</strong>" section below.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">find_MAP(
+  g,
+  max_iter = NA,
+  optimizer = NA,
+  show_progress_bar = TRUE,
+  save_all_perms = FALSE,
+  return_probabilities = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>g</code></td>
+<td>
+<p>Object of a <code>gips</code> class.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_iter</code></td>
+<td>
+<p>The number of iterations for an algorithm to perform.
+At least 2. For <code>optimizer = "BF"</code>, it is not used;
+for <code>optimizer = "MH"</code>, it has to be finite;
+for <code>optimizer = "HC"</code>, it can be infinite.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimizer</code></td>
+<td>
+<p>The optimizer for the search of the maximum posteriori:
+</p>
+
+<ul>
+<li> <p><code>"BF"</code> (the default for unoptimized <code>g</code> with <code style="white-space: pre;">⁠perm size &lt;= 9⁠</code>) - Brute Force;
+</p>
+</li>
+<li> <p><code>"MH"</code> (the default for unoptimized <code>g</code> with <code style="white-space: pre;">⁠perm size &gt; 10⁠</code>) - Metropolis-Hastings;
+</p>
+</li>
+<li> <p><code>"HC"</code> - Hill Climbing;
+</p>
+</li>
+<li> <p><code>"continue"</code> (the default for optimized <code>g</code>) - The same as
+the <code>g</code> was optimized by (see Examples).
+</p>
+</li>
+</ul>
+<p>See the <strong>Possible algorithms to use as optimizers</strong>
+section below for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show_progress_bar</code></td>
+<td>
+<p>A boolean.
+Indicate whether or not to show the progress bar:
+</p>
+
+<ul>
+<li>
+<p> When <code>max_iter</code> is infinite, <code>show_progress_bar</code> has to be <code>FALSE</code>;
+</p>
+</li>
+<li>
+<p> When <code>return_probabilities = TRUE</code>, then
+shows an additional progress bar for the time
+when the probabilities are calculated.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_all_perms</code></td>
+<td>
+<p>A boolean. <code>TRUE</code> indicates saving
+a list of all permutations visited during optimization.
+This can be useful sometimes but need a lot more RAM.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_probabilities</code></td>
+<td>
+<p>A boolean. <code>TRUE</code> can only be provided
+only when <code>save_all_perms = TRUE</code>. For:
+</p>
+
+<ul>
+<li> <p><code>optimizer = "MH"</code> - use Metropolis-Hastings results to
+estimate posterior probabilities;
+</p>
+</li>
+<li> <p><code>optimizer = "BF"</code> - use brute force results to
+calculate exact posterior probabilities.
+</p>
+</li>
+</ul>
+<p>These additional calculations are costly, so a second and third
+progress bar is shown (when <code>show_progress_bar = TRUE</code>).
+</p>
+<p>To examine probabilities after optimization,
+call <code>get_probabilities_from_gips()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>find_MAP</code> can produce a warning when:
+</p>
+
+<ul>
+<li>
+<p> the optimizer "hill_climbing" gets to the end of
+its <code>max_iter</code> without converging.
+</p>
+</li>
+<li>
+<p> the optimizer will find the permutation with smaller <code>n0</code> than
+<code>number_of_observations</code> (for more information on what it means,
+see <strong><code class="reqn">C_\sigma</code> and <code>n0</code></strong> section
+in <code>vignette("Theory", package = "gips")</code> or in its
+<a href="https://przechoj.github.io/gips/articles/Theory.html">pkgdown page</a>).
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>Returns an optimized object of a <code>gips</code> class.
+</p>
+
+
+<h3>Possible algorithms to use as optimizers</h3>
+
+<p>For a in-depth explanation, see in
+<code>vignette("Optimizers", package = "gips")</code> or in its
+<a href="https://przechoj.github.io/gips/articles/Optimizers.html">pkgdown page</a>.
+</p>
+<p>For every algorithm, there are some aliases available.
+</p>
+
+<ul>
+<li> <p><code>"brute_force"</code>, <code>"BF"</code>, <code>"full"</code> - use
+the <strong>Brute Force</strong> algorithm that checks the whole permutation
+space of a given size. This algorithm will find
+the actual Maximum A Posteriori Estimation, but it is
+very computationally expensive for bigger spaces.
+We recommend Brute Force only for <code>p &lt;= 9</code>.
+For the time the Brute Force takes on our machines, see in
+<code>vignette("Optimizers", package = "gips")</code> or in its
+<a href="https://przechoj.github.io/gips/articles/Optimizers.html">pkgdown page</a>.
+</p>
+</li>
+<li> <p><code>"Metropolis_Hastings"</code>, <code>"MH"</code> - use
+the <strong>Metropolis-Hastings</strong> algorithm;
+<a href="https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm">see Wikipedia</a>.
+The algorithm will draw a random transposition in every iteration
+and consider changing the current state (permutation).
+When the <code>max_iter</code> is reached, the algorithm will return the best
+permutation calculated as the MAP Estimator. This implements
+the <a href="https://arxiv.org/abs/2004.03503"><em>Second approach</em> from references, section 4.1.2</a>.
+This algorithm used in this context is a special case of the
+<strong>Simulated Annealing</strong> the user may be more familiar with;
+<a href="https://en.wikipedia.org/wiki/Simulated_annealing">see Wikipedia</a>.
+</p>
+</li>
+<li> <p><code>"hill_climbing"</code>, <code>"HC"</code> - use
+the <strong>hill climbing</strong> algorithm;
+<a href="https://en.wikipedia.org/wiki/Hill_climbing">see Wikipedia</a>.
+The algorithm will check all transpositions in every iteration and
+go to the one with the biggest a posteriori value.
+The optimization ends when all <em>neighbors</em> will have a smaller
+a posteriori value. If the <code>max_iter</code> is reached before the end,
+then the warning is shown, and it is recommended to continue
+the optimization on the output of the <code>find_MAP()</code> with
+<code>optimizer = "continue"</code>; see examples.
+Remember that <code>p*(p-1)/2</code> transpositions will be checked
+in every iteration. For bigger <code>p</code>, this may be costly.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Piotr Graczyk, Hideyuki Ishi, Bartosz Kołodziejek, Hélène Massam.
+"Model selection in the space of Gaussian models invariant by symmetry."
+The Annals of Statistics, 50(3) 1747-1774 June 2022.
+<a href="https://arxiv.org/abs/2004.03503">arXiv link</a>;
+<a href="https://doi.org/10.1214/22-AOS2174">doi:10.1214/22-AOS2174</a>
+</p>
+
+
+<h3>See Also</h3>
+
+
+<ul>
+<li> <p><code>gips()</code> - The constructor of a <code>gips</code> class.
+The <code>gips</code> object is used as the <code>g</code> parameter of <code>find_MAP()</code>.
+</p>
+</li>
+<li> <p><code>plot.gips()</code> - Practical plotting function for
+visualizing the optimization process.
+</p>
+</li>
+<li> <p><code>summary.gips()</code> - Summarize the output of optimization.
+</p>
+</li>
+<li> <p><code>AIC.gips()</code>, <code>BIC.gips()</code> - Get the Information Criterion
+of the found model.
+</p>
+</li>
+<li> <p><code>get_probabilities_from_gips()</code> - When
+<code>find_MAP(return_probabilities = TRUE)</code> was called,
+probabilities can be extracted with this function.
+</p>
+</li>
+<li> <p><code>log_posteriori_of_gips()</code> - The function that the optimizers
+of <code>find_MAP()</code> tries to find the argmax of.
+</p>
+</li>
+<li> <p><code>forget_perms()</code> - When the <code>gips</code> object was optimized
+with <code>find_MAP(save_all_perms = TRUE)</code>, it will be of
+considerable size in RAM. <code>forget_perms()</code> can make such an object
+lighter in memory by forgetting the permutations it considered.
+</p>
+</li>
+<li> <p><code>vignette("Optimizers", package = "gips")</code> or its
+<a href="https://przechoj.github.io/gips/articles/Optimizers.html">pkgdown page</a> -
+A place to learn more about
+the available optimizers.
+</p>
+</li>
+<li> <p><code>vignette("Theory", package = "gips")</code> or its
+<a href="https://przechoj.github.io/gips/articles/Theory.html">pkgdown page</a> -
+A place to learn more about
+the math behind the <code>gips</code> package.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">require("MASS") # for mvrnorm()
+
+perm_size &lt;- 5
+mu &lt;- runif(perm_size, -10, 10) # Assume we don't know the mean
+sigma_matrix &lt;- matrix(
+  data = c(
+    1.0, 0.8, 0.6, 0.6, 0.8,
+    0.8, 1.0, 0.8, 0.6, 0.6,
+    0.6, 0.8, 1.0, 0.8, 0.6,
+    0.6, 0.6, 0.8, 1.0, 0.8,
+    0.8, 0.6, 0.6, 0.8, 1.0
+  ),
+  nrow = perm_size, byrow = TRUE
+) # sigma_matrix is a matrix invariant under permutation (1,2,3,4,5)
+number_of_observations &lt;- 13
+Z &lt;- MASS::mvrnorm(number_of_observations, mu = mu, Sigma = sigma_matrix)
+S &lt;- cov(Z) # Assume we have to estimate the mean
+
+g &lt;- gips(S, number_of_observations)
+
+g_map &lt;- find_MAP(g, max_iter = 5, show_progress_bar = FALSE, optimizer = "Metropolis_Hastings")
+g_map
+
+g_map2 &lt;- find_MAP(g_map, max_iter = 5, show_progress_bar = FALSE, optimizer = "continue")
+
+if (require("graphics")) {
+  plot(g_map2, type = "both", logarithmic_x = TRUE)
+}
+
+g_map_BF &lt;- find_MAP(g, show_progress_bar = FALSE, optimizer = "brute_force")
+summary(g_map_BF)
+</code></pre>
+
+
+</div>

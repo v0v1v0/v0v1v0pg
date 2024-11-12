@@ -1,0 +1,122 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>factor_weights</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Factor weights</h2>
+
+<h3>Description</h3>
+
+<p>Factor weights to turn the generalized mean of a product into the product
+of generalized means. Useful for price-updating the weights in a
+generalized-mean index.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">factor_weights(r)
+
+update_weights(x, w = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>A finite number giving the order of the generalized mean.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A strictly positive numeric vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>A strictly positive numeric vector of weights, the same length as
+<code>x</code>. The default is to equally weight each element of <code>x</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function <code>factor_weights(r)</code> returns a function to compute weights
+<code>u(x, w)</code> such that
+</p>
+<pre>generalized_mean(r)(x * y, w) ==
+  generalized_mean(r)(x, w) * generalized_mean(r)(y, u(x, w))</pre>
+<p>This generalizes the result in section C.5 of Chapter 9 of the PPI Manual
+for chaining the Young index, and gives a way to chain generalized-mean
+price indexes over time.
+</p>
+<p>Factoring weights with <code>r = 1</code> sometimes gets called price-updating
+weights; <code>update_weights()</code> simply calls <code>factor_weights(1)()</code>.
+</p>
+<p>Factoring weights return a value that is the same length as <code>x</code>,
+so any missing values in <code>x</code> or the weights will return <code>NA</code>.
+Unless all values are <code>NA</code>, however, the result for will still satisfy
+the above identity when <code>na.rm = TRUE</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>factor_weights()</code> return a function:
+</p>
+<pre>function(x, w = NULL){...}</pre>
+<p><code>update_weights()</code> returns a numeric vector the same length as <code>x</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>ILO, IMF, OECD, UNECE, and World Bank. (2004).
+<em>Producer Price Index Manual: Theory and Practice</em>.
+International Monetary Fund.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>generalized_mean()</code> for the generalized mean.
+</p>
+<p><code>grouped()</code> to make these functions operate on grouped data.
+</p>
+<p>Other weights functions: 
+<code>scale_weights()</code>,
+<code>transmute_weights()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">x &lt;- 1:3
+y &lt;- 4:6
+w &lt;- 3:1
+# Factor the harmonic mean by chaining the calculation
+
+harmonic_mean(x * y, w)
+harmonic_mean(x, w) * harmonic_mean(y, factor_weights(-1)(x, w))
+
+# The common case of an arithmetic mean
+
+arithmetic_mean(x * y, w)
+arithmetic_mean(x, w) * arithmetic_mean(y, update_weights(x, w))
+
+# In cases where x and y have the same order, Chebyshev's
+# inequality implies that the chained calculation is too small
+
+arithmetic_mean(x * y, w) &gt;
+  arithmetic_mean(x, w) * arithmetic_mean(y, w)
+
+</code></pre>
+
+
+</div>

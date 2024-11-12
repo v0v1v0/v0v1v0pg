@@ -1,0 +1,505 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cv.grpnet</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Cross-Validation for grpnet
+</h2>
+
+<h3>Description</h3>
+
+<p>Implements k-fold cross-validation for <code>grpnet</code> to find the regularization parameters that minimize the prediction error (deviance, mean squared error, mean absolute error, or misclassification rate).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cv.grpnet(x, ...)
+
+## Default S3 method:
+cv.grpnet(x, 
+          y, 
+          group,
+          weights = NULL,
+          offset = NULL,
+          alpha = c(0.01, 0.25, 0.5, 0.75, 1),
+          gamma = c(3, 4, 5),
+          type.measure = NULL,
+          nfolds = 10, 
+          foldid = NULL,
+          same.lambda = FALSE,
+          parallel = FALSE, 
+          cluster = NULL, 
+          verbose = interactive(), 
+          adaptive = FALSE,
+          power = 1,
+          ...)
+           
+## S3 method for class 'formula'
+cv.grpnet(formula,
+          data, 
+          use.rk = TRUE,
+          weights = NULL,
+          offset = NULL,
+          alpha = c(0.01, 0.25, 0.5, 0.75, 1),
+          gamma = c(3, 4, 5),
+          type.measure = NULL,
+          nfolds = 10, 
+          foldid = NULL, 
+          same.lambda = FALSE,
+          parallel = FALSE, 
+          cluster = NULL, 
+          verbose = interactive(), 
+          adaptive = FALSE,
+          power = 1,
+          ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+
+<p>Model (design) matrix of dimension <code>nobs</code> by <code>nvars</code> (<code class="reqn">n \times p</code>).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+
+<p>Response vector of length <code class="reqn">n</code>. Matrix inputs are allowed for binomial and multinomial families (see "Binomial and multinomial" section in <code>grpnet</code>).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+
+<p>Group label vector (factor, character, or integer) of length <code class="reqn">p</code>. Predictors with the same label are grouped together for regularization.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+
+<p>Model formula: a symbolic description of the model to be fitted. Uses the same syntax as <code>lm</code> and <code>glm</code>. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>Optional data frame containing the variables referenced in <code>formula</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use.rk</code></td>
+<td>
+
+<p>If <code>TRUE</code> (default), the <code>rk.model.matrix</code> function is used to build the model matrix. Otherwise, the <code>model.matrix</code> function is used to build the model matrix. Additional arguments to the <code>rk.model.matrix</code> function can be passed via the <code>...</code> argument.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+
+<p>Optional vector of length <code class="reqn">n</code> with non-negative weights to use for weighted (penalized) likelihood estimation. Defaults to a vector of ones.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+
+<p>Optional vector of length <code class="reqn">n</code> with an a priori known term to be included in the model's linear predictor. Defaults to a vector of zeros.  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+
+<p>Scalar or vector specifying the elastic net tuning parameter <code class="reqn">\alpha</code>. If <code>alpha</code> is a vector (default), then (a) the same <code>foldid</code> is used to compute the cross-validation error for each <code class="reqn">\alpha</code>, and (b) the solution for the optimal <code class="reqn">\alpha</code> is returned. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+
+<p>Scalar or vector specifying the penalty hyperparameter <code class="reqn">\gamma</code> for MCP or SCAD. If <code>gamma</code> is a vector (default), then (a) the same <code>foldid</code> is used to compute the cross-validation error for each <code class="reqn">\gamma</code>, and (b) the solution for the optimal <code class="reqn">\gamma</code> is returned. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type.measure</code></td>
+<td>
+
+<p>Loss function for cross-validation. Options include: <code>"deviance"</code> for model deviance, <code>"mse"</code> for mean squared error, <code>"mae"</code> for mean absolute error, or <code>"class"</code> for classification error. Note that <code>"class"</code> is only available for binomial and multinomial families. The default is classification error (for binomial and multinomial) or deviance (others).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nfolds</code></td>
+<td>
+
+<p>Number of folds for cross-validation. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>foldid</code></td>
+<td>
+
+<p>Optional vector of length <code class="reqn">n</code> giving the fold identification for each observation. Must be coercible into a factor. After coersion, the <code>nfolds</code> argument is defined as <code>nfolds = nlevels(foldid)</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>same.lambda</code></td>
+<td>
+
+<p>Logical specfying if the same <code class="reqn">\lambda</code> sequence should be used for fitting the model to each fold's data. If <code>FALSE</code> (default), the <code class="reqn">\lambda</code> sequence is determined separately holding out each fold, and the <code class="reqn">\lambda</code> sequence from the full model is used to align the predictions. If <code>TRUE</code>, the <code class="reqn">\lambda</code> sequence from the full model is used to fit the model for each fold. The default often provides better (i.e., more stable) computational performance.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+
+<p>Logical specifying if sequential computing (default) or parallel computing should be used. If <code>TRUE</code>, the fitting for each fold is parallelized.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cluster</code></td>
+<td>
+
+<p>Optional cluster to use for parallel computing. If <code>parallel = TRUE</code> and <code>cluster = NULL</code>, then the cluster is defined <code>cluster = makeCluster(2L)</code>, which uses two cores. Recommended usage: <code>cluster = makeCluster(detectCores())</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>Logical indicating if the fitting progress should be printed. Defaults to <code>TRUE</code> in interactive sessions and <code>FALSE</code> otherwise. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adaptive</code></td>
+<td>
+
+<p>Logical indicating if the adaptive group elastic net should be used (see Note).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>power</code></td>
+<td>
+
+<p>If <code>adaptive = TRUE</code>, then the adaptive penalty weights are defined by dividing the original penalty weights by <code>tapply(coef, group, norm, type = "F")^power</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Optional additional arguments for <code>grpnet</code> (e.g., <code>standardize</code>, <code>penalty.factor</code>, etc.)
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function calls the <code>grpnet</code> function <code>nfolds+1</code> times: once on the full dataset to obtain the <code>lambda</code> sequence, and once holding out each fold's data to evaluate the prediction error. The syntax of (the default S3 method for) this function closely mimics that of the <code>cv.glmnet</code> function in the <b>glmnet</b> package (Friedman, Hastie, &amp; Tibshirani, 2010). 
+</p>
+<p>Let <code class="reqn">\mathbf{D}_u = \{\mathbf{y}_u, \mathbf{X}_u\}</code> denote the <code class="reqn">u</code>-th fold's data, let <code class="reqn">\mathbf{D}_{[u]} = \{\mathbf{y}_{[u]}, \mathbf{X}_{[u]}\}</code> denote the full dataset excluding the <code class="reqn">u</code>-th fold's data, and let <code class="reqn">\boldsymbol\beta_{\lambda [u]}</code> denote the coefficient estimates obtained from fitting the model to <code class="reqn">\mathbf{D}_{[u]}</code> using the regularization parameter <code class="reqn">\lambda</code>. 
+</p>
+<p>The cross-validation error for the <code class="reqn">u</code>-th fold is defined as
+</p>
+<p style="text-align: center;"><code class="reqn">E_u(\lambda) = C(\boldsymbol\beta_{\lambda [u]} , \mathbf{D}_u)</code>
+</p>
+
+<p>where <code class="reqn">C(\cdot , \cdot)</code> denotes the cross-validation loss function that is specified by <code>type.measure</code>. For example, the <code>"mse"</code> loss function is defined as
+</p>
+<p style="text-align: center;"><code class="reqn">C(\boldsymbol\beta_{\lambda [u]} , \mathbf{D}_u) = \| \mathbf{y}_u - \mathbf{X}_u \boldsymbol\beta_{\lambda [u]} \|^2</code>
+</p>
+
+<p>where <code class="reqn">\| \cdot \|</code> denotes the L2 norm.
+</p>
+<p>The mean cross-validation error <code>cvm</code> is defined as
+</p>
+<p style="text-align: center;"><code class="reqn">\bar{E}(\lambda) = \frac{1}{v} \sum_{u = 1}^v E_u(\lambda) </code>
+</p>
+
+<p>where <code class="reqn">v</code> is the total number of folds. The standard error <code>cvsd</code> is defined as
+</p>
+<p style="text-align: center;"><code class="reqn">S(\lambda) = \sqrt{ \frac{1}{v (v - 1)} \sum_{u=1}^v (E_u(\lambda) - \bar{E}(\lambda))^2 } </code>
+</p>
+
+<p>which is the classic definition of the standard error of the mean. 
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>regularization parameter sequence for the full data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cvm</code></td>
+<td>
+<p>mean cross-validation error for each <code>lambda</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cvsd</code></td>
+<td>
+<p>estimated standard error of <code>cvm</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cvup</code></td>
+<td>
+<p>upper curve: <code>cvm + cvsd</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cvlo</code></td>
+<td>
+<p>lower curve: <code>cvm - cvsd</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nzero</code></td>
+<td>
+<p>number of non-zero groups for each <code>lambda</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grpnet.fit</code></td>
+<td>
+<p>fitted grpnet object for the full data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.min</code></td>
+<td>
+<p>value of <code>lambda</code> that minimizes <code>cvm</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.1se</code></td>
+<td>
+<p>largest <code>lambda</code> such that <code>cvm</code> is within one <code>cvsd</code> from the minimum (see Note)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>index</code></td>
+<td>
+<p>two-element vector giving the indices of <code>lambda.min</code> and <code>lambda.1se</code> in the <code>lambda</code> vector, i.e., <code>c(minid, se1id)</code> as defined in the Note</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type.measure</code></td>
+<td>
+<p>loss function for cross-validation (used for plot label)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>matched call</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>runtime in seconds to perform k-fold CV tuning</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tune</code></td>
+<td>
+<p>data frame containing the tuning results, i.e., min(cvm) for each combo of <code>alpha</code> and/or <code>gamma</code></p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>When <code>adaptive = TRUE</code>, the adaptive group elastic net is used: <br>
+(1) an initial fit with <code>alpha = 0</code> estimates the <code>penalty.factor</code> <br>
+(2) a second fit using estimated <code>penalty.factor</code> is returned <br></p>
+<p><code>lambda.1se</code> is defined as follows: <br><code>minid &lt;- which.min(cvm)</code> <br><code>min1se &lt;- cvm[minid] + cvsd[minid]</code> <br><code>se1id &lt;- which(cvm &lt;= min1se)[1]</code> <br><code>lambda.1se &lt;- lambda[se1id]</code>
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Nathaniel E. Helwig &lt;helwig@umn.edu&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Friedman, J.,  Hastie, T., &amp; Tibshirani, R. (2010). Regularization paths for generalized linear models via coordinate descent. <em>Journal of Statistical Software, 33</em>(1), 1-22. <a href="https://doi.org/10.18637/jss.v033.i01">doi:10.18637/jss.v033.i01</a>
+</p>
+<p>Helwig, N. E. (2024). Versatile descent algorithms for group regularization and variable selection in generalized linear models. <em>Journal of Computational and Graphical Statistics</em>. <a href="https://doi.org/10.1080/10618600.2024.2362232">doi:10.1080/10618600.2024.2362232</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plot.cv.grpnet</code> for plotting the cross-validation error curve
+</p>
+<p><code>predict.cv.grpnet</code> for predicting from <code>cv.grpnet</code> objects
+</p>
+<p><code>grpnet</code> for fitting group elastic net regularization paths
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+######***######   family = "gaussian"   ######***######
+
+# load data
+data(auto)
+
+# 10-fold cv (formula method, response = mpg)
+set.seed(1)
+mod &lt;- cv.grpnet(mpg ~ ., data = auto)
+
+# print min and 1se solution info
+mod
+
+# plot cv error curve
+plot(mod)
+
+
+
+######***######   family = "binomial"   ######***######
+
+# load data
+data(auto)
+
+# redefine origin (Domestic vs Foreign)
+auto$origin &lt;- ifelse(auto$origin == "American", "Domestic", "Foreign")
+
+# 10-fold cv (default method, response = origin with 2 levels)
+set.seed(1)
+mod &lt;- cv.grpnet(origin ~ ., data = auto, family = "binomial")
+
+# print min and 1se solution info
+mod
+
+# plot cv error curve
+plot(mod)
+
+
+
+######***######   family = "multinomial"   ######***######
+
+# load data
+data(auto)
+
+# 10-fold cv (formula method, response = origin with 3 levels)
+set.seed(1)
+mod &lt;- cv.grpnet(origin ~ ., data = auto, family = "multinomial")
+
+# print min and 1se solution info
+mod
+
+# plot cv error curve
+plot(mod)
+
+
+
+######***######   family = "poisson"   ######***######
+
+# load data
+data(auto)
+
+# 10-fold cv (formula method, response = horsepower)
+set.seed(1)
+mod &lt;- cv.grpnet(horsepower ~ ., data = auto, family = "poisson")
+
+# print min and 1se solution info
+mod
+
+# plot cv error curve
+plot(mod)
+
+
+
+######***######   family = "negative.binomial"   ######***######
+
+# load data
+data(auto)
+
+# 10-fold cv (formula method, response = horsepower)
+set.seed(1)
+mod &lt;- cv.grpnet(horsepower ~ ., data = auto, family = "negative.binomial")
+
+# print min and 1se solution info
+mod
+
+# plot cv error curve
+plot(mod)
+
+
+
+######***######   family = "Gamma"   ######***######
+
+# load data
+data(auto)
+
+# 10-fold cv (formula method, response = origin)
+set.seed(1)
+mod &lt;- cv.grpnet(mpg ~ ., data = auto, family = "Gamma")
+
+# print min and 1se solution info
+mod
+
+# plot cv error curve
+plot(mod)
+
+
+
+######***######   family = "inverse.gaussian"   ######***######
+
+# load data
+data(auto)
+
+# 10-fold cv (formula method, response = origin)
+set.seed(1)
+mod &lt;- cv.grpnet(mpg ~ ., data = auto, family = "inverse.gaussian")
+
+# print min and 1se solution info
+mod
+
+# plot cv error curve
+plot(mod)
+
+
+</code></pre>
+
+
+</div>

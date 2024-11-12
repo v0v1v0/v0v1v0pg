@@ -1,0 +1,220 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gfa</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gibbs sampling for group factor analysis</h2>
+
+<h3>Description</h3>
+
+<p><code>gfa</code> returns posterior samples of group factor analysis model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gfa(Y, opts, K = NULL, projection = NULL, filename = "")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>Either </p>
+
+<ol>
+<li>
+<p>Data sources with co-occuring samples: a list of data
+matrices, where Y[[m]] is a numeric <code class="reqn">N \times D_m</code> matrix, or
+</p>
+</li>
+<li>
+<p>Data sources paired in two modes (some data sources share the
+samples of the first data source, and some share its features): A list with
+two elements structured as 1. The data collections Y[[1]] and
+Y[[2]] should be connected by sharing their first data source, i.e.
+Y[[1]][[1]] should equal the transpose of Y[[2]][[1]].
+</p>
+</li>
+</ol>
+<p>NOTE: The data features should have roughly zero mean and unit variance.
+If this is not the case, preprocessing with function
+<code>normalizeData</code> is recommended.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>opts</code></td>
+<td>
+<p>List of model options; see function <code>getDefaultOpts</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>The number of components (i.e. latent variables). Recommended to be
+set somewhat higher than the expected component number, so that the sampler
+can determine the model complexity by shutting down excessive components.
+High values result in high CPU time. Default: half of the minimum of the
+sample size and total data dimensionality.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>projection</code></td>
+<td>
+<p>Fixed projections. Only intended for sequential prediction
+use via function <code>sequentialGfaPrediction</code>. Default: NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filename</code></td>
+<td>
+<p>A string. If provided, will save the sampling chain to this
+file every 100 iterations. Default "", inducing no saving.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>GFA allows factor analysis of multiple data sources (i.e. data sets).
+The priors of the model can be set to infer bicluster structure
+from the data sources; see <code>getDefaultOpts</code>.
+Missing values (NAs) are inherently supported. They will not affect the model
+parameters, but can be predicted with function <code>reconstruction</code>,
+based on the observed values of the corresponding sample and feature.
+The association of a data source to each component is inferred based on
+the data. Letting only a subset of the components to explain a data source
+results in the posterior identifying relationships between any subset of the
+data sources. In the extreme cases, a component can explain relationships
+within a single data source only ("structured noise"), or across all the data
+sources.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list containing the model parameters - in case of pairing in two
+modes, each element is a list of length 2; one element for each mode.
+For most parameters, the final posterior sample is provided to aid in
+initial checks; all the posterior samples should be used for model
+analysis. The list elements are:   
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>W</code></td>
+<td>
+<p>The loading matrix (final posterior sample); <code class="reqn">D \times K</code>
+matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>The latent variables (final sample); <code class="reqn">N \times K</code> matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Z</code></td>
+<td>
+<p>The spike-and-slab parameters (final sample); <code class="reqn">D \times K</code>
+matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>The probability of slab in Z (final sample).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rz</code></td>
+<td>
+<p>The probability of slab in the spike-and-slab prior of X
+(final sample).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p>The noise precisions (final sample); D-element vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>The precisions of the projection weights W (final sample);
+<code class="reqn">D \times K</code> matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>The precisions of the latent variables X (final sample);
+<code class="reqn">N \times K</code> matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groups</code></td>
+<td>
+<p>A list denoting which features belong to each data source.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>D</code></td>
+<td>
+<p>Data dimensionalities; M-element vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>The number of components inferred. May be less than the initial K.</p>
+</td>
+</tr>
+</table>
+<p>and the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>posterior</code></td>
+<td>
+<p>the posterior samples of, by default, X, W and tau.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cost</code></td>
+<td>
+<p>The likelihood of all the posterior samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aic</code></td>
+<td>
+<p>The Akaike information criterion of all the posterior samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>opts</code></td>
+<td>
+<p>The options used for the GFA model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conv</code></td>
+<td>
+<p>An estimate of the convergence of the model's reconstruction
+based on Geweke diagnostic. Values significantly above 0.05 imply a
+non-converged model, and hence the need for a longer sampling chain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>The CPU time (in seconds) used to sample the model.</p>
+</td>
+</tr>
+</table>
+</div>

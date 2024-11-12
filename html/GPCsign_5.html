@@ -1,0 +1,175 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict class probability at newdata for a Gaussian Process Classification (GPC) model</h2>
+
+<h3>Description</h3>
+
+<p>Predicted probability of class 1. Optionally, conditional covariance based on a <code>gpcm</code> model and 95% quantiles of the probability of class 1 are returned.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'gpcm'
+predict(object, newdata, nsimu = NULL, 
+light.return = FALSE, checkNames=FALSE, seed = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>an object of class <code>gpcm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>a vector, matrix of points to be predicted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsimu</code></td>
+<td>
+<p>an optional integer indicating whether to resample latent GP at observation points and how many samples are required. If <code>NULL</code>, current samples are used. Default is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>light.return</code></td>
+<td>
+<p>an optional boolean. If <code>TRUE</code>, only <code>prob</code> is returned. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>checkNames</code></td>
+<td>
+<p>an optional boolean. If <code>TRUE</code>, a consistency test is performed between the names of newdata and the names of the experimental design (contained in <code>object@Xf</code>). Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>to fix the seed (used if <code>nsimu</code> is not <code>NULL</code>). Default is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>no other argument for this method</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>prob</code></td>
+<td>
+<p>the (averaged) probability of class 1 at <code>newdata</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower95, upper95</code></td>
+<td>
+<p> 95% confidence bounds for the probability at <code>newdata</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>probs</code></td>
+<td>
+<p>a matrix of sample predicted probabilities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Zsimu_var, Zsimu_mean</code></td>
+<td>
+<p>conditional variance vector and mean matrix of the latent GP at <code>newdata</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov</code></td>
+<td>
+<p>conditional covariance matrix at <code>newdata</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c</code></td>
+<td>
+<p>an auxiliary matrix, containing all the covariances between <code>newdata</code> and design points <code>Xf</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>an auxiliary vector, product of the inverse covariance matrix <code>invK</code> returned by <code>object</code> and the unconditional covariance matrix <code>c</code> between <code>newdata</code> and design points <code>Xf</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kz</code></td>
+<td>
+<p>an auxiliary matrix, corresponding to the unconditional covariance matrix at <code>newdata</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Morgane MENZ, Céline HELBERT, Victor PICHENY, François BACHOC. Contributors: Naoual SERRAJI.
+</p>
+
+
+<h3>References</h3>
+
+<p>Bachoc, F., Helbert, C. &amp; Picheny, V. Gaussian process optimization with failures: classification and convergence proof. <em>J Glob Optim</em> <b>78</b>, 483–506 (2020). <a href="https://doi.org/10.1007/s10898-020-00920-0">doi:10.1007/s10898-020-00920-0</a>.
+</p>
+<p>Roustant, O., Ginsbourger, D. &amp; Deville, Y. Contributors: Chevalier, C. , Richet, Y. DiceKriging: Kriging Methods for Computer Experiments. R package version 1.6.0. <a href="https://CRAN.R-project.org/package=DiceKriging">https://CRAN.R-project.org/package=DiceKriging</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># ----------------------------------
+# A 2D example - Branin-Hoo function
+# ----------------------------------
+
+# 30-points DoE, and the corresponding response
+d &lt;- 2
+nb_PX &lt;- 30
+require(DiceDesign)
+X &lt;- lhsDesign(nb_PX, d, seed = 123)$design
+Xopt &lt;- maximinSA_LHS(X, T0 = 10, c = 0.99, it = 1000)
+x &lt;- Xopt$design
+require(DiceKriging)
+fx &lt;- apply(x, 1, branin)
+s &lt;- ifelse(fx &lt; 14, -1, 1)
+f &lt;- s
+Xf &lt;- as.matrix(x)
+
+# Bulding GPC model
+GPCmodel &lt;- gpcm(f = f, Xf = Xf, coef.m = -0.1, coef.cov=c(0.8,0.5))
+
+# Graphics - Predict probabilities
+ngrid &lt;- 50
+x.grid &lt;- seq(0, 1., length.out = ngrid)
+grid &lt;- as.matrix(expand.grid(x.grid, x.grid))
+probabilities &lt;- predict(object = GPCmodel, newdata = grid)$prob
+filled.contour(x.grid, x.grid, matrix(probabilities, ngrid, ngrid),
+               color.palette = function(n) hcl.colors(n, "RdYlBu", rev = FALSE),
+               main = "probabilities map",
+               plot.axes = {
+                 axis(1)
+                 axis(2)
+                 points(Xf[f == 1, 1], Xf[f == 1, 2], col = "blue", pch = 21, bg = "blue")
+                 points(Xf[f == -1, 1], Xf[f == -1, 2], col = "red", pch = 21, bg = "red")
+               }
+)
+</code></pre>
+
+
+</div>

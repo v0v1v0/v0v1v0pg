@@ -1,0 +1,217 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cols_merge_n_pct</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Merge two columns to combine counts and percentages</h2>
+
+<h3>Description</h3>
+
+<p><code>cols_merge_n_pct()</code> is a specialized variant of <code>cols_merge()</code>,
+It operates by taking two columns that constitute both a count (<code>col_n</code>) and
+a fraction of the total population (<code>col_pct</code>) and merges them into a single
+column. What results is a column containing both counts and their associated
+percentages (e.g., <code style="white-space: pre;">⁠12 (23.2%)⁠</code>). The column specified in <code>col_pct</code> is
+dropped from the output table.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cols_merge_n_pct(data, col_n, col_pct, rows = everything(), autohide = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p><em>The gt table data object</em>
+</p>
+<p><code style="white-space: pre;">⁠obj:&lt;gt_tbl&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>This is the <strong>gt</strong> table object that is commonly created through use of the
+<code>gt()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col_n</code></td>
+<td>
+<p><em>Column to target for counts</em>
+</p>
+<p><code style="white-space: pre;">⁠&lt;column-targeting expression&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>The column that contains values for the count component. While select
+helper functions such as <code>starts_with()</code> and <code>ends_with()</code> can be used for
+column targeting, it's recommended that a single column name be used. This
+is to ensure that exactly one column is provided here.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col_pct</code></td>
+<td>
+<p><em>Column to target for percentages</em>
+</p>
+<p><code style="white-space: pre;">⁠&lt;column-targeting expression&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>The column that contains values for the percentage component. While select
+helper functions such as <code>starts_with()</code> and <code>ends_with()</code> can be used for
+column targeting, it's recommended that a single column name be used. This
+is to ensure that exactly one column is provided here. This column should
+be formatted such that percentages are displayed (e.g., with
+<code>fmt_percent()</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rows</code></td>
+<td>
+<p><em>Rows to target</em>
+</p>
+<p><code style="white-space: pre;">⁠&lt;row-targeting expression&gt;⁠</code> // <em>default:</em> <code>everything()</code>
+</p>
+<p>In conjunction with <code>columns</code>, we can specify which of their rows should
+participate in the merging process. The default <code>everything()</code> results in
+all rows in <code>columns</code> being formatted. Alternatively, we can supply a
+vector of row IDs within <code>c()</code>, a vector of row indices, or a select
+helper function (e.g. <code>starts_with()</code>, <code>ends_with()</code>, <code>contains()</code>,
+<code>matches()</code>, <code>num_range()</code>, and <code>everything()</code>). We can also use
+expressions to filter down to the rows we need
+(e.g., <code style="white-space: pre;">⁠[colname_1] &gt; 100 &amp; [colname_2] &lt; 50⁠</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>autohide</code></td>
+<td>
+<p><em>Automatic hiding of the <code>col_pct</code> column</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;logical&gt;⁠</code> // <em>default:</em> <code>TRUE</code>
+</p>
+<p>An option to automatically hide the column specified as <code>col_pct</code>. Any
+columns with their state changed to hidden will behave the same as before,
+they just won't be displayed in the finalized table.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>gt_tbl</code>.
+</p>
+
+
+<h3>Comparison with other column-merging functions</h3>
+
+<p>This function could be somewhat replicated using <code>cols_merge()</code>, however,
+<code>cols_merge_n_pct()</code> employs the following specialized semantics for <code>NA</code>
+and zero-value handling:
+</p>
+
+<ol>
+<li> <p><code>NA</code>s in <code>col_n</code> result in missing values for the merged
+column (e.g., <code>NA</code> + <code style="white-space: pre;">⁠10.2%⁠</code> = <code>NA</code>)
+</p>
+</li>
+<li> <p><code>NA</code>s in <code>col_pct</code> (but not <code>col_n</code>) result in
+base values only for the merged column (e.g., <code>13</code> + <code>NA</code> = <code>13</code>)
+</p>
+</li>
+<li> <p><code>NA</code>s both <code>col_n</code> and <code>col_pct</code> result in
+missing values for the merged column (e.g., <code>NA</code> + <code>NA</code> = <code>NA</code>)
+</p>
+</li>
+<li>
+<p> If a zero (<code>0</code>) value is in <code>col_n</code> then the formatted output will be
+<code>"0"</code> (i.e., no percentage will be shown)
+</p>
+</li>
+</ol>
+<p>Any resulting <code>NA</code> values in the <code>col_n</code> column following the merge
+operation can be easily formatted using <code>sub_missing()</code>.
+Separate calls of <code>sub_missing()</code> can be used for the <code>col_n</code> and
+<code>col_pct</code> columns for finer control of the replacement values. It is the
+responsibility of the user to ensure that values are correct in both the
+<code>col_n</code> and <code>col_pct</code> columns (this function neither generates nor
+recalculates values in either). Formatting of each column can be done
+independently in separate <code>fmt_number()</code> and <code>fmt_percent()</code> calls.
+</p>
+<p>This function is part of a set of four column-merging functions. The other
+three are the general <code>cols_merge()</code> function and the specialized
+<code>cols_merge_uncert()</code> and <code>cols_merge_range()</code> functions. These functions
+operate similarly, where the non-target columns can be optionally hidden from
+the output table through the <code>hide_columns</code> or <code>autohide</code> options.
+</p>
+
+
+<h3>Examples</h3>
+
+<p>Using a summarized version of the <code>pizzaplace</code> dataset, let's create a
+<strong>gt</strong> table that displays the counts and percentages of the top 3 pizzas
+sold by pizza category in 2015. The <code>cols_merge_n_pct()</code> function is used to
+merge the <code>n</code> and <code>frac</code> columns (and the <code>frac</code> column is formatted using
+<code>fmt_percent()</code>).
+</p>
+<div class="sourceCode r"><pre>pizzaplace |&gt;
+  dplyr::count(name, type, price, sort = TRUE) |&gt;
+  dplyr::mutate(frac = prop.table(n)) |&gt;
+  dplyr::slice_max(n, n = 3, by = type) |&gt;
+  dplyr::arrange(type) |&gt;
+  gt(
+    rowname_col = "name",
+    groupname_col = "type"
+  ) |&gt;
+  fmt_currency(price) |&gt;
+  fmt_percent(frac) |&gt;
+  cols_merge_n_pct(
+    col_n = n,
+    col_pct = frac
+  ) |&gt;
+  cols_label(
+    n = md("*N* (%)"),
+    price = "Price"
+  ) |&gt;
+  tab_style(
+    style = cell_text(font = "monospace"),
+    locations = cells_stub()
+  ) |&gt;
+  tab_stubhead(md("Cat. and  \nPizza Code")) |&gt;
+  tab_header(title = "Top 3 Pizzas Sold by Category in 2015") |&gt;
+  tab_options(table.width = px(512))
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_cols_merge_n_pct_1.png" alt="This image of a table was generated from the first code example in the `cols_merge_n_pct()` help file." style="width:100%;"><h3>Function ID</h3>
+
+<p>5-17
+</p>
+
+
+<h3>Function Introduced</h3>
+
+<p><code>v0.3.0</code> (May 12, 2021)
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other column modification functions: 
+<code>cols_add()</code>,
+<code>cols_align()</code>,
+<code>cols_align_decimal()</code>,
+<code>cols_hide()</code>,
+<code>cols_label()</code>,
+<code>cols_label_with()</code>,
+<code>cols_merge()</code>,
+<code>cols_merge_range()</code>,
+<code>cols_merge_uncert()</code>,
+<code>cols_move()</code>,
+<code>cols_move_to_end()</code>,
+<code>cols_move_to_start()</code>,
+<code>cols_nanoplot()</code>,
+<code>cols_unhide()</code>,
+<code>cols_units()</code>,
+<code>cols_width()</code>
+</p>
+
+
+</div>

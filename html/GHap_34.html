@@ -1,0 +1,173 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ghap.predictblup</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Predict BLUP from reference
+</h2>
+
+<h3>Description</h3>
+
+<p>Prediction of BLUP values in test individuals based on reference individuals.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  ghap.predictblup(refblup, vcp, covmat,
+                   errormat = NULL,
+                   errorname = "",
+                   include.ref = TRUE,
+                   diagonals = FALSE,
+                   tol = 1e-12)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>refblup</code></td>
+<td>
+
+<p>A named numeric vector of reference BLUP values.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcp</code></td>
+<td>
+
+<p>A numeric value for the variance in BLUP values.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covmat</code></td>
+<td>
+
+<p>A square matrix containing correlations among individuals. Both test and reference indiviudals must be present in the matrix.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>errormat</code></td>
+<td>
+
+<p>A square error matrix for reference individuals. This matrix can be obtained with argument extras = "LHSi" in the <code>ghap.lmm</code> function.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>errorname</code></td>
+<td>
+
+<p>The name used for the random effect in the <code>ghap.lmm</code> function. If the error matrix was imported from somewhere else, this argument can be ignored provided that the names in the error matrix match the ones in the covariance matrix.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include.ref</code></td>
+<td>
+
+<p>A logical value indicating if reference individuals should be included in the output (default = TRUE).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>diagonals</code></td>
+<td>
+
+<p>A logical value indicating if diagonals of the covariance matrix should be used in calculations of accuracy and standard errors (default = FALSE). The default is to set diagonals to 1. For genomic estimated breeding values, using TRUE will account for inbreeding in the computation of accuracies and standard errors.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+
+<p>A numeric value specifying the scalar to add to the diagonal of the covariance matrix if it is not inversible (default = 1e-12).
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A data frame with predictions of BLUP values. If an error matrix is provided, standard errors and accuracies are also included.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Yuri Tani Utsunomiya &lt;ytutsunomiya@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>J.F. Taylor. Implementation and accuracy of genomic selection. Aquaculture 2014. 420, S8-S14.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# #### DO NOT RUN IF NOT NECESSARY ###
+# 
+# # Copy plink data in the current working directory
+# exfiles &lt;- ghap.makefile(dataset = "example",
+#                          format = "plink",
+#                          verbose = TRUE)
+# file.copy(from = exfiles, to = "./")
+# 
+# # Copy metadata in the current working directory
+# exfiles &lt;- ghap.makefile(dataset = "example",
+#                          format = "meta",
+#                          verbose = TRUE)
+# file.copy(from = exfiles, to = "./")
+# 
+# # Load plink data
+# plink &lt;- ghap.loadplink("example")
+# 
+# # Load phenotype and pedigree data
+# df &lt;- read.table(file = "example.phenotypes", header=T)
+# 
+# ### RUN ###
+# 
+# # Subset individuals from the pure1 population
+# pure1 &lt;- plink$id[which(plink$pop == "Pure1")]
+# plink &lt;- ghap.subset(object = plink, ids = pure1, variants = plink$marker)
+# 
+# # Subset markers with MAF &gt; 0.05
+# freq &lt;- ghap.freq(plink)
+# mkr &lt;- names(freq)[which(freq &gt; 0.05)]
+# plink &lt;- ghap.subset(object = plink, ids = pure1, variants = mkr)
+# 
+# # Compute genomic relationship matrix
+# # Induce sparsity to help with matrix inversion
+# K &lt;- ghap.kinship(plink, sparsity = 0.01)
+# 
+# # Fit mixed model
+# df$rep &lt;- df$id
+# model &lt;- ghap.lmm(formula = pheno ~ 1 + (1|id) + (1|rep),
+#                   data = df,
+#                   covmat = list(id = K, rep = NULL),
+#                   extras = "LHSi")
+# refblup &lt;- model$random$id$Estimate
+# names(refblup) &lt;- rownames(model$random$id)
+# 
+# # Predict blup of reference and test individuals
+# blup &lt;- ghap.predictblup(refblup, vcp = model$vcp$Estimate[1],
+#                          covmat = as.matrix(K),
+#                          errormat = model$extras$LHSi,
+#                          errorname = "id")
+# 
+# # Compare predictions
+# plot(blup$Estimate, model$random$id$Estimate)
+# abline(0,1)
+</code></pre>
+
+
+</div>

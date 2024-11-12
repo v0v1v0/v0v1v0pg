@@ -1,0 +1,356 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gensvm.grid</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Cross-validated grid search for GenSVM</h2>
+
+<h3>Description</h3>
+
+<p>This function performs a cross-validated grid search of the 
+model parameters to find the best hyperparameter configuration for a given 
+dataset. This function takes advantage of GenSVM's ability to use warm 
+starts to speed up computation. The function uses the GenSVM C library for 
+speed.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gensvm.grid(
+  x,
+  y,
+  param.grid = "tiny",
+  refit = TRUE,
+  scoring = NULL,
+  cv = 3,
+  verbose = 0,
+  return.train.score = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>training data matrix. We denote the size of this matrix by 
+n_samples x n_features.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>training vector of class labels of length n_samples. The number of 
+unique labels in this vector is denoted by n_classes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param.grid</code></td>
+<td>
+<p>String (<code>'tiny'</code>, <code>'small'</code>, or <code>'full'</code>) 
+or data frame with parameter configurations to evaluate.  Typically this is 
+the output of <code>expand.grid</code>. For more details, see "Using a Parameter 
+Grid" below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>refit</code></td>
+<td>
+<p>boolean variable. If true, the best model from cross validation 
+is fitted again on the entire dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scoring</code></td>
+<td>
+<p>metric to use to evaluate the classifier performance during 
+cross validation. The metric should be an R function that takes two 
+arguments: y_true and y_pred and that returns a float such that higher 
+values are better. If it is NULL, the accuracy score will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv</code></td>
+<td>
+<p>the number of cross-validation folds to use or a vector with the 
+same length as <code>y</code> where each unique value denotes a test split.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>integer to indicate the level of verbosity (higher is more 
+verbose)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return.train.score</code></td>
+<td>
+<p>whether or not to return the scores on the 
+training splits</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A "gensvm.grid" S3 object with the following items:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>Call that produced this object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param.grid</code></td>
+<td>
+<p>Sorted version of the parameter grid used in training</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv.results</code></td>
+<td>
+<p>A data frame with the cross validation results</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>best.estimator</code></td>
+<td>
+<p>If refit=TRUE, this is the GenSVM model fitted with 
+the best hyperparameter configuration, otherwise it is NULL</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>best.score</code></td>
+<td>
+<p>Mean cross-validated test score for the model with the 
+best hyperparameter configuration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>best.params</code></td>
+<td>
+<p>Parameter configuration that provided the highest mean 
+cross-validated test score</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>best.index</code></td>
+<td>
+<p>Row index of the cv.results data frame that corresponds to 
+the best hyperparameter configuration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.splits</code></td>
+<td>
+<p>The number of cross-validation splits</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.objects</code></td>
+<td>
+<p>The number of instances in the data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.features</code></td>
+<td>
+<p>The number of features of the data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.classes</code></td>
+<td>
+<p>The number of classes in the data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>classes</code></td>
+<td>
+<p>Array with the unique classes in the data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>total.time</code></td>
+<td>
+<p>Training time for the grid search</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv.idx</code></td>
+<td>
+<p>Array with cross validation indices used to split the data</p>
+</td>
+</tr>
+</table>
+<h3>Using a Parameter Grid</h3>
+
+<p>To evaluate certain parameter configurations, a data frame can be supplied 
+to the <code>param.grid</code> argument of the function. Such a data frame can 
+easily be generated using the R function <code>expand.grid</code>, or could be 
+created through other ways to test specific parameter configurations.
+</p>
+<p>Three parameter grids are predefined:
+</p>
+
+<dl>
+<dt><code>'tiny'</code></dt>
+<dd>
+<p>This parameter grid is generated by the function 
+<code>gensvm.load.tiny.grid</code> and is the default parameter grid. It 
+consists of parameter configurations that are likely to perform well on 
+various datasets.</p>
+</dd>
+<dt><code>'small'</code></dt>
+<dd>
+<p>This grid is generated by 
+<code>gensvm.load.small.grid</code> and generates a data frame with 90 
+configurations. It is typically fast to train but contains some 
+configurations that are unlikely to perform well. It is included for 
+educational purposes.</p>
+</dd>
+<dt><code>'full'</code></dt>
+<dd>
+<p>This grid loads the parameter grid as used in the 
+GenSVM paper. It consists of 342 configurations and is generated by the 
+<code>gensvm.load.full.grid</code> function. Note that in the GenSVM paper 
+cross validation was done with this parameter grid, but the final training 
+step used <code>epsilon=1e-8</code>. The <code>gensvm.refit</code> function is 
+useful in this scenario.</p>
+</dd>
+</dl>
+<p>When you provide your own parameter grid, beware that only certain column 
+names are allowed in the data frame corresponding to parameters for the 
+GenSVM model. These names are:
+</p>
+
+<dl>
+<dt>p</dt>
+<dd>
+<p>Parameter for the lp norm. Must be in [1.0, 2.0].</p>
+</dd>
+<dt>kappa</dt>
+<dd>
+<p>Parameter for the Huber hinge function. Must be larger than 
+-1.</p>
+</dd>
+<dt>lambda</dt>
+<dd>
+<p>Parameter for the regularization term. Must be larger than 0.</p>
+</dd>
+<dt>weights</dt>
+<dd>
+<p>Instance weights specification. Allowed values are "unit" for 
+unit weights and "group" for group-size correction weights</p>
+</dd>
+<dt>epsilon</dt>
+<dd>
+<p>Stopping parameter for the algorithm. Must be larger than 0.</p>
+</dd>
+<dt>max.iter</dt>
+<dd>
+<p>Maximum number of iterations of the algorithm. Must be 
+larger than 0.</p>
+</dd>
+<dt>kernel</dt>
+<dd>
+<p>The kernel to used, allowed values are "linear", "poly", 
+"rbf", and "sigmoid". The default is "linear"</p>
+</dd>
+<dt>coef</dt>
+<dd>
+<p>Parameter for the "poly" and "sigmoid" kernels. See the section 
+"Kernels in GenSVM" in the codeinkgensvm-package page for more info.</p>
+</dd>
+<dt>degree</dt>
+<dd>
+<p>Parameter for the "poly" kernel. See the section "Kernels in 
+GenSVM" in the codeinkgensvm-package page for more info.</p>
+</dd>
+<dt>gamma</dt>
+<dd>
+<p>Parameter for the "poly", "rbf", and "sigmoid" kernels. See the 
+section "Kernels in GenSVM" in the codeinkgensvm-package page for more 
+info.</p>
+</dd>
+</dl>
+<p>For variables that are not present in the <code>param.grid</code> data frame the 
+default parameter values in the <code>gensvm</code> function will be used.
+</p>
+<p>Note that this function reorders the parameter grid to make the warm starts 
+as efficient as possible, which is why the param.grid in the result will not 
+be the same as the param.grid in the input.
+</p>
+
+
+<h3>Note</h3>
+
+<p>1. This function returns partial results when the computation is interrupted 
+by the user.
+2. The score.time reported in the results only covers the time needed to 
+compute the score from the predictions and true class labels. It does not 
+include the time to compute the predictions themselves.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Gerrit J.J. van den Burg, Patrick J.F. Groenen <br>
+Maintainer: Gerrit J.J. van den Burg &lt;gertjanvandenburg@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Van den Burg, G.J.J. and Groenen, P.J.F. (2016). <em>GenSVM: A Generalized 
+Multiclass Support Vector Machine</em>, Journal of Machine Learning Research, 
+17(225):1–42. URL <a href="https://jmlr.org/papers/v17/14-526.html">https://jmlr.org/papers/v17/14-526.html</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>predict.gensvm.grid</code>, <code>print.gensvm.grid</code>, 
+<code>plot.gensvm.grid</code>, <code>gensvm</code>, 
+<code>gensvm-package</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">x &lt;- iris[, -5]
+y &lt;- iris[, 5]
+
+
+# use the default parameter grid
+grid &lt;- gensvm.grid(x, y, verbose=TRUE)
+
+
+# use a smaller parameter grid
+pg &lt;- expand.grid(p=c(1.0, 1.5, 2.0), kappa=c(-0.9, 1.0), epsilon=c(1e-3))
+grid &lt;- gensvm.grid(x, y, param.grid=pg)
+
+# print the result
+print(grid)
+
+
+# Using a custom scoring function (accuracy as percentage)
+acc.pct &lt;- function(yt, yp) { return (100 * sum(yt == yp) / length(yt)) }
+grid &lt;- gensvm.grid(x, y, scoring=acc.pct)
+
+# With RBF kernel and very verbose progress printing
+pg &lt;- expand.grid(kernel=c('rbf'), gamma=c(1e-2, 1e-1, 1, 1e1, 1e2),
+                  lambda=c(1e-8, 1e-6), max.iter=c(5000))
+grid &lt;- gensvm.grid(x, y, param.grid=pg, verbose=2)
+
+
+</code></pre>
+
+
+</div>

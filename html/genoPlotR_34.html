@@ -1,0 +1,495 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>read_functions</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Reading functions</h2>
+
+<h3>Description</h3>
+
+<p>Functions to parse dna_seg objects from tab, embl, genbank, fasta, ptt
+files or from mauve backbone files, and comparison objects from tab or blast
+files. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">read_dna_seg_from_tab(file, header = TRUE, ...)
+read_dna_seg_from_file(file, tagsToParse=c("CDS"), fileType = "detect",
+                       meta_lines = 2, gene_type = "auto", header = TRUE,
+                       extra_fields = NULL, ...)
+read_dna_seg_from_embl(file, tagsToParse=c("CDS"), ...)
+read_dna_seg_from_genbank(file, tagsToParse=c("CDS"), ...)
+read_dna_seg_from_fasta(file, ...)
+read_dna_seg_from_ptt(file, meta_lines = 2, header = TRUE, ...)
+read_comparison_from_tab(file, header = TRUE, ...)
+read_comparison_from_blast(file, sort_by = "per_id",
+                           filt_high_evalue = NULL,
+                           filt_low_per_id = NULL,
+                           filt_length = NULL,
+                           color_scheme = NULL, ...)
+read_mauve_backbone(file, ref = 1, gene_type = "side_blocks",
+                    header = TRUE, filter_low = 0,
+                    common_blocks_only = TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+
+<p>Path to file to load. URL are accepted.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>header</code></td>
+<td>
+
+<p>Logical. Does the tab file has headers (column names)?
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tagsToParse</code></td>
+<td>
+
+<p>Character vector. Tags to parse in embl or genbank files.
+Common tags are 'CDS', 'gene', 'misc_feature'.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fileType</code></td>
+<td>
+
+<p>Character string. Select file type, could be 'detect' for automatic
+detection, 'embl' for embl files, 'genbank' for genbank files or
+'ptt' for ptt files.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>meta_lines</code></td>
+<td>
+
+<p>The number of lines in the ptt file that represent "meta" data, not
+counting the header lines. Standard for NCBI files is 2 (name and
+length, number of proteins. Default is also 2.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gene_type</code></td>
+<td>
+
+<p>Determines how genes are visualized. If 'auto' genes will appear as
+arrows in there are no introns and as blocks if there are introns.
+Can also be set to for example 'blocks' or 'arrows'. Do note, currently
+introns are not supported in the ptt file format.
+Default for mauve backbone is <code>side_blocks</code>.
+See <code>gene_types</code> page for more details, or use function
+<code>gene_types</code>. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extra_fields</code></td>
+<td>
+
+<p><code>NULL</code> by default. If a character vector, parses extra fields
+in the genbank or embl file that have corresponding keys and put
+them in the resulting <code>dna_seg</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sort_by</code></td>
+<td>
+
+<p>In BLAST-like tabs, gives the name of the column that will be used
+to sort the comparisons. Accepted values are <code>per_id</code>
+(percent identity, default), <code>mism</code> (mismatches), <code>gaps</code>
+(gaps), <code>e_value</code> (E-value), <code>bit_score</code> (bit score). 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filt_high_evalue</code></td>
+<td>
+
+<p>A numerical, or <code>NULL</code> (default). Filters out all comparisons
+that have a e-value higher than this one.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filt_low_per_id</code></td>
+<td>
+
+<p>A numerical, or <code>NULL</code> (default). Filters out all comparisons
+that have a percent identity lower than this one.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filt_length</code></td>
+<td>
+
+<p>A numerical, or <code>NULL</code> (default). Filters out all comparisons
+that have alignments shorter than this value.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>color_scheme</code></td>
+<td>
+
+<p>A color scheme to apply. See <code>apply_color_scheme</code> for more
+details. Possible values include <code>grey</code> and <code>red_blue</code>.
+<code>NULL</code> by default. Color schemes can be applied while running
+<code>plot_gene_map</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ref</code></td>
+<td>
+
+<p>In mauve backbone, which of the dna segments will be the reference,
+i.e. which one will have its blocks in order.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Further arguments passed to generic reading functions and class
+conversion functions. See <code>as.dna_seg</code> and
+<code>as.comparison</code>.
+</p>
+<p>For <code>read_comparison*</code> functions, see details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filter_low</code></td>
+<td>
+
+<p>A numeric. If larger than 0, all blocks smaller that this number
+will be filtered out. Defaults to 0.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>common_blocks_only</code></td>
+<td>
+
+<p>A logical. If <code>TRUE</code> (by default), reads only common blocks
+(core blocks).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Tab files representing DNA segements should have at least the following
+columns: name, start, end, strand (in that order. Additionally, if the
+tab file has headers, more columns will be used to define, for
+example, the color, line width and type, pch and/or cex. See
+<code>dna_seg</code> for more information. An example:
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    name   </td>
+<td style="text-align: left;"> start </td>
+<td style="text-align: left;"> end   </td>
+<td style="text-align: left;"> strand </td>
+<td style="text-align: left;"> col   </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    feat1A </td>
+<td style="text-align: left;"> 2     </td>
+<td style="text-align: left;"> 1345  </td>
+<td style="text-align: left;"> 1      </td>
+<td style="text-align: left;"> blue  </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    feat1B </td>
+<td style="text-align: left;"> 1399  </td>
+<td style="text-align: left;"> 2034  </td>
+<td style="text-align: left;"> 1      </td>
+<td style="text-align: left;"> red   </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    feat1C </td>
+<td style="text-align: left;"> 2101  </td>
+<td style="text-align: left;"> 2932  </td>
+<td style="text-align: left;"> -1     </td>
+<td style="text-align: left;"> grey  </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    feat1D </td>
+<td style="text-align: left;"> 2800  </td>
+<td style="text-align: left;"> 3120  </td>
+<td style="text-align: left;"> 1      </td>
+<td style="text-align: left;"> green </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  </td>
+</tr>
+</table>
+<p>Embl and Genbank files are two commonly used file types. These file types
+often contain a great variety of information. To properly extract data from
+these files, the user has to choose which features to extract. Commonly 'CDS'
+features are of interest, but other feature tags such as 'gene' or
+'misc_feature'  may be of interest. Should a feature contain an inner
+"pseudo" tag indicating this CDS or gene is a pseudo gene, this will
+be presented as a 'CDS_pseudo' or a 'gene_pseudo' feature type
+respectively in the resulting table. Certain constraints apply to
+these file types, of which some are: embl files must contain one and
+only one ID tag; genbank files may only contain one and only one locus
+tag. In these two files, the following tags are parsed (in addition to
+the regular name, start, end and strand): protein_id, product, color
+(or colour). In addition, extra tags can be parsed with the argument
+<code>extra_fields</code>. If there are more than one field with such a tag,
+only the first one is parsed.
+</p>
+<p>Fasta files are read as one gene, as long as there are nucleotides in
+the fasta file.
+</p>
+<p>Ptt (or protein table) files are a tabular format giving a bunch of
+information on each protein of a genome (or plasmid, or virus,
+etc). They are available for each published genome on the NCBI ftp
+site (ftp://ftp.ncbi.nlm.nih.gov/genomes/). As an example, look at
+ftp://ftp.ncbi.nlm.nih.gov/genomes/Bacteria/Bartonella_henselae_Houston-1/NC_005956.ptt.
+</p>
+<p>Tabular comparison files should have at least the following
+columns: start1, end1, start2, end2. If no header is specified, the
+fifth column is parsed as the color.
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    start1 </td>
+<td style="text-align: left;"> end1   </td>
+<td style="text-align: left;"> start2 </td>
+<td style="text-align: left;"> end2  </td>
+<td style="text-align: left;">  col  </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    2      </td>
+<td style="text-align: left;"> 1345   </td>
+<td style="text-align: left;"> 10     </td>
+<td style="text-align: left;"> 1210  </td>
+<td style="text-align: left;">  red  </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    1399   </td>
+<td style="text-align: left;"> 2034   </td>
+<td style="text-align: left;"> 2700   </td>
+<td style="text-align: left;"> 1100  </td>
+<td style="text-align: left;">  blue </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    500    </td>
+<td style="text-align: left;"> 800    </td>
+<td style="text-align: left;"> 3000   </td>
+<td style="text-align: left;"> 2500  </td>
+<td style="text-align: left;">  blue </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  </td>
+</tr>
+</table>
+<p>BLAST tabular result files are produced either with blastall using -m8
+or -m9 parameter, or with any of the newer
+blastn/blastp/blastx/tblastx using -outfmt 6 or -outfmt 7.
+</p>
+<p>In the subsequent <code>plot_gene_map</code>, the comparisons are drawn in
+the order of the <code>comparison</code> object, i.e. the last rows of the
+comparison object are on the top in the plot. For comparisons read
+from BLAST output, the order can be modified by using the argument
+<code>sort_by</code>. In any case, the order of plotting can be modified by
+modifying the order of rows in the <code>comparison</code> object prior to
+plotting. 
+</p>
+<p>Mauve backbone is another tabular data file that summarizes the blocks
+that are similar between all compared genomes. Each genome gets two
+columns, one start and one end of the block. There is one row per
+block and eventually a header row. If named, columns have sequence
+numbers, not actual names, so be careful to input the same order in
+both Mauve and genoPlotR. See
+http://asap.ahabs.wisc.edu/mauve-aligner/mauve-user-guide/mauve-output-file-formats.html
+for more info on the file format. Normally, the function should be
+able to read both <code>progressiveMauve</code> and <code>mauveAligner</code>
+outputs. The function returns both the blocks as <code>dna_seg</code>s and
+the links between the blocks as <code>comparison</code>s.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>read_dna_seg_from_tab</code>, <code>read_dna_seg_from_file</code>, <code>read_dna_seg_from_embl</code>,
+<code>read_dna_seg_from_genbank</code> and <code>read_dna_seg_from_ptt</code> return
+<code>dna_seg</code> objects. <code>read_comparison_from_tab</code> and
+<code>read_comparison_from_blast</code> return <code>comparison</code>
+objects. <code>read_mauve_backbone</code> returns a list containing a list
+of <code>dna_seg</code>s and <code>comparison</code>s.
+objects. 
+</p>
+
+
+<h3>Note</h3>
+
+<p>Formats are changing and it maybe that some functions are temporarily
+malfunctioning. Please report any bug to the author. Mauve examples
+were prepared with Mauve 2.3.1.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Lionel Guy, Jens Roat Kultima
+</p>
+
+
+<h3>References</h3>
+
+<p>For BLAST: http://www.ncbi.nlm.nih.gov/blast/
+For Mauve: http://asap.ahabs.wisc.edu/mauve/
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>comparison</code>, <code>dna_seg</code>,
+<code>apply_color_scheme</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">##
+## From tabs
+##
+## Read DNA segment from tab
+dna_seg3_file &lt;- system.file('extdata/dna_seg3.tab', package = 'genoPlotR')
+dna_seg3 &lt;- read_dna_seg_from_tab(dna_seg3_file)
+
+## Read comparison from tab
+comparison2_file &lt;- system.file('extdata/comparison2.tab',
+                                package = 'genoPlotR')
+comparison2 &lt;- read_comparison_from_tab(comparison2_file)
+
+##
+## Mauve backbone
+##
+## File: this is only to retrieve the file from the genoPlotR
+## installation folder. 
+bbone_file &lt;- system.file('extdata/barto.backbone', package = 'genoPlotR')
+## Read backbone
+## To read your own backbone, run something like
+## bbone_file &lt;- "/path/to/my/file.bbone"
+bbone &lt;- read_mauve_backbone(bbone_file)
+names &lt;- c("B_bacilliformis", "B_grahamii", "B_henselae", "B_quintana")
+names(bbone$dna_segs) &lt;- names
+## Plot
+plot_gene_map(dna_segs=bbone$dna_segs, comparisons=bbone$comparisons)
+
+## Using filter_low &amp; changing reference sequence
+bbone &lt;- read_mauve_backbone(bbone_file, ref=2, filter_low=2000) 
+names(bbone$dna_segs) &lt;- names
+plot_gene_map(dna_segs=bbone$dna_segs, comparisons=bbone$comparisons)
+
+## Read guide tree
+tree_file &lt;- system.file('extdata/barto.guide_tree', package = 'genoPlotR')
+tree_str &lt;- readLines(tree_file)
+for (i in 1:length(names)){
+  tree_str &lt;- gsub(paste("seq", i, sep=""), names[i], tree_str)
+}
+tree &lt;- newick2phylog(tree_str)
+## Plot
+plot_gene_map(dna_segs=bbone$dna_segs, comparisons=bbone$comparisons,
+              tree=tree)
+
+##
+## From embl file
+##
+bq_embl_file &lt;- system.file('extdata/BG_plasmid.embl', package = 'genoPlotR')
+bq &lt;- read_dna_seg_from_embl(bq_embl_file)
+
+##
+## From genbank file
+##
+bq_genbank_file &lt;- system.file('extdata/BG_plasmid.gbk', package = 'genoPlotR')
+bq &lt;- read_dna_seg_from_file(bq_genbank_file, fileType="detect")
+
+## Parsing extra fields in the genbank file
+bq &lt;- read_dna_seg_from_file(bq_genbank_file,
+                             extra_fields=c("db_xref", "transl_table"))
+names(bq)
+
+
+##
+## From ptt files
+##
+## From a file
+bq_ptt_file &lt;- system.file('extdata/BQ.ptt', package = 'genoPlotR')
+bq &lt;- read_dna_seg_from_ptt(bq_ptt_file)
+## Read directly from NCBI ftp site:
+url &lt;- "ftp://ftp.ncbi.nih.gov/genomes/Bacteria/Bartonella_henselae_Houston-1/NC_005956.ptt"
+attempt &lt;- 0
+## Not run: 
+while (attempt &lt; 5){
+  attempt &lt;- attempt + 1
+  bh &lt;- try(read_dna_seg_from_ptt(url))
+  if (!inherits(bh, "try-error")) {
+    attempt &lt;- 99
+  } else {
+    print(paste("Tried", attempt, "times, retrying in 5s"))
+    Sys.sleep(5)
+  }
+}
+
+## End(Not run)
+## If attempt to connect to internet fails
+if (!exists("bh")){
+  data(barto)
+  bh &lt;- barto$dna_segs[[3]]
+}
+
+##
+## Read from blast
+##
+bh_vs_bq_file &lt;- system.file('extdata/BH_vs_BQ.blastn.tab',
+                             package = 'genoPlotR')
+bh_vs_bq &lt;- read_comparison_from_blast(bh_vs_bq_file, color_scheme="grey")
+
+## Plot
+plot_gene_map(dna_segs=list(BH=bh, BQ=bq), comparisons=list(bh_vs_bq),
+              xlims=list(c(1,50000), c(1, 50000)))
+
+
+</code></pre>
+
+
+</div>

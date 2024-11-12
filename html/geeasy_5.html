@@ -1,0 +1,357 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>geelm.fit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit Generalized Estimating Equation-based Linear Models</h2>
+
+<h3>Description</h3>
+
+<p>Estimate mean structure parameters and their corresponding standard errors for
+generalized linear models with clustered or correlated observations by use of
+generalized estimating equations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">geelm.fit(x, y, id, offset, family, weights, control, corstr, start = NULL)
+
+geelm(
+  formula,
+  id = NULL,
+  waves = NULL,
+  data = parent.frame(),
+  family = gaussian,
+  corstr = "independence",
+  Mv = 1,
+  weights = NULL,
+  corr.mat = NULL,
+  offset = NULL,
+  engine = "geeasy",
+  output = "geelm",
+  control = geelm.control()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x, y</code></td>
+<td>
+<p>For <code>glm</code>:
+logical values indicating whether the response vector and model
+matrix used in the fitting process should be returned as components
+of the returned value.
+</p>
+<p>For <code>glm.fit</code>: <code>x</code> is a design matrix of dimension
+<code>n * p</code>, and <code>y</code> is a vector of observations of length
+<code>n</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>A vector identifying the clusters. If NULL, then each observation is
+assigned its own cluster.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>this can be used to specify an <em>a priori</em> known
+component to be included in the linear predictor during fitting.
+This should be <code>NULL</code> or a numeric vector of length equal to
+the number of cases.  One or more <code>offset</code> terms can be
+included in the formula instead or as well, and if more than one is
+specified their sum is used.  See <code>model.offset</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A description of the error distribution and link function to be used
+in the model. The argument can be one of three options: a <code>family</code> object,
+a character string, or a list of functions. For more information on how to use <code>family</code>
+objects, see Details below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>an optional vector of ‘prior weights’ to be used
+in the fitting process.  Should be <code>NULL</code> or a numeric vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>A list of parameters for controlling the fitting process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corstr</code></td>
+<td>
+<p>A character string specifying the correlation structure.
+The default is "independence". Allowed structures are: <code>"independence"</code>,
+<code>"exchangeable"</code>,  <code>"ar1"</code>, <code>"m-dependent"</code>, <code>"unstructured"</code>,
+<code>"fixed"</code>, and <code>"userdefined"</code>.  Any unique substring may be supplied.
+If <code>"fixed"</code> or <code>"userdefined"</code>, then <code>corr.mat</code> must be
+specified.  If <code>"m-dependent"</code>, then <code>Mv</code> is relevant.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>starting values for the parameters in the linear predictor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A formula expression similar to that for <code>glm</code>,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>waves</code></td>
+<td>
+<p>An numeric vector identifying the time ordering within clusters
+(i.e. levels of <code>id</code>). By default, data are assumed
+to be sorted such that observations in a cluster are in consecutive rows
+and higher numbered rows in a cluster are assumed to be later. Note that only the
+ordering of the values in <code>waves</code> is used, NOT the numeric values themselves.
+This means that e.g. having waves equal to <code>c(1, 2, 3)</code>
+or <code>c(1, 2, 7)</code> within a cluster results in the same model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>An optional data frame containing the variables in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mv</code></td>
+<td>
+<p>For <code>"m-dependent"</code>, the value for <code>m</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corr.mat</code></td>
+<td>
+<p>The correlation matrix for <code>"fixed"</code>.  Matrix should
+be symmetric with dimensions &gt;= the maximum cluster size.  If the correlation
+structure is <code>"userdefined"</code>, then this is a matrix describing which
+correlations are the same.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>engine</code></td>
+<td>
+<p>Engine used to fit the model. The default, <code>"geeasy"</code> uses this
+package (built on the <code>geeM</code> package), while <code>"geepack"</code> uses
+the function <code>geeglm</code> from <code>geepack</code> to fit the model. Note that if
+the geepack engine is used, the data are sorted according to id (and possibly
+waves within id) and NAs are dropped before the data is used
+(this differs from the standard in geepack).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output</code></td>
+<td>
+<p>Output object type. There are two options; 1) <code>"geelm"</code> (default), resulting in
+an output that inherits the structure of <code>geepack</code>s <code>geeglm</code> object, or 2)
+<code>"geem"</code> (or its alias <code>"geeM"</code>) which results in an output that has the structure
+of <code>geeM</code>s <code>geem</code> object.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Users may specify functions for link and variance functions, but the
+functions must be vectorized functions.
+</p>
+<p>Offsets can be specified in the model formula, as in <code>glm()</code> or they may be
+specified using the <code>offset</code> argument. If offsets are specified in both ways,
+their sum is used as an offset.
+</p>
+<p>For the <code>"userdefined"</code> correlation option, the function accepts a
+matrix with consecutive integers. Each such integer represent a distinct
+parameter that will be estimated.  All entries given as 1 will be assumed
+to be the same as each other and will be assumed to be possibly different
+from entries with a 2, and so on.<code>geelm</code> only looks at the upper
+triangle of the matrix.  Any entry given as 0 will be fixed at 0.
+</p>
+<p>If observations are dropped because they have a weight of 0, then the
+denominator for the moment estimates of the correlation matrices are
+calculated using the number of non-zero Pearson residuals for the
+correlation structures <code>unstructured</code>, <code>userdefined</code> and
+<code>m-dependent</code> with <code>Mv&gt;1</code>.  Therefore, residuals numerically
+equal to 0 may cause problems in the calculation of correlation parameters.
+</p>
+<p>Concerning the <code>family</code> argument: If the supplied argument is a character
+string, then the string should correspond to one of the family objects.
+In order to define a link function, a list must be created with the
+components <code>(LinkFun, VarFun, InvLink, InvLinkDeriv)</code>, all of which are
+vectorized functions.  If the components in the list are not named
+as <code>(LinkFun, VarFun, InvLink, InvLinkDeriv)</code>, then <code>geelm</code>
+assumes that the functions are given in that order.  LinkFun and VarFun
+are the link and variance functions. InvLink and InvLinkDeriv are the inverse
+of the link function and the derivative of the inverse of the link function
+and so are decided by the choice of the link function.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>geelm</code> (inherits from <code>geeglm</code>) representing the fit.
+It contains the following slots:
+</p>
+<p><code>$coefficients</code>: Coefficients from the mean structure model (betas) on their
+original scales
+</p>
+<p><code>$residuals</code>: Pearson residuals, in the order of the inputted dataset (with NAs omitted).
+</p>
+<p><code>$fitted.values</code>: Fitted values (response scale), in the order of the inputted dataset
+(with NAs omitted).
+</p>
+<p><code>$rank</code>: The rank of the model matrix, i.e. the number of estimated mean structure
+coefficients.
+</p>
+<p><code>$qr</code>: QR decomposition of the model matrix (NA omitted).
+</p>
+<p><code>$family</code>: A family object specifying which exponential family was used for fitting
+the mean structure model, see <code>family</code> for more information.
+</p>
+<p><code>$linear.predictors</code>: The linear predictor on the original scale.
+</p>
+<p><code>$weights</code>: Weights used for computations, in the order of the inputted dataset
+(NAs omitted).
+</p>
+<p><code>$prior.weights</code>: The original weights used to produce this geeglm object (set
+by user or defaulted to 1 for all observations).
+</p>
+<p><code>$df.residuals</code>: Residual degrees of freedom.
+</p>
+<p><code>$y</code>: Outcome variable, in the order of the inputted dataset (NAs omitted).
+</p>
+<p><code>$model</code>: The model.frame, ordered as the original inputted data with NAs omitted.
+</p>
+<p><code>$call</code>: The original function call that produced this geeglm object.
+</p>
+<p><code>$formula</code>: The formula used in the original call.
+</p>
+<p><code>$terms</code>: The terms of the formula used in the original call.
+</p>
+<p><code>$data</code>: The original dataset that was used for producing this geeglm object.
+</p>
+<p><code>$offset</code>: Offset used for fitting the model, ordered as the original inputted data
+with NAs omitted.
+</p>
+<p><code>$control</code>: Value of control parameters used for fitting the model.
+</p>
+<p><code>$method</code>: Internal function used for fitting the model.
+</p>
+<p><code>$contrasts</code>: Contrasts used in the model matrix.
+</p>
+<p><code>$xlevels</code>: Levels of factor variables used in the model formula (if any).
+</p>
+<p><code>$geese</code>: An object containing further information about the variance estimation,
+including a variance matrix for the beta-coefficients (<code>$vbeta</code>), the estimated
+coefficients for the working correlation matrix (<code>$alpha</code>), the estimated dispersion
+parameter (<code>$gamma</code>), and the individual cluster sizes (<code>$clusz</code>). See
+<code>geese</code> for more information.
+</p>
+<p><code>$modelInfo</code>: Information about the link functions used for fitting the mean, variance
+and scale structures of the model.
+</p>
+<p><code>$id</code>: IDs used for identifying the clusters, ordered as the original inputted data
+with NAs omitted.
+</p>
+<p><code>$corstr</code>: Name of the correlation structured imposed on the model. If the
+correlation structure requires further information, it is stored in a suitably named
+attribute. For example, for m-dependent correlation structures, the m scalar is available
+in an attribute named <code>Mv</code>.
+</p>
+<p><code>$cor.link</code>: Link function used for the correlation structure.
+</p>
+<p><code>$std.err</code>: Method used to estimate the standard error of the mean structure
+coefficients (betas).
+</p>
+
+
+<h3>Functions</h3>
+
+
+<ul><li> <p><code>geelm.fit()</code>: 
+</p>
+</li></ul>
+<h3>Author(s)</h3>
+
+<p>Anne Helby Petersen, Lee McDaniel &amp; Nick Henderson
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>glm</code>, <code>formula</code>, <code>family</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# load data
+data("respiratory")
+respiratory$useid &lt;- interaction(respiratory$center, respiratory$id)
+
+# fit model
+m &lt;- geelm(outcome ~ treat + sex + age + baseline, 
+           data = respiratory, id = useid,
+                      family = "binomial", corstr = "exchangeable")
+
+## Not run: 
+get_jack_se &lt;- function(object, dat){
+    parm &lt;- sapply(1:nrow(dat),
+                   function(i){
+                       dat.i &lt;- dat[-i,]
+                       coef(update(object, data=dat.i))
+                   })
+    parm &lt;- t(parm)
+    parm.mean &lt;- apply(parm, 2, mean)
+    
+    parm.cent &lt;- sapply(1:nrow(parm),
+                        function(i){
+                            parm[i, ] - parm.mean
+                        })
+    parm.cent &lt;- t(parm.cent) 
+    
+    jack.var &lt;- ((nrow(dat)-1) / nrow(dat)) * t(parm.cent) %*% parm.cent
+    jack.se &lt;- sqrt(diag(jack.var))
+    jack.se
+}
+
+
+# load data
+data("respiratory")
+respiratory$useid &lt;- interaction(respiratory$center, respiratory$id)
+
+# fit model
+obj &lt;- geelm(outcome ~ treat + sex + age + baseline, 
+           data = respiratory, id = useid,
+                      family = "binomial", corstr = "exchangeable")
+
+dat &lt;- respiratory
+get_jack_se(obj, dat)
+summary(obj) |&gt; coef()
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

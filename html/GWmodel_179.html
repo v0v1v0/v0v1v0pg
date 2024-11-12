@@ -1,0 +1,358 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gwr.basic</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Basic GWR model</h2>
+
+<h3>Description</h3>
+
+<p>This function implements basic GWR
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gwr.basic(formula, data, regression.points, bw, kernel="bisquare",
+adaptive=FALSE, p=2, theta=0, longlat=F,dMat,F123.test=F,cv=F, W.vect=NULL,
+parallel.method=FALSE,parallel.arg=NULL)
+## S3 method for class 'gwrm'
+print(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Regression model formula of a formula object </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a Spatial*DataFrame, i.e. SpatialPointsDataFrame or SpatialPolygonsDataFrame as defined in package <span class="pkg">sp</span>, or a sf object defined in package <span class="pkg">sf</span></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>regression.points</code></td>
+<td>
+<p>a Spatial*DataFrame object, i.e. SpatialPointsDataFrame or SpatialPolygonsDataFrame as defined in package <span class="pkg">sp</span>; Note that no diagnostic information will returned if it is assigned</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bw</code></td>
+<td>
+<p>bandwidth used in the weighting function, possibly calculated by bw.gwr;fixed (distance) or adaptive bandwidth(number of nearest neighbours)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kernel</code></td>
+<td>
+<p>function chosen as follows:
+</p>
+<p>gaussian: wgt = exp(-.5*(vdist/bw)^2);
+</p>
+<p>exponential: wgt = exp(-vdist/bw);
+</p>
+<p>bisquare: wgt = (1-(vdist/bw)^2)^2 if vdist &lt; bw, wgt=0 otherwise;
+</p>
+<p>tricube: wgt = (1-(vdist/bw)^3)^3 if vdist &lt; bw, wgt=0 otherwise; 
+</p>
+<p>boxcar: wgt=1 if dist &lt; bw, wgt=0 otherwise</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adaptive</code></td>
+<td>
+<p>if TRUE calculate an adaptive kernel where the bandwidth (bw) corresponds to the number of nearest neighbours (i.e. adaptive distance); default is FALSE, where a fixed kernel is found (bandwidth is a fixed distance)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>the power of the Minkowski distance, default is 2, i.e. the Euclidean distance</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>an angle in radians to rotate the coordinate system, default is 0</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>longlat</code></td>
+<td>
+<p>if TRUE, great circle distances will be calculated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dMat</code></td>
+<td>
+<p>a pre-specified distance matrix, it can be calculated by the function <code>gw.dist</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>F123.test</code></td>
+<td>
+<p>If TRUE, conduct three seperate F-tests according to Leung et al. (2000).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv</code></td>
+<td>
+<p>if TRUE, cross-validation data will be calculated and returned in the output Spatial*DataFrame</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>W.vect</code></td>
+<td>
+<p>default NULL, if given it will be used to weight the distance weighting matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>an object of class “gwrm”, returned by the function <code>gwr.basic</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel.method</code></td>
+<td>
+<p> FALSE as default, and the calibration will be conducted traditionally via the serial technique, 
+"omp": multi-thread technique with the OpenMP API, 
+"cluster": multi-process technique with the <span class="pkg">parallel</span> package,
+"cuda": parallel computing technique with CUDA</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel.arg</code></td>
+<td>
+<p> if parallel.method is not FALSE, then set the argument by following:
+if parallel.method is "omp", parallel.arg refers to the number of threads used, and its default value is 
+the number of cores - 1;
+if parallel.method is "cluster", parallel.arg refers to the number of R sessions used, and its default value is 
+the number of cores - 1;
+if parallel.method is "cuda",  parallel.arg refers to the number of calibrations  included in each group, 
+but note a too large value may cause the overflow of GPU memory. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments passed through (unused)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list of class “gwrm”:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>GW.arguments</code></td>
+<td>
+<p>a list class object including the model fitting parameters for generating the report file</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GW.diagnostic</code></td>
+<td>
+<p>a list class object including the diagnostic information of the model fitting</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lm</code></td>
+<td>
+<p>an object of class inheriting from “lm”, see lm. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SDF</code></td>
+<td>
+<p>a SpatialPointsDataFrame (may be gridded), or 
+SpatialPolygonsDataFrame object (see package “sp”), or sf object  (see package “sf”) integrated with 
+regression.points, GWR coefficient estimates, y value,predicted values, coefficient standard errors and t-values in its "data" slot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timings</code></td>
+<td>
+<p>starting and ending time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>this.call</code></td>
+<td>
+<p>the function call used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ftest.res</code></td>
+<td>
+<p>results of Leung's F tests when F123.test is TRUE.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>Requirements of using CUDA for high-performence computation in GWR functions:
+</p>
+<p>To run GWR-CUDA (i.e. parallel.method is pecified as “cuda”) with  
+<code>gwr.basic</code> , <code>bw.gwr</code> and <code>gwr.model.selection</code>, 
+the following conditions are required:
+</p>
+<p>1. There is at least one NVIDIA GPU supporting CUDA equipped on user's computer.
+</p>
+<p>2. CUDA (&gt;10.2) are installed with the environment variable 'CUDA_HOME' set properly. 
+</p>
+<p>3. The package should re-built from source. 
+- For Linux user, 'GWmodelCUDA' will be automatically built if CUDA toolkit could be detected 
+by the complier. 
+- For Windows user, 'GWmodelCUDA.dll' and 'GWmodelCUDA.lib' will be automatically downloaded;
+however, we would recommend users to build the 'GWmodelCUDA' library manually to avoid some potentially
+unknown issues, and an 'CMakeLists.txt' file is provided for this procedure.
+</p>
+<p>If any condition above is not satisfied, the GWR-CUDA will not work even though the “parallel.method” is 
+specified as “cuda”.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Binbin Lu <a href="mailto:binbinlu@whu.edu.cn">binbinlu@whu.edu.cn</a></p>
+
+
+<h3>References</h3>
+
+<p>Brunsdon, C, Fotheringham, S, Charlton, M (1996), Geographically Weighted Regression: A Method for Exploring Spatial Nonstationarity. 
+Geographical Analysis 28(4):281-298
+</p>
+<p>Charlton, M, Fotheringham, S, and Brunsdon, C (2007), GWR3.0, <a href="http://gwr.nuim.ie/">http://gwr.nuim.ie/</a>.
+</p>
+<p>Fotheringham S, Brunsdon, C, and Charlton, M (2002),
+Geographically Weighted Regression: The Analysis of Spatially Varying Relationships, Chichester: Wiley.
+</p>
+<p>Leung, Y, Mei, CL, and Zhang, WX (2000), Statistical tests for spatial nonstationarity 
+based on the geographically weighted regression model. Environment and Planning A, 32, 9-32.
+</p>
+<p>Lu, B, Charlton, M, Harris, P, Fotheringham, AS (2014) Geographically weighted regression 
+with a non-Euclidean distance metric: a case study using hedonic house price data. 
+International Journal of Geographical Information Science 28(4): 660-681
+</p>
+<p>OpenMP: <a href="https://www.openmp.org/">https://www.openmp.org/</a>
+</p>
+<p>CUDA: <a href="https://developer.nvidia.com/cuda-zone">https://developer.nvidia.com/cuda-zone</a>
+</p>
+<p>R Core Team (2020). R: A language and environment for statistical computing. R Foundation for Statistical
+Computing, Vienna, Austria.  <a href="https://www.R-project.org/">https://www.R-project.org/</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(LondonHP)
+DM&lt;-gw.dist(dp.locat=coordinates(londonhp))
+##Compare the time consumed with and without a specified distance matrix
+## Not run: 
+system.time(gwr.res&lt;-gwr.basic(PURCHASE~FLOORSZ, data=londonhp, bw=1000,
+            kernel = "gaussian"))
+system.time(DM&lt;-gw.dist(dp.locat=coordinates(londonhp)))
+system.time(gwr.res&lt;-gwr.basic(PURCHASE~FLOORSZ, data=londonhp, bw=1000,
+            kernel = "gaussian", dMat=DM))
+
+## specify an optimum bandwidth by cross-validation appraoch
+bw1&lt;-bw.gwr(PURCHASE~FLOORSZ, data=londonhp, kernel = "gaussian",dMat=DM)
+gwr.res1&lt;-gwr.basic(PURCHASE~FLOORSZ, data=londonhp, bw=bw1,kernel = "gaussian", 
+                   dMat=DM)
+gwr.res1 
+## End(Not run)
+data(LondonBorough)
+
+nsa = list("SpatialPolygonsRescale", layout.north.arrow(), offset = c(561900,200900), 
+scale = 500, col=1)
+## Not run: 
+if(require("RColorBrewer"))
+{
+  mypalette&lt;-brewer.pal(6,"Spectral")
+  x11()
+  spplot(gwr.res1$SDF, "FLOORSZ", key.space = "right", cex=1.5, cuts=10,
+  ylim=c(155840.8,200933.9), xlim=c(503568.2,561957.5),
+  main="GWR estimated coefficients for FLOORSZ with a fixed bandwidth", 
+  col.regions=mypalette, sp.layout=list(nsa, londonborough))}
+
+## End(Not run)
+## Not run: 
+bw2&lt;-bw.gwr(PURCHASE~FLOORSZ,approach="aic",adaptive=TRUE, data=londonhp, 
+            kernel = "gaussian", dMat=DM)
+gwr.res2&lt;-gwr.basic(PURCHASE~FLOORSZ, data=londonhp, bw=bw2,adaptive=TRUE,
+                    kernel = "gaussian", dMat=DM)
+gwr.res2
+if(require("RColorBrewer"))
+{
+  x11()
+  spplot(gwr.res2$SDF, "FLOORSZ", key.space = "right", cex=1.5, cuts=10,
+  ylim=c(155840.8,200933.9), xlim=c(503568.2,561957.5),
+  main="GWR estimated coefficients for FLOORSZ with an adaptive bandwidth", 
+  col.regions=mypalette, sp.layout=list(nsa,londonborough))}
+
+## End(Not run)
+## Not run: 
+  ############HP-GWR test code
+  simulate.data.generator &lt;- function(data.length) {
+  x1 &lt;- rnorm(data.length)
+  x2 &lt;- rnorm(data.length)
+  x3 &lt;- rnorm(data.length)
+  lon &lt;- rnorm(data.length, mean = 533200, sd = 10000)
+  lat &lt;- rnorm(data.length, mean = 159400, sd = 10000)
+  y &lt;- x1 + 5 * x2 + 2.5 * x3 + rnorm(data.length)
+  simulate.data &lt;- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3, lon = lon, lat = lat)
+  coordinates(simulate.data) &lt;- ~ lon + lat
+  names(simulate.data)
+  return(simulate.data)
+}
+simulate.data &lt;- simulate.data.generator(10000)
+adaptive = TRUE
+
+## GWR (not parallelized)
+bw.CV.s &lt;- bw.gwr(data = simulate.data, formula = y ~ x1 + x2 + x3, approach="CV", 
+                  kernel = "gaussian", adaptive = adaptive, parallel.method = FALSE)
+model.s &lt;- gwr.model.selection(DeVar = "y", InDeVars = c("x1", "x2", "x3"), data = simulate.data, 
+                              bw = bw.CV.s, approach="AIC", kernel = "gaussian", adaptive = T, 
+                              parallel.method = FALSE)
+system.time(
+  betas.s &lt;- gwr.basic(data = simulate.data, formula = y ~ x1 + x2 + x3, bw = bw.CV.s, 
+                       kernel = "gaussian", adaptive = TRUE)
+)
+
+## GWR-Omp
+bw.CV.omp &lt;- bw.gwr(data = simulate.data, formula = y ~ x1 + x2 + x3, approach="CV", 
+                    kernel = "gaussian", adaptive = adaptive, parallel.method = "omp")
+model.omp &lt;- gwr.model.selection(DeVar = "y", InDeVars = c("x1", "x2", "x3"), data = simulate.data, 
+                                bw = bw.CV.omp, approach="AIC", kernel = "gaussian", adaptive = T, 
+                                parallel.method = "omp")
+system.time(
+  betas.omp &lt;- gwr.basic(data = simulate.data, formula = y ~ x1 + x2 + x3, bw = bw.CV.omp, 
+                        kernel = "gaussian", adaptive = T, parallel.method = "omp"))
+
+## GWR-CUDA
+bw.CV.cuda &lt;- bw.gwr(data = simulate.data, formula = y ~ x1 + x2 + x3, approach="CV", 
+                     kernel = "gaussian", adaptive = adaptive, parallel.method = "cuda", 
+                     parallel.arg = 6*16)
+model.cuda &lt;- gwr.model.selection(DeVar = "y", InDeVars = c("x1", "x2", "x3"), 
+                                 data = simulate.data, bw = bw.CV.cuda, approach="AIC", 
+                                 kernel = "gaussian", adaptive = T, 
+                                 parallel.method = "cuda", parallel.arg = 6*16)
+system.time(
+  betas.cuda &lt;- gwr.basic(data = simulate.data, formula = y ~ x1 + x2 + x3, bw = bw.CV.cuda, 
+                          kernel = "gaussian", adaptive = T, parallel.method = "cuda", 
+                          parallel.arg = 6*8))
+
+## End(Not run)
+</code></pre>
+
+
+</div>

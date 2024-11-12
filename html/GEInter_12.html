@@ -1,0 +1,269 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Miss.boosting</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Robust gene-environment interaction analysis approach via sparse boosting, where the
+missingness in environmental measurements is effectively accommodated using multiple
+imputation approach</h2>
+
+<h3>Description</h3>
+
+<p>This gene-environment analysis approach includes three steps to accommodate both missingness
+in environmental (E) measurements and long-tailed or contaminated outcomes. At the first step,
+the  multiple imputation approach based on sparse boosting method is developed to accommodate
+missingness in E measurements, where we use <code>NA</code> to represent those E measurments which
+are missing. Here a semiparametric model is assumed to accommodate nonlinear effects, where we
+model continuous E factors in a nonlinear way, and discrete E factors in a linear way. For
+estimating the nonlinear functions, the B spline expansion is adopted. At the second step, for
+each imputed data, we develop <code>RobSBoosting</code> approach for identifying important main E
+and genetic (G) effects, and G-E interactions, where the Huber loss function and Qn estimator are
+adopted to accommodate long-tailed distribution/data contamination (see <code>RobSBoosting</code>).
+At the third step, the identification results from Step 2 are combined based on stability
+selection technique.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">Miss.boosting(
+  G,
+  E,
+  Y,
+  im_time = 10,
+  loop_time = 500,
+  num.knots = c(2),
+  Boundary.knots,
+  degree = c(2),
+  v = 0.1,
+  tau,
+  family = c("continuous", "survival"),
+  knots = NULL,
+  E_type
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+<p>Input matrix of <code>p</code> genetic measurements consisting of <code>n</code> rows. Each row
+is an observation vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>E</code></td>
+<td>
+<p>Input matrix of <code>q</code> environmental risk factors. Each row is an observation
+vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>Response variable. A quantitative vector for <code>family</code>="continuous". For
+<code>family</code>="survival", <code>Y</code> should be a two-column matrix with the first column being
+the log(survival time) and the second column being the censoring indicator. The indicator is a
+binary variable, with "1" indicating dead, and "0" indicating right censored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>im_time</code></td>
+<td>
+<p>Number of imputation for accommodating missingness
+in E variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loop_time</code></td>
+<td>
+<p>Number of iterations of the sparse boosting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num.knots</code></td>
+<td>
+<p>Numbers of knots for the B spline basis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Boundary.knots</code></td>
+<td>
+<p>The boundary of knots for the B spline basis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>degree</code></td>
+<td>
+<p>Degree for the B spline basis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>v</code></td>
+<td>
+<p>The step size used in the sparse boosting process. Default is 0.1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p>Threshold used in the stability selection at the third step.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>Response type of <code>Y</code> (see above).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>knots</code></td>
+<td>
+<p>List of knots for the B spline basis. Default is NULL and knots can be generated
+with the given <code>num.knots, degree</code> and <code>Boundary.knots</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>E_type</code></td>
+<td>
+<p>A vector indicating the type of each E factor, with "ED" representing discrete E factor, and "EC" representing continuous E factor.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object with S3 class <code>"Miss.boosting"</code> is returned, which is a list with the following components
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The call that produced this object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha0</code></td>
+<td>
+<p>A vector with each element indicating whether the corresponding E factor is
+selected.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta0</code></td>
+<td>
+<p>A vector with each element indicating whether the corresponding G factor or G-E
+interaction is selected. The first element is the first G effect and the second to
+(<code>q+1</code>) elements are the interactions for the first G factor, and so on.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>The intercept estimate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unique_variable</code></td>
+<td>
+<p>A matrix with two columns that represents the variables that are
+selected for the model after removing the duplicates, since the <code>loop_time</code> iterations of
+the method may produce variables that are repeatedly selected into the model. Here, the first
+and second columns correspond to the indexes of E factors and G factors. For example, (1, 0)
+represents that this variable is the first E factor, and (1,2) represents that the variable is
+the interaction between the first E factor and second G factor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unique_coef</code></td>
+<td>
+<p>Coefficients corresponding to <code>unique_variable</code>. Here, the coefficients are simple regression coefficients for the linear effect (discrete E factor, G factor, and
+their interaction), and B spline coefficients for the nonlinear effect (continuous E factor,
+and corresponding G-E interaction).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unique_knots</code></td>
+<td>
+<p>A list of knots corresponding to <code>unique_variable</code>. Here, when the
+type of <code>unique_variable</code> is discrete E factor, G factor or their interaction, knot will
+be NULL, and knots will be B spline otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unique_Boundary.knots</code></td>
+<td>
+<p>A list of boundary knots corresponding to
+<code>unique_variable</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unique_vtype</code></td>
+<td>
+<p>A vector representing the variable type of <code>unique_variable</code>.
+Here, "EC" stands for continuous E effect, "ED" for discrete E effect,
+"G"  for genetic factor variable, "EC-G" for the interaction between "EC" and "G",
+and "ED-G" for the interaction between "ED" and "G".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>degree</code></td>
+<td>
+<p>Degree for the B spline basis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>NorM</code></td>
+<td>
+<p>The values of B spline basis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>E_type</code></td>
+<td>
+<p>The type of E effects.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Mengyun Wu and Shuangge Ma.
+<em>Robust semiparametric gene-environment interaction analysis using sparse boosting.
+Statistics in Medicine, 38(23):4625-4641, 2019.</em>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(Rob_data)
+G=Rob_data[,1:20];E=Rob_data[,21:24]
+Y=Rob_data[,25];Y_s=Rob_data[,26:27]
+knots=list();Boundary.knots=matrix(0,(20+4),2)
+for (i in 1:4){
+  knots[[i]]=c(0,1)
+  Boundary.knots[i,]=c(0,1)
+}
+E2=E1=E
+
+##continuous
+E1[7,1]=NA
+fit1&lt;-Miss.boosting(G,E1,Y,im_time=1,loop_time=100,num.knots=c(2),Boundary.knots,
+degree=c(2),v=0.1,tau=0.3,family="continuous",knots=knots,E_type=c("EC","EC","ED","ED"))
+y1_hat=predict(fit1,matrix(E1[1,],nrow=1),matrix(G[1,],nrow=1))
+plot(fit1)
+
+
+##survival
+E2[4,1]=NA
+fit2&lt;-Miss.boosting(G,E2,Y_s,im_time=2,loop_time=200,num.knots=c(2),Boundary.knots,
+degree=c(2),v=0.1,tau=0.3,family="survival",knots,E_type=c("EC","EC","ED","ED"))
+y2_hat=predict(fit2,matrix(E1[1,],nrow=1),matrix(G[1,],nrow=1))
+plot(fit2)
+
+</code></pre>
+
+
+</div>

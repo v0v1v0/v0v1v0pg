@@ -1,0 +1,208 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>weighted_quantile</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Weighted sample quantiles</h2>
+
+<h3>Description</h3>
+
+<p>A variation of <code>quantile()</code> that can be applied to weighted samples.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">weighted_quantile(
+  x,
+  probs = seq(0, 1, 0.25),
+  weights = NULL,
+  n = NULL,
+  na.rm = FALSE,
+  names = TRUE,
+  type = 7,
+  digits = 7
+)
+
+weighted_quantile_fun(x, weights = NULL, n = NULL, na.rm = FALSE, type = 7)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>numeric vector: sample values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>probs</code></td>
+<td>
+<p>numeric vector: probabilities in <code class="reqn">[0, 1]</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Weights for the sample. One of:
+</p>
+
+<ul>
+<li>
+<p> numeric vector of same length as <code>x</code>: weights for corresponding values in <code>x</code>,
+which will be normalized to sum to 1.
+</p>
+</li>
+<li> <p><code>NULL</code>: indicates no weights are provided, so unweighted sample quantiles
+(equivalent to <code>quantile()</code>) are returned.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Presumed effective sample size. If this is greater than 1 and
+continuous quantiles (<code>type &gt;= 4</code>) are requested, flat regions may be added
+to the approximation to the inverse CDF in areas where the normalized
+weight exceeds <code>1/n</code> (i.e., regions of high density). This can be used to
+ensure that if a sample of size <code>n</code> with duplicate <code>x</code> values is summarized
+into a weighted sample without duplicates, the result of <code>weighted_quantile(..., n = n)</code>
+on the weighted sample is equal to the result of <code>quantile()</code> on the original
+sample. One of:
+</p>
+
+<ul>
+<li> <p><code>NULL</code>: do not make a sample size adjustment.
+</p>
+</li>
+<li>
+<p> numeric: presumed effective sample size.
+</p>
+</li>
+<li>
+<p> function or name of function (as a string): A function applied to
+<code>weights</code> (prior to normalization) to determine the sample size. Some
+useful values may be:
+</p>
+
+<ul>
+<li> <p><code>"length"</code>: i.e. use the number of elements in <code>weights</code> (equivalently
+in <code>x</code>) as the effective sample size.
+</p>
+</li>
+<li> <p><code>"sum"</code>: i.e. use the sum of the unnormalized <code>weights</code> as the sample
+size. Useful if the provided <code>weights</code> is unnormalized so that its
+sum represents the true sample size.
+</p>
+</li>
+</ul>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.rm</code></td>
+<td>
+<p>logical: if <code>TRUE</code>, corresponding entries in <code>x</code> and <code>weights</code>
+are removed if either is <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names</code></td>
+<td>
+<p>logical: If <code>TRUE</code>, add names to the output giving the input
+<code>probs</code> formatted as a percentage.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>integer between 1 and 9: determines the type of quantile estimator
+to be used. Types 1 to 3 are for discontinuous quantiles, types 4 to 9 are
+for continuous quantiles. See <strong>Details</strong>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>numeric: the number of digits to use to format percentages
+when <code>names</code> is <code>TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Calculates weighted quantiles using a variation of the quantile types based
+on a generalization of <code>quantile()</code>.
+</p>
+<p>Type 1–3 (discontinuous) quantiles are directly a function of the inverse
+CDF as a step function, and so can be directly translated to the weighted
+case using the natural definition of the weighted ECDF as the cumulative
+sum of the normalized weights.
+</p>
+<p>Type 4–9 (continuous) quantiles require some translation from the definitions
+in <code>quantile()</code>. <code>quantile()</code> defines continuous estimators in terms of
+<code class="reqn">x_k</code>, which is the <code class="reqn">k</code>th order statistic, and <code class="reqn">p_k</code>, which is a function of <code class="reqn">k</code>
+and <code class="reqn">n</code> (the sample size). In the weighted case, we instead take <code class="reqn">x_k</code> as the <code class="reqn">k</code>th
+smallest value of <code class="reqn">x</code> in the weighted sample (not necessarily an order statistic,
+because of the weights). Then we can re-write the formulas for <code class="reqn">p_k</code> in terms of
+<code class="reqn">F(x_k)</code> (the empirical CDF at <code class="reqn">x_k</code>, i.e. the cumulative sum of normalized
+weights) and <code class="reqn">f(x_k)</code> (the normalized weight at <code class="reqn">x_k</code>), by using the
+fact that, in the unweighted case, <code class="reqn">k = F(x_k) \cdot n</code> and <code class="reqn">1/n = f(x_k)</code>:
+</p>
+
+<dl>
+<dt>Type 4</dt>
+<dd>
+<p><code class="reqn">p_k = \frac{k}{n} = F(x_k)</code></p>
+</dd>
+<dt>Type 5</dt>
+<dd>
+<p><code class="reqn">p_k = \frac{k - 0.5}{n} = F(x_k) - \frac{f(x_k)}{2}</code></p>
+</dd>
+<dt>Type 6</dt>
+<dd>
+<p><code class="reqn">p_k = \frac{k}{n + 1} = \frac{F(x_k)}{1 + f(x_k)}</code></p>
+</dd>
+<dt>Type 7</dt>
+<dd>
+<p><code class="reqn">p_k = \frac{k - 1}{n - 1} = \frac{F(x_k) - f(x_k)}{1 - f(x_k)}</code></p>
+</dd>
+<dt>Type 8</dt>
+<dd>
+<p><code class="reqn">p_k = \frac{k - 1/3}{n + 1/3} = \frac{F(x_k) - f(x_k)/3}{1 + f(x_k)/3}</code></p>
+</dd>
+<dt>Type 9</dt>
+<dd>
+<p><code class="reqn">p_k = \frac{k - 3/8}{n + 1/4} = \frac{F(x_k) - f(x_k) \cdot 3/8}{1 + f(x_k)/4}</code></p>
+</dd>
+</dl>
+<p>Then the quantile function (inverse CDF) is the piece-wise linear function
+defined by the points <code class="reqn">(p_k, x_k)</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>weighted_quantile()</code> returns a numeric vector of <code>length(probs)</code> with the
+estimate of the corresponding quantile from <code>probs</code>.
+</p>
+<p><code>weighted_quantile_fun()</code> returns a function that takes a single argument,
+a vector of probabilities, which itself returns the corresponding quantile
+estimates. It may be useful when <code>weighted_quantile()</code> needs to be called
+repeatedly for the same sample, re-using some pre-computation.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>weighted_ecdf()</code>
+</p>
+
+
+</div>

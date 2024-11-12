@@ -1,0 +1,534 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>glarma</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generalized Linear Autoregressive Moving Average Models with
+Various Distributions</h2>
+
+<h3>Description</h3>
+
+<p>The function <code>glarma</code> is used to fit generalized linear
+autoregressive moving average models with various distributions
+(Poisson, binomial, negative binomial) using either Pearson residuals
+or score residuals, and for the binomial distribution, identity
+residuals. It also estimates the parameters of the GLARMA model with
+various distributions by using Fisher scoring or Newton-Raphson
+iteration.
+</p>
+<p>For Poisson and negative binomial response distributions the log link
+is currently used. For binomial responses the logit link is currently
+used.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">glarma(y, X, offset = NULL, type = "Poi", method = "FS", residuals = "Pearson",
+       phiLags,  thetaLags, phiInit, thetaInit, beta, alphaInit,
+       alpha = 1, maxit = 30, grad = 2.22e-16)
+
+glarmaPoissonPearson(y, X, offset = NULL, delta, phiLags, thetaLags,
+                     method =  "FS")
+
+glarmaPoissonScore(y, X, offset = NULL, delta, phiLags, thetaLags,
+                   method =  "FS")
+
+glarmaBinomialIdentity(y, X, offset = NULL, delta, phiLags, thetaLags,
+                       method =  "FS")
+
+glarmaBinomialPearson(y, X, offset = NULL, delta, phiLags, thetaLags,
+                      method =  "FS")
+
+glarmaBinomialScore(y, X, offset = NULL, delta, phiLags, thetaLags,
+                    method =  "FS")
+
+glarmaNegBinPearson(y, X, offset = NULL, delta, phiLags, thetaLags,
+                    method =  "FS")
+
+glarmaNegBinScore(y, X, offset = NULL, delta, phiLags, thetaLags,
+                  method =  "FS")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Numeric vector; the response variable. If the
+response variable is for the model with the binomial
+distribution, it should be a n by 2 matrix, one column is the
+number of successes and another is the number of failures.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Matrix; the explanatory variables. A vector of ones should be
+added to the data matrix as the first column for the <code>beta</code> of
+the intercept.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>Either <code>NULL</code> or a numeric vector of length equal
+to the number of cases. Used to specify an <em>a priori</em> known
+component to be included in the linear predictor during fitting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>Numeric vector; initial values of the regression
+coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>phiLags</code></td>
+<td>
+<p>Numeric vector; AR orders.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>phiInit</code></td>
+<td>
+<p>Numeric vector; initial values for the corresponding
+AR orders.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thetaLags</code></td>
+<td>
+<p>Numeric vector; MA orders.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thetaInit</code></td>
+<td>
+<p>Numeric vector; initial values for the corresponding
+MA orders.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>Numeric vector; initial values of the parameters for the
+GLARMA estimation procedure. It is a combination of the parameters of
+<code>beta</code>, the AR terms and the MA terms.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Numeric; an optional initial shape parameter for
+<code>glm.nb</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alphaInit</code></td>
+<td>
+<p>Numeric; an initial shape parameter for
+<code>glarma</code> for negative binomial counts.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Character; the count distribution. Possible values are
+<code>"Poi"</code> (Poisson), <code>"Bin"</code> (binomial) and <code>"NegBin"</code>
+(negative binomial). The default is the
+Poisson distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Character; method of iteration to be used. Possible
+values are <code>"FS"</code> (Fisher scoring), and <code>"NR"</code>
+(Newton-Raphson). The default is to use Fisher scoring to estimate
+the parameters of a GLARMA model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p>Character; the type of residuals to be used. Possible
+values are <code>"Pearson"</code> and <code>"Score"</code>, and for the binomial
+distribution <code>"Identity"</code> is also allowed. The default is to
+use Pearson residuals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>Numeric; the maximum number of iterations allowed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grad</code></td>
+<td>
+<p>Numeric; the tolerance for recognizing numbers, which
+are smaller than the specified tolerance, as zero.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Models for <code>glarma</code> are specified symbolically. A typical model
+has the form <code>y</code> (response), <code>X</code> (terms) where <code>y</code> is
+the count or factor reponse vector, <code>X</code> is a series of terms
+which specifies a linear predictor for the response. It should be noted
+that the first column of <code>X</code> should be a vector of 1s as the
+intercept in the model. Four initial parameters that need to be
+estimated are combined into <code class="reqn">\delta = (\beta, \phi, \theta,
+  \alpha)</code>, where <code class="reqn">\alpha</code>
+is an optional parameter to accomodate the negative binomial
+model. Note that in the function <code>glm.nb</code> from the
+package <span class="pkg">MASS</span>, this parameter is called <code>theta</code>.
+</p>
+<p>For Poisson and negative binomial response distributions the log link
+is currently used. For binomial responses the logit link is currently
+used.
+</p>
+<p>The generalized linear autoregressive moving average models are
+computed as follows.
+</p>
+<p>The linear predictor for the response is
+</p>
+<p style="text-align: center;"><code class="reqn">\log{\mu_t} = W_t = X_t^T\beta + \mbox{offset} + Z_t.</code>
+</p>
+
+<p>The infinite moving average from the linear predictor is
+</p>
+<p style="text-align: center;"><code class="reqn">Z_t = \sum_{i=1}^\infty \gamma_i e_{t-i}.</code>
+</p>
+
+<p>This infinite moving average, is computed using the autoregressive
+moving average recursions
+</p>
+<p style="text-align: center;"><code class="reqn">Z_t = \phi_1 (Z_{t-1} + e_{t-1}) + ... +%
+              \phi_p (Z_{t-p} + e_{t-p}) + \theta_1 e_{t-1}%
+	      + ... + \theta_q e_{t-q}</code>
+</p>
+
+<p>where <code class="reqn">p</code> and <code class="reqn">q</code> are the orders of <code class="reqn">\phi</code>
+and <code class="reqn">\theta</code> respectively and the non-zero lags of the vectors
+<code>phi</code> and <code>theta</code> may be specified by the user via the
+arguments <code>phiLag</code> and <code>thetaLag</code>.
+</p>
+<p>There are two types of residuals which may be used in each
+recursion, Pearson residuals or score residuals, and in addition,
+for the binomial distribution, identity residuals may be used. The
+infinite moving average, <code class="reqn">Z_t</code>, depends on the type of
+residuals used, as do the final parameters obtained from the
+filter. Standardisation of past observed counts is necessary to
+avoid instability, therefore the user should choose the appropriate
+type of residuals depending on the situation.
+</p>
+<p>The method of estimation for parameters implemented in the function
+aims to maximise the log likelihood by an iterative method commencing
+from suitably chosen initial values for the parameters. Starting from
+initial values <code class="reqn">\hat\delta^{(0)}</code> for the vector of
+parameters updates are obtained using the iterations
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{\delta}^{(k+1)}=\hat{\delta}^{(k)}+\Omega(\hat{\delta}^{(k)}%
+)\frac{\partial l(\hat{\delta}^{(k)})}{\partial\delta}</code>
+</p>
+
+<p>where <code class="reqn">\Omega (\hat\delta^{(k)})</code> is some
+suitably chosen matrix.
+</p>
+<p>Iterations continue for <code class="reqn">k\geq1</code> until convergence is
+reached or the number of iterations <code class="reqn">k</code> reaches a user specified
+upper limit on maximum iterations in which case they will stop. The
+convergence criterion used in our implementation is that based on
+<code class="reqn">\eta</code>, the maximum of absolute values of the first
+derivatives.
+</p>
+<p>When <code class="reqn">\eta</code> is less than a user specified value <code>grad</code>
+the iterations stop. There are two methods of optimization of the
+likelihood, Newton-Raphson and Fisher scoring. The method used is
+specified by the argument <code>method</code>. It should be noticed that if
+the initial value for parameters are not chosen well, the
+optimization of the likelihood might fail to converge. Care is needed
+when fitting mixed ARMA specifications because there is potential for
+the AR and MA parameters to be non-identifiable if the orders <code class="reqn">p</code> and
+<code class="reqn">q</code> are too large. Lack of identifiability manifests itself in the
+algorithm to optimize the likelihood failing to converge and/or the
+hessian being singular—check the warning messages and convergence
+error codes.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function <code>summary</code> (i.e., <code>summary.glarma</code>)
+can be used to obtain or print a summary of the results.
+</p>
+<p>The generic accessor functions <code>coef</code> (i.e.,
+<code>coef.glarma</code>), <code>logLik</code> (i.e.,
+<code>logLik.glarma</code>), <code>fitted</code> (i.e.,
+<code>fitted.glarma</code>), <code>residuals</code> (i.e.,
+<code>residuals.glarma</code>), <code>nobs</code> (i.e.,
+<code>nobs.glarma</code>), <code>model.frame</code> (i.e.,
+<code>model.frame.glarma</code>) and <code>extractAIC</code> (i.e.,
+<code>extractAIC.glarma</code>) can be used to extract various useful
+features of the value returned by <code>glarma</code>.
+</p>
+<p><code>glarma</code> returns an object of class "glarma" with components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>a vector of coefficients for <code>beta</code>, <code>AR</code> and
+<code>MA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logLik</code></td>
+<td>
+<p>the loglikelihood of the specific distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logLikDeriv</code></td>
+<td>
+<p>the derivative of the loglikelhood of the specified
+distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logLikDeriv2</code></td>
+<td>
+<p>the second derivative of the loglikelihood of the
+specified distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta</code></td>
+<td>
+<p>the estimated linear predictor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu</code></td>
+<td>
+<p>the GLARMA estimated mean.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>the GLARMA fitted values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p>the residuals of the type specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov</code></td>
+<td>
+<p>the estimated covariance matrix of the maximum
+likelihood estimators.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>phiLags</code></td>
+<td>
+<p>vector of AR orders.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thetaLags</code></td>
+<td>
+<p>vector of MA orders.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>the number of columns in the model matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pq</code></td>
+<td>
+<p>the number of <code>phiLags</code> plus the number of
+<code>thetaLags</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>null.deviance</code></td>
+<td>
+<p>the deviance from the initial GLM fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df.null</code></td>
+<td>
+<p>the degrees of freedom from the initial GLM fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>the <code class="reqn">y</code> vector used in the GLARMA model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>the model matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>the offset, <code>NULL</code> if there is no offset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>the distribution of the counts.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>the method of iteration used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residType</code></td>
+<td>
+<p>the type of the residuals returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the matched call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>the number of iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>errCode</code></td>
+<td>
+<p>the error code; 0 indicating successful convergence of
+the iteration method, 1 indicating failure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>WError</code></td>
+<td>
+<p>error code for finiteness of <code class="reqn">W</code>; 0 indicating all
+values of <code class="reqn">W</code> are finite, 1 indicating at least one infinite
+value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min</code></td>
+<td>
+<p>the minimum of the absolute value of the gradient.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aic</code></td>
+<td>
+<p>A version of Akaike's An Information Criterion, minus
+twice the maximized log-likelihood plus twice the number of
+parameters, computed by the aic component of the family. For
+binomial and Poisson families the dispersion is fixed at one and the
+number of parameters is the number of coefficients.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>The original GLARMA routine for Poisson responses was developed in
+collaboration with Richard A. Davis and Ying Wang. The binomial
+response version was developed with the assistance of Haolan Lu. The
+extension to negative binomial response was carried out by Bo
+Wang. Daniel Drescher contributed to the initial structure of the
+software used as the basis of the package.
+</p>
+<p>The main author of the package is  "William T.M. Dunsmuir"
+&lt;w.dunsmuir@unsw.edu.au&gt;. Package development was carried out by
+Cenanning Li supervised by David J. Scott.
+</p>
+
+
+<h3>References</h3>
+
+<p>Dunsmuir, William T. M. and Scott, David J. (2015) The <span class="pkg">glarma</span> Package
+for Observation-Driven Time Series Regression of Counts.
+<em>Journal of Statistical Software</em>, <b>67(7)</b>, 1–36.
+<a href="http://dx.doi.org/10.18637/jss.v067.i07">http://dx.doi.org/10.18637/jss.v067.i07</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Additional examples may be found in <code>Asthma</code>,
+<code>OxBoatRace</code>, <code>RobberyConvict</code>, and
+<code>DriverDeaths</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">### Example from Davis, Dunsmuir Wang (1999)
+## MA(1,2,5), Pearson Residuals, Fisher Scoring
+data(Polio)
+y &lt;- Polio[, 2]
+X &lt;- as.matrix(Polio[, 3:8])
+glarmamod &lt;- glarma(y, X, thetaLags = c(1,2,5), type = "Poi", method = "FS",
+                    residuals = "Pearson", maxit = 100, grad = 1e-6)
+glarmamod
+summary(glarmamod)
+
+## Score Type (GAS) Residuals, Fisher Scoring
+glarmamod &lt;- glarma(y, X, thetaLags = c(1,2,5), type = "Poi", method = "FS",
+                    residuals = "Score", maxit = 100, grad = 1e-6)
+glarmamod
+summary(glarmamod)
+
+## Score Type (GAS)  Residuals, Newton Raphson
+## Note: Newton Raphson fails to converge from GLM initial estimates.
+## Setting up the initial estimates by ourselves
+init.delta &lt;- glarmamod$delta
+beta &lt;- init.delta[1:6]
+thetaInit &lt;- init.delta[7:9]
+
+glarmamod &lt;- glarma(y, X, beta = beta, thetaLags = c(1, 2, 5),
+                    thetaInit = thetaInit, type ="Poi", method = "NR",
+                    residuals = "Score", maxit = 100, grad = 1e-6)
+glarmamod
+summary(glarmamod)
+
+## AR(1,5), Pearson Residuals, Fisher Scoring
+glarmamod &lt;- glarma(y, X, phiLags = c(1, 5), type = "Poi", method = "FS",
+                    residuals = "Pearson", maxit = 100, grad = 1e-6)
+glarmamod
+summary(glarmamod)
+
+
+
+</code></pre>
+
+
+</div>

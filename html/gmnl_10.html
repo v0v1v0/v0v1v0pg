@@ -1,0 +1,540 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gmnl</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate Multinomial Logit Models with Observed and Unobserved Individual Heterogeneity.</h2>
+
+<h3>Description</h3>
+
+<p>Estimate different types of multinomial logit models with observed and unobserved individual heterogneity, such as
+MIXL, S-MNL, G-MNL, LC and MM-MNL models. These models are estimated using  Maximum Simulated Likelihood. It supports both cross-sectional and panel data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gmnl(
+  formula,
+  data,
+  subset,
+  weights,
+  na.action,
+  model = c("mnl", "mixl", "smnl", "gmnl", "lc", "mm"),
+  start = NULL,
+  ranp = NULL,
+  R = 40,
+  Q = 2,
+  haltons = NA,
+  mvar = NULL,
+  seed = 12345,
+  correlation = FALSE,
+  bound.err = 2,
+  panel = FALSE,
+  hgamma = c("direct", "indirect"),
+  reflevel = NULL,
+  init.tau = 0.1,
+  init.gamma = 0.1,
+  notscale = NULL,
+  print.init = FALSE,
+  gradient = TRUE,
+  typeR = TRUE,
+  ...
+)
+
+## S3 method for class 'gmnl'
+print(
+  x,
+  digits = max(3, getOption("digits") - 3),
+  width = getOption("width"),
+  ...
+)
+
+## S3 method for class 'gmnl'
+summary(object, ...)
+
+## S3 method for class 'summary.gmnl'
+print(
+  x,
+  digits = max(3, getOption("digits") - 2),
+  width = getOption("width"),
+  ...
+)
+
+## S3 method for class 'gmnl'
+update(object, new, ...)
+
+## S3 method for class 'gmnl'
+coef(object, ...)
+
+## S3 method for class 'gmnl'
+model.matrix(object, ...)
+
+## S3 method for class 'gmnl'
+residuals(object, outcome = TRUE, ...)
+
+## S3 method for class 'gmnl'
+df.residual(object, ...)
+
+## S3 method for class 'gmnl'
+fitted(object, outcome = TRUE, ...)
+
+## S3 method for class 'gmnl'
+logLik(object, ...)
+
+## S3 method for class 'gmnl'
+nObs(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>a symbolic description of the model to be estimated. The formula is divided in five parts, each of them separated by the symbol <code>|</code>. The first part is reserved for alternative-specific variables with a generic coefficient. The second part corresponds to individual-specific variables with an alternative specific coefficients. The third part corresponds to alternative-specific variables with an alternative-specific coefficident. The fourth part is reserved for time-invariant variables that modify the mean of the random parameters. Finally, the fifth part is reserved for time-invariant variables that enter in the scale coefficient or in the probability assignment in models with latent classes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>the data of class <code>mlogit.data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>an optional vector specifying a subset of observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>an optional vector of weights. Default to 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>a function wich indicated what should happen when the data
+contains <code>NA</code>'s.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>a string indicating which model is estimated. The options are "<code>mnl</code>" for the Multinomial Logit Model, "<code>mixl</code>" for the Mixed Logit Model, "<code>smnl</code>" for the Scaled Multinomial Logit Model, "<code>gmnl</code>" for the Generalized Multinomial Logit Model, "<code>lc</code>" for the Latent Class Multinomial Logit Model, and "<code>mm</code>" for the Mixed-Mixed Multinomial Logit Model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>a vector of starting values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ranp</code></td>
+<td>
+<p>a named vector whose names are the random parameters and values the distribution:
+"<code>n</code>" for normal, "<code>ln</code>" for log-normal, "<code>cn</code>" for truncated normal, "<code>u</code>" for uniform, "<code>t</code>" for triangular, "<code>sb</code>" for Sb Johnson.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>the number of draws of pseudo-random numbers if <code>ranp</code> is not <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Q</code></td>
+<td>
+<p>number of classes for LC or MM-MNL models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>haltons</code></td>
+<td>
+<p>only relevant if <code>ranp</code> is not <code>NULL</code>. If <code>haltons = NULL</code>, pseudo-random numbers are used instead of Halton sequences. If <code>haltons=NA</code>, the first <code class="reqn">K</code> primes are used to generates the Halton draws, where <code class="reqn">K</code> is the number of random parameters, and 15 of the initial sequence of elements are dropped. Otherwise, <code>haltons</code> should be a list with elements <code>prime</code> and <code>drop</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mvar</code></td>
+<td>
+<p>only valid if <code>ranp</code> is not <code>NULL</code>. This is a named list, where the names correspond to the variables with random parameters, and the values correspond to the variables that enter in the mean of each random parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>seed for the random number generator. Default is <code>seed = 12345</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correlation</code></td>
+<td>
+<p>only relevant if <code>ranp</code> is not <code>NULL</code>. If true, the correlation across random parameters is taken into account.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bound.err</code></td>
+<td>
+<p>only relevenat if model is <code>smnl</code> or <code>gmnl</code>. It indicates at which values the draws for the scale parameter are truncated. By default <code>bound.err = 2</code>, therefore a truncated normal distribution with truncation at -2 and +2 is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>panel</code></td>
+<td>
+<p>if <code>TRUE</code> a panel data model is estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hgamma</code></td>
+<td>
+<p>a string indicated how to estimate the parameter gamma. If "<code>direct</code>", then <code class="reqn">\gamma</code> is estimated directly, if "<code>indirect</code>" then <code class="reqn">\gamma ^*</code> is estimated, where <code class="reqn">\gamma = \exp(\gamma^*)/(1 + \exp(\gamma^*))</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reflevel</code></td>
+<td>
+<p>the base alternative.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init.tau</code></td>
+<td>
+<p>initial value for the <code class="reqn">\tau</code> parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init.gamma</code></td>
+<td>
+<p>initial value  for <code class="reqn">\gamma</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>notscale</code></td>
+<td>
+<p>only relevant if model is <code>smnl</code> or <code>gmnl</code>. It is a vector indicating which variables should not be scaled.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print.init</code></td>
+<td>
+<p>if <code>TRUE</code>, the initial values for the optimization procedure are printed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gradient</code></td>
+<td>
+<p>if <code>TRUE</code>, analytical gradients are used for the optimization procedure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>typeR</code></td>
+<td>
+<p>if <code>TRUE</code>, truncated normal draws are used for the scale parameter, if <code>FALSE</code> the procedure suggested by Greene (2010) is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments to be passed to <code>maxLik</code>, which depend in the maximization routine.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x, object</code></td>
+<td>
+<p>and object of class <code>gmnl</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>the number of digits.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>width</code></td>
+<td>
+<p>width.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>new</code></td>
+<td>
+<p>an updated formula for the <code>update</code> method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome</code></td>
+<td>
+<p>if <code>TRUE</code>, then the <code>fitted</code> and <code>residuals</code> methods return a vector that corresponds to the chosen alternative, otherwise it returns a matrix where each column corresponds to each alternative.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Let the utility to person <code class="reqn">i</code> from choosing alternative <code class="reqn">j</code> on choice occasion <code class="reqn">t</code> be: </p>
+<p style="text-align: center;"><code class="reqn">U_{ijt} = \beta_{i}x_{ijt} + \epsilon_{ijt}</code>
+</p>
+<p> where <code class="reqn">\epsilon_{ijt}</code> is i.i.d extreme value, and <code class="reqn">\beta_i</code> vary across individuals. Each model estimated by <code>gmnl</code> depends on how <code class="reqn">\beta_i</code> is specified. The options are the following:
+</p>
+
+<ol>
+<li>
+<p> S-MNL if <code class="reqn">\beta_i=\sigma_i\beta</code>, where the scale <code class="reqn">\sigma_i</code> varies across individuals.
+</p>
+</li>
+<li>
+<p> MIXL  if <code class="reqn">\beta_i=\beta + s\eta_i</code>, where <code class="reqn">\eta_i</code> is a draw from some distribution. For example, if <code class="reqn">\beta_i\sim N(\beta, s^2)</code>, then <code class="reqn">\eta_i\sim N(0, 1)</code>.
+</p>
+</li>
+<li>
+<p> GMNL if <code class="reqn">\beta_i=\sigma_i\beta + \gamma s\eta_i + \sigma_i(1-\gamma)s\eta_i</code>, where <code class="reqn">\sigma_i</code> is the scale parameter, and <code class="reqn">\gamma</code> is a parameter that controls how the variance of residual taste heterogeneity varies with scale.
+</p>
+</li>
+<li>
+<p> LC if <code class="reqn">\beta_i=\beta_q</code> with probability <code class="reqn">w_{iq}</code> for <code class="reqn">q = 1,...,Q</code>, where <code class="reqn">Q</code> is the total number of classes.
+</p>
+</li>
+<li>
+<p> MM-MIXL if  <code class="reqn">\beta_i\sim f(\beta_q, \Sigma_q)</code> with probability <code class="reqn">w_{iq}</code> for <code class="reqn">q = 1,...,Q</code>, where <code class="reqn">Q</code> is the total number of classes.
+</p>
+</li>
+</ol>
+<p>Observed heterogeneity can be also accommodated in the random parameters when the MIXL is estimated by including individual-specific covariates. Specifically, the vector of random coefficients is </p>
+<p style="text-align: center;"><code class="reqn">\beta_i=\beta +\Pi z_i + L\eta_i</code>
+</p>
+<p> where <code class="reqn">z_i</code> is a set of characteristics of individual <code class="reqn">i</code> that influence the mean of the taste parameters; and <code class="reqn">\Pi</code> is matrix of parameters. To estimate this model, the fourth part of the <code>formula</code> should be specified along with the <code>mvar</code> argument.
+</p>
+<p>One can also allow the mean of the scale to differ across individuals by including individual-specific characteristics. Thus, the scale parameters can be written as </p>
+<p style="text-align: center;"><code class="reqn">\exp(\bar{\sigma} + \delta h_i + \tau \upsilon_i)</code>
+</p>
+<p> where <code class="reqn">h_i</code> is a vector of attributes of individual <code class="reqn">i</code>. To estimate this model, the fifth part of the <code>formula</code> should include the variables that enter <code class="reqn">h_i</code>.
+</p>
+<p>For models with latent classes,  the class assignment is modeled as a semi-parametric multinomial logit format </p>
+<p style="text-align: center;"><code class="reqn">w_{iq}= \frac{\exp(\gamma_q)}{\sum_{q=1}^Q\exp(\gamma_q)}</code>
+</p>
+<p> for <code class="reqn">q = 1,...,Q, \gamma_1 = 0</code>. Latent class models (LC and MM-MIXL) requires at least that a constant should be specified in the fifth part of the <code>formula</code>. If the class assignment, <code class="reqn">w_{iq}</code>, is also determined by socio-economic characteristics, these variables can be also included in the fifth part.  
+</p>
+<p>Models that involve random parameters are estimated using Maximum Simulated Likelihood using the <code>maxLik</code> function of <code>maxLik</code> package.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class “<code>gmnl</code>” with the following elements
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p>the named vector of coefficients,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logLik</code></td>
+<td>
+<p>a set of values of the maximum likelihood procedure,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mf</code></td>
+<td>
+<p>the model framed used,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>the formula (a <code>gFormula</code> object),</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p><code>proc.time()</code> minus the start time,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>freq</code></td>
+<td>
+<p>frequency of dependent variable,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>draws</code></td>
+<td>
+<p>type of draws used,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>the fitted model,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>number of draws used,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ranp</code></td>
+<td>
+<p>vector indicating the variables with random parameters and their distribution,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p>the residuals,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correlation</code></td>
+<td>
+<p>whether the model is fitted assuming that the random parameters are correlated,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bi</code></td>
+<td>
+<p>matrix of conditional expectation of random parameters,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Q</code></td>
+<td>
+<p>number of classes,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the matched call.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Mauricio Sarrias <a href="mailto:msarrias86@gmail.com">msarrias86@gmail.com</a>
+</p>
+
+
+<h3>References</h3>
+
+
+<ul>
+<li>
+<p> Keane, M., &amp; Wasi, N. (2013). Comparing alternative models of heterogeneity in consumer choice behavior. Journal of Applied Econometrics, 28(6), 1018-1045.
+</p>
+</li>
+<li>
+<p> Fiebig, D. G., Keane, M. P., Louviere, J., &amp; Wasi, N. (2010). The generalized multinomial logit model: accounting for scale and coefficient heterogeneity. Marketing Science, 29(3), 393-421.
+</p>
+</li>
+<li>
+<p> Greene, W. H., &amp; Hensher, D. A. (2010). Does scale heterogeneity across individuals matter? An empirical assessment of alternative logit models. Transportation, 37(3), 413-428.
+</p>
+</li>
+<li>
+<p> Train, K. (2009). Discrete choice methods with simulation. Cambridge University Press.
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>mlogit</code>, <code>mlogit.data</code>,  <code>maxLik</code>, <code>Rchoice</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Examples using the Fishing data set from the AER package
+data("TravelMode", package = "AER")
+library(mlogit)
+TM &lt;- mlogit.data(TravelMode, choice = "choice", shape = "long", 
+                 alt.levels = c("air", "train", "bus", "car"), chid.var = "individual")
+## Not run: 
+## S-MNL model, ASCs not scaled
+smnl &lt;- gmnl(choice ~ wait + vcost + travel + gcost| 1, data = TM, 
+             model = "smnl", R = 100, 
+             notscale = c(1, 1, 1, rep(0, 4)))
+summary(smnl)
+
+## MIXL model with observed heterogeneity
+mixl.hier &lt;- gmnl(choice ~ vcost + gcost + travel + wait | 1 | 0 | income + size - 1,
+                 data = TM,
+                 model = "mixl",
+                 ranp = c(travel = "t", wait = "n"),
+                 mvar = list(travel = c("income","size"), wait = c("income")),
+                 R = 30,
+                 haltons = list("primes"= c(2, 17), "drop" = rep(19, 2)))
+summary(mixl.hier)
+
+## Examples using the Electricity data set from the mlogit package
+data("Electricity", package = "mlogit")
+Electr &lt;- mlogit.data(Electricity, id.var = "id", choice = "choice",
+                     varying = 3:26, shape = "wide", sep = "")
+                     
+## Estimate a MIXL model with correlated random parameters
+Elec.cor &lt;- gmnl(choice ~ pf + cl + loc + wk + tod + seas| 0, data = Electr,
+                 subset = 1:3000,
+                 model = 'mixl',
+                 R = 10,
+                 panel = TRUE,
+                 ranp = c(cl = "n", loc = "n", wk = "n", tod = "n", seas = "n"),
+                 correlation = TRUE)
+summary(Elec.cor)
+cov.gmnl(Elec.cor)
+se.cov.gmnl(Elec.cor)
+se.cov.gmnl(Elec.cor, sd = TRUE)
+cor.gmnl(Elec.cor)
+
+## Estimate a G-MNL model, where ASCs are also random
+Electr$asc2 &lt;- as.numeric(Electr$alt == 2)
+Electr$asc3 &lt;- as.numeric(Electr$alt == 3)
+Electr$asc4 &lt;- as.numeric(Electr$alt == 4)
+
+Elec.gmnl &lt;- gmnl(choice ~ pf + cl + loc + wk + tod + seas + asc2 + asc3 + asc4 | 0,
+                 data = Electr,
+                 subset = 1:3000,
+                 model = 'gmnl',
+                 R = 30,
+                 panel = TRUE,
+                 notscale = c(rep(0, 6), 1, 1, 1),
+                 ranp = c(cl = "n", loc = "n", wk = "n", tod = "n", seas = "n",
+                 asc2 = "n", asc3 = "n", asc4 = "n"))
+summary(Elec.gmnl)
+
+## Estimate a LC model with 2 classes
+Elec.lc &lt;- gmnl(choice ~ pf + cl + loc + wk + tod + seas| 0 | 0 | 0 | 1,
+               data = Electr,
+               subset = 1:3000,
+               model = 'lc',
+               panel = TRUE,
+               Q = 2)
+summary(Elec.lc)
+
+## Estimate a MM-MIXL model
+Elec.mm &lt;- gmnl(choice ~ pf + cl + loc + wk + tod + seas| 0 | 0 | 0 | 1,
+                 data = Electr,
+                 subset = 1:3000,
+                 model = 'mm',
+                 R = 30,
+                 panel = TRUE,
+                 ranp = c(pf = "n", cl = "n", loc = "n", wk = "n", tod = "n",
+                 seas = "n"),
+                 Q = 2,
+                 iterlim = 500)
+summary(Elec.mm)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

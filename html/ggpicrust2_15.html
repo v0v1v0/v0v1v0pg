@@ -1,0 +1,83 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pathway_heatmap</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create pathway heatmap</h2>
+
+<h3>Description</h3>
+
+<p>This function creates a heatmap of the predicted functional pathway abundance data. The function first makes the abundance data relative, then converts the abundance data to a long format and orders the samples based on the environment information. The heatmap is then created using the 'ggplot2' library. The color palette, appearance and the color bar of the heatmap can be customized using the 'scale_fill_gradientn', 'theme' and 'guides' functions respectively.
+</p>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>abundance</code></td>
+<td>
+<p>A matrix or data frame of pathway abundance data, where columns correspond to samples and rows correspond to pathways.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metadata</code></td>
+<td>
+<p>A data frame of metadata, where each row corresponds to a sample and each column corresponds to a metadata variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>A character string specifying the column name in the metadata data frame that contains the group variable.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A ggplot heatmap object. The output is a ggplot object representing the heatmap of the predicted functional pathway abundance data. The heatmap visualizes the z score of pathways in different samples.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(ggpicrust2)
+library(ggh4x)
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(magrittr)
+# Create example functional pathway abundance data
+kegg_abundance_example &lt;- matrix(rnorm(30), nrow = 3, ncol = 10)
+colnames(kegg_abundance_example) &lt;- paste0("Sample", 1:10)
+rownames(kegg_abundance_example) &lt;- c("PathwayA", "PathwayB", "PathwayC")
+
+# Create example metadata
+# Please ensure the sample IDs in the metadata have the column name "sample_name"
+metadata_example &lt;- data.frame(sample_name = colnames(kegg_abundance_example),
+                               group = factor(rep(c("Control", "Treatment"), each = 5)))
+
+# Create a heatmap
+pathway_heatmap(kegg_abundance_example, metadata_example, "group")
+# Use real dataset
+data("metacyc_abundance")
+data("metadata")
+metacyc_daa_results_df &lt;- pathway_daa(abundance = metacyc_abundance %&gt;%
+column_to_rownames("pathway"),
+metadata = metadata, group = "Environment", daa_method = "LinDA")
+annotated_metacyc_daa_results_df &lt;- pathway_annotation(pathway = "MetaCyc",
+daa_results_df = metacyc_daa_results_df, ko_to_kegg = FALSE)
+feature_with_p_0.05 &lt;- metacyc_daa_results_df %&gt;% filter(p_adjust &lt; 0.05)
+pathway_heatmap(abundance = metacyc_abundance %&gt;%
+right_join(annotated_metacyc_daa_results_df %&gt;%
+select(all_of(c("feature","description"))), by = c("pathway" = "feature")) %&gt;%
+filter(pathway %in% feature_with_p_0.05$feature) %&gt;%
+select(-"pathway") %&gt;%
+column_to_rownames("description"), metadata = metadata, group = "Environment")
+
+</code></pre>
+
+
+</div>

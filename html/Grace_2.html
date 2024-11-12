@@ -1,0 +1,225 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>grace.test</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+
+Graph-Constrained Hypothesis Testing Procedure
+</h2>
+
+<h3>Description</h3>
+
+
+<p>Test for the association between Y and each column of X using the Grace test based on Zhao and Shojaie (2016).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  grace.test(Y, X, L=NULL, lambda.L=NULL, lambda.2=0, normalize.L=FALSE,
+  eta=0.05, C=4*sqrt(3), K=10, sigma.error=NULL, verbose=FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+
+<p>outcome vector.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>matrix of predictors.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+
+<p>penalty weight matrix L.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.L</code></td>
+<td>
+
+<p>tuning parameter value for the penalty induced by the L matrix (see details). If a sequence of lambda.L values is supplied, K-fold cross-validation is performed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.2</code></td>
+<td>
+
+<p>tuning parameter value for the ridge penalty (see details). If a sequence of lambda.2 values is supplied, K-fold cross-validation is performed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normalize.L</code></td>
+<td>
+
+<p>whether the penalty weight matrix L should be normalized.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta</code></td>
+<td>
+
+<p>sparsity parameter <code class="reqn">\eta</code> (see details).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>C</code></td>
+<td>
+
+<p>parameter for the initial estimator (see details). It could also be "cv" or "scaled.lasso", in which case cross-validation or the scaled lasso are applied to estimate the initial estimator.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+
+<p>number of folds in cross-validation.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma.error</code></td>
+<td>
+
+<p>error standard deviation. If NULL, scaled lasso is then applied to estimate it.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>whether computation progress should be printed
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function performs the Grace test (if lambda.2 = 0), the GraceI test (if lambda.L = 0) and the GraceR test as introduced in Zhao and Shojaie (2016). The Grace tests examine the null hypothesis <code class="reqn">\beta_j=0</code> conditional on all other covariates, even if the design matrix <code class="reqn">X</code> has more covariates (columns) than observations (rows). Network information on associations between covariates, which is represented by the <code class="reqn">L</code> matrix, could be used to improve the power of the test. When <code class="reqn">L</code> is informative (see Zhao and Shojaie (2016) for details), the Grace test is expected to deliver higher power than the GraceI test and other competing methods which ignores the network information (see e.g. Buhlmann (2013), van de Geer et al. (2014), Zhang and Zhang (2014)). When <code class="reqn">L</code> is potentially uninformative or inaccurate, the GraceR test could be used. Using data-adaptive choices (e.g. by cross-validation) of lambda.L and lambda.2, the GraceR test could adaptively choose the amount of outside information to be incorporated, which leads to more robust performance. Regardless of the informativeness of <code class="reqn">L</code>, type-I error rates of the Grace, GraceI and GraceR tests are asymptotically controlled.
+</p>
+<p>The Grace tests are based on the following Grace estimator:
+</p>
+<p style="text-align: center;"><code class="reqn">(\hat\alpha, \hat\beta) = \arg\min_{\alpha, \beta}{\|Y-\alpha 1 -X\beta\|_2^2+lambda.L(\beta^T L\beta)+lambda.2\|\beta\|_2^2}</code>
+</p>
+
+<p>In the formulation, L is the penalty weight matrix. Tuning parameters lambda.L and lambda.2 may be chosen by cross-validation. In practice, X and Y are standardized and centered, respectively, before estimating <code class="reqn">\hat\beta</code>. The resulting estimate is then rescaled back into the original scale. Note that the intercept <code class="reqn">\hat\alpha</code> is not penalized.
+</p>
+<p>To perform the Grace tests, the lasso initial estimator is calculated using lasso tuning parameter <code class="reqn">\sigma_\epsilon C\sqrt{\log(p)/n}</code>. The Grace test requires C to be larger than <code class="reqn">2\sqrt{2}</code>. <code class="reqn">\sigma_\epsilon</code> is the error standard deviation, which is estimated using the scaled lasso (Sun and Zhang, 2012).
+</p>
+<p><code class="reqn">\eta&lt;0.5</code> is the sparsity parameter of <code class="reqn">\beta</code>, which controls the level of bias correction. It is assumed that the number of nonzero elements in <code class="reqn">\beta</code>, <code class="reqn">s=o([n/\log(p)]^\eta)</code>. This parameter is usually unknown. Using larger values of <code class="reqn">\eta</code> leads to more conservative results.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An R ‘list’ with elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>fitted intercept.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>fitted regression coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pvalue</code></td>
+<td>
+<p>p-values based on the Grace tests.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group.test</code></td>
+<td>
+<p>function to perform the group test, with the null hypothesis being that all the regression coefficients in the group equal zero. The argument of this function needs to be an index vector of variables. There is an optimal second argument, which specifies whether the group test should be performed based on the "holm" procedure (default), or based on the "max" test statstic. The output is the p-value of the group test. See examples below.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Sen Zhao
+</p>
+
+
+<h3>References</h3>
+
+<p>Li, C., and Li, H. (2008). Network-constrained regularization and variable selection for analysis of genomic data. Bioinformatics, 24, 1175-1182.
+</p>
+<p>Sun, T., and Zhang, C.-H. (2012). Scaled sparse linear regression. Biometrika, 99, 879-898.
+</p>
+<p>Buhlmann, P. (2013). Statistical significance in high-dimensional linear models. Bernoulli, 19, 1212-1242.
+</p>
+<p>van de Geer, S., Buhlmann, P., Rotiv, Y., and Dezeure, R. (2014). On asymptotically optimal confidence regions and tests for high-dimensional models. The Annals of Statistics, 42, 1166-1202.
+</p>
+<p>Zhang, C.-H., and Zhang, S.S. (2014). Confidence intervals for low dimensional parameters in high dimensional linear models. Journal of the Royal Statistical Society: Series B, 76, 217-242.
+</p>
+<p>Zhao, S., and Shojaie, A. (2016). A signifiance test for graph-constrained estimation. Biometrics, 72, 484-493.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(120)
+n &lt;- 100
+p &lt;- 200
+
+L &lt;- matrix(0, nrow = p, ncol = p)
+for(i in 1:10){
+	L[((i - 1) * p / 10 + 1), ((i - 1) * p / 10 + 1):(i * (p / 10))] &lt;- -1
+}
+diag(L) &lt;- 0
+ind &lt;- lower.tri(L, diag = FALSE)
+L[ind] &lt;- t(L)[ind]
+diag(L) &lt;- -rowSums(L)
+
+beta &lt;- c(rep(1, 10), rep(0, p - 10))
+
+Sigma &lt;- solve(L + 0.1 * diag(p))
+sigma.error &lt;- sqrt(t(beta) %*% Sigma %*% beta) / 2
+
+X &lt;- mvrnorm(n, mu = rep(0, p), Sigma = Sigma)
+Y &lt;- c(X %*% beta + rnorm(n, sd = sigma.error))
+
+grace.test.result &lt;- grace.test(Y, X, L, lambda.L = c(0.08, 0.12),
+                                lambda.2 = c(0.08, 0.12))
+mean(grace.test.result$pvalue[beta == 0] &lt; 0.05)
+
+grace.test.result$group.test(1:2)
+grace.test.result$group.test(3:50)
+grace.test.result$group.test(11:100)
+grace.test.result$group.test(1:5, method = "max")
+
+grace.test.result &lt;- grace.test(Y, X, L, lambda.L = 0.08,
+                                lambda.2 = 0.08, C = "cv")
+mean(grace.test.result$pvalue[beta == 0] &lt; 0.05)
+</code></pre>
+
+
+</div>

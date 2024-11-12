@@ -1,0 +1,188 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>create_input_landscape</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>create an landscape input from a named list of rasters or raster files</h2>
+
+<h3>Description</h3>
+
+<p>create an landscape input from a named list of rasters or raster files
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">create_input_landscape(
+  landscapes,
+  cost_function,
+  directions,
+  output_directory,
+  timesteps = NULL,
+  calculate_full_distance_matrices = FALSE,
+  crs = NULL,
+  overwrite_output = FALSE,
+  verbose = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>landscapes</code></td>
+<td>
+<p>list of named list(s) of raster(s) or raster file(s) name(s). Starting from the present towards the past.
+NOTE: the list names are important since these are the environmental names</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cost_function</code></td>
+<td>
+<p>function that returns a cost value between a pair of sites (neighbors) that should have the following signature:
+<code>cost_function &lt;- 
+ function(src, src_habitable, dest, dest_habitable){
+ rules for environmental factors to be considered (e.g. elevation)
+ return(cost value)
+}</code>
+where: **src** is a vector of environmental conditions for the origin sites, 
+**src_habitable** (TRUE or FALSE) for habitable condition of the origin sites, 
+**dest** is a vector of environmental conditions for the destination site, dest_habitable  (TRUE or FALSE) for habitable condition of the destination cell</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>directions</code></td>
+<td>
+<p>4, 8 or 16 neighbors, dictates the connection of cell neighbors on adjacency matrix (see gistance package)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_directory</code></td>
+<td>
+<p>path for storing the gen3sis ready landscape (i.e. landscape.rds, metadata.txt and full- and/or local_distance folders)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timesteps</code></td>
+<td>
+<p>vector of names for every time-step to represent the time-step at gen3sis ready landscape. 
+If timesteps=NULL (default), time-steps are sequentially numbered from 0 to the latest time-step.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>calculate_full_distance_matrices</code></td>
+<td>
+<p>should a full distance matrix be calculated? TRUE or FALSE? 
+If TRUE calculates the entire distance matrix for every time-step and between all habitable cells 
+(faster CPU time, higher storage required). 
+If FALSE (default), only local distances are calculated (slower CPU time when simulating but smaller gen3sis landscape size)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>crs</code></td>
+<td>
+<p>the coordinate reference system in crs format (see raster::crs)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>overwrite_output</code></td>
+<td>
+<p>TRUE or FALSE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>print distance calculation progress (default: FALSE)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function creates the input landscapes files needed by the run_simulation function. 
+It uses as input the dynamic landscape rasters and user defined geodesimal corrections as well as rules to define the connection costs between sites
+</p>
+
+
+<h3>Value</h3>
+
+<p>no return object. This function saves the landscape input files for gen3sis at the output_directory
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>run_simulation</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# load needed library
+library(raster)
+
+# get path containing example rasters
+datapath &lt;- system.file(file.path("extdata", "WorldCenter"), package="gen3sis")
+
+# create raster bricks
+temperature_brick &lt;- brick(file.path(datapath, "input_rasters/temp_rasters.grd"))
+aridity_brick &lt;-  brick(file.path(datapath, "input_rasters/arid_rasters.grd"))
+area_brick &lt;-  brick(file.path(datapath, "input_rasters/area_rasters.grd"))
+
+# create sub-list of environmental variables for fast example 
+# (i.e. 4 time-steps)
+landscapes_sub_list &lt;- list(temp=NULL, arid=NULL, area=NULL)
+for(i in 1:4){
+  landscapes_sub_list$temp &lt;- c(landscapes_sub_list$temp, temperature_brick[[i]])
+  landscapes_sub_list$arid &lt;- c(landscapes_sub_list$arid, aridity_brick[[i]])
+  landscapes_sub_list$area &lt;- c(landscapes_sub_list$area, area_brick[[i]])
+}
+
+# define cost function, crossing water as double as land sites
+cost_function_water &lt;- function(source, habitable_src, dest, habitable_dest) {
+  if(!all(habitable_src, habitable_dest)) {
+    return(2/1000)
+  } else {
+    return(1/1000)
+  }
+}
+
+## Not run: 
+# create input landscape ready for gen3sis from sub-list 
+# (i.e. 10 time-steps) and only local-distances.
+create_input_landscape(
+  landscapes = landscapes_sub_list,
+  cost_function = cost_function_water,
+  output_directory = file.path(tempdir(), "landscape_sub"),
+  directions = 8, # surrounding sites for each site
+  timesteps = paste0(round(150:147,2), "Ma"),
+  calculate_full_distance_matrices = FALSE) # full distance matrix
+
+
+# create list of all environmental variables available
+landscapes_list &lt;- list(temp=NULL, arid=NULL, area=NULL)
+for(i in 1:nlayers(temperature_brick)){
+  landscapes_list$temp &lt;- c(landscapes_list$temp, temperature_brick[[i]])
+  landscapes_list$arid &lt;- c(landscapes_list$arid, aridity_brick[[i]])
+  landscapes_list$area &lt;- c(landscapes_list$area, area_brick[[i]])
+}
+
+# create input landscape ready for gen3sis (~ 3min run-time)
+# and full distance matrix
+create_input_landscape(
+  landscapes = landscapes_list,
+  cost_function = cost_function_water,
+  output_directory = file.path(tempdir(), "landscape_WorldCenter_5"),
+  directions = 8, # surrounding sites for each site
+  timesteps = paste0(round(150:100,2), "Ma"),
+  crs="+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0",
+  calculate_full_distance_matrices = FALSE) # full distance matrix
+
+## End(Not run)
+</code></pre>
+
+
+</div>

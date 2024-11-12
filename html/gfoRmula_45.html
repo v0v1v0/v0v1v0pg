@@ -1,0 +1,122 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simple_restriction</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simple Restriction</h2>
+
+<h3>Description</h3>
+
+<p>This function assists the implementation of a restriction on a covariate in the data
+table <code>newdf</code> by setting lines where the covariate is restricted to a user-specified value.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">simple_restriction(newdf, pool, restriction, time_name, t, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>newdf</code></td>
+<td>
+<p>Data table containing the simulated data at time <code class="reqn">t</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pool</code></td>
+<td>
+<p>Data table containing the simulated data at times before <code class="reqn">t</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>restriction</code></td>
+<td>
+<p>List of vectors. Each vector contains as its first entry
+the covariate affected by the restriction; its second entry
+the condition that must be <code>TRUE</code> for the covariate to be
+modeled; its third entry a function that executes other specific actions
+based on the condition (in this case, this function); and its fourth
+entry some value used by the function (in this case, the value
+the user desires to assign to the covariate when it is not modeled).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_name</code></td>
+<td>
+<p>Character string specifying the name of the time variable in <code>pool</code> and <code>newdf</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t</code></td>
+<td>
+<p>Integer specifying the current time index.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>This argument is not used in this function.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>No value is returned. The data table <code>newdf</code> is modified in place.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Estimating the effect of static treatment strategies on risk of a
+## failure event with a simple restriction
+
+id &lt;- 'id'
+time_points &lt;- 7
+time_name &lt;- 't0'
+covnames &lt;- c('L1', 'L2', 'A')
+outcome_name &lt;- 'Y'
+outcome_type &lt;- 'survival'
+covtypes &lt;- c('binary', 'bounded normal', 'binary')
+histories &lt;- c(lagged, lagavg)
+histvars &lt;- list(c('A', 'L1', 'L2'), c('L1', 'L2'))
+covparams &lt;- list(covmodels = c(L1 ~ lag1_A + lag_cumavg1_L1 + lag_cumavg1_L2 +
+                                  L3 + t0,
+                                L2 ~ lag1_A + L1 + lag_cumavg1_L1 +
+                                  lag_cumavg1_L2 + L3 + t0,
+                                A ~ lag1_A + L1 + L2 + lag_cumavg1_L1 +
+                                  lag_cumavg1_L2 + L3 + t0))
+ymodel &lt;- Y ~ A + L1 + L2 + L3 + lag1_A + lag1_L1 + lag1_L2 + t0
+intervention1.A &lt;- list(static, rep(0, time_points))
+intervention2.A &lt;- list(static, rep(1, time_points))
+int_descript &lt;- c('Never treat', 'Always treat')
+nsimul &lt;- 10000
+
+# At t0 == 5, assume we have deterministic knowledge that L1 equals 0
+restrictions &lt;- list(c('L1', 't0 != 5', simple_restriction, 0))
+
+gform_basic &lt;- gformula(obs_data = basicdata_nocomp, id = id,
+                        time_points = time_points,
+                        time_name = time_name, covnames = covnames,
+                        outcome_name = outcome_name,
+                        outcome_type = outcome_type, covtypes = covtypes,
+                        covparams = covparams, ymodel = ymodel,
+                        intervention1.A = intervention1.A,
+                        intervention2.A = intervention2.A,
+                        restrictions = restrictions,
+                        int_descript = int_descript,
+                        histories = histories, histvars = histvars,
+                        basecovs = c('L3'), nsimul = nsimul,
+                        seed = 1234)
+gform_basic
+
+
+</code></pre>
+
+
+</div>

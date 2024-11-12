@@ -1,0 +1,163 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simulate_target</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generating time series with controllable features using MAR models</h2>
+
+<h3>Description</h3>
+
+<p><code>simulate_target</code> simulate one time series of length 'length' from a MAR model with target features 
+and returns a <code>ts</code> or <code>msts</code> object.
+<code>generate_target</code> simulate multiple time series of length 'length' from a MAR model with target features 
+and returns a <code>tsibble</code> object. The index of the tsibble is guessed from the seasonal periods.
+The specified features should not depend on the scale of the time series as the series is scaled during simulation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">simulate_target(
+  length = 100,
+  seasonal_periods = 1,
+  feature_function,
+  target,
+  k = ifelse(length(seasonal_periods) == 1, 3, length(seasonal_periods)),
+  tolerance = 0.05,
+  trace = FALSE,
+  parallel = FALSE
+)
+
+generate_target(
+  length = 100,
+  nseries = 10,
+  seasonal_periods = 1,
+  feature_function,
+  target,
+  k = ifelse(length(seasonal_periods) == 1, 3, length(seasonal_periods)),
+  tolerance = 0.05,
+  trace = FALSE,
+  parallel = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>length</code></td>
+<td>
+<p>length of the time series to be generated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seasonal_periods</code></td>
+<td>
+<p>Either a scalar or a numeric vector of length k containing
+the number of seasonal periods for each component.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>feature_function</code></td>
+<td>
+<p>a function that returns a vector of features from a time series.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>target</code></td>
+<td>
+<p>target feature values of the same length as that returned by <code>feature_function()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>integer specifying number of components to use for MAR models. Default is 3
+unless there are multiple seasonal periods specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tolerance</code></td>
+<td>
+<p>average tolerance per feature. The genetic algorithm will attempt
+to find a solution where the average difference between the series features and target
+is less than <code>tolerance</code>. A larger value will give a faster but less precise
+solution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>logical indicating if details of the search should be shown.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>An optional argument which allows to specify if the Genetic Algorithm
+should be run sequentially or in parallel.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nseries</code></td>
+<td>
+<p>Number of series to generate</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A time series object of class "ts" or "msts".
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Yanfei Kang and Rob J Hyndman
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1)
+library(tsfeatures)
+my_features &lt;- function(y) {
+  c(entropy(y), acf = acf(y, plot = FALSE)$acf[2:3, 1, 1])
+}
+# Simulate a ts with specified target features
+y &lt;- simulate_target(
+  length = 60, feature_function = my_features, target = c(0.5, 0.9, 0.8)
+)
+my_features(y)
+plot(y)
+## Not run: 
+# Generate a tsibble with specified target features
+df &lt;- generate_target(
+  length = 60, feature_function = my_features, target = c(0.5, 0.9, 0.8)
+)
+df %&gt;% 
+ as_tibble() %&gt;%
+ group_by(key) %&gt;%
+ dplyr::summarise(value = my_features(value), 
+           feature=c("entropy","acf1", "acf2"),
+           .groups = "drop")
+autoplot(df)
+# Simulate time series similar to an existing series
+my_features &lt;- function(y) {
+  c(stl_features(y)[c("trend", "seasonal_strength", "peak", "trough")])
+}
+y &lt;- simulate_target(
+  length = length(USAccDeaths),
+  seasonal_periods = frequency(USAccDeaths),
+  feature_function = my_features, target = my_features(USAccDeaths)
+)
+tsp(y) &lt;- tsp(USAccDeaths)
+plot(cbind(USAccDeaths, y))
+cbind(my_features(USAccDeaths), my_features(y))
+## End(Not run)
+</code></pre>
+
+
+</div>

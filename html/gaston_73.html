@@ -1,0 +1,145 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>score.fixed.linear/score.fixed.logistic</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Score Test for Covariates with Fixed Effects in Linear or Logistic Mixed Model </h2>
+
+<h3>Description</h3>
+
+<p> Score Test for association between covariates and phenotype.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R"> 
+score.fixed.linear(x, Y, X = matrix(1, length(Y)), K, ...)
+score.fixed.logistic(x, Y, X = matrix(1, length(Y)), K, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> A matrix of covariates </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p> The phenotype vector </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p> A covariable matrix. The default is a column vector of ones, to include an intercept in the model </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p> A positive definite matrix or a <code>list</code> of such matrices </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> Optional arguments used to fit null model in <code>lmm.aireml</code> or <code>logistic.mm.aireml</code> function. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function <code>score.fixed.linear</code> considers the linear mixed model
+</p>
+<p style="text-align: center;"><code class="reqn"> Y = X\alpha + x\beta + \omega_1 + \ldots + \omega_k + \varepsilon </code>
+</p>
+
+<p>whereas the <code>score.fixed.logistic</code> function considers the following logistic model
+</p>
+<p style="text-align: center;"><code class="reqn"> \mbox{logit}(P[Y=1|X,x,\omega_1,\ldots,\omega_k])  = X\alpha + x\beta + \omega_1 + \ldots + \omega_k</code>
+</p>
+
+<p>with <code class="reqn"> \omega_j \sim N(0,\tau_j K_j) </code> where <code class="reqn">K_j</code> are Genetic Relationship Matrix (GRM), <code class="reqn"> \varepsilon \sim N(0,\sigma^2 I_n) </code>
+and fixed effects <code class="reqn">\alpha</code> and <code class="reqn">\beta</code>.
+</p>
+<p>The two functions give score test for
+<code class="reqn">H_0</code> : <code class="reqn">\beta=0</code> vs <code class="reqn">H_1</code> : <code class="reqn">\beta\neq 0</code>.  
+In this aim, all parameters under null model are estimated with <code>lmm.aireml</code> or <code>logistic.mm.aireml</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A named list of values:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>score</code></td>
+<td>
+<p> Estimated score </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p> The corresponding p-value </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log.p</code></td>
+<td>
+<p> The logarithm of corresponding p-value </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p> Hervé Perdry and Claire Dandine-Roulland </p>
+
+
+<h3>See Also</h3>
+
+ <p><code>lmm.aireml</code>, <code>logistic.mm.aireml</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Load data
+data(AGT)
+x &lt;- as.bed.matrix(AGT.gen, AGT.fam, AGT.bim)
+standardize(x) &lt;- "p"
+
+# Calculate GRM et its eigen decomposition
+k &lt;- GRM(x)
+eig &lt;- eigen(k)
+eig$values &lt;- round(eig$values, 5)
+
+# generate covariate matrix
+set.seed(1)
+X &lt;- cbind( rbinom(nrow(x), 1, prob=1/2), rnorm(nrow(x)) )
+
+
+# simulate quantitative phenotype with polygenic component and covariate effects
+y &lt;- X %*% c(-1,0.5) + lmm.simu(0.3,1,eigenK=eig)$y
+
+t &lt;- score.fixed.linear(X, y, K=k, verbose=FALSE)
+str(t)
+
+
+# simulate binary phenotype with polygenic component and covariate effects
+mu &lt;- X %*% c(-1,0.5) + lmm.simu(1, 0, eigenK=eig)$y
+pi &lt;- 1/(1+exp(-mu))
+y &lt;- 1*( runif(length(pi))&lt;pi )
+
+tt &lt;- score.fixed.logistic(X, y, K=k, verbose=FALSE)
+str(tt)
+</code></pre>
+
+
+</div>

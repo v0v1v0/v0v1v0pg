@@ -1,0 +1,264 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mecca</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+running a MECCA analysis
+</h2>
+
+<h3>Description</h3>
+
+<p>Runs MECCA's hybrid ABC-MCMC algorithm to jointly estimate diversification rates and trait evolution from incompletely sampled comparative data. Many of the arguments taken by this function are the same as those in calibrateMecca().
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mecca(phy, richness, cladeMean, cladeVariance, model = c("BM", "Trend", "twoRate"),
+   prior.list = list(priorSigma = c(-4.961845, 4.247066), priorMean = c(-10, 10)),
+   start = start, Ngens = 10000, printFreq = 100, sigmaPriorType = "uniform",
+   rootPriorType = "uniform", SigmaBounds = c(-4.961845, 4.247066), hotclade = NULL,
+   divPropWidth = 0.1, scale = 1, divSampleFreq = 0, BoxCox = TRUE, outputName = "mecca")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>phy</code></td>
+<td>
+
+<p>time-calibrated phylogenetic tree of class 'phylo'
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>richness</code></td>
+<td>
+
+<p>named vector of species richnesses corresponding to tips in the tree (if a tip does not represent a higher level taxon, its richness should be 1)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cladeMean</code></td>
+<td>
+
+<p>named vector of trait means (all tips in the tree must be represented)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cladeVariance</code></td>
+<td>
+
+<p>named vector of trait variances (all tips in the tree must be represented; if only one taxon is present, use 0 for the variance)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+
+<p>model of trait evolution to be used – options currently implemented are "BM" = Brownian Motion, "Trend" = Brownian moton with a trend, and "twoRate" = two Brownian rate model (see <code>hotclade</code> below).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior.list</code></td>
+<td>
+
+<p>a list containing prior distribution parameters (default values used if this argument is empty)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+
+<p>ouput of <code>startingpt.mecca</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ngens</code></td>
+<td>
+
+<p>number of generations to run MECCA
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>printFreq</code></td>
+<td>
+
+<p>frequency of printing the acceptance rate
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigmaPriorType</code></td>
+<td>
+
+<p>type of prior distribution on the Brownian rate parameter (currently either "uniform" or "normal")
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rootPriorType</code></td>
+<td>
+
+<p>type of prior distribution on the root state rate parameter (currently "uniform" is available)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SigmaBounds</code></td>
+<td>
+
+<p>bounds for sigma (default values correspond to a wide range taken from Harmon et al. 2010)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hotclade</code></td>
+<td>
+
+<p>if a two-rate model is to be fit, this specifies which clade takes the second rate – two names should be specified in a vector; either the two tip names that span the clade of interest, or the name of a terminal/internal edge and NULL if only one branch takes the second rate
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>divPropWidth</code></td>
+<td>
+
+<p>proposal width for the diversification MCMC (default value of 0.1 seems to work well)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+
+<p>a numeric value by which the proposal width for trait evolution parameters will be multiplied (a value of 2 seems to work well, but this should be adjusted for each individual dataset)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>divSampleFreq</code></td>
+<td>
+
+<p>whether new trees are simulated at every step – the default (0) is yes; if a non-zero value is given, this will determine the frequency (every n steps) with which new tip trees are simulated
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BoxCox</code></td>
+<td>
+
+<p>whether summaries are BOX-COX standardized – default (1) is yes and is recommended; this should always be consistent with the calibration step
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outputName</code></td>
+<td>
+
+<p>name stem for output file names
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The output files produced are formatted to be used with the C++ Program ABCtoolbox (Wegmann et al. 2010), which produces adjusted posterior distributions and can perform model selection without likelihoods.
+</p>
+
+
+<h3>Value</h3>
+
+<p>MECCA does not store any output in memory. Instead, five output files are generated to the current working directory. This files are fully compatible with ABCtoolbox (Wegmann et al. 2011). The first file (outputname_bdSimFile.tx) will output the posterior sample for diversification parameters. The second file (outputname_bmSimFile.txt) ouputs the sampled trait evolution parameters and their associated raw summary statistics while outputname_ObsFile.txt gives the observed summaries.For ABC toolbox though, it will often be more efficient to use pls-transformed versions of the observed and simulated summary statistics. These are available in outputname_distObs.txt, and outputname_distSimFile.txt.
+
+
+
+
+</p>
+
+
+<h3>Note</h3>
+
+<p>The numbers printed to the screen during the run give the current generation, acceptance rate for diversification parameters, acceptance rate for trait evolutionary rate parameters and acceptance rate for root state parameters, respectively
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Graham Slater, Luke Harmon, Daniel Wegmann
+</p>
+
+
+<h3>References</h3>
+
+<p>Slater GJ, LJ Harmon, D Wegmann, P Joyce, LJ Revell, and ME Alfaro. 2012. Fitting models of continuous trait evolution to incompletely sampled comparative data using approximate Bayesian computation. <em>Evolution</em> 66:752-762.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+data(carnivores)
+phy &lt;- carnivores$phy
+data &lt;- carnivores$dat
+richness &lt;- data[,1]
+names(richness) &lt;- rownames(data)
+
+priors &lt;- list(priorSigma = c(-4.5, 4.5), priorMean = c(-5, 2))
+
+## CALIBRATION (far too short for a real analysis)
+Cal &lt;- calibrate.mecca(phy, richness, model = "BM", prior.list = priors, Ncalibrations = 1000)
+
+params &lt;- Cal$trait[, c(1,2)] ## extract the calibration BM parameters
+stats &lt;- Cal$trait[, -c(1,2)] ## extract the calibration summary stats
+
+## now we run pls, determining combinations of summaries that explain variation in our parameters
+## For BM, 2 components is sufficient. For more complex models, more componenets will be required.
+require(pls)
+myPlsr&lt;-pls::plsr(as.matrix(params) ~ as.matrix(stats), scale=F, ncomp = 2)
+
+plot(RMSEP(myPlsr)) ## Look at Root Mean Square error plots
+
+summary(myPlsr) ## take a look at 
+
+plsdat &lt;- myPlsr$loadings
+
+## extract means and variances from the carnivore data ##
+
+cladeMean&lt;-data[,2]
+names(cladeMean)&lt;-rownames(data)
+cladeVariance&lt;-data[,3]
+names(cladeVariance)&lt;-rownames(data)
+
+## STARTING POINT
+## And now we can compute starting values for the ABC-MCMC
+start &lt;- startingpt.mecca(Cal, phy, cladeMean, cladeVariance,
+tolerance = 0.05, plsdat, BoxCox = TRUE)
+
+
+## MECCA (far too short for a real analysis)
+mecca(phy, richness, cladeMean, cladeVariance, model = "BM", prior.list = priors, start = start,
+   Ngens = 1000, printFreq = 100, sigmaPriorType = "uniform", rootPriorType = "uniform",
+   SigmaBounds = c(-4.5, 4.5), divPropWidth = 0.1, scale = 2, divSampleFreq = 0, BoxCox = TRUE,
+   outputName ="MeccaBM.txt")
+
+## PASTE UNCOMMENTED FOLLOWING LINE TO DROP FILES CREATED BY MECCA
+ # unlink(dir(pattern=paste(r)),recursive=TRUE)
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

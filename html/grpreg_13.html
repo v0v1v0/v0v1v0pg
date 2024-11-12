@@ -1,0 +1,444 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>grpreg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a group penalized regression path</h2>
+
+<h3>Description</h3>
+
+<p>Fit regularization paths for models with grouped penalties over a grid of
+values for the regularization parameter lambda. Fits linear and logistic
+regression models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">grpreg(
+  X,
+  y,
+  group = 1:ncol(X),
+  penalty = c("grLasso", "grMCP", "grSCAD", "gel", "cMCP"),
+  family = c("gaussian", "binomial", "poisson"),
+  nlambda = 100,
+  lambda,
+  lambda.min = {
+     if (nrow(X) &gt; ncol(X)) 
+         1e-04
+     else 0.05
+ },
+  log.lambda = TRUE,
+  alpha = 1,
+  eps = 1e-04,
+  max.iter = 10000,
+  dfmax = p,
+  gmax = length(unique(group)),
+  gamma = ifelse(penalty == "grSCAD", 4, 3),
+  tau = 1/3,
+  group.multiplier,
+  warn = TRUE,
+  returnX = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>The design matrix, without an intercept.  <code>grpreg</code>
+standardizes the data and includes an intercept by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The response vector, or a matrix in the case of multitask learning
+(see details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>A vector describing the grouping of the coefficients.  For
+greatest efficiency and least ambiguity (see details), it is best if
+<code>group</code> is a factor or vector of consecutive integers, although
+unordered groups and character vectors are also allowed.  If there are
+coefficients to be included in the model without being penalized, assign
+them to group 0 (or <code>"0"</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalty</code></td>
+<td>
+<p>The penalty to be applied to the model.  For group selection,
+one of <code>grLasso</code>, <code>grMCP</code>, or <code>grSCAD</code>.  For bi-level
+selection, one of <code>gel</code> or <code>cMCP</code>.  See below for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>Either "gaussian" or "binomial", depending on the response.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nlambda</code></td>
+<td>
+<p>The number of <code>lambda</code> values.  Default is 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>A user supplied sequence of <code>lambda</code> values.  Typically,
+this is left unspecified, and the function automatically computes a grid of
+lambda values that ranges uniformly on the log scale over the relevant range
+of lambda values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.min</code></td>
+<td>
+<p>The smallest value for <code>lambda</code>, as a fraction of
+<code>lambda.max</code>.  Default is .0001 if the number of observations is larger
+than the number of covariates and .05 otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log.lambda</code></td>
+<td>
+<p>Whether compute the grid values of lambda on log scale
+(default) or linear scale.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p><code>grpreg</code> allows for both a group penalty and an L2 (ridge)
+penalty; <code>alpha</code> controls the proportional weight of the regularization
+parameters of these two penalties.  The group penalties' regularization
+parameter is <code>lambda*alpha</code>, while the regularization parameter of the
+ridge penalty is <code>lambda*(1-alpha)</code>.  Default is 1: no ridge penalty.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>Convergence threshhold.  The algorithm iterates until the RMSD
+for the change in linear predictors for each coefficient is less than
+<code>eps</code>.  Default is <code>1e-4</code>.  See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.iter</code></td>
+<td>
+<p>Maximum number of iterations (total across entire path).
+Default is 10000.  See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dfmax</code></td>
+<td>
+<p>Limit on the number of parameters allowed to be nonzero.  If
+this limit is exceeded, the algorithm will exit early from the
+regularization path.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gmax</code></td>
+<td>
+<p>Limit on the number of groups allowed to have nonzero elements.
+If this limit is exceeded, the algorithm will exit early from the
+regularization path.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>Tuning parameter of the group or composite MCP/SCAD penalty
+(see details).  Default is 3 for MCP and 4 for SCAD.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p>Tuning parameter for the group exponential lasso; defaults to
+1/3.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group.multiplier</code></td>
+<td>
+<p>A vector of values representing multiplicative
+factors by which each group's penalty is to be multiplied.  Often, this is a
+function (such as the square root) of the number of predictors in each
+group.  The default is to use the square root of group size for the group
+selection methods, and a vector of 1's (i.e., no adjustment for group size)
+for bi-level selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warn</code></td>
+<td>
+<p>Should the function give a warning if it fails to converge?
+Default is TRUE.  See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>returnX</code></td>
+<td>
+<p>Return the standardized design matrix (and associated group
+structure information)?  Default is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to other functions (such as gBridge).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>There are two general classes of methods involving grouped penalties: those
+that carry out bi-level selection and those that carry out group selection.
+Bi-level means carrying out variable selection at the group level as well as
+the level of individual covariates (i.e., selecting important groups as well
+as important members of those groups).  Group selection selects important
+groups, and not members within the group – i.e., within a group,
+coefficients will either all be zero or all nonzero.  The <code>grLasso</code>,
+<code>grMCP</code>, and <code>grSCAD</code> penalties carry out group selection, while
+the <code>gel</code> and <code>cMCP</code> penalties carry out bi-level selection.  For
+bi-level selection, see also the <code>gBridge()</code> function.  For
+historical reasons and backwards compatibility, some of these penalties have
+aliases; e.g., <code>gLasso</code> will do the same thing as <code>grLasso</code>, but
+users are encouraged to use <code>grLasso</code>.
+</p>
+<p>Please note the distinction between <code>grMCP</code> and <code>cMCP</code>.  The
+former involves an MCP penalty being applied to an L2-norm of each group.
+The latter involves a hierarchical penalty which places an outer MCP penalty
+on a sum of inner MCP penalties for each group, as proposed in Breheny &amp;
+Huang, 2009.  Either penalty may be referred to as the "group MCP",
+depending on the publication.  To resolve this confusion, Huang et al.
+(2012) proposed the name "composite MCP" for the <code>cMCP</code> penalty.
+</p>
+<p>For more information about the penalties and their properties, please
+consult the references below, many of which contain discussion, case
+studies, and simulation studies comparing the methods.  If you use
+<code>grpreg</code> for an analysis, please cite the appropriate reference.
+</p>
+<p>In keeping with the notation from the original MCP paper, the tuning
+parameter of the MCP penalty is denoted 'gamma'.  Note, however, that in
+Breheny and Huang (2009), <code>gamma</code> is denoted 'a'.
+</p>
+<p>The objective function for <code>grpreg</code> optimization is defined to be
+</p>
+<p style="text-align: center;"><code class="reqn">Q(\beta|X, y) = \frac{1}{n} L(\beta|X, y) + </code>
+</p>
+<p style="text-align: center;"><code class="reqn"> P_\lambda(\beta)</code>
+</p>
+<p> where the loss function L is
+the negative log-likelihood (half the deviance) for the specified outcome
+distribution (gaussian/binomial/poisson). For more details, refer to the
+following:
+</p>
+
+<ul>
+<li> <p><a href="https://pbreheny.github.io/grpreg/articles/models.html">Models and loss functions</a>
+</p>
+</li>
+<li> <p><a href="https://pbreheny.github.io/grpreg/articles/penalties.html">Penalties</a>
+</p>
+</li>
+</ul>
+<p>For the bi-level selection methods, a locally approximated coordinate
+descent algorithm is employed.  For the group selection methods, group
+descent algorithms are employed.
+</p>
+<p>The algorithms employed by <code>grpreg</code> are stable and generally converge
+quite rapidly to values close to the solution.  However, especially when p
+is large compared with n, <code>grpreg</code> may fail to converge at low values
+of <code>lambda</code>, where models are nonidentifiable or nearly singular.
+Often, this is not the region of the coefficient path that is most
+interesting.  The default behavior warning the user when convergence
+criteria are not met may be distracting in these cases, and can be modified
+with <code>warn</code> (convergence can always be checked later by inspecting the
+value of <code>iter</code>).
+</p>
+<p>If models are not converging, increasing <code>max.iter</code> may not be the most
+efficient way to correct this problem.  Consider increasing <code>n.lambda</code>
+or <code>lambda.min</code> in addition to increasing <code>max.iter</code>.
+</p>
+<p>Although <code>grpreg</code> allows groups to be unordered and given arbitary
+names, it is recommended that you specify groups as consecutive integers.
+The first reason is efficiency: if groups are out of order, <code>X</code> must be
+reordered prior to fitting, then this process reversed to return
+coefficients according to the original order of <code>X</code>.  This is
+inefficient if <code>X</code> is very large.  The second reason is ambiguity with
+respect to other arguments such as <code>group.multiplier</code>.  With
+consecutive integers, <code>group=3</code> unambiguously denotes the third element
+of <code>group.multiplier</code>.
+</p>
+<p>Seemingly unrelated regressions/multitask learning can be carried out using
+<code>grpreg</code> by passing a matrix to <code>y</code>.  In this case, <code>X</code> will
+be used in separate regressions for each column of <code>y</code>, with the
+coefficients grouped across the responses.  In other words, each column of
+<code>X</code> will form a group with m members, where m is the number of columns
+of <code>y</code>.  For multiple Gaussian responses, it is recommended to
+standardize the columns of <code>y</code> prior to fitting, in order to apply the
+penalization equally across columns.
+</p>
+<p><code>grpreg</code> requires groups to be non-overlapping.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object with S3 class <code>"grpreg"</code> containing:
+</p>
+
+<dl>
+<dt>beta</dt>
+<dd>
+<p>The fitted matrix of coefficients.  The number of rows is equal
+to the number of coefficients, and the number of columns is equal to
+<code>nlambda</code>.</p>
+</dd>
+<dt>family</dt>
+<dd>
+<p>Same as above.</p>
+</dd>
+<dt>group</dt>
+<dd>
+<p>Same as above.</p>
+</dd>
+<dt>lambda</dt>
+<dd>
+<p>The sequence of <code>lambda</code> values in the path.</p>
+</dd>
+<dt>alpha</dt>
+<dd>
+<p>Same as above.</p>
+</dd>
+<dt>deviance</dt>
+<dd>
+<p>A vector containing the deviance of the fitted model at each
+value of <code>lambda</code>.</p>
+</dd>
+<dt>n</dt>
+<dd>
+<p>Number of observations.</p>
+</dd>
+<dt>penalty</dt>
+<dd>
+<p>Same as above.</p>
+</dd>
+<dt>df</dt>
+<dd>
+<p>A vector of length <code>nlambda</code> containing estimates of effective number of model parameters all the points along the regularization path.  For details on how this is calculated, see Breheny and Huang (2009).</p>
+</dd>
+<dt>iter</dt>
+<dd>
+<p>A vector of length <code>nlambda</code> containing the number of iterations until convergence at each value of <code>lambda</code>.</p>
+</dd>
+<dt>group.multiplier</dt>
+<dd>
+<p>A named vector containing the multiplicative constant applied to each group's penalty.</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Patrick Breheny
+</p>
+
+
+<h3>References</h3>
+
+
+<ul>
+<li>
+<p> Breheny P and Huang J. (2009) Penalized methods for bi-level variable
+selection. <em>Statistics and its interface</em>, <strong>2</strong>: 369-380.
+<a href="https://doi.org/10.4310/sii.2009.v2.n3.a10">doi:10.4310/sii.2009.v2.n3.a10</a>
+</p>
+</li>
+<li>
+<p> Huang J, Breheny P, and Ma S. (2012). A selective review of group
+selection in high dimensional models. <em>Statistical Science</em>, <strong>27</strong>: 481-499.
+<a href="https://doi.org/10.1214/12-sts392">doi:10.1214/12-sts392</a>
+</p>
+</li>
+<li>
+<p> Breheny P and Huang J. (2015) Group descent algorithms for nonconvex
+penalized linear and logistic regression models with grouped predictors.
+<em>Statistics and Computing</em>, <strong>25</strong>: 173-187. <a href="https://doi.org/10.1007/s11222-013-9424-2">doi:10.1007/s11222-013-9424-2</a>
+</p>
+</li>
+<li>
+<p> Breheny P. (2015) The group exponential lasso for bi-level variable
+selection. <em>Biometrics</em>, <strong>71</strong>: 731-740. <a href="https://doi.org/10.1111/biom.12300">doi:10.1111/biom.12300</a>
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>cv.grpreg()</code>, as well as <code>plot.grpreg()</code> and <code>select.grpreg()</code> methods.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Birthweight data
+data(Birthwt)
+X &lt;- Birthwt$X
+group &lt;- Birthwt$group
+
+# Linear regression
+y &lt;- Birthwt$bwt
+fit &lt;- grpreg(X, y, group, penalty="grLasso")
+plot(fit)
+fit &lt;- grpreg(X, y, group, penalty="grMCP")
+plot(fit)
+fit &lt;- grpreg(X, y, group, penalty="grSCAD")
+plot(fit)
+fit &lt;- grpreg(X, y, group, penalty="gel")
+plot(fit)
+fit &lt;- grpreg(X, y, group, penalty="cMCP")
+plot(fit)
+select(fit, "AIC")
+
+# Logistic regression
+y &lt;- Birthwt$low
+fit &lt;- grpreg(X, y, group, penalty="grLasso", family="binomial")
+plot(fit)
+fit &lt;- grpreg(X, y, group, penalty="grMCP", family="binomial")
+plot(fit)
+fit &lt;- grpreg(X, y, group, penalty="grSCAD", family="binomial")
+plot(fit)
+fit &lt;- grpreg(X, y, group, penalty="gel", family="binomial")
+plot(fit)
+fit &lt;- grpreg(X, y, group, penalty="cMCP", family="binomial")
+plot(fit)
+select(fit, "BIC")
+
+# Multitask learning (simulated example)
+set.seed(1)
+n &lt;- 50
+p &lt;- 10
+k &lt;- 5
+X &lt;- matrix(runif(n*p), n, p)
+y &lt;- matrix(rnorm(n*k, X[,1] + X[,2]), n, k)
+fit &lt;- grpreg(X, y)
+# Note that group is set up automatically
+fit$group
+plot(fit)
+</code></pre>
+
+
+</div>

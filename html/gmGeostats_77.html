@@ -1,0 +1,124 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>constructMask</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Constructs a mask for a grid</h2>
+
+<h3>Description</h3>
+
+<p>Constructs a mask for a grid
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">constructMask(grid, method = "maxdist", maxval = NULL, x = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+<p>a grid, see details for more info</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>which construction method? currently one of 'maxdist', 'sillprop' or 'point2polygon'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxval</code></td>
+<td>
+<p>for maxdist and sillprop methods, maximum reference value</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>extra information for the grid construction, see details</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Method 'maxdist' defines the mask as all points within a maximum distance
+(must be given in <code>maxval</code>) from the reference data (given in <code>x</code>: this is expected
+to be the original complete data, with coordinates and variables). For method 'sillprop'
+the mask is defined by those points which total kriging variance is below
+a fixed proportion (given in <code>maxval</code>, default=0.99) of the total variogram
+model sill (variogram model given in <code>x</code>, of class "variogramModelList").
+In this method, the argument <code>grid</code> is expected to be the output of a cokriging
+analysis. Finally, method 'point2poly' created the mask by taking the points internal
+to a "SpatialPolygon" object (given in <code>x</code>).
+</p>
+
+
+<h3>Value</h3>
+
+<p>a logical vector with as many elements as points in the grid, with TRUE for
+those points within the mask, and FALSE for those outside the mask.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other masking functions: 
+<code>getMask()</code>,
+<code>print.mask()</code>,
+<code>setMask()</code>,
+<code>unmask()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## with data.frame
+x = 1:23
+y = 1:29
+xy = expand.grid(x=x, y=y)
+xyz.df = data.frame(xy, z = rnorm(29*23)*ifelse(abs(xy$x-xy$y)&lt;3, 1, NA)+(xy$x+xy$y)/2)
+mask.df = constructMask(grid = xy, method = "maxdist", maxval = 3, x=xyz.df)
+image(mask.df)
+oldpar = par(mfrow = c(1,1))
+mask.df
+xyz.df.masked = setMask(xyz.df, mask.df)
+dim(xyz.df.masked)
+summary(xyz.df.masked)
+xyz.df.unmasked = unmask(xyz.df.masked)
+dim(xyz.df.unmasked)
+length(x)*length(y)
+summary(xyz.df.unmasked)
+## with SpatialGrid
+library(sp)
+library(magrittr)
+xy.sp = sp::SpatialPoints(coords = xy)
+meandiff = function(x) mean(diff(x))
+xy.gt = GridTopology(c(min(x),min(y)), c(meandiff(x), meandiff(y)), c(length(x),length(y)))
+aux = sp::SpatialPixelsDataFrame(grid = xy.gt, data=xyz.df, points = xy.sp)
+xyz.sgdf = as(aux, "SpatialGridDataFrame")
+image_cokriged(xyz.sgdf, ivar="z")
+## reorder the data in the grid and plot again
+par(mfrow=c(1,1))
+ms = function(x) sortDataInGrid(x, grid=xy.gt)
+mask.gt = constructMask(grid = xy.gt, method = "maxdist", maxval = 3, x=xyz.sgdf)
+image(x,y,matrix(ms(xyz.sgdf@data$z), nrow=23, ncol=29))  
+image(x,y,matrix(ms(mask.gt), nrow=23, ncol=29))  
+image(mask.gt)
+## work with the mask and plot again
+par(mfrow=c(1,1))
+xyz.sgdf.masked = setMask(x = xyz.sgdf, mask = mask.gt)
+getMask(xyz.sgdf.masked)
+image(x,y,matrix(ms(xyz.sgdf@data$z), nrow=23, ncol=29))  
+points(xyz.sgdf.masked@coords)
+par(oldpar)
+</code></pre>
+
+
+</div>

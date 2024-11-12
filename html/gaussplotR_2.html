@@ -1,0 +1,231 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>characterize_gaussian_fits</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Characterize the orientation of fitted 2D-Gaussians</h2>
+
+<h3>Description</h3>
+
+<p>The orientation and partial correlations of Gaussian data are analyzed
+according to Levitt et al. 1994 and Priebe et al. 2003. Features include
+computation of partial correlations between response variables and
+independent and diagonally-tuned predictions, along with Z-difference
+scoring.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">characterize_gaussian_fits(
+  fit_objects_list = NULL,
+  data = NULL,
+  constrain_amplitude = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fit_objects_list</code></td>
+<td>
+<p>A list of outputs from <code>fit_gaussian_2D()</code>. See
+Details for more. This is the preferred input object for this function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data.frame that contains the raw data (generally rectilinearly
+gridded data, but this is not a strict requirement). Columns must be named
+<code>"X_values"</code>, <code>"Y_values"</code> and <code>"response"</code>. See
+<code>fit_gaussian_2D()</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constrain_amplitude</code></td>
+<td>
+<p>Default FALSE; should the amplitude of the
+Gaussian be set to the maximum value of the <code>"response"</code> variable
+(<code>TRUE</code>), or should the amplitude fitted by <code>stats::nls()</code>
+(<code>FALSE</code>)? See <code>fit_gaussian_2D()</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments that can be passed to
+<code>fit_gaussian_2D()</code> if data are supplied.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function accepts either a list of objects output from
+<code>fit_gaussian_2D()</code> (preferred) or a data.frame that contains the raw
+data.
+</p>
+<p>The supplied fit_objects_list must be a list that contains objects returned
+by <code>fit_gaussian_2D()</code>. This list must contain exactly three models. All
+three models must have been run using <code>method = "elliptical_log"</code>. The
+models must be: 1) one in which orientation is unconstrained, 2) one in which
+orientation is constrained to Q = 0 (i.e. a diagonally-oriented Gaussian),
+and 3) one in which orientation is constrained to Q = -1 (i.e. a
+horizontally-oriented Gaussian). See this function's Examples for guidance.
+</p>
+<p>Should raw data be provided instead of the fit_objects_list, the
+<code>characterize_gaussian_fits()</code> runs <code>fit_gaussian_2D()</code> internally.
+This is generally not recommended, as difficulties in fitting models via
+<code>stats::nls()</code> are more easily troubleshot by the optional arguments in
+<code>fit_gaussian_2D()</code>. Nevertheless, supplying raw data instead of a list
+of fitted models is feasible, though your mileage may vary.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with the following:
+</p>
+
+<ul>
+<li>
+<p>"model_comparison" A model comparison output (i.e. what is produced
+by <code>compare_gaussian_fits()</code>), which indicates the relative preference
+of each of the three models.
+</p>
+</li>
+<li>
+<p>"Q_table" A data.frame that provides information on the value of Q
+from the best-fitting model, along with the 5-95% confidence intervals of
+this estimate.
+</p>
+</li>
+<li>
+<p>"r_i" A numeric, the correlation of the data with the independent
+(Q = -1) prediction.
+</p>
+</li>
+<li>
+<p>"r_s" A numeric, the correlation of the data with the diagonally-
+oriented (Q = 0) prediction.
+</p>
+</li>
+<li>
+<p>"r_is" A numeric, the correlation between the independent
+(Q = -1) prediction and the the diagonally-oriented (Q = 0) prediction.
+</p>
+</li>
+<li>
+<p>"R_indp" A numeric, partial correlation of the response variable
+with the independent (Q = -1) prediction.
+</p>
+</li>
+<li>
+<p>"R_diag" A numeric, partial correlation of the response variable
+with the diagonally-oriented (Q = 0) prediction.
+</p>
+</li>
+<li>
+<p>"ZF_indp" A numeric, the Fisher Z-transform of the R_indp
+coefficient. See Winship et al. 2006 for details.
+</p>
+</li>
+<li>
+<p>"ZF_diag" A numeric, the Fisher Z-transform of the R_diag
+coefficient. See Winship et al. 2006 for details.
+</p>
+</li>
+<li>
+<p>"Z_diff" A numeric, the Z-difference between ZF_indp and ZF_diag.
+See Winship et al. 2006 for details.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Vikram B. Baliga
+</p>
+
+
+<h3>References</h3>
+
+<p>Levitt JB, Kiper DC, Movshon JA. Receptive fields and functional architecture
+of macaque V2. J Neurophysiol. 1994 71:2517–2542.
+</p>
+<p>Priebe NJ, Cassanello CR, Lisberger SG. The neural representation of speed in
+macaque area MT/V5. J Neurosci. 2003 Jul 2;23(13):5650-61. doi:
+10.1523/JNEUROSCI.23-13-05650.2003.
+</p>
+<p>Winship IR, Crowder N, Wylie DRW. Quantitative reassessment of speed tuning
+in the accessory optic system and pretectum of pigeons. J Neurophysiol. 2006
+95(1):546-551. doi: 10.1152/jn.00921.2005
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if (interactive()) {
+  library(gaussplotR)
+
+  ## Load the sample data set
+  data(gaussplot_sample_data)
+
+  ## The raw data we'd like to use are in columns 1:3
+  samp_dat &lt;-
+    gaussplot_sample_data[,1:3]
+
+  ## Fit the three required models
+  gauss_fit_uncn &lt;-
+    fit_gaussian_2D(
+      samp_dat,
+      method = "elliptical_log",
+      constrain_amplitude = FALSE,
+      constrain_orientation = "unconstrained"
+    )
+
+  gauss_fit_diag &lt;-
+    fit_gaussian_2D(
+      samp_dat,
+      method = "elliptical_log",
+      constrain_amplitude = FALSE,
+      constrain_orientation = 0
+    )
+
+  gauss_fit_indp &lt;-
+    fit_gaussian_2D(
+      samp_dat,
+      method = "elliptical_log",
+      constrain_amplitude = FALSE,
+      constrain_orientation = -1
+    )
+
+  ## Combine the outputs into a list
+  models_list &lt;-
+    list(
+      gauss_fit_uncn,
+      gauss_fit_diag,
+      gauss_fit_indp
+    )
+
+  ## Now characterize
+  out &lt;-
+    characterize_gaussian_fits(models_list)
+  out
+
+  ## Alternatively, the raw data itself can be supplied.
+  ## This is less preferred, as fitting of models may fail
+  ## internally.
+  out2 &lt;-
+    characterize_gaussian_fits(data = samp_dat)
+
+  ## This produces the same output, assuming models are fit without error
+  identical(out, out2)
+}
+</code></pre>
+
+
+</div>

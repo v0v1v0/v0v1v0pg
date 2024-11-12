@@ -1,0 +1,153 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>EM_PAVA_Func</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+EM-PAVA function
+</h2>
+
+<h3>Description</h3>
+
+<p>This function is used to estimate the genotype-specific distribution of time-to-event outcomes using EM-PAVA algorithm (Qin et al. 2014).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">EM_PAVA_Func (q, x, delta, timeval, p, ep = 1e-05, maxiter = 400)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>q</code></td>
+<td>
+<p>matrix of 2 columns, where the first and second columns are the probabilities of belonging to the carrier <code>p0G</code> and non-carrier groups <code>1 - p0G</code>, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>observed event time or censoring time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>indicator of event.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timeval</code></td>
+<td>
+<p>grid points at which the distribution function values are estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>number of groups.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ep</code></td>
+<td>
+<p>convergence criterion. Here, <code>ep = 1e-5</code> is used as the default value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiter</code></td>
+<td>
+<p>maximum number of EM iterations. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Technical details can be found in Qin et al. (2014).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list of prediction values for classes
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Fest</code></td>
+<td>
+<p>estimated values at the points of <code>timeval</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Fest.all</code></td>
+<td>
+<p>estimated values of cumulative distribution function on both carrier and non-carrier groups.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Qin, J., Garcia, T., Ma, Y., Tang, M., Marder, K. &amp; Wang, Y. (2014). Combining isotonic regression and EM algorithm to predict genetic risk under monotonicity constraint. <em>The Annals of Applied Statistics</em> <b>8</b>(2), 1182-1208.
+</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>p0G_Func()</code>, <code>Sieve_NPMLE_Switch()</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data("Simulated_data");
+
+OY = Simulated_data[,2];
+ind = order(OY);
+ODelta = Simulated_data[,3];
+Op0G = Simulated_data[,4];
+
+Y = OY[ind];
+Delta = ODelta[ind];
+p0G = Op0G[ind];
+
+Grid = seq(0.01, 3.65, 0.01);
+fix_t1 = c(0.288, 0.693, 1.390);
+fix_t2 = c(0.779, 1.860, 3.650);
+
+EMpava_result = EM_PAVA_Func ( q = rbind(p0G,1-p0G), x = Y, delta = Delta, 
+                               timeval = Grid, p = 2, ep = 1e-4 );
+
+all = sort(c(Grid, Y));
+
+F_carr_func = function(x){  EMpava_result$Fest.all[1, which.max(all[all &lt;= x]) ]  };
+F_non_func  = function(x){  EMpava_result$Fest.all[2, which.max(all[all &lt;= x]) ]  };
+
+PAVA_F1.hat_fix_t = apply( matrix(fix_t1, ncol=1), 1, F_carr_func );
+PAVA_F2.hat_fix_t = apply( matrix(fix_t2, ncol=1), 1, F_non_func );
+
+PAVA_F.hat_fix_t = data.frame( fix_t1 = fix_t1, PAVA_F1.hat = PAVA_F1.hat_fix_t,
+                               fix_t2 = fix_t2, PAVA_F2.hat = PAVA_F2.hat_fix_t  );
+
+print(PAVA_F.hat_fix_t);
+
+# plot estimated curves
+
+F_carr = apply( matrix(Grid, ncol=1), 1, F_carr_func );
+F_non = apply( matrix(Grid, ncol=1), 1, F_non_func );
+
+plot( Grid, F_carr, type = 's', lty = 1, 
+      xlab = "Y", ylab = "Estimated Cumulative Distribution Function",
+      ylim = c(0,1), col = 'blue' );
+lines(Grid, F_non, type='s', lty=2, col='red');
+legend("topleft", legend=c("Carrier group", "Non-Carrier group"),
+       lty=c(1,2), col=c("blue", "red") );
+
+</code></pre>
+
+
+</div>

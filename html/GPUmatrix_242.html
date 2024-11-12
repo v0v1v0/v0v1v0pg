@@ -1,0 +1,129 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>NMFgpumatrix</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Non negative factorization of a matrix</h2>
+
+<h3>Description</h3>
+
+<p>The non-negative factorization (NMF) of a matrix is an approximate factorization were an initial matrix <code>V</code> is approximated by the product of two matrix <code>W</code> and <code>H</code> so that,
+</p>
+<p><code class="reqn">V \approx WH</code>
+</p>
+<p>This function operates in the same way with the 'base' <code>matrix</code> objects as with gpu.matrix-class objects, and it does not require any additional changes beyond initializing the input matrix as a gpu.matrix-class object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">NMFgpumatrix(V, k = 10, Winit = NULL,
+             Hinit = NULL, tol = 1e-06,
+             niter = 100)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>V</code></td>
+<td>
+<p>a <code>gpu.matrix</code>. Values in <code>V</code> must be <code class="reqn">\geq 0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>The inner dimension of the product of the matrices W and H. That is, it corresponds to the number of columns in W and the number of rows in H.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Winit</code></td>
+<td>
+<p>Initial value for matrix W. Initial values for <code>W</code> must be <code class="reqn">\geq 0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Hinit</code></td>
+<td>
+<p>Initial value for matrix H. Initial values for <code>H</code> must be <code class="reqn">\geq 0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>tolerance to be used for the estimation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>niter</code></td>
+<td>
+<p>maximum number of iterations.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>We have implemented our own non-negative matrix factorization (NMF) function using Lee
+and Seung[1] multiplicative update rule:
+</p>
+<p><code class="reqn">W_{[i,j]}^{n+1} \leftarrow  W_{[i,j]}^{n} \frac{(V(H^{n+1})^T)_{[i,j]}}{(W^nH^{n+1}(H^{n+1})^T)_{[i,j]}}</code>
+</p>
+<p>and
+</p>
+<p><code class="reqn">H_{[i,j]}^{n+1} \leftarrow  H_{[i,j]}^{n} \frac{((W^{n})^TV)_{[i,j]}}{((W^n)^TW^{n}H^{n})_{[i,j]}}</code>
+</p>
+<p>to update the <code class="reqn">W</code> and <code class="reqn">H</code> respectively.
+</p>
+<p>Note that the values of V must be positive. If any value of V is negative, it will be set to 0. If this happens, the following warning message will be displayed: "The values of V must be positive. Negative values in V are set to 0.
+</p>
+<p>If the user decides to initialise the values of W and H, they must also be positive. If there are negative values, they will be set to 0. The following warning message will be displayed: "The Winit values must be positive. Negative values in Winit are set to 0" if Winit has negative values or "The values of Hinit must be positive. Negative values in Hinit are set to 0" if Winit has negative values.
+</p>
+<p>In addition, Winit and Hinit must also have the correct dimensions. Winit must fulfil two conditions: <code>nrow(Winit) == nrow(V)</code> and  <code>ncol(Winit) == k</code>. If not, the function will stop with the following error message: "The dimensions of the Winit matrix are incorrect. Please check that <code>nrow(Winit) == nrow(V)</code> and that <code>ncol(Winit) == k</code>". On the other hand, Hinit must fulfil two conditions: <code>nrow(Winit) == nrow(V)</code> and that <code>ncol(Winit) == k</code>. If not, the function will stop with the following error message: "The dimensions of the Winit matrix are incorrect. Please check that <code>nrow(Winit) == nrow(V)</code> and that <code>ncol(Winit) == k</code>".
+</p>
+<p>If the input gpu.matrix-class object is stored on the GPU, then the operations will be performed on the GPU. See <code>gpu.matrix</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function returns a list that contains the corresponding matrix <code class="reqn">W</code> and <code class="reqn">H</code>. If the input <code>V</code> matrix is a gpu.matrix-class object, then both <code class="reqn">W</code> and <code class="reqn">H</code> are also gpu.matrix-class objects.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Angel Rubio and Cesar Lobato.
+</p>
+
+
+<h3>References</h3>
+
+<p>[1] Lee, D., Seung, H. Learning the parts of objects by non-negative matrix factorization. Nature 401, 788–791 (1999). https://doi.org/10.1038/44565
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+library(Matrix)
+set.seed(1)
+a1 &lt;- gpu.matrix(runif(90),nrow=30,ncol=3)
+a2 &lt;- gpu.matrix(runif(30),nrow=3,ncol=10)
+V &lt;- a1 %*% a2
+b &lt;- NMFgpumatrix(V = V, k=3, tol = 1e-6)
+
+#check result:
+image(Matrix(as.matrix(V)))
+image(Matrix(as.matrix(b$W %*% b$H)))
+
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

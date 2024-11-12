@@ -1,0 +1,221 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Subset-Predict</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Subset and Predict Functions</h2>
+
+<h3>Description</h3>
+
+<p>The <code>Subset</code> and <code>Predict</code> function used in the default configuration of <code>Gapfill</code>.
+To predict a missing value, the two function are called sequentially as described the help page of <code>Gapfill</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">Subset(data, mp, i, initialSize = c(10L, 10L, 1L, 5L))
+
+Predict(
+  a,
+  i,
+  nTargetImage = 5,
+  nImages = 4,
+  nQuant = 2,
+  predictionInterval = FALSE,
+  qrErrorToNA = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Numeric array with four dimensions. The input (satellite) data to be gap-filled.
+Missing values should be encoded as <code>NA</code>.
+The data should have the dimensions: x coordinate, y coordinate, seasonal index (e.g., day of the year), and year.
+See the <code>ndvi</code> dataset for an example.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mp</code></td>
+<td>
+<p>Integer vector of length 4 encoding the position of the missing value in <code>data</code> to predict.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>i</code></td>
+<td>
+<p>Integer vector of length 1. The number of tried subsets that lead to a <code>NA</code> return value from <code>Predict</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initialSize</code></td>
+<td>
+<p>Integer vector of length 4, that provides the size of the subset for <code>i = 0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+<p>Return value of <code>Subset()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nTargetImage</code></td>
+<td>
+<p>Integer vector of length 1. Minimum number of non-NA values in the image containing the missing value.
+If the criterion is not met, <code>NA</code> is returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nImages</code></td>
+<td>
+<p>Integer vector of length 1. Minimum number of non-empty images.
+If the criterion is not met, <code>NA</code> is returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nQuant</code></td>
+<td>
+<p>Integer vector of length 1. Parameter passed to <code>EstimateQuantile</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predictionInterval</code></td>
+<td>
+<p>Logical vector of length 1.
+If <code>FALSE</code> (default), no prediction interval is returned.
+If <code>TRUE</code>, the predicted value together with the lower and upper bounds
+of an approximated 90% prediction interval are returned.
+In that case, the function returns 3 values, and hence,
+the argument <code>nPredict</code> of <code>gapfill</code> has to be set to 3 in order to store all returned values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>qrErrorToNA</code></td>
+<td>
+<p>Logical vector of length 1.
+If <code>TRUE</code> (default), an error in the quentile regression fitting leads to a <code>NA</code> return value.
+If <code>FALSE</code>, an error in the quentile regression fitting leads to an error and stops the prediction.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>Subset</code> function defines the search strategy to find a
+relevant subset by calling the function <code>ArrayAround</code>.
+The size of the initial subset is given by the argument <code>initialSize</code>.
+Its default values is <code>c(5L, 5L, 1L, 5L)</code>, which corresponds to a spatial extend of 5 pixels
+in each direction from the missing value and includes time points having the previous, the same or the next seasonal index and
+are not further apart than 5 years.
+With an increase of the argument <code>i</code>, the spatial extent of the subset increases.
+</p>
+<p>The <code>Predict</code> function decides whether the subset <code>a</code> is suitable and
+calculates the prediction (fill value) when a suitable subset is provided.
+To formulate the conditions that are used to decide if a subset is suitable,
+consider the subset <code>a</code> as a collection of images.
+More precisely, if <code>dim(a)</code> <code>=</code> <code>c(d1, d2, d3, d4)</code>,
+it can be seen as a collection of <code>d3*d4</code> images with an extent of <code>d1</code> by <code>d2</code> pixels.    
+Using this terminology, we require the following conditions to be fulfilled
+in order to predict the missing value:
+</p>
+
+<ul>
+<li> <p><code>a</code> contains at least <code>nTargetImage</code> non-NA values in the image containing the missing value,
+</p>
+</li>
+<li> <p><code>a</code> contains at least <code>nImages</code> non-empty images.
+</p>
+</li>
+</ul>
+<p>The prediction itself is based on sorting procedures (see <code>Score</code> and
+<code>EstimateQuantile</code>) and the quantile regression function <code>rq</code>.
+</p>
+<p>If the argument <code>predictionInterval</code> is <code>TRUE</code> the <code>Predict</code> functions returns
+the predicted value together with the lower and upper bounds of an approximated 90% prediction interval.
+The interval combines the uncertainties introduced by <code>Score</code>
+and <code>EstimateQuantile</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>Subset</code> returns an array with 4 dimensions containing the missing value
+at the position indicated by the attribute <code>mp</code>.
+</p>
+<p><code>Predict</code> returns a numeric vector containing the predicted value
+(and if <code>predictionInterval</code> is <code>TRUE</code>, the lower and upper bounds of the prediction interval),
+or <code>NA</code>, if no prediction was feasible.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The current implementation of <code>Subset</code> does not take into account
+that locations at the boundary of <code>data</code> can be neighboring to each other.
+For example, if global data (entire sphere) are considered, the location
+<code>data[1,1,,]</code> is a neighbor of <code>data[dim(data)[1], dim(data)[2],,]</code>.
+Similar considerations apply when data are available for an entire year. 
+To take this into account, the <code>Subset</code> function can be redefined accordingly or
+the data can be augmented.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Florian Gerber, <a href="mailto:flora.fauna.gerber@gmail.com">flora.fauna.gerber@gmail.com</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>F. Gerber, R. de Jong, M. E. Schaepman, G. Schaepman-Strub, and R. Furrer (2018)
+in IEEE Transactions on Geoscience and Remote Sensing, pp. 1-13, doi: <a href="https://doi.org/10.1109/TGRS.2017.2785240">10.1109/TGRS.2017.2785240</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>Gapfill</code>, <code>Extend</code>,
+<code>EstimateQuantile</code>, <code>Score</code>, <code>ndvi</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Assume we choose c(5, 5, 1, 5) as initalSize of the subset
+iS &lt;- c(5, 5, 1, 5)
+## case 1: initial subset leads to prediction -------
+i &lt;- 0
+a &lt;- Subset(data = ndvi, mp = c(1, 3, 1, 2), i = i, initialSize = iS)
+p &lt;- Predict(a = a, i = i)
+p
+stopifnot(identical(a, ArrayAround(data = ndvi, mp = c(1, 3, 1, 2),
+                                   size = c(5 + i, 5 + i, 1, 5))))
+stopifnot(identical(p, Gapfill(data = ndvi, subset = 1807,
+                               initialSize = iS, verbose = FALSE)$fill[1807]))
+
+## case 2: two tries are necessary ------------------
+i &lt;- 0
+a &lt;- Subset(data = ndvi, mp = c(20, 1, 1, 2), i = i, initialSize = iS)
+p &lt;- Predict(a = a, i = i)
+p
+
+## Increase i and try again.
+i &lt;- i + 1
+a &lt;- Subset(data = ndvi, mp = c(20, 1, 1, 2), i = i, initialSize = iS)
+p &lt;- Predict(a = a, i = i)
+p
+stopifnot(identical(a, ArrayAround(data = ndvi, mp = c(20, 1, 1, 2),
+                                   size = c(5 + i, 5 + i, 1, 6))))
+stopifnot(identical(p, Gapfill(data = ndvi, subset = 1784,
+                               initialSize = iS, verbose = FALSE)$fill[1784]))
+</code></pre>
+
+
+</div>

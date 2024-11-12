@@ -1,0 +1,116 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gdm.transform</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Transform Environmental Data Using a Fitted Generalized Dissimilarity Model</h2>
+
+<h3>Description</h3>
+
+<p>This function transforms geographic and environmental predictors using (1) the
+fitted functions from a model object returned from <code>gdm</code> and (2) a
+data frame or raster object containing predictor data for a set of sites.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gdm.transform(model, data, filename = "", ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>A gdm model object resulting from a call to <code>gdm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Either (i) a data frame containing values for each predictor variable in the model, formatted as follows: X, Y, var1, var2, var3, ..., varN or
+(ii) a terra object SpatRaster with one layer per predictor variable used in the model,
+excluding X and Y (rasters for x- and y-coordinates are built automatically from the input
+rasters if the model was fit with geo=TRUE). The order of the columns (data frame) or raster layers (SpatRaster) MUST be the same as the order of the predictors in
+the site-pair table used in model fitting. There is currently no checking to ensure that the order
+of the variables to be transformed are the same as those in the site-pair table used in model fitting.
+If geographic distance was not used as a predictor in model fitting, the x- and y-columns
+need to be removed from the data to be transformed.
+Output is provided in the same format as the input data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filename</code></td>
+<td>
+<p>character. Output filename for rasters. When provided the raster layers are
+written to file directly.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments to pass to terra <code>predict</code> function.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>gdm.transform returns either a data frame with the same number of rows as the input data frame or a SpatRaster,
+depending on the format of the input data. If the model uses geographic distance as a predictor the output object
+will contain columns or layers for the transformed X and Y values for each site.
+The transformed environmental data will be in the remaining columns or layers.
+</p>
+
+
+<h3>References</h3>
+
+<p>Ferrier S, Manion G, Elith J, Richardson, K (2007) Using generalized dissimilarity modelling to analyse and predict patterns of beta diversity in regional biodiversity assessment. <em>Diversity &amp; Distributions</em> 13, 252-264.
+</p>
+<p>Fitzpatrick MC, Keller SR (2015) Ecological genomics meets community-level modeling of biodiversity: Mapping the genomic landscape of current and future environmental adaptation. <em>Ecology Letters</em> 18: 1-16
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># start with the southwest data set
+# grab the columns with xy, site ID, and species data
+sppTab &lt;- southwest[, c("species", "site", "Lat", "Long")]
+
+##fit gdm using rasters
+rastFile &lt;- system.file("./extdata/swBioclims.grd", package="gdm")
+envRast &lt;- terra::rast(rastFile)
+
+sitePairRast &lt;- formatsitepair(sppTab, 2, XColumn="Long", YColumn="Lat",
+                               sppColumn="species", siteColumn="site",
+                               predData=envRast)
+##remove NA values
+sitePairRast &lt;- na.omit(sitePairRast)
+
+##fit raster GDM
+gdmRastMod &lt;- gdm(sitePairRast, geo=TRUE)
+
+##raster input, raster output
+transRasts &lt;- gdm.transform(gdmRastMod, envRast)
+
+# map biological patterns
+rastDat &lt;- terra::spatSample(transRasts, 10000, na.rm = TRUE)
+pcaSamp &lt;- prcomp(rastDat)
+
+# note the use of the 'index' argument
+pcaRast &lt;- terra::predict(transRasts, pcaSamp, index=1:3)
+
+# scale rasters
+pcaRast[[1]] &lt;- terra::app(pcaRast[[1]], fun = scales::rescale, to = c(0, 255))
+pcaRast[[2]] &lt;- terra::app(pcaRast[[2]], fun = scales::rescale, to = c(0, 255))
+pcaRast[[3]] &lt;- terra::app(pcaRast[[3]], fun = scales::rescale, to = c(0, 255))
+
+terra::plotRGB(pcaRast, r=1, g=2, b=3)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,138 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>luz_metric_f1score</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>luz_metric_f1score</h2>
+
+<h3>Description</h3>
+
+<p>luz_metric function to calculate the macro-averaged, class aggregated F1-score
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">luz_metric_f1score(
+  nCls = 1,
+  smooth = 1,
+  mode = "multiclass",
+  biThresh = 0.5,
+  clsWghts = rep(1, nCls),
+  zeroStart = TRUE,
+  usedDS = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>nCls</code></td>
+<td>
+<p>Number of classes being differentiated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smooth</code></td>
+<td>
+<p>A smoothing factor to avoid divide by zero errors. Default is 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mode</code></td>
+<td>
+<p>Either "binary" or "multiclass". If "binary", only the logit for
+the positive class prediction should be provided. If both the positive and negative
+or background class probability is provided for a binary classification, use
+the "multiclass" mode. Note that this package is designed to treat all predictions as multiclass.
+The "binary" mode is only provided for use outside of the standard geodl workflow.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>biThresh</code></td>
+<td>
+<p>Probability threshold to define postive case prediction. Default is 0.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clsWghts</code></td>
+<td>
+<p>Vector of class weightings loss calculatokn. Default is equal weightings.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zeroStart</code></td>
+<td>
+<p>TRUE or FALSE. If class indices start at 0 as opposed to 1, this should be set to
+TRUE. This is required  to implement one-hot encoding since R starts indexing at 1. Default is TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>usedDS</code></td>
+<td>
+<p>TRUE or FALSE. If deep supervision was implemented and masks are produced at varying scales using
+the defineSegDataSetDS() function, this should be set to TRUE. Only the original resolution is used
+to calculate assessment metrics. Default is FALSE.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Calculates F1-score based on luz_metric() for use within training and validation
+loops.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Calculated metric returned as a base-R vector as opposed to tensor.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(terra)
+library(torch)
+#Generate example data as SpatRasters
+ref &lt;- terra::rast(matrix(sample(c(1, 2, 3), 625, replace=TRUE), nrow=25, ncol=25))
+pred1 &lt;- terra::rast(matrix(sample(c(1:150), 625, replace=TRUE), nrow=25, ncol=25))
+pred2 &lt;- terra::rast(matrix(sample(c(1:150), 625, replace=TRUE), nrow=25, ncol=25))
+pred3 &lt;- terra::rast(matrix(sample(c(1:150), 625, replace=TRUE), nrow=25, ncol=25))
+pred &lt;- c(pred2, pred2, pred3)
+
+#Convert SpatRaster to array
+ref &lt;- terra::as.array(ref)
+pred &lt;- terra::as.array(pred)
+
+#Convert arrays to tensors and reshape
+ref &lt;- torch::torch_tensor(ref, dtype=torch::torch_long())
+pred &lt;- torch::torch_tensor(pred, dtype=torch::torch_float32())
+ref &lt;- ref$permute(c(3,1,2))
+pred &lt;- pred$permute(c(3,1,2))
+
+#Add mini-batch dimension
+ref &lt;- ref$unsqueeze(1)
+pred &lt;- pred$unsqueeze(1)
+
+#Duplicate tensors to have a batch of two
+ref &lt;- torch::torch_cat(list(ref, ref), dim=1)
+pred &lt;- torch::torch_cat(list(pred, pred), dim=1)
+
+#Calculate Macro-Averaged, Class Aggregated F1-Score
+metric&lt;-luz_metric_f1score(nCls=3,
+                           smooth=1e-8,
+                           mode = "multiclass",
+                           zeroStart=FALSE,
+                           usedDS=FALSE)
+metric&lt;-metric$new()
+metric$update(pred,ref)
+metric$compute()
+
+</code></pre>
+
+
+</div>

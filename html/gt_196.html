@@ -1,0 +1,185 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>text_case_match</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Perform whole or partial text replacements with a 'switch'-like approach</h2>
+
+<h3>Description</h3>
+
+<p><code>text_case_match()</code> provides a useful interface for a approach to replacing
+table cells that behaves much like a switch statement. The targeting of cell
+for transformation happens with the <code>.locations</code> argument. Once overall
+targeting is handled, you need to supply a sequence of two-sided formulas
+matching of the general form: <code style="white-space: pre;">⁠&lt;vector_old_text&gt; ~ &lt;new_text&gt;⁠</code>. In the left
+hand side (LHS) there should be a character vector containing strings to
+match on. The right hand side (RHS) should contain a single string (or
+something coercible to a length one character vector). There's also the
+<code>.replace</code> argument that changes the matching and replacing behavior. By
+default, <code>text_case_match()</code> will try to match on entire strings and replace
+those strings. This can be changed to a partial matching and replacement
+strategy with the alternate option.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">text_case_match(
+  .data,
+  ...,
+  .default = NULL,
+  .replace = c("all", "partial"),
+  .locations = cells_body()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>.data</code></td>
+<td>
+<p><em>The gt table data object</em>
+</p>
+<p><code style="white-space: pre;">⁠obj:&lt;gt_tbl&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>This is the <strong>gt</strong> table object that is commonly created through use of the
+<code>gt()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p><em>Matching expressions</em>
+</p>
+<p><code style="white-space: pre;">⁠&lt;multiple expressions&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>A sequence of two-sided formulas matching this general construction:
+<code style="white-space: pre;">⁠&lt;old_text&gt; ~ &lt;new_text&gt;⁠</code>. The left hand side (LHS) determines which values
+to match on and it can be any length (allowing for <code>new_text</code> to replace
+different values of <code>old_text</code>). The right hand side (RHS) provides the
+replacement text (it must resolve to a single value of the <code>character</code>
+class).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.default</code></td>
+<td>
+<p><em>Default replacement text</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <em>default:</em> <code>NULL</code> (<code>optional</code>)
+</p>
+<p>The replacement text to use when cell values aren't matched by any of the
+LHS inputs. If <code>NULL</code>, the default, no replacement text will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.replace</code></td>
+<td>
+<p><em>Method for text replacement</em>
+</p>
+<p><code style="white-space: pre;">⁠singl-kw:[all|partial]⁠</code> // <em>default:</em> <code>"all"</code>
+</p>
+<p>A choice in how the matching is to be done. The default <code>"all"</code> means that
+the <code>old_text</code> (on the LHS of formulas given in <code>...</code>) must match the cell
+text <em>completely</em>. With that option, the replacement will completely
+replace that matched text. With <code>"partial"</code>, the match will occur in all
+substrings of <code>old_text</code>. In this way, the replacements will act on those
+matched substrings.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.locations</code></td>
+<td>
+<p><em>Locations to target</em>
+</p>
+<p><code>&lt;locations expressions&gt;</code> // <em>default:</em> <code>cells_body()</code>
+</p>
+<p>The cell or set of cells to be associated with the text transformation.
+Only <code>cells_column_spanners()</code>, <code>cells_column_labels()</code>,
+<code>cells_row_groups()</code>, <code>cells_stub()</code>, and <code>cells_body()</code> can
+be used here. We can enclose several of these calls within a <code>list()</code> if we
+wish to make the transformation happen at different locations.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>gt_tbl</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<p>Let's use the <code>exibble</code> dataset to create a simple, two-column <strong>gt</strong> table
+(keeping only the <code>char</code> and <code>fctr</code> columns). In the <code>char</code> column, we'll
+transform the <code>NA</code> value to <code>"elderberry"</code> using the <code>text_case_match()</code>
+function. Over in the <code>fctr</code> column, some more sophisticated matches will be
+performed using <code>text_case_match()</code>. That column has spelled out numbers and
+we can produce these on the LHS with help from <code>vec_fmt_spelled_num()</code>.
+The replacements will contain descriptive text. In this last call of
+<code>text_case_match()</code>, we use a <code>.default</code> to replace text for any of those
+non-matched cases.
+</p>
+<div class="sourceCode r"><pre>exibble |&gt;
+  dplyr::select(char, fctr) |&gt;
+  gt() |&gt;
+  text_case_match(
+    NA ~ "elderberry",
+    .locations = cells_body(columns = char)
+  ) |&gt;
+  text_case_match(
+    vec_fmt_spelled_num(1:4) ~ "one to four",
+    vec_fmt_spelled_num(5:6) ~ "five or six",
+    .default = "seven or more",
+    .locations = cells_body(columns = fctr)
+  )
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_text_case_match_1.png" alt="This image of a table was generated from the first code example in the `text_case_match()` help file." style="width:100%;"><p>Next, let's use a transformed version of the <code>towny</code> dataset to create a
+<strong>gt</strong> table. Transform the text in the <code>csd_type</code> column using two-sided
+formulas supplied to <code>text_case_match()</code>. We can replace matches on the LHS
+with Fontawesome icons furnished by the <strong>fontawesome</strong> R package.
+</p>
+<div class="sourceCode r"><pre>towny |&gt;
+  dplyr::select(name, csd_type, population_2021) |&gt;
+  dplyr::filter(csd_type %in% c("city", "town")) |&gt;
+  dplyr::slice_max(population_2021, n = 5, by = csd_type) |&gt;
+  dplyr::arrange(csd_type) |&gt;
+  gt() |&gt;
+  fmt_integer() |&gt;
+  text_case_match(
+    "city" ~ fontawesome::fa("city"),
+    "town" ~ fontawesome::fa("house-chimney")
+  ) |&gt;
+  cols_label(
+    name = "City/Town",
+    csd_type = "",
+    population_2021 = "Population"
+  )
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_text_case_match_2.png" alt="This image of a table was generated from the second code example in the `text_case_match()` help file." style="width:100%;"><h3>Function ID</h3>
+
+<p>4-3
+</p>
+
+
+<h3>Function Introduced</h3>
+
+<p><code>v0.9.0</code> (Mar 31, 2023)
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other text transforming functions: 
+<code>text_case_when()</code>,
+<code>text_replace()</code>,
+<code>text_transform()</code>
+</p>
+
+
+</div>

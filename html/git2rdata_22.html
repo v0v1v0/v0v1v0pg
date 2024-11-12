@@ -1,0 +1,128 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>relabel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Relabel Factor Levels by Updating the Metadata</h2>
+
+<h3>Description</h3>
+
+<p>Imagine the situation where we have a dataframe with a factor variable and we
+have stored it with <code>write_vc(optimize = TRUE)</code>. The raw data file contains
+the factor indices and the metadata contains the link between the factor
+index and the corresponding label. See
+<code>vignette("version_control", package = "git2rdata")</code>. In such a case,
+relabelling a factor can be fast and lightweight by updating the metadata.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">relabel(file, root = ".", change)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>the name of the git2rdata object. Git2rdata objects cannot
+have dots in their name. The name may include a relative path. <code>file</code> is a
+path relative to the <code>root</code>.
+Note that <code>file</code> must point to a location within <code>root</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>root</code></td>
+<td>
+<p>The root of a project. Can be a file path or a <code>git-repository</code>.
+Defaults to the current working directory (<code>"."</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>change</code></td>
+<td>
+<p>either a <code>list</code> or a <code>data.frame</code>. In case of a <code>list</code> is a
+named <code>list</code> with named <code>vectors</code>. The names of list elements must match the
+names of the variables. The names of the vector elements must match the
+existing factor labels. The values represent the new factor labels. In case
+of a <code>data.frame</code> it needs to have the variables <code>factor</code> (name of the
+factor), <code>old</code> (the old) factor label and <code>new</code> (the new factor label).
+<code>relabel()</code> ignores all other columns.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>invisible <code>NULL</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other storage: 
+<code>display_metadata()</code>,
+<code>list_data()</code>,
+<code>prune_meta()</code>,
+<code>read_vc()</code>,
+<code>rename_variable()</code>,
+<code>rm_data()</code>,
+<code>update_metadata()</code>,
+<code>verify_vc()</code>,
+<code>write_vc()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# initialise a git repo using git2r
+repo_path &lt;- tempfile("git2rdata-repo-")
+dir.create(repo_path)
+repo &lt;- git2r::init(repo_path)
+git2r::config(repo, user.name = "Alice", user.email = "alice@example.org")
+
+# Create a dataframe and store it as an optimized git2rdata object.
+# Note that write_vc() uses optimization by default.
+# Stage and commit the git2rdata object.
+ds &lt;- data.frame(
+  a = c("a1", "a2"),
+  b = c("b2", "b1"),
+  stringsAsFactors = TRUE
+)
+junk &lt;- write_vc(ds, "relabel", repo, sorting = "b", stage = TRUE)
+cm &lt;- commit(repo, "initial commit")
+# check that the workspace is clean
+status(repo)
+
+# Define new labels as a list and apply them to the git2rdata object.
+new_labels &lt;- list(
+  a = list(a2 = "a3")
+)
+relabel("relabel", repo, new_labels)
+# check the changes
+read_vc("relabel", repo)
+# relabel() changed the metadata, not the raw data
+status(repo)
+git2r::add(repo, "relabel.*")
+cm &lt;- commit(repo, "relabel using a list")
+
+# Define new labels as a dataframe and apply them to the git2rdata object
+change &lt;- data.frame(
+  factor = c("a", "a", "b"),
+  old = c("a3", "a1", "b2"),
+  new = c("c2", "c1", "b3"),
+  stringsAsFactors = TRUE
+)
+relabel("relabel", repo, change)
+# check the changes
+read_vc("relabel", repo)
+# relabel() changed the metadata, not the raw data
+status(repo)
+</code></pre>
+
+
+</div>

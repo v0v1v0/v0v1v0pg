@@ -1,0 +1,125 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>flip</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Flip bins and sequences</h2>
+
+<h3>Description</h3>
+
+<p><code>flip</code> and <code>flip_seqs</code> reverse-complement specified bins or individual
+sequences and their features. <code>sync</code> automatically flips bins using a
+heuristic that maximizes the amount of forward strand links between
+neighboring bins.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">flip(x, ..., .bin_track = seqs)
+
+flip_seqs(x, ..., .bins = everything(), .seq_track = seqs, .bin_track = seqs)
+
+sync(x, link_track = 1, min_support = 0)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a gggenomes object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>bins or sequences to flip in dplyr::select like syntax (numeric
+position or unquoted expressions)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.bin_track, .seq_track</code></td>
+<td>
+<p>when using a function as selector such as
+<code>tidyselect::where()</code>, this specifies the track in which context the
+function is evaluated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.bins</code></td>
+<td>
+<p>preselection of bins with sequences to flip. Useful if selecting
+by numeric position. It sets the context for selection, for example the
+11th sequences of the total set might more easily described as the 2nd
+sequences of the 3rd bin: <code>flip_seqs(2, .bins=3)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link_track</code></td>
+<td>
+<p>the link track to use for flipping bins nicely</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_support</code></td>
+<td>
+<p>only flip a bin if at least this many more nucleotides
+support an inversion over the given orientation</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For more details see the help vignette:
+<code>vignette("flip", package = "gggenomes")</code>
+</p>
+
+
+<h3>Value</h3>
+
+<p>a gggenomes object with flipped bins or sequences
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(patchwork)
+p &lt;- gggenomes(genes = emale_genes) +
+  geom_seq(aes(color = strand), arrow = TRUE) +
+  geom_link(aes(fill = strand)) +
+  expand_limits(color = c("-")) +
+  labs(caption = "not flipped")
+
+# nothing flipped
+p0 &lt;- p %&gt;% add_links(emale_ava)
+
+# flip manually
+p1 &lt;- p %&gt;%
+  add_links(emale_ava) %&gt;%
+  flip(4:6) + labs(caption = "manually")
+
+# flip automatically based on genome-genome links
+p2 &lt;- p %&gt;%
+  add_links(emale_ava) %&gt;%
+  sync() + labs(caption = "genome alignments")
+
+# flip automatically based on protein-protein links
+p3 &lt;- p %&gt;%
+  add_sublinks(emale_prot_ava) %&gt;%
+  sync() + labs(caption = "protein alignments")
+
+# flip automatically based on genes linked implicitly by belonging
+# to the same clusters of orthologs (or any grouping of your choice)
+p4 &lt;- p %&gt;%
+  add_clusters(emale_cogs) %&gt;%
+  sync() + labs(caption = "shared orthologs")
+
+p0 + p1 + p2 + p3 + p4 + plot_layout(nrow = 1, guides = "collect")
+</code></pre>
+
+
+</div>

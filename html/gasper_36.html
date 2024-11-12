@@ -1,0 +1,196 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>SUREthresh</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Stein's Unbiased Risk Estimate</h2>
+
+<h3>Description</h3>
+
+<p>Adaptive Threshold Selection Using Principle of Stein's Unbiased Risk Estimate (SURE).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">SUREthresh(
+  wcn,
+  thresh,
+  diagWWt,
+  beta = 2,
+  sigma,
+  hatsigma = NA,
+  policy = "uniform",
+  keepwc = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>wcn</code></td>
+<td>
+<p>Numeric vector of the noisy spectral graph wavelet coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thresh</code></td>
+<td>
+<p>Numeric vector of threshold values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>diagWWt</code></td>
+<td>
+<p>Numeric vector of weights typically derived from the diagonal elements of the wavelet frame matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>A numeric value specifying the type of thresholding to be used, for example:
+</p>
+
+<ul>
+<li>
+<p> 1 for soft thresholding.
+</p>
+</li>
+<li>
+<p> 2 for James-Stein thresholding.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>A numeric value representing the standard deviation (sd) of the noise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hatsigma</code></td>
+<td>
+<p>An optional numeric value providing an estimate of the noise standard deviation (default is <code>NA</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>policy</code></td>
+<td>
+<p>A character string determining the thresholding policy. Valid options include:
+</p>
+
+<ul>
+<li> <p><code>"uniform"</code> for a global threshold applied uniformly across all coefficients.
+</p>
+</li>
+<li> <p><code>"dependent"</code> for threshold values that adaptively depend on the corresponding <code>diagWWt</code> weights.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keepwc</code></td>
+<td>
+<p>A logical value determining if the thresholded wavelet coefficients should be returned (Default is <code>TRUE</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>SUREthresh</code> function is a data-driven approach to finding the optimal thresholding value for denoising wavelet coefficients. SURE provides a means to evaluate the denoising quality of a given thresholding function <code class="reqn">h</code>. The expected risk in terms of the mean squared error (MSE) between the original coefficients <code class="reqn">\mathbf{F}</code> and their thresholded counterparts <code class="reqn">h(\widetilde{\mathbf{F}})</code>, considering a noise variance <code class="reqn">\sigma^2</code>, is given by:
+</p>
+<p style="text-align: center;"><code class="reqn">
+\mathbb E \left[\|\mathbf{F} - h(\widetilde{\mathbf{F}})\|_2^2 \right] = \mathbb E \left[-n\sigma^2 + \|\widetilde{\mathbf{F}} - h(\widetilde{\mathbf{F}})\|_2^2 + 2\sigma^2 \sum_{i,j = 1}^{n(J+1)} \gamma_{ij} \partial_j h_i(\widetilde{\mathbf{F}}) \right]
+</code>
+</p>
+
+<p>Where:
+</p>
+
+<ul>
+<li> <p><code class="reqn">\widetilde{\mathbf{F}}</code> are the noisy wavelet coefficients.
+</p>
+</li>
+<li> <p><code class="reqn">\gamma_{ij}</code> represents the elements of the matrix obtained by multiplying the transpose of the wavelet transform matrix <code class="reqn">\mathbf{\Psi}</code> with itself, i.e., <code class="reqn">\gamma_{ij} = (\mathbf{\Psi}^\top \mathbf{\Psi})_{ij}</code>.
+</p>
+</li>
+<li> <p><code class="reqn">h_i</code> is the <code class="reqn">i^{th}</code> component of the thresholding function <code class="reqn">h</code>.
+</p>
+</li>
+<li> <p><code class="reqn">n</code> is the sample size.
+</p>
+</li>
+</ul>
+<p>The thresholding operator, represented by <code class="reqn">h</code> in the <code>SUREthresh</code> function, is obtained using this <code>betathresh</code> function. The SURE in the transformed domain can be explicitly stated as:
+</p>
+<p style="text-align: center;"><code class="reqn">
+\mathbf{SURE}(h) = -n \sigma^2 + \sum_{i=1}^{n(J+1)} \widetilde{F}_i^2 \left ( 1 \wedge \frac{t_i^\beta}{|\widetilde{F}_i|^\beta} \right )^2
++ 2 \sum_{i=1}^{n(J+1)} \gamma_{ij} \mathbf{1}_{[t_i,\infty)}(|\widetilde{F}_i|) \left [ 1+\frac{(\beta-1) t_i^\beta}{|\widetilde{F}_i|^\beta} \right ].
+</code>
+</p>
+
+<p><code>GVN</code> and <code>HPFVN</code> provide naive noise variance estimation.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list containing:
+</p>
+
+<ul>
+<li>
+<p> A dataframe with calculated SURE and hatSURE values.
+</p>
+</li>
+<li>
+<p> Minima of SURE and hatSURE and their corresponding optimal thresholds.
+</p>
+</li>
+<li>
+<p> Thresholded wavelet coefficients (if <code>keepwc = TRUE</code>).
+</p>
+</li>
+</ul>
+<h3>Note</h3>
+
+<p>The vector of thresholds <code>thresh</code> for evaluating the SURE can be effectively determined by ordering the absolute values of the noisy wavelet coefficients. This approach aligns with Donoho and Johnstone's trick in standard wavelet thresholding, where SURE typically reaches its minimum at one of these coefficients. For further details, see Donoho and Johnstone Section 2.3 and de Loynes et al. Section 3.3.
+</p>
+<p>The function intentionally omits the irreducible variance term from the SURE calculations, as it doesn't affect the minimum's location.
+</p>
+<p>Also, when 'keepwc = TRUE', the function provides thresholded wavelet coefficients for all evaluated threshold values, offering deeper insights into the effects of different thresholds.
+</p>
+
+
+<h3>References</h3>
+
+<p>Donoho, D. L., &amp; Johnstone, I. M. (1995). Adapting to unknown smoothness via wavelet shrinkage. Journal of the american statistical association, 90(432), 1200-1224.
+</p>
+<p>de Loynes, B., Navarro, F., Olivier, B. (2021). Data-driven thresholding in denoising with Spectral Graph Wavelet Transform. Journal of Computational and Applied Mathematics, Vol. 389.
+</p>
+<p>Stein, C. M. (1981). Estimation of the mean of a multivariate normal distribution. The annals of Statistics, 1135-1151.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>SURE_MSEthresh</code>, <code>GVN</code>, <code>HPFVN</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#
+# See example in SURE_MSEthresh
+#
+
+</code></pre>
+
+
+</div>

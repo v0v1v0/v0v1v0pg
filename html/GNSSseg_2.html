@@ -1,0 +1,163 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GNSSseg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Homogeneization of GNSS series</h2>
+
+<h3>Description</h3>
+
+<p>fit a segmentation in the mean model by taken into account for a functional part and a heterogeneous variance (default is monthly)
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GNSSseg(
+  Data,
+  lyear = 365.25,
+  lmin = 1,
+  Kmax = 30,
+  selection.K = "BM_BJ",
+  S = 0.75,
+  f = TRUE,
+  selection.f = FALSE,
+  threshold = 0.001,
+  tol = 1e-04
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Data</code></td>
+<td>
+<p>a data frame, with size [n x 2], containing the signal (e.g. the daily GPS-ERAI series for GNSS) and the dates (in format yyyy-mm-dd of type "calendar time" (class POSIXct))</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lyear</code></td>
+<td>
+<p>the length of the year in the signal. Default is 365.25</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lmin</code></td>
+<td>
+<p>the minimum length of the segments. Default is 1</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Kmax</code></td>
+<td>
+<p>the maximal number of segments (must be lower than n). Default is 30</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>selection.K</code></td>
+<td>
+<p>a name indicating the model selection criterion to select the number of segments K (<code>mBIC</code>, <code>Lav</code>, <code>BM_BJ</code> or <code>BM_slope</code>). <code>"none"</code> indicates that no selection is claimed and the procedure considers <code>Kmax</code> segments or <code>Kmax</code>-1 changes. If <code>selection.K="All"</code>, the results for the four possible criteria are given. Default is <code>"BM_BJ"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S</code></td>
+<td>
+<p>the threshold used in the Lav's criterion. Default is 0.75</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>f</code></td>
+<td>
+<p>a boolean indicating if the functional part is taking into account in the model. Default is TRUE and note that if <code>f=FALSE</code>, only a segmentation is performed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>selection.f</code></td>
+<td>
+<p>a boolean indicating if a selection on the functions of the Fourier decomposition of order 4 is performed. Default is FALSE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threshold</code></td>
+<td>
+<p>a numeric value lower than 1 used for the selection of the functions of the Fourier decomposition of order 4. Default is 0.001</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>the stopping rule for the iterative procedure. Default is 1e-4</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function performs homogeneization of GNSS series. The considered model is such that: (1) the average is composed of a piecewise function (changes in the mean) with a functional part and (2) the variance is heterogeneous on fixed intervals. By default the latter intervals are the months.
+The inference procedure consists in two steps. First, the number of segments is fixed to <code>Kmax</code> and the parameters are estimated using the maximum likelihood procedure using the following procedure: first the variances are robustly estimated and then the segmentation and the functional parts are iteratively estimated. Then the number of segments is chosen using model selection criteria. The possible criteria are <code>mBIC</code> the modified BIC criterion, <code>Lav</code> the criterion proposed by Lavielle, <code>BM_BJ</code> and <code>BM_slope</code> the criteriain which the penalty constant is calibrated using the Biggest Jump and the slope.
+</p>
+
+<ul>
+<li>
+<p> The data is a data frame with 2 columns: $signal is the signal to be homogeneized (a daily series) and $date is the date. The date will be in format yyyy-mm-dd of type "calendar time" (class POSIXct).
+</p>
+</li>
+<li>
+<p> The function part is estimated using a Fourier decomposition of order 4 with <code>selection.f=FALSE</code>. <code>selection.f=TRUE</code> consists in selecting the significative functions of the Fourier decomposition of order 4 (for which p.values are lower than <code>threshold</code>)
+</p>
+</li>
+<li>
+<p> If <code>selection.K="none"</code>, the procedure is performed with <code>Kmax</code> segments.
+</p>
+</li>
+<li>
+<p> Missing data in the signal are accepted.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>A file containing
+</p>
+
+<ul>
+<li> <p><code>K</code> that corresponds to the selected number of segments or <code>K</code>-1 corresponds to the number of changes. If <code>selection.K="none"</code>, the number of segments is <code>Kmax</code>.
+</p>
+</li>
+<li> <p><code>seg</code> that corresponds to the estimation of the segmentation parameters (the begin and the end positions of each segment with the estimated mean).
+</p>
+</li>
+<li> <p><code>funct</code> that corresponds to the estimation of the functional part. If <code>f==FALSE</code>, <code>funct</code> is FALSE
+</p>
+</li>
+<li> <p><code>coeff</code> that corresponds to the estimation of the coefficients of the Fourier decomposition. The vector contains 8 coefficients if <code>selection.f=FALSE</code> or as many coefficients as the number of selected functions if <code>selection.f=TRUE</code>. If <code>f==FALSE</code>, <code>coeff</code> is FALSE
+</p>
+</li>
+<li> <p><code>variances</code> that corresponds to the estimated variances of each fixed interval
+</p>
+</li>
+<li> <p><code>SSR</code> that corresponds to the Residuals Sum of Squares for k=1,...,<code>Kmax</code>. If <code>selection.K="none"</code>, it contains only the SSR for <code>Kmax</code> segments
+</p>
+</li>
+<li> <p><code>Tot</code> is a list. Each component contains all the results k segments (k=1,...,<code>Kmax</code>). If <code>selection.K="none"</code>, <code>Tot</code> is NA
+</p>
+</li>
+</ul>
+<p>If <code>selection.K="All"</code>, the outputs <code>K</code>, <code>seg</code>, <code>funct</code> and <code>coeff</code> are each a list containing the corresponding results obtained for the four model selection criteria
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(Data)
+lyear=365.25
+Kmax=4
+lmin=1
+result=GNSSseg(Data,lyear,Kmax=Kmax,selection.K="none")
+plot_GNSS(Data,result$seg,result$funct)
+</code></pre>
+
+
+</div>

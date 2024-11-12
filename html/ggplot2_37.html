@@ -1,0 +1,120 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>automatic_plotting</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Tailoring plots to particular data types</h2>
+
+<h3>Description</h3>
+
+<p>There are three functions to make plotting particular data types easier:
+<code>autoplot()</code>, <code>autolayer()</code> and <code>fortify()</code>. These are S3 generics for which
+other packages can write methods to display classes of data. The three
+functions are complementary and allow different levels of customisation.
+Below we'll explore implementing this series of methods to automate plotting
+of some class.
+</p>
+<p>Let's suppose we are writing a packages that has a class called 'my_heatmap',
+that wraps a matrix and we'd like users to easily plot this heatmap.
+</p>
+<div class="sourceCode r"><pre>my_heatmap &lt;- function(...) {
+  m &lt;- matrix(...)
+  class(m) &lt;- c("my_heatmap", class(m))
+  m
+}
+
+my_data &lt;- my_heatmap(volcano)
+</pre></div>
+
+
+<h3>Automatic data shaping</h3>
+
+<p>One of the things we have to do is ensure that the data is shaped in the long
+format so that it is compatible with ggplot2. This is the job of the
+<code>fortify()</code> function. Because 'my_heatmap' wraps a matrix, we can let the
+fortify method 'melt' the matrix to a long format. If your data is already
+based on a long-format <code style="white-space: pre;">⁠&lt;data.frame&gt;⁠</code>, you can skip implementing a
+<code>fortify()</code> method.
+</p>
+<div class="sourceCode r"><pre>fortify.my_heatmap &lt;- function(model, ...) {
+  data.frame(
+    row = as.vector(row(model)),
+    col = as.vector(col(model)),
+    value = as.vector(model)
+  )
+}
+
+fortify(my_data)
+</pre></div>
+<p>When you have implemented the <code>fortify()</code> method, it should be easier to
+construct a plot with the data than with the matrix.
+</p>
+<div class="sourceCode r"><pre>ggplot(my_data, aes(x = col, y = row, fill = value)) +
+  geom_raster()
+</pre></div>
+
+
+<h3>Automatic layers</h3>
+
+<p>A next step in automating plotting of your data type is to write an
+<code>autolayer()</code> method. These are typically wrappers around geoms or stats
+that automatically set aesthetics or other parameters. If you haven't
+implemented a <code>fortify()</code> method for your data type, you might have to
+reshape the data in <code>autolayer()</code>.
+</p>
+<p>If you require multiple layers to display your data type, you can use an
+<code>autolayer()</code> method that constructs a list of layers, which can be added
+to a plot.
+</p>
+<div class="sourceCode r"><pre>autolayer.my_heatmap &lt;- function(object, ...) {
+  geom_raster(
+    mapping = aes(x = col, y = row, fill = value),
+    data = object,
+    ...,
+    inherit.aes = FALSE
+  )
+}
+
+ggplot() + autolayer(my_data)
+</pre></div>
+<p>As a quick tip: if you define a mapping in <code>autolayer()</code>, you might want
+to set <code>inherit.aes = FALSE</code> to not have aesthetics set in other layers
+interfere with your layer.
+</p>
+
+
+<h3>Automatic plots</h3>
+
+<p>The last step in automating plotting is to write an <code>autoplot()</code> method
+for your data type. The expectation is that these return a complete plot.
+In the example below, we're exploiting the <code>autolayer()</code> method that we
+have already written to make a complete plot.
+</p>
+<div class="sourceCode r"><pre>autoplot.my_heatmap &lt;- function(object, ..., option = "magma") {
+  ggplot() +
+    autolayer(my_data) +
+    scale_fill_viridis_c(option = option) +
+    theme_void()
+}
+
+autoplot(my_data)
+</pre></div>
+<p>If you don't have a wish to implement a base R plotting method, you
+can set the plot method for your class to the autoplot method.
+</p>
+<div class="sourceCode r"><pre>plot.my_heatmap &lt;- autoplot.my_heatmap
+plot(my_data)
+</pre></div>
+
+
+<h3>See Also</h3>
+
+<p>Other plotting automation topics: 
+<code>autolayer()</code>,
+<code>autoplot()</code>,
+<code>fortify()</code>
+</p>
+
+
+</div>

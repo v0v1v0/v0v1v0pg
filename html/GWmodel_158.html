@@ -1,0 +1,240 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gwr.lcr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>GWR with a locally-compensated ridge term</h2>
+
+<h3>Description</h3>
+
+<p>To address possible local collinearity problems in basic GWR, GWR-LCR finds local ridge parameters at affected
+locations (set by a user-specified threshold for the design matrix condition number).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gwr.lcr(formula, data, regression.points, bw, kernel="bisquare",
+                    lambda=0,lambda.adjust=FALSE,cn.thresh=NA,
+                    adaptive=FALSE, p=2, theta=0, longlat=F,cv=T,dMat)
+## S3 method for class 'gwrlcr'
+print(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Regression model formula of a formula object </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a Spatial*DataFrame, i.e. SpatialPointsDataFrame or SpatialPolygonsDataFrame as defined in package <span class="pkg">sp</span>, or a sf object defined in package <span class="pkg">sf</span></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>regression.points</code></td>
+<td>
+<p>a Spatial*DataFrame object, i.e. SpatialPointsDataFrame 
+or SpatialPolygonsDataFrame as defined in package <span class="pkg">sp</span>,
+or a two-column numeric array</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bw</code></td>
+<td>
+<p>bandwidth used in the weighting function, possibly calculated by <code>bw.gwr.lcr</code>;
+fixed (distance) or adaptive bandwidth(number of nearest neighbours)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kernel</code></td>
+<td>
+<p>function chosen as follows:
+</p>
+<p>gaussian: wgt = exp(-.5*(vdist/bw)^2);
+</p>
+<p>exponential: wgt = exp(-vdist/bw);
+</p>
+<p>bisquare: wgt = (1-(vdist/bw)^2)^2 if vdist &lt; bw, wgt=0 otherwise;
+</p>
+<p>tricube: wgt = (1-(vdist/bw)^3)^3 if vdist &lt; bw, wgt=0 otherwise; 
+</p>
+<p>boxcar: wgt=1 if dist &lt; bw, wgt=0 otherwise</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>the power of the Minkowski distance, default is 2, i.e. the Euclidean distance</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>option for a globally-defined (constant) ridge parameter. Default is lambda=0, which gives a basic GWR fit</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.adjust</code></td>
+<td>
+<p>a locally-varying ridge parameter. Default FALSE, refers to: (i) a basic GWR without
+a local ridge adjustment (i.e. lambda=0, everywhere); or (ii) a penalised GWR with a global ridge adjustment 
+(i.e. lambda is user-specified as some constant, other than 0 everywhere); if TRUE, use cn.tresh
+to set the maximum condition number. Here for locations with a condition number (for its local design matrix) 
+above this user-specified threshold, a local ridge parameter is found</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cn.thresh</code></td>
+<td>
+<p>maximum value for condition number, commonly set between 20 and 30</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adaptive</code></td>
+<td>
+<p>if TRUE calculate an adaptive kernel where the bandwidth (bw) corresponds to the number of nearest neighbours (i.e. adaptive distance); default is FALSE, where a fixed kernel is found (bandwidth is a fixed distance)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>an angle in radians to rotate the coordinate system, default is 0</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>longlat</code></td>
+<td>
+<p>if TRUE, great circle distances will be calculated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv</code></td>
+<td>
+<p>if TRUE, 'cross-validation data will be calculated and returned in the output Spatial*DataFrame</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dMat</code></td>
+<td>
+<p>a pre-specified distance matrix, it can be calculated by the function <code>gw.dist</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>an object of class “gwrlcr”, returned by the function gwr.lcr</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments passed through (unused)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list of class “rgwr”:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>SDF</code></td>
+<td>
+<p>a SpatialPointsDataFrame (may be gridded), or 
+SpatialPolygonsDataFrame object (see package “sp”), or sf object  (see package “sf”) 
+with coordinates of regression.points in its "data" slot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GW.arguments</code></td>
+<td>
+<p>parameters used for the LCR-GWR calibration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GW.diagnostic</code></td>
+<td>
+<p>diagnostic information is given when data points are also used as regression locations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timings</code></td>
+<td>
+<p>timing information for running this function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>this.call</code></td>
+<td>
+<p>the function call used.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Binbin Lu <a href="mailto:binbinlu@whu.edu.cn">binbinlu@whu.edu.cn</a></p>
+
+
+<h3>References</h3>
+
+<p>Wheeler D (2007) Diagnostic tools and a remedial method for collinearity in geographically weighted regression. Environment and Planning A 39:2464-2481
+</p>
+<p>Brunsdon C, Charlton M, Harris P (2012) Living with collinearity in Local Regression Models. GISRUK 2012, Lancaster, UK
+</p>
+<p>Brunsdon C, Charlton M, Harris P (2012) Living with collinearity in Local Regression Models. Spatial Accuracy 2012, Brazil
+</p>
+<p>Gollini I, Lu B, Charlton M, Brunsdon C, Harris P (2015) GWmodel: an R Package for 
+exploring Spatial Heterogeneity using Geographically Weighted Models.  Journal of 
+Statistical Software 63(17): 1-50
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(DubVoter)
+require(RColorBrewer)
+
+# Function to find the global condition number (CN)
+BKW_cn &lt;- function (X) {
+  p &lt;- dim(X)[2]
+  Xscale &lt;- sweep(X, 2, sqrt(colSums(X^2)), "/")
+  Xsvd &lt;- svd(Xscale)$d
+  cn &lt;- Xsvd[1] / Xsvd[p]
+  cn
+}
+#
+X &lt;- cbind(1,Dub.voter@data[,3:10])
+head(X)
+CN.global &lt;- BKW_cn(X)
+CN.global
+## Not run: 
+# gwr.lcr function with a global bandwidth to check that the global CN is found
+gwr.lcr1 &lt;- gwr.lcr(GenEl2004~DiffAdd+LARent+SC1+Unempl+LowEduc+Age18_24
++Age25_44+Age45_64, data=Dub.voter, bw=10000000000)
+summary(gwr.lcr1$SDF$Local_CN)
+
+# Find and map the local CNs from a basic GWR fit using the lcr-gwr function 
+#(note this is NOT the locally-compensated ridge GWR fit as would need to set 
+#lambda.adjust=TRUE and cn.thresh=30, say)
+
+bw.lcr2 &lt;- bw.gwr.lcr(GenEl2004~DiffAdd+LARent+SC1+Unempl+LowEduc+Age18_24
++Age25_44+Age45_64, data=Dub.voter, kernel="bisquare", adaptive=TRUE)
+gwr.lcr2 &lt;- gwr.lcr(GenEl2004~DiffAdd+LARent+SC1+Unempl+LowEduc+Age18_24
++Age25_44+Age45_64, data=Dub.voter, bw=bw.lcr2, kernel="bisquare", adaptive=TRUE)
+if(require("RColorBrewer"))
+  spplot(gwr.lcr2$SDF,"Local_CN",col.regions=brewer.pal(9,"YlOrRd"),cuts=8,
+  main="Local CN")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

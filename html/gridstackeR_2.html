@@ -1,0 +1,166 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>grid_stack</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Grid Stack Container</h2>
+
+<h3>Description</h3>
+
+<p>This acts as a container for the grid_stack_item's.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">grid_stack(
+  ...,
+  id = "gridstackeR-grid",
+  opts = "{cellHeight: 70}",
+  ncols = 12,
+  nrows = 12,
+  dynamic_full_window_height = FALSE,
+  height_offset = 0
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>content to include in the container</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>the id of the grid_stack container</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>opts</code></td>
+<td>
+<p>grid options: check
+<a href="https://github.com/gridstack/gridstack.js/tree/master/doc#grid-options"> gridstack documentation</a>
+for more details</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncols</code></td>
+<td>
+<p>number of columns for the grid (If you need &gt; 12 columns you need to generate the CSS manually)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nrows</code></td>
+<td>
+<p>number of rows for the grid</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dynamic_full_window_height</code></td>
+<td>
+<p>if TRUE, the grid will change dynamically to fit the window size minus the <code>height_offset</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>height_offset</code></td>
+<td>
+<p>margin for the grid height, see <code>dynamic_full_window_height</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a grid_stack that can contain resizable and draggable <code>grid_stack_item</code>s
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+library(gridstackeR)
+library(shiny)
+library(shinydashboard)
+library(shinyjs)
+
+
+ui &lt;- dashboardPage(
+  title = "gridstackeR Demo",
+  dashboardHeader(),
+  dashboardSidebar(disable = TRUE),
+  dashboardBody(
+    useShinyjs(),
+    # make sure the content fills the given height
+    tags$style(".grid-stack-item-content {height:100%;}"),
+    grid_stack(
+      dynamic_full_window_height = TRUE,
+      grid_stack_item(
+        h = 2, w = 2, style = "overflow:hidden",
+        box(
+          title = "gridstackeR", status = "success", solidHeader = TRUE,
+          width = 12, height = "100%",
+          div("Drag and scale the Boxes as desired")
+        )
+      ),
+      grid_stack_item(
+        h = 4, w = 4, id = "plot_container", style = "overflow:hidden",
+        box(
+          title = "Histogram", status = "primary", solidHeader = TRUE,
+          width = 12, height = "100%",
+          plotOutput("plot", height = "auto")
+        )
+      ),
+      grid_stack_item(
+        h = 3, w = 4, minH = 3, maxH = 3, id = "slider", style = "overflow:hidden",
+        box(
+          title = "Inputs", status = "warning", solidHeader = TRUE,
+          width = 12, height = "100%",
+          sliderInput("slider", "Slider input:", 1, 100, 50)
+        )
+      ),
+      grid_stack_item(
+        w = 4, h = 10, x = 0, y = 0, id = "c_table",
+        DT::dataTableOutput("mytable")
+      )
+    )
+  )
+)
+
+server &lt;- function(input, output, session) {
+
+  output$plot &lt;- renderPlot({
+    x    &lt;- faithful$waiting
+    bins &lt;- seq(min(x), max(x), length.out = input$slider + 1)
+
+    hist(x, breaks = bins, col = "#75AADB", border = "white",
+         xlab = "Waiting time to next eruption (in mins)",
+         main = "Histogram of waiting times")
+
+  },
+  # set the height according to the container height (minus the margins)
+  height = function() {max(input$plot_container_height - 80, 150)}
+  )
+
+  output$mytable &lt;- DT::renderDataTable({
+    DT::datatable(mtcars, options = list(
+      # set the height according to the container height (minus the margins)
+      scrollY = max(input$c_table_height, 200) - 110, paging = FALSE
+    )
+    )
+  })
+}
+
+shinyApp(ui, server)
+
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

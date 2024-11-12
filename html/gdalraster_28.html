@@ -1,0 +1,117 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>footprint</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute footprint of a raster</h2>
+
+<h3>Description</h3>
+
+<p><code>footprint()</code> is a wrapper of the <code>gdal_footprint</code> command-line
+utility (see <a href="https://gdal.org/programs/gdal_footprint.html">https://gdal.org/programs/gdal_footprint.html</a>).
+The function can be used to compute the footprint of a raster file, taking
+into account nodata values (or more generally the mask band attached to
+the raster bands), and generating polygons/multipolygons corresponding to
+areas where pixels are valid, and write to an output vector file.
+Refer to the GDAL documentation at the URL above for a list of command-line
+arguments that can be passed in <code>cl_arg</code>. Requires GDAL &gt;= 3.8.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">footprint(src_filename, dst_filename, cl_arg = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>src_filename</code></td>
+<td>
+<p>Character string. Filename of the source raster.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dst_filename</code></td>
+<td>
+<p>Character string. Filename of the destination vector.
+If the file and the output layer exist, the new footprint is appended to
+them, unless the <code>-overwrite</code> command-line argument is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl_arg</code></td>
+<td>
+<p>Optional character vector of command-line arguments for
+<code>gdal_footprint</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Post-vectorization geometric operations are applied in the following order:
+</p>
+
+<ul>
+<li>
+<p> optional splitting (<code>-split_polys</code>)
+</p>
+</li>
+<li>
+<p> optional densification (<code>-densify</code>)
+</p>
+</li>
+<li>
+<p> optional reprojection (<code>-t_srs</code>)
+</p>
+</li>
+<li>
+<p> optional filtering by minimum ring area (<code>-min_ring_area</code>)
+</p>
+</li>
+<li>
+<p> optional application of convex hull (<code>-convex_hull</code>)
+</p>
+</li>
+<li>
+<p> optional simplification (<code>-simplify</code>)
+</p>
+</li>
+<li>
+<p> limitation of number of points (<code>-max_points</code>)
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>Logical indicating success (invisible <code>TRUE</code>).
+An error is raised if the operation fails.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>polygonize()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">evt_file &lt;- system.file("extdata/storml_evt.tif", package="gdalraster")
+out_file &lt;- file.path(tempdir(), "storml.geojson")
+
+# Requires GDAL &gt;= 3.8
+if (as.integer(gdal_version()[2]) &gt;= 3080000) {
+  # command-line arguments for gdal_footprint
+  args &lt;- c("-t_srs", "EPSG:4326")
+  footprint(evt_file, out_file, args)
+
+  deleteDataset(out_file)
+}
+</code></pre>
+
+
+</div>

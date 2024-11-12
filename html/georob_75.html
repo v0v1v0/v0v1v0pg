@@ -1,0 +1,426 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>lgnpp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Unbiased Back-Transformations for Log-normal Kriging</h2>
+
+<h3>Description</h3>
+
+<p>The function <code>lgnpp</code> back-transforms point or block Kriging
+predictions of a log-transformed response variable computed by
+<code>predict.georob</code>.  Alternatively, the function averages
+log-normal point Kriging predictions for a block and approximates the mean
+squared prediction error of the block mean.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">lgnpp(object, newdata, locations, is.block = FALSE, all.pred = NULL,
+    extended.output = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>an object with Kriging predictions of a log-transformed
+response variable as obtained by
+<code>predict(<var>georob-object, ...</var>)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>an optional object as passed as argument <code>newdata</code> to
+<code>predict.georob</code>, see <em>Details</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>locations</code></td>
+<td>
+<p>an optional one-sided formula specifying what variables
+of <code>newdata</code> are the coordinates of the prediction points, see
+<code>predict.georob</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>is.block</code></td>
+<td>
+<p>an optional logical scalar (default <code>FALSE</code>) specifying
+whether point predictions contained in <code>object</code> are considered to
+belong to a single block and should be averaged after
+back-transformation.  Ignored if <code>object</code> contains block Kriging
+predictions, see <em>Details</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>all.pred</code></td>
+<td>
+<p>an optional positive integer or an object as obtained by
+<code>lgnpp(predict(<var>georob-object, ...</var>))</code>, see <em>Details</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extended.output</code></td>
+<td>
+<p>a logical scalar controlling whether the
+covariance matrix of the errors of the back-transformed point predictions
+is added as an attribute to the result, see <em>Details</em>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function <code>lgnpp</code> performs three tasks:
+</p>
+
+
+<h4>1. Back-transformation of point Kriging predictions of a
+log-transformed response</h4>
+
+<p>The usual, marginally unbiased back-transformation for log-normal point
+Kriging is used:
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{U}(\boldsymbol{s}) = \exp( \widehat{Z}(\boldsymbol{s}) +
+      1/2 (  \mathrm{Var}_{\hat{\theta}}[ Z(\boldsymbol{s})]
+      - \mathrm{Var}_{\hat{\theta}}[\widehat{Z}(\boldsymbol{s})])),</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\mathrm{Cov}_{\hat{\theta}}[
+      U(\boldsymbol{s}_i) - \widehat{U}(\boldsymbol{s}_i),
+      U(\boldsymbol{s}_j) - \widehat{U}(\boldsymbol{s}_j)
+      ] = \mu_{\hat{\theta}}(\boldsymbol{s}_i) \mu_{\hat{\theta}}(\boldsymbol{s}_j)
+    </code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">
+      \times \{
+        \exp(\mathrm{Cov}_{\hat{\theta}}[Z(\boldsymbol{s}_i),Z(\boldsymbol{s}_j)])
+        -2\exp(\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\boldsymbol{s}_i),Z(\boldsymbol{s}_j)])
+        +\exp(\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(\boldsymbol{s}_i),\widehat{Z}(\boldsymbol{s}_j)])
+      \},
+    </code>
+</p>
+
+<p>where <code class="reqn">\widehat{Z}</code> and <code class="reqn">\widehat{U}</code> denote the
+log- and back-transformed predictions of the signal,
+and
+</p>
+<p style="text-align: center;"><code class="reqn">\mu_{\hat{\theta}}(\boldsymbol{s}) \approx
+      \exp(\boldsymbol{x}(\boldsymbol{s})\mathrm{^T}\widehat{\boldsymbol{\beta}}
+      + 1/2 \mathrm{Var}_{\hat{\theta}}[Z(\boldsymbol{s})]).
+    </code>
+</p>
+
+<p>The expressions for the required covariance terms can be found in the
+Appendices of <cite>Nussbaum et al.  (2014)</cite>.  Instead of the signal
+<code class="reqn">Z(\boldsymbol{s})</code>, predictions of the
+log-transformed response <code class="reqn">Y(\boldsymbol{s})</code>
+or the estimated trend
+<code class="reqn">\boldsymbol{x}(\boldsymbol{s})^\mathrm{T}\widehat{\boldsymbol{\beta}}</code> of the log-transformed data can be back-transformed (see
+<code>georobPackage</code>).  The
+above transformations are used if <code>object</code>
+contains point Kriging predictions (see <code>predict.georob</code>,
+<em>Value</em>) and if <code>is.block = FALSE</code> and <code>all.pred</code> is
+missing.
+</p>
+
+
+
+<h4>2. Back-transformation of block Kriging predictions of a
+log-transformed response</h4>
+
+<p>Block Kriging predictions of a log-transformed response variable are
+back-transformed by the approximately unbiased transformation proposed
+by <cite>Cressie (2006, Appendix C)</cite>
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{U}(A) = \exp( \widehat{Z}(A) + 1/2 \{
+    \mathrm{Var}_{\hat{\theta}}[Z(\boldsymbol{s})] + \widehat{\boldsymbol{\beta}}\mathrm{^T}
+    \boldsymbol{M}(A) \widehat{\boldsymbol{\beta}} -
+    \mathrm{Var}_{\hat{\theta}}[\widehat{Z}(A)]
+    \}),
+  </code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\mathrm{E}_{\hat{\theta}}[\{U(A) - \widehat{U}(A))^2] = \mu_{\hat{\theta}}(A)^2 \{
+    \exp(\mathrm{Var}_{\hat{\theta}}[Z(A)]) - 2 \exp(\mathrm{Cov}_{\hat{\theta}}[\widehat{Z}(A),Z(A)]) + \exp(\mathrm{Var}_{\hat{\theta}}[\widehat{Z}(A)])
+    \}
+  </code>
+</p>
+
+<p>where <code class="reqn">\widehat{Z}(A)</code> and <code class="reqn">\widehat{U}(A)</code> are the log- and
+back-transformed predictions of the block mean <code class="reqn">U(A)</code>, respectively,
+<code class="reqn">\boldsymbol{M}(A)</code> is the spatial
+covariance matrix of the covariates
+</p>
+<p style="text-align: center;"><code class="reqn"> \boldsymbol{M}(A) = 1/|A| \int_A
+  ( \boldsymbol{x}(\boldsymbol{s}) - \boldsymbol{x}(A) )
+  ( \boldsymbol{x}(\boldsymbol{s}) - \boldsymbol{x}(A) )\mathrm{^T} \,d\boldsymbol{s}
+  </code>
+</p>
+
+<p>within the block <code class="reqn">A</code> where
+</p>
+<p style="text-align: center;"><code class="reqn"> \boldsymbol{x}(A) = 1/|A| \int_A \boldsymbol{x}(\boldsymbol{s}) \,d\boldsymbol{s}
+  </code>
+</p>
+
+<p>and
+</p>
+<p style="text-align: center;"><code class="reqn"> \mu_{\hat{\theta}}(A) \approx \exp(\boldsymbol{x}(A)\mathrm{^T}
+    \widehat{\boldsymbol{\beta}} + 1/2 \mathrm{Var}_{\hat{\theta}}[Z(A)]).
+  </code>
+</p>
+
+<p>This back-transformation is based on the assumption that both the point data
+<code class="reqn">U(\boldsymbol{s})</code> and the block means
+<code class="reqn">U(A)</code> follow  log-normal laws, which strictly cannot hold.  But
+for small blocks the assumption works well as the bias and the loss of
+efficiency caused by this assumption are small (<cite>Cressie, 2006</cite>;
+<cite>Hofer et al., 2013</cite>).
+</p>
+<p>The above formulae are used by <code>lgnpp</code> if <code>object</code> contains
+block Kriging predictions in the form of a
+<code>SpatialPolygonsDataFrame</code>.  To approximate
+<code class="reqn">\boldsymbol{M}(A)</code>, one needs the covariates
+on a fine grid for the whole study domain in which the blocks lie.  The
+covariates are passed <code>lgnpp</code> as argument <code>newdata</code>, where
+<code>newdata</code> can be any spatial data frame accepted by
+<code>predict.georob</code>.  For evaluating
+<code class="reqn">\boldsymbol{M}(A)</code> the geometry of the blocks
+is taken from the <code>polygons</code> slot of the<br><code>SpatialPolygonsDataFrame</code> passed as <code>object</code> to <code>lgnpp</code>.
+</p>
+
+
+
+<h4>3. Back-transformation and averaging of point Kriging predictions
+of a log-transformed response</h4>
+
+<p><code>lgnpp</code> allows as a further option to back-transform and
+<em>average</em> point Kriging predictions passed as <code>object</code> to the
+function.  One then assumes that the predictions in <code>object</code> refer
+to points that lie in <em>a single</em> block.  Hence, one uses the
+approximation
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{U}(A) \approx \frac{1}{K} \sum_{s_i \in A} \widehat{U}(\boldsymbol{s}_i)
+  </code>
+</p>
+
+<p>to predict the block mean <code class="reqn">U(A)</code>, where <code class="reqn">K</code> is the number of
+points in <code class="reqn">A</code>. The mean squared prediction error can be approximated by
+</p>
+<p style="text-align: center;"><code class="reqn">\mathrm{E}_{\hat{\theta}}[\{U(A) - \widehat{U}(A)\}^2] \approx \frac{1}{K^2}
+    \sum_{s_i \in A} \sum_{s_j \in A}
+    \mathrm{Cov}_{\hat{\theta}}[
+    U(\boldsymbol{s}_i) - \widehat{U}(\boldsymbol{s}_i),
+    U(\boldsymbol{s}_j) - \widehat{U}(\boldsymbol{s}_j)
+    ].
+    </code>
+</p>
+
+<p>In most instances, the evaluation of the above double sum is not feasible
+because a large number of points is used to discretize the block <code class="reqn">A</code>.
+<code>lgnpp</code> then uses the following approximations to compute the mean
+squared error (see also Appendix E of <cite>Nussbaum et al., 2014</cite>):
+</p>
+
+<ul>
+<li>
+<p> Point prediction results are passed as <code>object</code> to <code>lgnpp</code>
+only for a <em>random sample of points in <code class="reqn">A</code></em> (of size <code class="reqn">k</code>),
+for which the evaluation of the above double sum is feasible.
+</p>
+</li>
+<li>
+<p> The prediction results for the <em>complete set of points</em>
+within the block are passed as argument <code>all.pred</code> to
+<code>lgnpp</code>.  These results are used to compute <code class="reqn">\widehat{U}(A)</code>.
+</p>
+</li>
+<li>
+<p> The mean squared error is then approximated by
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \mathrm{E}_{\hat{\theta}}[\{U(A) - \widehat{U}(A)\}^2] \approx
+      \frac{1}{K^2} \sum_{s_i \in A} \mathrm{E}_{\hat{\theta}}[ \{ U(\boldsymbol{s}_i) - \widehat{U}(\boldsymbol{s}_i)\}^2]
+    </code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">+ \frac{K-1}{K k (k-1)} \sum_{s_i \in \mathrm{sample}}\sum_{s_j \in \mathrm{sample}, s_j \neq s_i}
+    \mathrm{Cov}_{\hat{\theta}}[
+    U(\boldsymbol{s}_i) - \widehat{U}(\boldsymbol{s}_i),
+    U(\boldsymbol{s}_j) - \widehat{U}(\boldsymbol{s}_j)
+    ].
+    </code>
+</p>
+
+<p>The first term of the RHS (and <code class="reqn">\widehat{U}(A)</code>) can be
+computed from the point Kriging results contained in <code>all.pred</code>,
+and the double sum is evaluated from the full covariance matrices of
+the predictions and the respective targets, passed to <code>lgnpp</code> as
+<code>object</code> (one has to use the arguments
+<code>control=control.predict.georob(full.covmat=TRUE)</code> for
+<code>predict.georob</code> when computing the point Kriging
+predictions stored in <code>object</code>).
+</p>
+</li>
+<li>
+<p> If the prediction results are not available for the complete set
+of points in <code class="reqn">A</code> then <code>all.pred</code> may be equal to <code class="reqn">K</code>.  The
+block mean is then approximated by
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{U}(A) \approx \frac{1}{k} \sum_{s_i \in \mathrm{sample}}
+    \widehat{U}(\boldsymbol{s}_i) </code>
+</p>
+
+<p>and the first term of the RHS of the expression for the mean squared
+error by
+</p>
+<p style="text-align: center;"><code class="reqn"> \frac{1}{kK} \sum_{s_i \in \mathrm{sample}} \mathrm{E}_{\hat{\theta}}[ \{
+      U(\boldsymbol{s}_i) -
+      \widehat{U}(\boldsymbol{s}_i)\}^2].
+    </code>
+</p>
+
+</li>
+<li>
+<p> By drawing samples repeatedly and passing the related Kriging
+results as <code>object</code> to <code>lgnpp</code>, one can reduce the error of
+the approximation of the mean squared error.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>If <code>is.block</code> is <code>FALSE</code> and <code>all.pred</code> is equal to
+<code>NULL</code> <code>lgnpp</code> returns an updated object of the same class as
+<code>object</code> (see section <em>Value</em> of <code>predict.georob</code>).
+The data frame with the point or block Kriging predictions is
+complemented by <code>lgnpp</code> with the following new components:
+</p>
+
+<ul>
+<li> <p><code>lgn.pred</code>: the back-transformed Kriging predictions of a
+log-transformed response.
+</p>
+</li>
+<li> <p><code>lgn.se</code>: the standard  errors of the
+back-transformed predictions.
+</p>
+</li>
+<li> <p><code>lgn.lower</code>, <code>lgn.upper</code>: the bounds of the
+back-transformed prediction intervals.
+</p>
+</li>
+</ul>
+<p>If <code>is.block</code> is <code>TRUE</code> or <code>all.pred</code> not equal to
+<code>NULL</code> <code>lgnpp</code> returns a named numeric vector with two
+elements:
+</p>
+
+<ul>
+<li> <p><code>mean</code>: the back-transformed block Kriging estimate, see
+<em>Details</em>.
+</p>
+</li>
+<li> <p><code>se</code>: the (approximated) block Kriging standard error, see
+<em>Details</em>.
+</p>
+</li>
+</ul>
+<p>If <code>extended.output</code> is <code>TRUE</code> then the vector is supplemented
+with the attribute <code>mse.lgn.pred</code> that contains the full covariance
+matrix of the back-transformed point prediction errors.</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Andreas Papritz <a href="mailto:papritz@retired.ethz.ch">papritz@retired.ethz.ch</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Cressie, N. (2006) Block Kriging for Lognormal Spatial Processes.
+<em>Mathematical Geology</em>, <b>38</b>, 413–443,
+<a href="https://doi.org/10.1007/s11004-005-9022-8">doi:10.1007/s11004-005-9022-8</a>.
+</p>
+<p>Hofer, C., Borer, F., Bono, R., Kayser, A. and Papritz, A. 2013.
+Predicting topsoil heavy metal content of parcels of land: An empirical
+validation of customary and constrained lognormal block Kriging and
+conditional simulations.  <em>Geoderma</em>, <b>193–194</b>, 200–212,
+<a href="https://doi.org/10.1016/j.geoderma.2012.08.034">doi:10.1016/j.geoderma.2012.08.034</a>.
+</p>
+<p>Nussbaum, M., Papritz, A., Baltensweiler, A. and Walthert, L. (2014)
+Estimating soil organic carbon stocks of Swiss forest soils by robust
+external-drift kriging.  <em>Geoscientific Model Development</em>,
+<b>7</b>, 1197–1210.  <a href="https://doi.org/10.5194/gmd-7-1197-2014">doi:10.5194/gmd-7-1197-2014</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>georobPackage</code> for a description of the model and a brief summary of the algorithms;
+</p>
+<p><code>georob</code> for (robust) fitting of spatial linear models;
+</p>
+<p><code>predict.georob</code> for computing robust Kriging predictions.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(meuse)
+
+data(meuse.grid)
+coordinates(meuse.grid) &lt;- ~x+y
+meuse.grid.pixdf &lt;- meuse.grid
+gridded(meuse.grid.pixdf) &lt;- TRUE
+
+data(meuse.blocks, package = "constrainedKriging")
+
+r.logzn.rob &lt;- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
+    variogram.model = "RMexp", param = c(variance = 0.15, nugget = 0.05, scale = 200),
+    tuning.psi = 1., control = control.georob(cov.bhat = TRUE, full.cov.bhat = TRUE))
+
+## point predictions of log(Zn)
+r.pred.points.1 &lt;- predict(r.logzn.rob, newdata = meuse.grid.pixdf,
+    control = control.predict.georob(extended.output = TRUE))
+str(r.pred.points.1, max = 3)
+
+## back-transformation of point predictions
+r.backtf.pred.points &lt;- lgnpp(r.pred.points.1)
+str(r.backtf.pred.points, max = 3)
+
+spplot(r.backtf.pred.points, zcol = "lgn.pred", main = "Zn content")
+
+## predicting mean Zn content for whole area
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  ## recompute point predictions with argument full.covmat = TRUE
+  r.pred.points.2 &lt;- predict(r.logzn.rob, newdata = meuse.grid.pixdf,
+      control = control.predict.georob(extended.output = TRUE, full.covmat = TRUE))
+  str(r.pred.points.2, max = 3)
+  r.block &lt;- lgnpp(r.pred.points.2, is.block = TRUE, all.pred = r.backtf.pred.points@data)
+  r.block
+}
+
+## block predictions of log(Zn)
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  r.pred.block &lt;- predict(r.logzn.rob, newdata = meuse.blocks,
+      control = control.predict.georob(extended.output = TRUE,
+          pwidth = 75, pheight = 75, mmax = 50))
+  r.backtf.pred.block &lt;- lgnpp(r.pred.block, newdata = meuse.grid)
+
+  spplot(r.backtf.pred.block, zcol = "lgn.pred", main = "block means Zn content")
+}
+</code></pre>
+
+
+</div>

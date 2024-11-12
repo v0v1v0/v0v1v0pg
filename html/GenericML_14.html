@@ -1,0 +1,164 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plot.GenericML</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Plot method for a <code>"GenericML"</code> object</h2>
+
+<h3>Description</h3>
+
+<p>Visualizes the estimates of the generic targets of interest: plots the point estimates as well as the corresponding confidence intervals. The generic targets of interest can be (subsets of) the parameters of the BLP, GATES, or CLAN analysis.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'GenericML'
+plot(
+  x,
+  type = "GATES",
+  learner = "best",
+  CLAN_variable = NULL,
+  groups = "all",
+  ATE = TRUE,
+  limits = NULL,
+  title = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of the class <code>"GenericML"</code>, as returned by the function <code>GenericML()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>The analysis whose parameters shall be plotted. Either <code>"GATES"</code>, <code>"BLP"</code>, or <code>"CLAN"</code>. Default is <code>"GATES"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>learner</code></td>
+<td>
+<p>The learner whose results are to be returned. Default is <code>"best"</code> for the best learner as measured by the <code class="reqn">\Lambda</code> parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CLAN_variable</code></td>
+<td>
+<p>Name of the CLAN variable to be plotted. Only applicable if <code>type = "CLAN"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groups</code></td>
+<td>
+<p>Character vector indicating the per-group parameter estimates that shall be plotted in GATES and CLAN analyses. Default is <code>"all"</code> for all parameters. If there are <code class="reqn">K</code> groups, this variable is a subset of <code>c("G1", "G2",...,"GK", "G1-G2", "G1-G2",..., "G1-GK", "GK-G1", "GK-G2",...)</code>, where Gk denotes the k-th group. Note that this set depends on the choices of the arguments <code>"diff_GATES"</code> and <code>"diff_CLAN"</code> of the <code>"GenericML"</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ATE</code></td>
+<td>
+<p>Logical. If <code>TRUE</code> (default), then the BLP estimate of the average treatment effect along with confidence intervals will be added to the plot. Only applicable if <code>type</code> is <code>"CLAN"</code> or <code>"GATES"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>limits</code></td>
+<td>
+<p>A numeric vector of length two holding the limits of the y-axis of the plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>title</code></td>
+<td>
+<p>The title of the plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to be passed down.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If you wish to retrieve the data frame that this plot method visualizes, please use <code>setup_plot()</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>"ggplot"</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>setup_plot()</code>,
+<code>GenericML()</code>,
+<code>get_BLP()</code>,
+<code>get_GATES()</code>,
+<code>get_CLAN()</code>,
+<code>setup_diff()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(require("ranger")) {
+
+## generate data
+set.seed(1)
+n  &lt;- 150                                  # number of observations
+p  &lt;- 5                                    # number of covariates
+D  &lt;- rbinom(n, 1, 0.5)                    # random treatment assignment
+Z  &lt;- matrix(runif(n*p), n, p)             # design matrix
+Y0 &lt;- as.numeric(Z %*% rexp(p) + rnorm(n)) # potential outcome without treatment
+Y1 &lt;- 2 + Y0                               # potential outcome under treatment
+Y  &lt;- ifelse(D == 1, Y1, Y0)               # observed outcome
+
+## name the columns of Z
+colnames(Z) &lt;- paste0("V", 1:p)
+
+## specify learners
+learners &lt;- c("random_forest")
+
+## specify quantile cutoffs (the 4 quartile groups here)
+quantile_cutoffs &lt;- c(0.25, 0.5, 0.75)
+
+## specify the differenced generic targets of GATES and CLAN
+diff_GATES &lt;- setup_diff(subtract_from = "most",
+                         subtracted = c(1,2,3))
+diff_CLAN  &lt;- setup_diff(subtract_from = "least",
+                         subtracted = c(3,2))
+
+## perform generic ML inference
+# small number of splits to keep computation time low
+x &lt;- GenericML(Z, D, Y, learners, num_splits = 2,
+               quantile_cutoffs = quantile_cutoffs,
+               diff_GATES = diff_GATES,
+               diff_CLAN = diff_CLAN,
+               parallel = FALSE)
+
+## plot BLP parameters
+plot(x, type = "BLP")
+
+## plot GATES parameters "G1", "G4", "G4-G1"
+plot(x, type = "GATES", groups = c("G1", "G4", "G4-G1"))
+
+## plot CLAN parameters "G1", "G2", "G2-G1" of variable "V1":
+plot(x, type = "CLAN", CLAN_variable = "V1",
+     groups = c("G1", "G2", "G1-G3"))
+}
+
+</code></pre>
+
+
+</div>

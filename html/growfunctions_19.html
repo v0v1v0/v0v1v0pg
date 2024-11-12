@@ -1,0 +1,213 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>MSPE</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute normalized mean squared prediction error based on accuracy to impute missing data values</h2>
+
+<h3>Description</h3>
+
+<p>Uses as input the output object from the gpdpgrow() and gmrfdpgrow() functions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">MSPE(object, y_true, pos)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A <code>gpdpgrow</code> or <code>gmrfdpgrow</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y_true</code></td>
+<td>
+<p>An <code>N x T</code> numeric matrix of test set values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pos</code></td>
+<td>
+<p>An <code>N x T</code> matrix with all entries either <code>0</code> or <code>1</code>, where a <code>1</code>
+indexes a missing entry or test point in <code>y_true</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list object containing various MSPE fit statistics that measure the accuracy of 
+of predicting the values in <code>y_true</code> indexed by <code>pos</code>.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>SSE</code></td>
+<td>
+<p>Sum of squared errors based on <em>full</em> <code>N x T</code>, <code>y_true - y_hat</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MSE</code></td>
+<td>
+<p>Mean squared error computed from <code>SSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RMSE</code></td>
+<td>
+<p>Square root of <code>MSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SSPE</code></td>
+<td>
+<p>Sum of squared prediction error based on missing values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MSPE</code></td>
+<td>
+<p>Mean squared prediction error based on missing values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nMSPE</code></td>
+<td>
+<p>Mean squared prediction error based on missing values that is 
+normalized by the variance of the test observations to produce a value in 
+<code>[0,1]</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RMSPE</code></td>
+<td>
+<p>Square root of <code>MSPE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Terrance Savitsky <a href="mailto:tds151@gmail.com">tds151@gmail.com</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gpdpgrow</code>, <code>gmrfdpgrow</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">{
+library(growfunctions)
+
+## load the monthly employment count data for a collection of 
+## U.S. states from the Current 
+## Population Survey (cps)
+data(cps)
+## subselect the columns of N x T, y, associated with 
+## the years 2009 - 2013
+## to examine the state level employment 
+## levels during the "great recession"
+y_short   &lt;- cps$y[,(cps$yr_label %in% c(2009:2013))]
+
+## dimensions
+T         &lt;- ncol(y_short)  ## time points per unit
+N         &lt;- nrow(y_short)  ## number of units
+
+## Demonstrate estimation of intermittent missing data 
+## from posterior predictive distribution by randomly
+## selecting 10 percent of entries in y_short and 
+## setting them to NA.
+
+## randomly assign missing positions in y.
+## assume every unit has equal number of 
+## missing positions
+## randomly select number of missing 
+## observations for each unit
+m_factor  &lt;- .1
+M         &lt;- floor(m_factor*N*T)
+m_vec     &lt;- rep(floor(M/N),N)
+if( sum(m_vec) &lt; M )
+{
+    m_left              &lt;- M - sum(m_vec)
+    pos_i               &lt;- sample(1:N, m_left, 
+                                replace = FALSE)
+     m_vec[pos_i]        &lt;- m_vec[pos_i] + 1
+} # end conditional statement on whether all 
+  # missing cells allocated
+  # randomly select missing 
+  # positions for each unit
+pos       &lt;- matrix(0,N,T)
+for( i in 1:N )
+{
+    sel_ij              &lt;- sample(3:(T-3), m_vec[i], 
+                           replace = FALSE) 
+                           ## avoid edge effects
+    pos[i,sel_ij]       &lt;- 1
+}
+
+## configure N x T matrix, y_obs, with 10 percent missing 
+## observations (filled with NA)
+## to use for sampling.  Entries in y_short 
+## that are set to missing (NA) are
+## determined by entries of "1" in the 
+## N x T matrix, pos.
+y_obs               &lt;- y_short
+y_obs[pos == 1]     &lt;- NA       
+
+## Conduct dependent GP model estimation under 
+## missing observations in y_obs.
+## We illustrate the ability to have multiple 
+## function or covariance terms
+## by seting gp_cov = c("se","sn"), which indicates 
+## the first term is a
+## squared exponential ("se") trend covariance term 
+## and the "sn" is a seasonality
+## term.  The setting, sn_order = 4, indicates the 
+## length scale of the seasonality
+## term is 4 month.  The season term is actually 
+## "quasi" seasonal, in that the
+## seasonal covariance kernel is multiplied by a 
+## squared exponential, which allows
+## the pattern of seasonality to evolve over time.
+res_gp_2               &lt;- gpdpgrow(y = y_obs, 
+                                  gp_cov=c("se","sn"), 
+                                  sn_order = 4, 
+                                  n.iter = 10, 
+                                  n.burn = 4, 
+                                  n.thin = 1, 
+                                  n.tune = 0) 
+
+## 2 plots of estimated functions: 1. faceted by cluster and fit;
+## 2.  data for experimental units.
+## for a group of randomly-selected functions
+fit_plots_gp_2        &lt;- cluster_plot( object = res_gp_2,  
+                                      units_name = "state", 
+                                      units_label = cps$st, 
+                                      single_unit = TRUE, 
+                                      credible = TRUE )
+                                      
+## Compute out-of-sample fit statistic, normalized mean-square 
+## prediction error (MSPE)
+## The normalized MSPE will take the predicted values 
+## for the entries in y_short purposefully
+## set to NA and will subtract them from the known true 
+## values in y_short (and square them).
+## This MSE on predicted (test) data is then 
+## divided by the variance of the test observations
+## to output something akin to a percent error.
+( nmspe_gp  &lt;- MSPE(res_gp_2, y_short, pos)$nMSPE )    
+}
+</code></pre>
+
+
+</div>

@@ -1,0 +1,228 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gs_update_ahr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Group sequential design using average hazard ratio under non-proportional hazards</h2>
+
+<h3>Description</h3>
+
+<p>Group sequential design using average hazard ratio under non-proportional hazards
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gs_update_ahr(
+  x = NULL,
+  alpha = NULL,
+  ia_alpha_spending = c("actual_info_frac", "min_of_planned_and_actual_info_frac"),
+  fa_alpha_spending = c("full_alpha", "info_frac"),
+  observed_data = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A original design created by either <code>gs_design_ahr</code> or <code>gs_power_ahr</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Alpha for the updated design.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ia_alpha_spending</code></td>
+<td>
+<p>Alpha spending strategy for interim analyses,
+either <code>"actual_info_frac"</code> (default), or <code>"min_of_planned_and_actual_info_frac"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fa_alpha_spending</code></td>
+<td>
+<p>Alpha spending strategy for final analysis,
+either <code>"info_frac"</code> or <code>"full_alpha"</code> (default).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>observed_data</code></td>
+<td>
+<p>a list of observed datasets by analyses.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list with input parameters, enrollment rate, analysis, and bound.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(gsDesign)
+library(gsDesign2)
+library(dplyr)
+
+alpha &lt;- 0.025
+beta &lt;- 0.1
+ratio &lt;- 1
+
+# Enrollment
+enroll_rate &lt;- define_enroll_rate(
+  duration = c(2, 2, 10),
+  rate = (1:3) / 3)
+
+# Failure and dropout
+fail_rate &lt;- define_fail_rate(
+  duration = c(3, Inf), fail_rate = log(2) / 9,
+  hr = c(1, 0.6), dropout_rate = .0001)
+
+# IA and FA analysis time
+analysis_time &lt;- c(20, 36)
+
+# Randomization ratio
+ratio &lt;- 1
+
+# Example A: one-sided design (efficacy only) ----
+
+# Original design
+upper &lt;- gs_spending_bound
+upar &lt;- list(sf = sfLDOF, total_spend = alpha)
+x &lt;- gs_design_ahr(
+  enroll_rate = enroll_rate, fail_rate = fail_rate,
+  alpha = alpha, beta = beta, ratio = ratio,
+  info_scale = "h0_info",
+  info_frac = NULL,
+  analysis_time = c(20, 36),
+  upper = gs_spending_bound, upar = upar,
+  lower = gs_b, lpar = rep(-Inf, 2),
+  test_upper = TRUE, test_lower = FALSE) |&gt; to_integer()
+
+# Observed dataset at IA and FA
+set.seed(123)
+
+observed_data &lt;- simtrial::sim_pw_surv(
+  n = x$analysis$n[x$analysis$analysis == 2],
+  stratum = data.frame(stratum = "All", p = 1),
+  block = c(rep("control", 2), rep("experimental", 2)),
+  enroll_rate = x$enroll_rate,
+  fail_rate = (fail_rate |&gt; simtrial::to_sim_pw_surv())$fail_rate,
+  dropout_rate = (fail_rate |&gt; simtrial::to_sim_pw_surv())$dropout_rate)
+
+observed_data_ia &lt;- observed_data |&gt; simtrial::cut_data_by_date(x$analysis$time[1])
+observed_data_fa &lt;- observed_data |&gt; simtrial::cut_data_by_date(x$analysis$time[2])
+
+# Example A1 ----
+# IA spending = observed events / final planned events
+gs_update_ahr(
+  x = x,
+  ia_alpha_spending = "actual_info_frac",
+  fa_alpha_spending = "full_alpha",
+  observed_data = list(observed_data_ia, observed_data_fa))
+
+# Example A2 ----
+# IA, FA spending = observed events / final planned events
+gs_update_ahr(
+  x = x,
+  ia_alpha_spending = "actual_info_frac",
+  fa_alpha_spending = "info_frac",
+  observed_data = list(observed_data_ia, observed_data_fa))
+
+# Example A3 ----
+# IA spending = min(observed events, planned events) / final planned events
+gs_update_ahr(
+  x = x,
+  ia_alpha_spending = "min_of_planned_and_actual_info_frac",
+  fa_alpha_spending = "full_alpha",
+  observed_data = list(observed_data_ia, observed_data_fa))
+
+# Example A4 ----
+# IA spending = min(observed events, planned events) / final planned events
+gs_update_ahr(
+  x = x,
+  ia_alpha_spending = "min_of_planned_and_actual_info_frac",
+  fa_alpha_spending = "info_frac",
+  observed_data = list(observed_data_ia, observed_data_fa))
+
+# Example A5 ----
+# IA spending = min(observed events, planned events) / final planned events
+# alpha is upadted to 0.05
+gs_update_ahr(
+  x = x,
+  alpha = 0.05,
+  ia_alpha_spending = "min_of_planned_and_actual_info_frac",
+  fa_alpha_spending = "info_frac",
+  observed_data = list(observed_data_ia, observed_data_fa))
+
+# Example B: Two-sided asymmetric design,
+# beta-spending with non-binding lower bound ----
+
+# Original design
+x &lt;- gs_design_ahr(
+  enroll_rate = enroll_rate, fail_rate = fail_rate,
+  alpha = alpha, beta = beta, ratio = ratio,
+  info_scale = "h0_info",
+  info_frac = NULL, analysis_time = c(20, 36),
+  upper = gs_spending_bound,
+  upar = list(sf = sfLDOF, total_spend = alpha, param = NULL),
+  test_upper = TRUE,
+  lower = gs_spending_bound,
+  lpar = list(sf = sfLDOF, total_spend = beta, param = NULL),
+  test_lower = c(TRUE, FALSE),
+  binding = FALSE) |&gt; to_integer()
+
+# Example B1 ----
+# IA spending = observed events / final planned events
+# the remaining alpha will be allocated to FA.
+gs_update_ahr(
+  x = x,
+  ia_alpha_spending = "actual_info_frac",
+  fa_alpha_spending = "full_alpha",
+  observed_data = list(observed_data_ia, observed_data_fa))
+
+# Example B2 ----
+# IA, FA spending = observed events / final planned events
+gs_update_ahr(
+  x = x,
+  ia_alpha_spending = "actual_info_frac",
+  fa_alpha_spending = "info_frac",
+  observed_data = list(observed_data_ia, observed_data_fa))
+
+# Example B3 ----
+# IA spending = min(observed events, planned events) / final planned events
+gs_update_ahr(
+  x = x,
+  ia_alpha_spending = "min_of_planned_and_actual_info_frac",
+  fa_alpha_spending = "full_alpha",
+  observed_data = list(observed_data_ia, observed_data_fa))
+
+# Example B4 ----
+# IA spending = min(observed events, planned events) / final planned events
+gs_update_ahr(
+  x = x,
+  ia_alpha_spending = "min_of_planned_and_actual_info_frac",
+  fa_alpha_spending = "info_frac",
+  observed_data = list(observed_data_ia, observed_data_fa))
+
+# Example A5 ----
+# IA spending = min(observed events, planned events) / final planned events
+# alpha is upadted to 0.05
+gs_update_ahr(
+  x = x,
+  alpha = 0.05,
+  ia_alpha_spending = "min_of_planned_and_actual_info_frac",
+  fa_alpha_spending = "info_frac",
+  observed_data = list(observed_data_ia, observed_data_fa))
+</code></pre>
+
+
+</div>

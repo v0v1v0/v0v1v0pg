@@ -1,0 +1,238 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>texture_image</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate Texture Metrics per Pixel</h2>
+
+<h3>Description</h3>
+
+<p>Calculates the various texture metrics over windows centered
+on individual pixels. This creates a continuous surface of the
+texture metric.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">texture_image(
+  x,
+  window_type = "square",
+  size = 5,
+  in_meters = FALSE,
+  metric,
+  args = NULL,
+  parallel = TRUE,
+  ncores = NULL,
+  nclumps = 100
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A raster or matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>window_type</code></td>
+<td>
+<p>Character. Type of window, either circular or square.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>size</code></td>
+<td>
+<p>Numeric. Size of window (edge length) or diameter (in meters).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>in_meters</code></td>
+<td>
+<p>Logical. Is the size given in meters?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metric</code></td>
+<td>
+<p>Character. Metric to calculate for each window. Metrics
+from the geodiv package are listed below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>args</code></td>
+<td>
+<p>List. Arguments from function to be applied over each window
+(e.g., list(threshold = 0.2)).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>Logical. Option to run the calculations in
+parallel on available cores.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Numeric. If parallel is TRUE, number of cores on which to
+run the calculations. Defaults to all available, minus 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nclumps</code></td>
+<td>
+<p>Numeric. Number of clumps to split the raster or matrix into.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Note that this function is meant to work on rasters with an equal area
+projection.
+</p>
+<p>Metrics available from geodiv package:
+</p>
+
+<ol>
+<li>
+<p><code>'sa'</code>: average surface roughness
+</p>
+</li>
+<li>
+<p><code>'sq'</code>: root mean square roughness
+</p>
+</li>
+<li>
+<p><code>'s10z'</code>: ten-point height
+</p>
+</li>
+<li>
+<p><code>'sdq'</code>: root mean square slope of surface, 2-point method
+</p>
+</li>
+<li>
+<p><code>'sdq6'</code>: root mean square slope of surface, 7-point method
+</p>
+</li>
+<li>
+<p><code>'sdr'</code>: surface area ratio
+</p>
+</li>
+<li>
+<p><code>'sbi'</code>: surface bearing index
+</p>
+</li>
+<li>
+<p><code>'sci'</code>: core fluid retention index
+</p>
+</li>
+<li>
+<p><code>'ssk'</code>: skewness
+</p>
+</li>
+<li>
+<p><code>'sku'</code>: kurtosis
+</p>
+</li>
+<li>
+<p><code>'sds'</code>: summit density
+</p>
+</li>
+<li>
+<p><code>'sfd'</code>: 3d fractal dimension
+</p>
+</li>
+<li>
+<p><code>'srw'</code>: dominant radial wavelength, radial wavelength index, mean half wavelength
+</p>
+</li>
+<li>
+<p><code>'std'</code>: angle of dominating texture, texture direction index
+</p>
+</li>
+<li>
+<p><code>'svi'</code>: valley fluid retention index
+</p>
+</li>
+<li>
+<p><code>'stxr'</code>: texture aspect ratio
+</p>
+</li>
+<li>
+<p><code>'ssc'</code>: mean summit curvature
+</p>
+</li>
+<li>
+<p><code>'sv'</code>: maximum valley depth
+</p>
+</li>
+<li>
+<p><code>'sph'</code>: maximum peak height
+</p>
+</li>
+<li>
+<p><code>'sk'</code>: core roughness depth
+</p>
+</li>
+<li>
+<p><code>'smean'</code>: mean peak height
+</p>
+</li>
+<li>
+<p><code>'svk'</code>: reduced valley depth
+</p>
+</li>
+<li>
+<p><code>'spk'</code>: reduced peak height
+</p>
+</li>
+<li>
+<p><code>'scl'</code>: correlation length
+</p>
+</li>
+<li>
+<p><code>'sdc'</code>: bearing area curve height interval
+</p>
+</li>
+</ol>
+<h3>Value</h3>
+
+<p>A raster or list of rasters (if function results in multiple outputs)
+with pixel values representative of the metric value for the window
+surrounding that pixel.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The total window size for square windows will be (size * 2) + 1.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># import raster image
+data(normforest)
+normforest &lt;- terra::unwrap(normforest)
+
+# crop raster to smaller area
+x &lt;- terra::crop(normforest, terra::ext(normforest[1:100, 1:100, drop = FALSE]))
+
+# get a surface of root mean square roughness
+sa_img &lt;- texture_image(x = x, window = 'square',
+size = 5, metric = 'sa',
+parallel = TRUE, ncores = 1, nclumps = 20)
+
+# plot the result
+terra::plot(sa_img)
+</code></pre>
+
+
+</div>

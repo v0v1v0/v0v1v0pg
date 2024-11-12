@@ -1,0 +1,201 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>KMconstrained</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+K-means over dense data input with constraints on cluster weights
+</h2>
+
+<h3>Description</h3>
+
+<p>Multithreaded weighted Minkowski and spherical K-means via Lloyd's algorithm over dense representation of data given cluster size (weight) constraints.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">KMconstrained(
+  X,
+  centroid,
+  Xw = rep(1, ncol(X)),
+  clusterWeightUB = rep(ncol(X) + 1, ncol(centroid)),
+  minkP = 2,
+  convergenceTail = 5L,
+  tailConvergedRelaErr = 1e-04,
+  maxIter = 100L,
+  maxCore = 7L,
+  paraSortInplaceMerge = FALSE,
+  verbose = TRUE
+  )
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>A <code>d x N</code> numeric matrix where <code>N</code> is the number of data points — each column is an observation, and <code>d</code> is the dimensionality. Column-observation representation promotes cache locality.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centroid</code></td>
+<td>
+
+<p>A <code>d x K</code> numeric matrix where <code>K</code> is the number of clusters. Each column represents a cluster center.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Xw</code></td>
+<td>
+
+<p>A numeric vector of size <code>N</code>. <code>Xw[i]</code> is the weight on observation <code>X[, i]</code>. Users should normalize <code>Xw</code> such that the elements sum up to <code>N</code>. Default uniform weights for all observations.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clusterWeightUB</code></td>
+<td>
+
+<p>An integer vector of size <code>K</code>. The upper bound of weight for each cluster. If <code>Xw</code> are all 1, <code>clusterWeightUB</code> upper-bound cluster sizes.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minkP</code></td>
+<td>
+
+<p>A numeric value or a character string. If numeric, <code>minkP</code> is the power <code>p</code> in the definition of Minkowski distance. If character string, <code>"max"</code> implies Chebyshev distance, <code>"cosine"</code> implies cosine dissimilarity. Default 2.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convergenceTail</code></td>
+<td>
+
+<p>An integer. The algorithm may end up with "cyclical convergence" due to the size / weight constraints, that is, every few iterations produce the same clustering. If the cost (total in-cluster distance) of each of the last <code>convergenceTail</code> iterations has a relative difference less than <code>tailConvergedRelaErr</code> against the cost from the prior iteration, the program stops.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tailConvergedRelaErr</code></td>
+<td>
+
+<p>A numeric value, explained in <code>convergenceTail</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxIter</code></td>
+<td>
+
+<p>An integer. The maximal number of iterations. Default 100.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxCore</code></td>
+<td>
+
+<p>An integer. The maximal number of threads to invoke. No more than the total number of logical processors on machine. Default 7.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>paraSortInplaceMerge</code></td>
+<td>
+
+<p>A boolean value. <code>TRUE</code> let the algorithm call <code>std::inplace_merge()</code> (<code>std</code> refers to C++ STL namespace) instead of <code>std::merge()</code> for parallel-sorting the observation-centroid distances. In-place merge is slower but requires no extra memory.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>A boolean value. <code>TRUE</code> prints progress.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>See details in <code>KM()</code> for common implementation highlights. Weight upper bounds are implemented as follows:
+</p>
+<p>In each iteration, all the (observation ID, centroid ID, distance) tuples are sorted by distance. From the first to the last tuple, the algorithm puts observation in the cluster labeled by the centroid ID, if (i) the observation has not already been assigned and (ii) the cluster size has not exceeded its upper bound. The actual implementation is slightly different. A parallel merge sort is crafted for computing speed.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of size <code>K</code>, the number of clusters. Each element is a list of 3 vectors:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>centroid </code></td>
+<td>
+<p>a numeric vector of size <code>d</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clusterMember </code></td>
+<td>
+<p>an integer vector of indexes of elements grouped to <code>centroid</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>member2centroidDistance </code></td>
+<td>
+<p>a numeric vector of the same size of <code>clusterMember</code>. The <code>i</code>th element is the Minkowski distance or cosine dissimilarity from <code>centroid</code> to the <code>clusterMember[i]</code>th observation in <code>X</code>.</p>
+</td>
+</tr>
+</table>
+<p>Empty <code>clusterMember</code> implies empty cluster.
+</p>
+
+
+<h3>Note</h3>
+
+<p>Although rarely happens, divergence of K-means with non-Euclidean distance <code>minkP != 2</code> measure is still a theoretical possibility. Bounding the cluster weights / sizes increases the chance of divergence.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">N = 3000L # Number of points.
+d = 500L # Dimensionality.
+K = 50L # Number of clusters.
+dat = matrix(rnorm(N * d) + runif(N * d), nrow = d)
+
+
+# Use kmeans++ initialization.
+centroidInd = GMKMcharlie::KMppIni(
+  X = dat, K, firstSelection = 1L, minkP = 2, stochastic = FALSE,
+  seed = sample(1e9L, 1), maxCore = 2L, verbose = TRUE)
+
+
+centroid = dat[, centroidInd]
+
+
+# Each cluster size should not be greater than N / K * 2.
+sizeConstraints = as.integer(rep(N / K * 2, K))
+system.time({rst = GMKMcharlie::KMconstrained(
+  X = dat, centroid = centroid, clusterWeightUB = sizeConstraints,
+  maxCore = 2L, tailConvergedRelaErr = 1e-6, verbose = TRUE)})
+
+
+# Size upper bounds vary in [N / K * 1.5, N / K * 2]
+sizeConstraints = as.integer(round(runif(K, N / K * 1.5, N / K * 2)))
+system.time({rst = GMKMcharlie::KMconstrained(
+  X = dat, centroid = centroid, clusterWeightUB = sizeConstraints,
+  maxCore = 2L, tailConvergedRelaErr = 1e-6, verbose = TRUE)})
+</code></pre>
+
+
+</div>

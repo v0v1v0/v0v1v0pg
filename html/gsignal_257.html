@@ -1,0 +1,125 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sosfilt</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Second-order sections filtering</h2>
+
+<h3>Description</h3>
+
+<p>One-dimensional second-order (biquadratic) sections IIR digital filtering.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sosfilt(sos, x, zi = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>sos</code></td>
+<td>
+<p>Second-order section representation, specified as an nrow-by-6
+matrix, whose rows contain the numerator and denominator coefficients of
+the second-order sections:<br><code>sos &lt;- rbind(cbind(B1, A1), cbind(...),
+cbind(Bn, An))</code>, where <code>B1 &lt;- c(b0, b1, b2)</code>, and <code>A1 &lt;- c(a0,
+a1, a2)</code> for section 1, etc. The b0 entry must be nonzero for each section.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>the input signal to be filtered, specified as a numeric or complex
+vector or matrix. If <code>x</code> is a matrix, each column is filtered.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zi</code></td>
+<td>
+<p>If <code>zi</code> is provided, it is taken as the initial state of the
+system and the final state is returned as zf. If <code>x</code> is a vector,
+<code>zi</code> must be a matrix with <code>nrow(sos)</code> rows and 2 columns. If
+<code>x</code> is a matrix, then <code>zi</code> must be a 3-dimensional array of size
+<code>(nrow(sos), 2, ncol(x))</code>. Alternatively, <code>zi</code> may be the
+character string <code>"zf"</code>, which specifies to return the final state
+vector even though the initial state vector is set to all zeros. Default:
+NULL.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The filter function is implemented as a series of second-order filters
+with direct-form II transposed structure. It is designed to minimize
+numerical precision errors for high-order filters [1].
+</p>
+
+
+<h3>Value</h3>
+
+<p>The filtered signal, of the same dimensions as the input signal. In
+case the <code>zi</code> input argument was specified, a list with two elements
+is returned containing the variables <code>y</code>, which represents the output
+signal, and <code>zf</code>, which contains the final state vector or matrix.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Geert van Boxtel, <a href="mailto:G.J.M.vanBoxtel@gmail.com">G.J.M.vanBoxtel@gmail.com</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Smith III, J.O. (2012). Introduction to digital filters, with
+audio applications (3rd Ed.). W3K Publishing.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>filter</code>, <code>filtfilt</code>, <code>Sos</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">fs &lt;- 1000
+t &lt;- seq(0, 1, 1/fs)
+s &lt;- sin(2* pi * t * 6)
+x &lt;- s + rnorm(length(t))
+plot(t, x, type = "l", col="light gray")
+lines(t, s, col="black")
+sosg &lt;- butter(3, 0.02, output = "Sos")
+sos &lt;- sosg$sos
+sos[1, 1:3] &lt;- sos[1, 1:3] * sosg$g
+y &lt;- sosfilt(matrix(sos, ncol=6), x)
+lines(t, y, col="red")
+
+## using 'filter' will handle the gain for you
+y2 &lt;- filter(sosg, x)
+all.equal(y, y2)
+
+## The following example is from Python scipy.signal.sosfilt
+## It shows the instability that results from trying to do a
+## 13th-order filter in a single stage (the numerical error
+## pushes some poles outside of the unit circle)
+arma &lt;- ellip(13, 0.009, 80, 0.05, output='Arma')
+sos &lt;- ellip(13, 0.009, 80, 0.05, output='Sos')
+x &lt;- rep(0, 700); x[1] &lt;- 1
+y_arma &lt;- filter(arma, x)
+y_sos &lt;- filter(sos, x)
+plot(y_arma, type ="l")
+lines (y_sos, col = 2)
+legend("topleft", legend = c("Arma", "Sos"), lty = 1, col = 1:2)
+
+</code></pre>
+
+
+</div>

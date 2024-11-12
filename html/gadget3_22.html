@@ -1,0 +1,178 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>action_migrate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gadget3 migration action</h2>
+
+<h3>Description</h3>
+
+<p>Add migration to a g3 model
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">g3a_migrate_normalize(row_total = 1)
+
+g3a_migrate(stock, migrate_f, normalize_f = g3a_migrate_normalize(),
+            run_f = TRUE,
+            run_at = g3_action_order$migrate)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>row_total</code></td>
+<td>
+
+<p>When calculating the proportion of individuals that will stay in place, use this total
+for what rows are expected to sum to.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stock</code></td>
+<td>
+
+<p>The <code>g3_stock</code> that will migrate in this action.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>migrate_f</code></td>
+<td>
+
+<p>A formula describing the migration in terms of (source) <code>area</code> and <code>dest_area</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normalize_f</code></td>
+<td>
+
+<p>Function to normalize a vector of possible destinations, to make sure fish
+aren't added or destroyed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>run_f</code></td>
+<td>
+
+<p>formula specifying a condition for running this action, default always runs.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>run_at</code></td>
+<td>
+
+<p>Integer order that spawning actions will be run within model, see <code>g3_action_order</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>To restrict movement to a particular step in a year, or a particular area, use <var>run_f</var>.
+For example:
+</p>
+
+<dl>
+<dt><code>cur_step == 1</code></dt>
+<dd>
+<p>Migration will happen on first step of every year</p>
+</dd>
+<dt><code>cur_step == 1 &amp;&amp; cur_year &gt;= 1990</code></dt>
+<dd>
+<p>Migration will happen on first step of every year after 1990</p>
+</dd>
+<dt><code>cur_step == 2 &amp;&amp; area = 1</code></dt>
+<dd>
+<p>Migration will happen on second step of every year, in the first area</p>
+</dd>
+</dl>
+<p>Multiple migration actions can be added, for a separate spring and autumn migration, for instance.
+</p>
+<p>The action will define the following stock instance variables for each given <var>stock</var>:
+</p>
+
+<dl>
+<dt><var>stock__migratematrix</var></dt>
+<dd>
+<p><code class="reqn">a \times a</code> array, containing proportion of (stock) moved from one area to another. If NaN, no movement has occurred</p>
+</dd>
+</dl>
+<h3>Value</h3>
+
+
+
+<h4>g3a_migrate_normalize</h4>
+
+<p>A formula transforming <code>stock__migratematrix[,stock__area_idx]</code> (i.e.
+all possible destinations from a given area) by:
+</p>
+
+<ol>
+<li>
+<p>Squaring so values are all positive
+</p>
+</li>
+<li>
+<p>Altering the proportion of static individuals so a row sums to <var>row_total</var>
+</p>
+</li>
+<li>
+<p>Dividing by row_total so a row sums to 1
+</p>
+</li>
+</ol>
+<h4>g3a_migrate</h4>
+
+<p>An action (i.e. list of formula objects) that will, for the given <var>stock</var>...</p>
+
+<ol>
+<li>
+<p>Fill in <var>stock__migratematrix</var> using <var>migrate_f</var> and <var>normalize_f</var>
+</p>
+</li>
+<li>
+<p>Apply movement to <var>stock</var>
+</p>
+</li>
+</ol>
+<h3>See Also</h3>
+
+<p><code>g3_stock</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+areas &lt;- list(a=1, b=2, c=3, d=4)
+
+# NB: stock doesn't live in b, so won't figure in stock_acd__migratematrix
+stock_acd &lt;- (g3_stock('stock_acd', seq(10, 40, 10))
+    %&gt;% g3s_livesonareas(areas[c('a', 'c', 'd')]))
+
+movement_action &lt;- list(
+    g3a_migrate(
+        stock_acd,
+        # In spring, individuals in area 'a' will migrate to 'd'.
+        ~if (area == area_a &amp;&amp; dest_area == area_d) 0.8 else 0,
+        run_f = ~cur_step == 2),
+    g3a_migrate(
+        stock_acd,
+        # In autumn, individuals in all areas will migrate to 'a'
+        ~if (dest_area == area_a) 0.8 else 0,
+        run_f = ~cur_step == 4),
+    list())
+</code></pre>
+
+
+</div>

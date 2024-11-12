@@ -1,0 +1,191 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>generate_heatmaps</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generate Heatmaps</h2>
+
+<h3>Description</h3>
+
+<p>This function generates interactive and static heatmaps based on the average similarity matrix.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">generate_heatmaps(
+  average_percent_similarity,
+  html_title = "Heatmap of Average Similarity",
+  tiff_title = "Heatmap of Average Similarity",
+  xlab = "SampleID",
+  ylab = "SampleID",
+  width_inch = 8,
+  height_inch = 6,
+  dpi = 300
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>average_percent_similarity</code></td>
+<td>
+<p>A matrix containing average similarity values between SampleIDs.
+Rows and columns should be labeled with SampleIDs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>html_title</code></td>
+<td>
+<p>Title for the interactive heatmap (HTML version).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tiff_title</code></td>
+<td>
+<p>Title for the static heatmap (TIFF version).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlab</code></td>
+<td>
+<p>Label for the x-axis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ylab</code></td>
+<td>
+<p>Label for the y-axis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>width_inch</code></td>
+<td>
+<p>Width of the heatmap in inches.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>height_inch</code></td>
+<td>
+<p>Height of the heatmap in inches.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dpi</code></td>
+<td>
+<p>Dots per inch for the static heatmap.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing the file names of the generated heatmaps.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+accession_ranges &lt;- list(
+  SRU1 = "AJ240966 to AJ240970",
+  STU2 = "AB015240 to AB015245",
+  WPU13 = "L11934 to L11939",
+  INU20 = c("AF277467 to AF277470", "AF333080 to AF333085")
+)
+
+# Use the function to expand accession ranges
+sam_acc &lt;- expand_accession_ranges(accession_ranges)
+print(sam_acc)
+
+# 2 get_sequence_information
+accessions_to_query &lt;- sam_acc$accession
+seq_info &lt;- get_sequence_information(accessions_to_query, remove_dot_1 = TRUE)
+print(seq_info)
+result &lt;- preprocess_for_alignment(sam_acc, seq_info)
+
+# Access the resulting data frames
+merged_data &lt;- result$merged_data
+main_data &lt;- result$main_data
+final_data &lt;- result$final_data
+
+# If you want to sample 10% from each SampleID group:
+sampled_data &lt;- data_sampling(final_data, sample_proportion = 0.1)
+
+alignment_results &lt;- alignment_info(final_data, type = "global", verbose = 1)
+
+# Access the resulting data frames
+score_matrix &lt;- alignment_results$score_matrix
+normalized_score_matrix &lt;- alignment_results$normalized_score_matrix
+
+total_aligned_positions_matrix &lt;- alignment_results$total_aligned_positions_matrix
+number_of_matching_positions_matrix &lt;- alignment_results$number_of_matching_positions_matrix
+
+percent_similarity_matrix &lt;- alignment_results$percent_similarity_matrix
+
+alignment_results_list &lt;- alignment_results$alignment_results_list
+
+alignment_info_matrix &lt;- alignment_results$alignment_info_matrix
+
+output_directory &lt;- tempdir()
+
+# Save the list of alignment results to an RDS file
+saveRDS(alignment_results_list, file.path(output_directory, "alignment_results_list.rds"))
+
+# Save matrices to files
+write.table(score_matrix, file.path(output_directory, "score_matrix.txt"), sep = "\t")
+average_percent_similarity &lt;- compute_average_similarity_matrix(percent_similarity_matrix)
+print(average_percent_similarity)
+
+output_directory &lt;- tempdir()
+width_inch &lt;- 8
+height_inch &lt;- 6
+dpi &lt;- 300
+
+heatmap_files &lt;- generate_heatmaps(average_percent_similarity)
+
+# Save the interactive heatmap as an HTML file ####
+html &lt;- file.path(output_directory, "5. heatmap.html")
+# htmlwidgets should be installed and loaded
+# htmlwidgets::saveWidget(heatmap_files$html, file = html)
+
+# save the TIFFE images ####
+
+# heatmap_tiff_file1
+tiff1 &lt;- file.path(output_directory, "5. heatmap1.tiff")
+tiff(tiff1, width = width_inch, height = height_inch, units = "in", res = dpi)
+heatmap(as.matrix(average_percent_similarity), main = "Heatmap of Average Similarity")
+
+# Close the TIFF device
+dev.off()
+
+# heatmap_tiff_file2
+tiff2 &lt;- file.path(output_directory, "5. heatmap2.tiff")
+
+# Open the TIFF device
+tiff(tiff2, width = width_inch, height = height_inch, units = "in", res = dpi)
+print(heatmap_files$tiff2)
+
+# Close the TIFF device
+dev.off()
+
+# heatmap_tiff_file3
+# tiff3 &lt;- file.path(output_directory, "5. heatmap3.tiff")
+
+# Open the TIFF device and create the heatmap.2 with hierarchical clustering dendrogram
+# gplots should be installed and loaded
+# gplots::heatmap.2(as.matrix(average_percent_similarity),
+#          dendrogram = "row",
+#          Colv = "Rowv",
+#          scale = "row",
+#          main = "Heatmap of Average Similarity")
+
+# Close the TIFF device
+# dev.off()
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,157 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>examine</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Diagnostic functions</h2>
+
+<h3>Description</h3>
+
+<p>Provide diagnostic functions for an object of class <code>result.goldfish</code>.
+<code>outliers</code> helps to identify outliers events.
+<code>changepoints</code> helps to identify where a change point
+in the events sequence is presented using the log-likelihood.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">examineOutliers(
+  x,
+  method = c("Hampel", "IQR", "Top"),
+  parameter = 3,
+  window = NULL
+)
+
+examineChangepoints(
+  x,
+  moment = c("mean", "variance"),
+  method = c("PELT", "AMOC", "BinSeg"),
+  window = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>an object of class <code>result.goldfish</code> output from an
+<code>estimate</code> call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Choice of <code>"AMOC"</code>, <code>"PELT"</code> or <code>"BinSeg"</code>.
+For a detail description see <code>cpt.mean</code> or
+<code>cpt.var</code>. The default value is <code>"PELT"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameter</code></td>
+<td>
+<p>An integer that represents the number of absolute outliers
+to identify, the threshold for the Hampel filter, i.e. <code>parameter * MAD</code>,
+or the threshold beyond the interquartile range halved, i.e.
+<code>parameter/2 * IQR</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>window</code></td>
+<td>
+<p>The window half-width for the Hampel filter.
+By default it is half the width of the event sequence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>moment</code></td>
+<td>
+<p>character argument to choose between "mean" or "variance".
+See section <em>Change point</em> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments to be passed to the functions in the
+<span class="pkg">changepoint</span> package.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>NULL</code> if neither outliers nor change points are identified.
+An object of class <code>ggplot</code> object from a call of <code>ggplot2::ggplot()</code>.
+It can be modified using the <code>ggplot2</code> syntax.
+</p>
+
+
+<h3>Outliers</h3>
+
+<p><code>examineOutliers</code> creates a plot with the log-likelihood of the events
+in the y-axis and the event index in the x-axis, identifying observations
+with labels indicating the sender and recipient.
+</p>
+
+
+<h3>Change point</h3>
+
+<p>The parameter <code>moment</code> controls which method from the package
+<span class="pkg">changepoint</span> is used:
+</p>
+
+<dl>
+<dt><code>"mean"</code></dt>
+<dd>
+<p>It uses the <code>cpt.mean</code>
+function to investigate optimal positioning and (potentially) number
+of change points for the log-likelihood of the events in mean.</p>
+</dd>
+<dt><code>"variance"</code></dt>
+<dd>
+<p>It uses the
+<code>cpt.var</code>
+function to investigate optimal positioning and (potentially) number
+of change points for the log-likelihood of the events in variance</p>
+</dd>
+</dl>
+<p>The function call creates a plot with the log-likelihood of the events
+in the y-axis and the event index in the x-axis, highlighting the change
+point sections identified by the method.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># A multinomial receiver choice model
+data("Social_Evolution")
+callNetwork &lt;- defineNetwork(nodes = actors, directed = TRUE)
+callNetwork &lt;- linkEvents(
+  x = callNetwork, changeEvent = calls,
+  nodes = actors
+)
+callsDependent &lt;- defineDependentEvents(
+  events = calls, nodes = actors,
+  defaultNetwork = callNetwork
+)
+
+mod01 &lt;- estimate(callsDependent ~ inertia + recip + trans,
+  model = "DyNAM", subModel = "choice",
+  estimationInit = list(
+    returnIntervalLogL = TRUE,
+    engine = "default_c"
+  )
+)
+
+examineOutliers(mod01)
+
+examineChangepoints(mod01)
+</code></pre>
+
+
+</div>

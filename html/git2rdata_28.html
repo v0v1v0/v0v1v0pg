@@ -1,0 +1,180 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rm_data</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Remove Data Files From Git2rdata Objects</h2>
+
+<h3>Description</h3>
+
+<p>Remove the data (<code>.tsv</code>) file from all valid git2rdata objects at the <code>path</code>.
+The metadata remains untouched. A warning lists any git2rdata object with
+<strong>invalid</strong> metadata. The function keeps any <code>.tsv</code> file with
+invalid metadata or from non-git2rdata objects.
+</p>
+<p>Use this function with caution since it will remove all valid data files
+without asking for confirmation. We strongly recommend to use this
+function on files under version control. See
+<code>vignette("workflow", package = "git2rdata")</code> for some examples on how to use
+this.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rm_data(root = ".", path = NULL, recursive = TRUE, ...)
+
+## S3 method for class 'git_repository'
+rm_data(
+  root,
+  path = NULL,
+  recursive = TRUE,
+  ...,
+  stage = FALSE,
+  type = c("unmodified", "modified", "ignored", "all")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>root</code></td>
+<td>
+<p>The root of a project. Can be a file path or a <code>git-repository</code>.
+Defaults to the current working directory (<code>"."</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>path</code></td>
+<td>
+<p>the directory in which to clean all the data files. The directory
+is relative to <code>root</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recursive</code></td>
+<td>
+<p>remove files in subdirectories too.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>parameters used in some methods</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stage</code></td>
+<td>
+<p>stage the changes after removing the files. Defaults to FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Defines the classes of files to remove. <code>unmodified</code> are files in
+the git history and unchanged since the last commit. <code>modified</code> are files in
+the git history and changed since the last commit. <code>ignored</code> refers to file
+listed in a <code>.gitignore</code> file. Selecting <code>modified</code> will remove both
+<code>unmodified</code> and <code>modified</code> data files. Selecting <code>ìgnored</code> will remove
+<code>unmodified</code>, <code>modified</code> and <code>ignored</code> data files. <code>all</code> refers to all
+visible data files, including <code>untracked</code> files.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>returns invisibly a vector of removed files names. The paths are
+relative to <code>root</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other storage: 
+<code>display_metadata()</code>,
+<code>list_data()</code>,
+<code>prune_meta()</code>,
+<code>read_vc()</code>,
+<code>relabel()</code>,
+<code>rename_variable()</code>,
+<code>update_metadata()</code>,
+<code>verify_vc()</code>,
+<code>write_vc()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## on file system
+
+# create a directory
+root &lt;- tempfile("git2rdata-")
+dir.create(root)
+
+# store a dataframe as git2rdata object. Capture the result to minimise
+# screen output
+junk &lt;- write_vc(iris[1:6, ], "iris", root, sorting = "Sepal.Length")
+# write a standard tab separate file (non git2rdata object)
+write.table(iris, file = file.path(root, "standard.tsv"), sep = "\t")
+# write a YAML file
+yml &lt;- list(
+  authors = list(
+   "Research Institute for Nature and Forest" = list(
+       href = "https://www.inbo.be/en")))
+yaml::write_yaml(yml, file = file.path(root, "_pkgdown.yml"))
+
+# list the git2rdata objects
+list_data(root)
+# list the files
+list.files(root, recursive = TRUE)
+
+# remove all .tsv files from valid git2rdata objects
+rm_data(root, path = ".")
+# check the removal of the .tsv file
+list.files(root, recursive = TRUE)
+list_data(root)
+
+# remove dangling git2rdata metadata files
+prune_meta(root, path = ".")
+# check the removal of the metadata
+list.files(root, recursive = TRUE)
+list_data(root)
+
+
+## on git repo
+
+# initialise a git repo using git2r
+repo_path &lt;- tempfile("git2rdata-repo-")
+dir.create(repo_path)
+repo &lt;- git2r::init(repo_path)
+git2r::config(repo, user.name = "Alice", user.email = "alice@example.org")
+
+# store a dataframe
+write_vc(iris[1:6, ], "iris", repo, sorting = "Sepal.Length", stage = TRUE)
+# check that the dataframe is stored
+status(repo)
+list_data(repo)
+
+# commit the current version and check the git repo
+commit(repo, "add iris data", session = TRUE)
+status(repo)
+
+# remove the data files from the repo
+rm_data(repo, path = ".")
+# check the removal
+list_data(repo)
+status(repo)
+
+# remove dangling metadata
+prune_meta(repo, path = ".")
+# check the removal
+list_data(repo)
+status(repo)
+</code></pre>
+
+
+</div>

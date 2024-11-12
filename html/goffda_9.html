@@ -1,0 +1,471 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>flm_est</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimation of functional linear models</h2>
+
+<h3>Description</h3>
+
+<p>Estimation of the linear operator relating a
+functional predictor <code class="reqn">X</code> with a functional response <code class="reqn">Y</code> in the
+linear model
+</p>
+<p style="text-align: center;"><code class="reqn">Y(t) = \int_a^b \beta(s, t) X(s)\,\mathrm{d}s + \varepsilon(t),</code>
+</p>
+
+<p>where <code class="reqn">X</code> is a random variable in the Hilbert space of
+square-integrable functions in <code class="reqn">[a, b]</code>, <code class="reqn">L^2([a, b])</code>,
+<code class="reqn">Y</code> and <code class="reqn">\varepsilon</code> are random variables
+in <code class="reqn">L^2([c, d])</code>, and <code class="reqn">s \in [a, b]</code> and <code class="reqn">t \in [c, d]</code>.
+</p>
+<p>The linear, Hilbert–Schmidt, integral operator is parametrized by
+the bivariate kernel <code class="reqn">\beta \in L^2([a, b]) \otimes
+L^2([c, d])</code>. Its estimation is done through the truncated expansion
+of <code class="reqn">\beta</code> in the tensor product of the data-driven
+bases of the Functional Principal Components (FPC) of
+<code class="reqn">X</code> and <code class="reqn">Y</code>, and through the fitting of the resulting multivariate
+linear model. The FPC basis for <code class="reqn">X</code> is truncated in <code class="reqn">p</code>
+components, while the FPC basis for <code class="reqn">Y</code> is truncated in <code class="reqn">q</code>
+components. Automatic selection of <code class="reqn">p</code> and <code class="reqn">q</code> is detailed below.
+</p>
+<p>The particular cases in which either <code class="reqn">X</code> or <code class="reqn">Y</code> are
+<em>constant</em> functions give either a scalar predictor or response.
+The simple linear model arises if both <code class="reqn">X</code> and <code class="reqn">Y</code> are scalar,
+for which <code class="reqn">\beta</code> is a constant.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">flm_est(X, Y, est_method = "fpcr_l1s", p = NULL, q = NULL,
+  thre_p = 0.99, thre_q = 0.99, lambda = NULL, X_fpc = NULL,
+  Y_fpc = NULL, compute_residuals = TRUE, centered = FALSE,
+  int_rule = "trapezoid", cv_verbose = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X, Y</code></td>
+<td>
+<p>samples of functional/scalar predictors and functional/scalar
+response. Either <code>fdata</code> objects (for functional
+variables) or vectors of length <code>n</code> (for scalar variables).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>est_method</code></td>
+<td>
+<p>either <code>"fpcr"</code> (Functional Principal Components
+Regression; FPCR), <code>"fpcr_l2"</code> (FPCR with ridge penalty),
+<code>"fpcr_l1"</code> (FPCR with lasso penalty) or <code>"fpcr_l1s"</code>
+(FPCR with lasso-selected FPC). If <code>X</code> is scalar, <code>flm_est</code>
+only considers <code>"fpcr"</code> as estimation method. See details below.
+Defaults to <code>"fpcr_l1s"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p, q</code></td>
+<td>
+<p>index vectors indicating the specific FPC to be
+considered for the truncated bases expansions of <code>X</code> and <code>Y</code>,
+respectively. If a single number for <code>p</code> is provided, then
+<code>p &lt;- 1:max(p)</code> internally (analogously for <code>q</code>) and the first
+<code>max(p)</code> FPC are considered. If <code>NULL</code> (default), then a
+data-driven selection of <code>p</code> and <code>q</code> is done. See details below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thre_p, thre_q</code></td>
+<td>
+<p>thresholds for the <em>proportion</em> of variance
+that is explained, <em>at least</em>, by the first <code class="reqn">p</code> and <code class="reqn">q</code> FPC
+of <code>X</code> and <code>Y</code>, respectively. These thresholds are employed
+for an (initial) automatic selection of <code class="reqn">p</code> and <code class="reqn">q</code>.
+Default to <code>0.99</code>. <code>thre_p</code> (<code>thre_q</code>) is ignored if
+<code>p</code> (<code>q</code>) is provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>regularization parameter <code class="reqn">\lambda</code> for the estimation
+methods <code>"fpcr_l2"</code>, <code>"fpcr_l1"</code>, and <code>"fpcr_l1s"</code>. If
+<code>NULL</code> (default), it is chosen with <code>cv_glmnet</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X_fpc, Y_fpc</code></td>
+<td>
+<p>FPC decompositions of <code>X</code> and <code>Y</code>, as
+returned by <code>fpc</code>. Computed if not provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compute_residuals</code></td>
+<td>
+<p>whether to compute the fitted values <code>Y_hat</code>
+and its <code>Y_hat_scores</code>, and the <code>residuals</code> of the fit
+and its <code>residuals_scores</code>. Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centered</code></td>
+<td>
+<p>flag to indicate if <code>X</code> and <code>Y</code> have been
+centered or not, in order to avoid their recentering. Defaults to
+<code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>int_rule</code></td>
+<td>
+<p>quadrature rule for approximating the definite
+unidimensional integral: trapezoidal rule (<code>int_rule = "trapezoid"</code>)
+and extended Simpson rule (<code>int_rule = "Simpson"</code>) are available.
+Defaults to <code>"trapezoid"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv_verbose</code></td>
+<td>
+<p>flag to display information about the estimation procedure
+(passed to <code>cv_glmnet</code>). Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further parameters to be passed to <code>cv_glmnet</code>
+(and then to <code>cv.glmnet</code>) such as <code>cv_1se</code>,
+<code>cv_nlambda</code> or <code>cv_parallel</code>, among others.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>flm_est</code> deals seamlessly with either functional or scalar inputs
+for the predictor and response. In the case of scalar inputs, the
+corresponding dimension-related arguments (<code>p</code>, <code>q</code>,
+<code>thre_p</code> or <code>thre_q</code>) will be ignored as in these cases either
+<code class="reqn">p = 1</code> or <code class="reqn">q = 1</code>.
+</p>
+<p>The function translates the functional linear model into a multivariate
+model with multivariate response and then estimates the
+<code class="reqn">p \times q</code> matrix of coefficients of <code class="reqn">\beta</code> in the
+tensor basis of the FPC of <code>X</code> and <code>Y</code>. The following estimation
+methods are implemented:
+</p>
+
+<ul>
+<li> <p><code>"fpcr"</code>: Functional Principal Components Regression (FPCR);
+see details in Ramsay and Silverman (2005).
+</p>
+</li>
+<li> <p><code>"fpcr_l2"</code>: FPCR, with ridge penalty on the associated
+multivariate linear model.
+</p>
+</li>
+<li> <p><code>"fpcr_l1"</code>: FPCR, with lasso penalty on the associated
+multivariate linear model.
+</p>
+</li>
+<li> <p><code>"fpcr_l1s"</code>: FPCR, with FPC selected by lasso regression
+on the associated multivariate linear model.
+</p>
+</li>
+</ul>
+<p>The last three methods are explained in García-Portugués et al. (2021).
+</p>
+<p>The <code class="reqn">p</code> FPC of <code>X</code> and <code class="reqn">q</code> FPC of <code>Y</code> are determined
+as follows:
+</p>
+
+<ul>
+<li>
+<p> If <code>p = NULL</code>, then <code>p</code> is set as
+<code>p_thre &lt;- 1:j_thre</code>, where <code>j_thre</code> is the <code class="reqn">j</code>-th FPC of
+<code>X</code> for which the cumulated proportion of explained variance is
+greater than <code>thre_p</code>. If <code>p != NULL</code>, then <code>p_thre &lt;- p</code>.
+</p>
+</li>
+<li>
+<p> If <code>q = NULL</code>, then the same procedure is followed with
+<code>thre_q</code>, resulting <code>q_thre</code>.
+</p>
+</li>
+</ul>
+<p>Once <code>p_thre</code> and <code>q_thre</code> have been obtained, the methods
+<code>"fpcr_l1"</code> and <code>"fpcr_l1s"</code> perform a second selection
+of the FPC that are effectively considered in the estimation of <code class="reqn">\beta</code>.
+This subset of FPC (of <code>p_thre</code>) is encoded in <code>p_hat</code>. No further
+selection of FPC is done for the methods <code>"fpcr"</code> and <code>"fpcr_l2"</code>.
+</p>
+<p>The flag <code>compute_residuals</code> controls if <code>Y_hat</code>,
+<code>Y_hat_scores</code>, <code>residuals</code>, and <code>residuals_scores</code> are
+computed. If <code>FALSE</code>, they are set to <code>NULL</code>. <code>Y_hat</code> equals
+<code class="reqn">\hat Y_i(t) = \int_a^b \hat \beta(s, t) X_i(s) \,\mathrm{d}s</code> and <code>residuals</code>
+stands for <code class="reqn">\hat \varepsilon_i(t) = Y_i(t) - \hat Y_i(t)</code>, both for
+<code class="reqn">i = 1, \ldots, n</code>. <code>Y_hat_scores</code> and<br><code>residuals_scores</code>
+are the <code class="reqn">n\times q</code> matrices of coefficients (or scores) of these
+functions in the FPC of <code>Y</code>.
+</p>
+<p>Missing values on <code>X</code> and <code>Y</code> are automatically removed.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with the following entries:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Beta_hat</code></td>
+<td>
+<p>estimated <code class="reqn">\beta</code>, a matrix with values
+<code class="reqn">\hat\beta(s, t)</code> evaluated at the grid points for <code>X</code>
+and <code>Y</code>. Its size is <code>c(length(X$argvals), length(Y$argvals))</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Beta_hat_scores</code></td>
+<td>
+<p>the matrix of coefficients of <code>Beta_hat</code>
+(resulting from projecting it into the tensor basis of <code>X_fpc</code> and
+<code>Y_fpc</code>), with dimension <code>c(p_hat, q_thre)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>H_hat</code></td>
+<td>
+<p>hat matrix of the associated fitted multivariate
+linear model, a matrix of size <code>c(n, n)</code>. <code>NULL</code> if
+<code>est_method = "fpcr_l1"</code>, since lasso estimation does not provide it
+explicitly.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_thre</code></td>
+<td>
+<p>index vector indicating the FPC of <code>X</code>
+considered for estimating the model. Chosen by <code>thre_p</code> or equal
+to <code>p</code> if given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_hat</code></td>
+<td>
+<p>index vector of the FPC considered by the methods
+<code>"fpcr_l1"</code> and <code>"fpcr_l1s"</code> methods after further selection
+of the FPC considered in <code>p_thre</code>. For methods <code>"fpcr"</code> and
+<code>"fpcr_l2"</code>, <code>p_hat</code> equals <code>p_thre</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q_thre</code></td>
+<td>
+<p>index vector indicating the FPC of <code>Y</code>
+considered for estimating the model. Chosen by <code>thre_q</code> or equal
+to <code>q</code> if given. Note that zeroing by lasso procedure only affects
+in the rows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>est_method</code></td>
+<td>
+<p>the estimation method employed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y_hat</code></td>
+<td>
+<p>fitted values, either an <code>fdata</code>
+object or a vector, depending on <code>Y</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y_hat_scores</code></td>
+<td>
+<p>the matrix of coefficients of <code>Y_hat</code>, with
+dimension <code>c(n, q_thre)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p>residuals of the fitted model, either an
+<code>fdata</code> object or a vector, depending on <code>Y</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals_scores</code></td>
+<td>
+<p>the matrix of coefficients of
+<code>residuals</code>, with dimension <code>c(n, q_thre)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X_fpc, Y_fpc</code></td>
+<td>
+<p>FPC of <code>X</code> and <code>Y</code>, as
+returned by <code>fpc</code> with <code>n_fpc = n</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>regularization parameter <code class="reqn">\lambda</code> used for the
+estimation methods <code>"fpcr_l2"</code>, <code>"fpcr_l1"</code>, and
+<code>"fpcr_l1s"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv</code></td>
+<td>
+<p>cross-validation object returned by
+<code>cv_glmnet</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Eduardo García-Portugués and Javier Álvarez-Liébana.
+</p>
+
+
+<h3>References</h3>
+
+<p>García-Portugués, E., Álvarez-Liébana, J., Álvarez-Pérez, G. and
+Gonzalez-Manteiga, W. (2021). A goodness-of-fit test for the functional
+linear model with functional response. <em>Scandinavian Journal of
+Statistics</em>, 48(2):502–528. <a href="https://doi.org/10.1111/sjos.12486">doi:10.1111/sjos.12486</a>
+</p>
+<p>Ramsay, J. and Silverman, B. W. (2005). <em>Functional Data Analysis</em>.
+Springer-Verlag, New York.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Quick example of functional response and functional predictor
+
+# Generate data
+set.seed(12345)
+n &lt;- 50
+X_fdata &lt;- r_ou(n = n, t = seq(0, 1, l = 201), sigma = 2)
+epsilon &lt;- r_ou(n = n, t = seq(0, 1, l = 201), sigma = 0.5)
+Y_fdata &lt;- 2 * X_fdata + epsilon
+
+# Lasso-selection FPCR (p and q are estimated)
+flm_est(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l1s")
+
+## Functional response and functional predictor
+
+# Generate data
+set.seed(12345)
+n &lt;- 50
+X_fdata &lt;- r_ou(n = n, t = seq(0, 1, l = 201), sigma = 2)
+epsilon &lt;- r_ou(n = n, t = seq(0, 1, l = 201), sigma = 0.5)
+Y_fdata &lt;- 2 * X_fdata + epsilon
+
+# FPCR (p and q are estimated)
+fpcr_1 &lt;- flm_est(X = X_fdata, Y = Y_fdata, est_method = "fpcr")
+fpcr_1$Beta_hat_scores
+fpcr_1$p_thre
+fpcr_1$q_thre
+
+# FPCR (p and q are provided)
+fpcr_2 &lt;- flm_est(X = X_fdata, Y = Y_fdata, est_method = "fpcr",
+                  p = c(1, 5, 2, 7), q = 2:1)
+fpcr_2$Beta_hat_scores
+fpcr_2$p_thre
+fpcr_2$q_thre
+
+# Ridge FPCR (p and q are estimated)
+l2_1 &lt;- flm_est(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l2")
+l2_1$Beta_hat_scores
+l2_1$p_hat
+
+# Ridge FPCR (p and q are provided)
+l2_2 &lt;- flm_est(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l2",
+                p = c(1, 5, 2, 7), q = 2:1)
+l2_2$Beta_hat_scores
+l2_2$p_hat
+
+# Lasso FPCR (p and q are estimated)
+l1_1 &lt;- flm_est(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l1")
+l1_1$Beta_hat_scores
+l1_1$p_thre
+l1_1$p_hat
+
+# Lasso estimator (p and q are provided)
+l1_2 &lt;- flm_est(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l1",
+                p = c(1, 5, 2, 7), q = 2:1)
+l1_2$Beta_hat_scores
+l1_2$p_thre
+l1_2$p_hat
+
+# Lasso-selection FPCR (p and q are estimated)
+l1s_1 &lt;- flm_est(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l1s")
+l1s_1$Beta_hat_scores
+l1s_1$p_thre
+l1s_1$p_hat
+
+# Lasso-selection FPCR (p and q are provided)
+l1s_2 &lt;- flm_est(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l1s",
+                 p = c(1, 5, 2, 7), q = 1:4)
+l1s_2$Beta_hat_scores
+l1s_2$p_thre
+l1s_2$p_hat
+
+## Scalar response
+
+# Generate data
+set.seed(12345)
+n &lt;- 50
+beta &lt;- r_ou(n = 1, t = seq(0, 1, l = 201), sigma = 0.5, x0 = 3)
+X_fdata &lt;- fdata_cen(r_ou(n = n, t = seq(0, 1, l = 201), sigma = 2))
+epsilon &lt;- rnorm(n, sd = 0.25)
+Y &lt;- drop(inprod_fdata(X_fdata1 = X_fdata, X_fdata2 = beta)) + epsilon
+
+# FPCR
+fpcr_4 &lt;- flm_est(X = X_fdata, Y = Y, est_method = "fpcr")
+fpcr_4$p_hat
+
+# Ridge FPCR
+l2_4 &lt;- flm_est(X = X_fdata, Y = Y, est_method = "fpcr_l2")
+l2_4$p_hat
+
+# Lasso FPCR
+l1_4 &lt;- flm_est(X = X_fdata, Y = Y, est_method = "fpcr_l1")
+l1_4$p_hat
+
+# Lasso-selection FPCR
+l1s_4 &lt;- flm_est(X = X_fdata, Y = Y, est_method = "fpcr_l1s")
+l1s_4$p_hat
+
+## Scalar predictor
+
+# Generate data
+set.seed(12345)
+n &lt;- 50
+X &lt;- rnorm(n)
+epsilon &lt;- r_ou(n = n, t = seq(0, 1, l = 201), sigma = 0.5)
+beta &lt;- r_ou(n = 1, t = seq(0, 1, l = 201), sigma = 0.5, x0 = 3)
+beta$data &lt;- matrix(beta$data, nrow = n, ncol = ncol(beta$data),
+                    byrow = TRUE)
+Y_fdata &lt;- beta * X + epsilon
+
+# FPCR
+fpcr_4 &lt;- flm_est(X = X, Y = Y_fdata, est_method = "fpcr")
+plot(beta, col = 2)
+lines(beta$argvals, drop(fpcr_4$Beta_hat))
+
+</code></pre>
+
+
+</div>

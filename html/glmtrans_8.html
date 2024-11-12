@@ -1,0 +1,238 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>source_detection</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Transferable source detection for GLM transfer learning algorithm.</h2>
+
+<h3>Description</h3>
+
+<p>Detect transferable sources from multiple source data sets. Currently can deal with Gaussian, logistic and Poisson models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">source_detection(
+  target,
+  source = NULL,
+  family = c("gaussian", "binomial", "poisson"),
+  alpha = 1,
+  standardize = TRUE,
+  intercept = TRUE,
+  nfolds = 10,
+  cores = 1,
+  valid.nfolds = 3,
+  lambda = "lambda.1se",
+  detection.info = TRUE,
+  target.weights = NULL,
+  source.weights = NULL,
+  C0 = 2,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>target</code></td>
+<td>
+<p>target data. Should be a list with elements x and y, where x indicates a predictor matrix with each row/column as a(n) observation/variable, and y indicates the response vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>source</code></td>
+<td>
+<p>source data. Should be a list with some sublists, where each of the sublist is a source data set, having elements x and y with the same meaning as in target data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>response type. Can be "gaussian", "binomial" or "poisson". Default = "gaussian".
+</p>
+
+<ul>
+<li>
+<p> "gaussian": Gaussian distribution.
+</p>
+</li>
+<li>
+<p> "binomial": logistic distribution. When <code>family = "binomial"</code>, the input response in both <code>target</code> and <code>source</code> should be 0/1.
+</p>
+</li>
+<li>
+<p> "poisson": poisson distribution. When <code>family = "poisson"</code>, the input response in both <code>target</code> and <code>source</code> should be non-negative.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>the elasticnet mixing parameter, with <code class="reqn">0 \leq \alpha \leq 1</code>. The penality is defined as </p>
+<p style="text-align: center;"><code class="reqn">(1-\alpha)/2||\beta||_2^2+\alpha ||\beta||_1</code>
+</p>
+<p>. <code>alpha = 1</code> encodes the lasso penalty while <code>alpha = 0</code> encodes the ridge penalty. Default = 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standardize</code></td>
+<td>
+<p>the logical flag for x variable standardization, prior to fitting the model sequence. The coefficients are always returned on the original scale. Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>the logical indicator of whether the intercept should be fitted or not. Default = <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nfolds</code></td>
+<td>
+<p>the number of folds. Used in the cross-validation for GLM elastic net fitting procedure. Default = 10. Smallest value allowable is <code>nfolds = 3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>the number of cores used for parallel computing. Default = 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>valid.nfolds</code></td>
+<td>
+<p>the number of folds used in cross-validation procedure when detecting transferable sources. Useful only when <code>transfer.source.id = "auto"</code>. Default = 3.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>lambda (the penalty parameter) used in the transferable source detection algorithm. Can be either "lambda.min" or "lambda.1se". Default = "lambda.1se".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>detection.info</code></td>
+<td>
+<p>the logistic flag indicating whether to print detection information or not. Useful only when <code>transfer.source.id = "auto"</code>. Default = <code>TURE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>target.weights</code></td>
+<td>
+<p>weight vector for each target instance. Should be a vector with the same length of target response. Default = <code>NULL</code>, which makes all instances equal-weighted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>source.weights</code></td>
+<td>
+<p>a list of weight vectors for the instances from each source. Should be a list with the same length of the number of sources. Default = <code>NULL</code>, which makes all instances equal-weighted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>C0</code></td>
+<td>
+<p>the constant used in the transferable source detection algorithm. See Algorithm 2 in Tian, Y. and Feng, Y., 2021. Default = 2.
+</p>
+
+<ul>
+<li>
+<p> "lambda.min": value of lambda that gives minimum mean cross-validated error in the sequence of lambda.
+</p>
+</li>
+<li>
+<p> "lambda.1se": largest value of lambda such that error is within 1 standard error of the minimum.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object with S3 class <code>"glmtrans_source_detection"</code>.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>target.valid.loss</code></td>
+<td>
+<p>the validation (or cross-validation) loss on target data. Only available when <code>transfer.source.id = "auto"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>source.loss</code></td>
+<td>
+<p>the loss on each source data. Only available when <code>transfer.source.id = "auto"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threshold</code></td>
+<td>
+<p>the threshold to determine transferability. Only available when <code>transfer.source.id = "auto"</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p><code>source.loss</code> and <code>threshold</code> outputed by <code>source_detection</code> can be visualized by function <code>plot.glmtrans</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Tian, Y. and Feng, Y., 2021. <em>Transfer Learning under High-dimensional Generalized Linear Models. arXiv preprint arXiv:2105.14328.</em>
+</p>
+<p>Li, S., Cai, T.T. and Li, H., 2020. <em>Transfer learning for high-dimensional linear regression: Prediction, estimation, and minimax optimality. arXiv preprint arXiv:2006.10593.</em>
+</p>
+<p>Friedman, J., Hastie, T. and Tibshirani, R., 2010. <em>Regularization paths for generalized linear models via coordinate descent. Journal of statistical software, 33(1), p.1.</em>
+</p>
+<p>Zou, H. and Hastie, T., 2005. <em>Regularization and variable selection via the elastic net. Journal of the royal statistical society: series B (statistical methodology), 67(2), pp.301-320.</em>
+</p>
+<p>Tibshirani, R., 1996. <em>Regression shrinkage and selection via the lasso. Journal of the Royal Statistical Society: Series B (Methodological), 58(1), pp.267-288.</em>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>glmtrans</code>, <code>predict.glmtrans</code>, <code>models</code>, <code>plot.glmtrans</code>, <code>cv.glmnet</code>, <code>glmnet</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(0, kind = "L'Ecuyer-CMRG")
+
+# study the linear model
+D.training &lt;- models("gaussian", type = "all", K = 2, p = 500, Ka = 1, n.target = 100, cov.type = 2)
+detection.gaussian &lt;- source_detection(D.training$target, D.training$source)
+detection.gaussian$transferable.source.id
+
+
+# study the logistic model
+D.training &lt;- models("binomial", type = "all", K = 2, p = 500, Ka = 1, n.target = 100, cov.type = 2)
+detection.binomial &lt;- source_detection(D.training$target, D.training$source,
+family = "binomial", cores = 2)
+detection.binomial$transferable.source.id
+
+
+# study Poisson model
+D.training &lt;- models("poisson", type = "all", K = 2, p = 500, Ka = 1, n.target = 100, cov.type = 2)
+detection.poisson &lt;- source_detection(D.training$target, D.training$source,
+family = "poisson", cores = 2)
+detection.poisson$transferable.source.id
+
+</code></pre>
+
+
+</div>

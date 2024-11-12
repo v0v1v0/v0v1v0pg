@@ -1,0 +1,128 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>guide_coloursteps_interactive</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create interactive colorsteps guide</h2>
+
+<h3>Description</h3>
+
+<p>The guide is based on <code>guide_coloursteps()</code>.
+See the documentation for that function for more details.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">guide_coloursteps_interactive(...)
+
+guide_colorsteps_interactive(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments passed to base function.</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>An interactive guide object.
+</p>
+
+
+<h3>Details for interactive scale and interactive guide functions</h3>
+
+<p>For scales, the interactive parameters can be supplied as arguments in the relevant function
+and they can be scalar values or vectors, depending on the number of breaks (levels) and
+the type of the guide used.
+The guides do not accept any interactive parameter directly, they receive them from the scales.
+</p>
+<p>When guide of type <code>legend</code>, <code>bins</code>, <code>colourbar</code> or <code>coloursteps</code> is used,
+it will be converted to a <code>guide_legend_interactive()</code>, <code>guide_bins_interactive()</code>,
+<code>guide_colourbar_interactive()</code> or <code>guide_coloursteps_interactive()</code> respectively,
+if it's not already.
+</p>
+<p>The length of each scale interactive parameter vector should match the length of the breaks.
+It can also be a named vector, where each name should correspond to the same break name.
+It can also be defined as function that takes the breaks as input and returns a named or
+unnamed vector of values as output.
+</p>
+<p>For binned guides like <code>bins</code> and <code>coloursteps</code> the breaks include the label breaks and the limits.
+The number of bins will be one less than the number of breaks and the interactive parameters can be
+constructed for each bin separately (look at the examples).
+For <code>colourbar</code> guide in raster mode, the breaks vector, is scalar 1 always, meaning the interactive
+parameters should be scalar too. For <code>colourbar</code> guide in non-raster mode, the bar is drawn using
+rectangles, and the breaks are the midpoints of each rectangle.
+</p>
+<p>The interactive parameters here, give interactivity only to the key elements of the guide.
+</p>
+<p>To provide interactivity to the rest of the elements of a guide, (title, labels, background, etc),
+the relevant theme elements or relevant guide arguments can be used.
+The <code>guide</code> arguments <code>title.theme</code> and <code>label.theme</code> can be defined as
+<code>element_text_interactive</code> (in fact, they will be converted to that if they are not
+already), either directly or via the theme.
+See the element_*_interactive section for more details.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>interactive_parameters, <code>girafe()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># add interactive coloursteps guide to a ggplot -------
+library(ggplot2)
+library(ggiraph)
+
+set.seed(4393)
+dsmall &lt;- diamonds[sample(nrow(diamonds), 1000),]
+p &lt;- ggplot(dsmall, aes(x, y)) +
+  stat_density_2d(aes(
+    fill = after_stat(nlevel),
+    tooltip = paste("nlevel:", after_stat(nlevel))
+  ),
+  geom = "interactive_polygon") +
+  facet_grid(. ~ cut)
+
+# add interactive binned scale, by default the guide is colorsteps
+p1 &lt;- p + scale_fill_viridis_b_interactive(data_id = "nlevel",
+                                           tooltip = "nlevel")
+x &lt;- girafe(ggobj = p1)
+if (interactive()) print(x)
+
+
+# make the title and labels interactive
+p2 &lt;- p + scale_fill_viridis_b_interactive(
+  data_id = "nlevel",
+  tooltip = "nlevel",
+  name = label_interactive("nlevel", data_id = "nlevel",
+                           tooltip = "nlevel"),
+  labels = function(breaks) {
+    l &lt;- lapply(breaks, function(br) {
+      label_interactive(
+        as.character(br),
+        data_id = as.character(br),
+        onclick = paste0("alert(\"", as.character(br), "\")"),
+        tooltip = as.character(br)
+      )
+    })
+    l
+  }
+)
+x &lt;- girafe(ggobj = p2)
+x &lt;- girafe_options(x,
+                    opts_hover_key(girafe_css("stroke:red", text="stroke:none;fill:red")))
+if (interactive()) print(x)
+
+</code></pre>
+
+
+</div>

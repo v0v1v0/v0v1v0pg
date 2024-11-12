@@ -1,0 +1,143 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>addWeights</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Add weights to graph.</h2>
+
+<h3>Description</h3>
+
+<p><code>addWeights</code> allows to add edge weights to a graph. This is
+the last step of the graph generation process. Note that adding edges is not
+possible once <code>addWeights</code> was called once.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">addWeights(graph, generator = NULL, weights = NULL, symmetric = TRUE,
+  to.int = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>graph</code></td>
+<td>
+<p>[<code>grapherator</code>]<br>
+Graph.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>generator</code></td>
+<td>
+<p>[<code>function(graph, ...)</code>]<br>
+Function used to generate weights. The functions needs to expect the graph
+as the first argument <code>graph</code>. Additional control argument are
+possible.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>[<code>matrix</code>]<br>
+Square matrix of weights.
+If some weights are already assigned, pay attention to the correct dimensions.
+If this is passed all other arguments are ignored.
+Default is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>symmetric</code></td>
+<td>
+<p>[<code>logical(1)</code>]<br>
+Should the weights be symmetric, i.e., <code class="reqn">w(i, j) = w(j, i)</code> for each pair <code class="reqn">i, j</code> of nodes?
+Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>to.int</code></td>
+<td>
+<p>[<code>logical(1)</code>]<br>
+Should weights be rounded to integer?
+Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>[any]<br>
+Additional arguments passed down to <code>generator</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>[<code>grapherator</code>] Graph.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other graph generators: <code>addEdges</code>,
+<code>addNodes</code>, <code>graph</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># first we define a simple graph
+g = graph(0, 100)
+g = addNodes(g, n = 5, generator = addNodesLHS)
+g = addNodes(g, n = c(3, 10, 20, 10, 40), by.centers = TRUE, generator = addNodesUniform,
+  lower = c(0, 0), upper = c(15, 15))
+g = addEdges(g, generator = addEdgesDelauney)
+
+# first graph contains two integer random weights per edge
+g1 = addWeights(g, generator = addWeightsRandom, method = runif, min = 10, max = 20, to.int = TRUE)
+g1 = addWeights(g, generator = addWeightsRandom, method = runif, min = 10, max = 30, to.int = TRUE)
+## Not run: 
+plot(g1)$pl.weights
+
+## End(Not run)
+
+# next one contains correlated weights. The first weight corresponds to the
+# Euclidean distance of the points, the second is generated in a way, that
+# a given correlation rho is achieved.
+g2 = addWeights(g, generator = addWeightsCorrelated, rho = -0.7)
+## Not run: 
+plot(g2)$pl.weights
+
+## End(Not run)
+
+# Last example contains two weights per edge: the first one is the Manhattan
+# block distance between the nodes in the plane. The second one is the Euclidean
+# distance plus a normally distributed jitter. Here we write a custom weight
+# generator which returns two weight matrizes.
+myWeightGenerator = function(graph, ...) {
+  n = getNumberOfNodes(graph)
+  adj.mat = getAdjacencyMatrix(graph)
+  coords = getNodeCoordinates(graph)
+
+  man.dist = as.matrix(dist(coords), method = "manhattan")
+  euc.dist = as.matrix(dist(coords)) + abs(rnorm(n * n, ...))
+
+  # keep in mind non-existent edges
+  euc.dist[!adj.mat] = man.dist[!adj.mat] = Inf
+
+  # return the necessary format
+  return(list(weights = list(man.dist, euc.dist), generator = "MyWG"))
+}
+
+g3 = addWeights(g, generator = myWeightGenerator, mean = 30, sd = 5)
+## Not run: 
+plot(g3)$pl.weights
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,126 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ginterpolating</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Interpolation of a Graph Signal</h2>
+
+<h3>Description</h3>
+
+<p>This function interpolates a graph signal utilizing the Laplacian matrix.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ginterpolating(ad_mat, signal, vertices)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ad_mat</code></td>
+<td>
+<p>an weighted adjacency matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>signal</code></td>
+<td>
+<p>a graph signal.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vertices</code></td>
+<td>
+<p>specifies vertices for the observed signal. A signal on <code>vertices</code> and Laplacian matrix
+is used for interpolating a signal outside <code>vertices</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function interpolates a graph signal utilizing the Laplacian matrix.
+</p>
+
+
+<h3>Value</h3>
+
+ 
+<p>a signal with interpolated points.
+</p>
+
+
+<h3>References</h3>
+
+<p>Ortega, A., Frossard, P., Kovačević, J., Moura, J. M. F., and Vandergheynst, P. (2018).
+Graph signal processing: overview, challenges, and applications. <em>Proceedings of the IEEE 106</em>, 808–828.
+<a href="https://doi.org/10.1109/JPROC.2018.2820126">doi:10.1109/JPROC.2018.2820126</a>
+</p>
+<p>Shuman, D. I., Narang, S. K., Frossard, P., Ortega, A., and Vandergheynst, P. (2013). The emerging field of signal processing on graphs: Extending high-dimensional data analysis to networks and other irregular domains. <em>IEEE Signal Processing Magazine</em>, <b>30(3)</b>, 83–98.
+<a href="https://doi.org/10.1109/MSP.2012.2235192">doi:10.1109/MSP.2012.2235192</a>
+</p>
+<p>Tremblay, N., Borgnat, P., and Flandrin, P. (2014). Graph empirical mode decomposition. <em>22nd European Signal Processing Conference (EUSIPCO)</em>, 2350–2354.
+</p>
+<p>Zeng, J., Cheung, G., and Ortega, A. (2017). Bipartite approximation for graph wavelet signal decomposition. <em>IEEE Transactions on Signal Processing</em>, <b>65(20)</b>, 5466–5480.
+<a href="https://doi.org/10.1109/TSP.2017.2733489">doi:10.1109/TSP.2017.2733489</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gextrema</code>, <code>gsmoothing</code>, <code>sgemd</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#### example : composite of two components having different frequencies
+
+## define vertex coordinate
+x &lt;- y &lt;- seq(0, 1, length=30)
+xy &lt;- expand.grid(x=x, y=y)
+
+## weighted adjacency matrix by Gaussian kernel 
+## for connecting vertices within distance 0.04
+A &lt;- adjmatrix(xy, method = "dist", 0.04) 
+
+## signal
+# high-frequency component
+signal1 &lt;- rep(sin(12.5*pi*x - 1.25*pi), 30)
+
+# low-frequency component
+signal2 &lt;- rep(sin(5*pi*x - 0.5*pi), 30)
+
+# composite signal
+signal0 &lt;- signal1 + signal2
+
+# noisy signal with SNR(signal-to-noise ratio)=5
+signal &lt;- signal0 + rnorm(900, 0, sqrt(var(signal0) / 5)) 
+
+# graph with signal
+gsig &lt;- gsignal(vertex = cbind(xy, signal), edge = A, edgetype = "matrix")
+
+# local extrema using graph object
+extremaout &lt;- gextrema(as_adjacency_matrix(gsig, attr="weight"), V(gsig)$z)
+maxima &lt;- extremaout$maxima_list; minima &lt;- extremaout$minima_list
+
+# Interpolation of upper, lower and mean envelope
+uenvelope &lt;- ginterpolating(as_adjacency_matrix(gsig, attr="weight"), 
+    V(gsig)$z, maxima)
+lenvelope &lt;- ginterpolating(as_adjacency_matrix(gsig, attr="weight"), 
+    V(gsig)$z, minima) 
+menvelope &lt;- (uenvelope + lenvelope) / 2
+
+# display a graph signal
+gplot(gsig, size=3, legend=FALSE) 
+
+# display mean envelope
+gplot(gsig, menvelope, size=3, legend=FALSE) 
+</code></pre>
+
+
+</div>

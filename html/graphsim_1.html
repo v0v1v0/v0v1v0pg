@@ -1,0 +1,621 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>graphsim-package</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>The graphsim package</h2>
+
+<h3>Description</h3>
+
+<p>graphsim is a package to simulate normalised expression data from networks 
+for biological pathways using ‘<code>igraph</code>’ objects and multivariate
+normal distributions.
+</p>
+
+
+<h3>Details</h3>
+
+<p>This package provides functions to develop simulated continuous data 
+(e.g., gene expression) from a Sigma (<code class="reqn">\Sigma</code>) covariance matrix derived from a 
+graph structure in ‘<code>igraph</code>’ objects. Intended to extend 
+‘<code>mvtnorm</code>’ to take 'igraph' structures rather than sigma 
+matrices as input. This allows the use of simulated data that correctly
+accounts for pathway relationships and correlations. Here we present
+a versatile statistical framework to simulate correlated gene expression
+data from biological pathways, by sampling from a multivariate normal
+distribution derived from a graph structure. This package allows the
+simulation of biologicalpathways from a graph structure based on a
+statistical model of gene expression, such as simulation of expression
+profiles that of log-transformed and normalised data from microarray
+and RNA-Seq data.
+</p>
+
+
+<h3>Introduction</h3>
+
+<p>This package enables the generation of simulated gene expression datasets 
+containing pathway relationships from a known underlying network.
+These simulated datasets can be used to evaluate various bioinformatics 
+methodologies, including statistical and network inference procedures.
+</p>
+<p>These are computed by 1) resolving inhibitory states to derive a consistent
+matrix of positive and negative edges, 2) inferring relationships between
+nodes from paths in the graph, 3) weighting these in a Sigma (<code class="reqn">\Sigma</code>) 
+covariance matrix and 4) using this to sample a multivariate normal 
+distribution.
+</p>
+
+
+<h3>Getting Started</h3>
+
+<p>The <code>generate_expression</code> function is a wrapper 
+around all necessary functions to give a final simulated dataset.
+</p>
+<p>Here we set up an example graph object using the 
+<code>igraph</code> package.
+</p>
+<pre>
+library("igraph")
+graph_structure_edges &lt;- rbind(c("A", "C"), c("B", "C"), c("C", "D"),c("D", "E"),
+                               c("D", "F"), c("F", "G"), c("F", "I"), c("H", "I"))
+graph_structure &lt;- graph.edgelist(graph_structure_edges, directed = TRUE)
+</pre>
+<p>Then we can call <code>generate_expression</code> to return
+the simulated data based on the relationships defined in the graph
+structure. Various options are available to fine-tune this.
+</p>
+<pre>
+expr &lt;- generate_expression(100, graph_structure,
+                            cor = 0.8,
+                            mean = 0,
+                            sd = 1,
+                            comm = FALSE,
+                            dist = TRUE,
+                            absolute = FALSE,
+                            laplacian = FALSE)
+</pre>
+<p>Here we can see the final result. The graph
+structure defines the covariance matrix used
+by <code>rmvnorm</code> to
+generate a multivariate distribution.
+</p>
+<pre>
+dim(expr)
+
+library("gplots")
+heatmap.2(expr,
+          scale = "none",
+          trace = "none",
+          col = bluered(50),
+          colsep = 1:4,
+          rowsep = 1:4)
+</pre>
+<p>This dataset consists of 9 rows (one for each vertex or gene)
+in the graph and 100 columns (one for each sample or observation).
+</p>
+<p>Input with an adjacency matrix is available using the
+<code>generate_expression_mat</code>
+function.
+</p>
+
+
+<h3>Creating Input Data</h3>
+
+<p>Graph structures can be passed directly from the
+<code>igraph</code> package.
+Using this package, you can create an ‘<code>igraph</code>’
+class object.
+</p>
+<pre>
+&gt; class(graph_structure)
+[1] "igraph"
+
+&gt; graph_structure
+IGRAPH ba7fa2f DN-- 9 8 -- 
+  + attr: name (v/c)
+  + edges from ba7fa2f (vertex names):
+    [1] A-&gt;C B-&gt;C C-&gt;D D-&gt;E D-&gt;F F-&gt;G F-&gt;I H-&gt;I
+</pre>
+<p>This ‘<code>igraph</code>’ object class can be passed
+directly to <code>generate_expression</code>
+shown above and internal functions described below:
+<code>make_sigma_mat_graph</code>,
+<code>make_sigma_mat_dist_graph</code>,
+<code>make_distance_graph</code>,
+and
+<code>make_state_matrix</code>.
+</p>
+<p>The ‘<code>graphsim</code>’ package also supports various
+matrix formats and has functions to handle these.
+The following functions will compute matrices from an
+‘<code>igraph</code>’ object class:
+</p>
+
+<ul>
+<li>  <p><code>make_adjmatrix_graph</code>
+to derive the adjacency matrix for a graph structure.
+</p>
+</li>
+<li>  <p><code>make_commonlink_graph</code>
+to derive the ‘common link’ matrix for a graph structure of
+mutually shared neighbours.
+</p>
+</li>
+<li>  <p><code>make_laplacian_graph</code>
+to derive the Laplacian matrix for a graph structure.
+</p>
+</li>
+</ul>
+<p>The following functions will compute matrices from an
+<code>adjacency matrix</code>:
+</p>
+
+<ul>
+<li>  <p><code>make_commonlink_adjmat</code>
+to derive the ‘common link’ matrix for a graph structure of
+mutually shared neighbours.
+</p>
+</li>
+<li>  <p><code>make_laplacian_adjmat</code>
+to derive the Laplacian matrix for a graph structure.
+</p>
+</li>
+</ul>
+<p>We provide some pre-generate pathways from Reactoem database
+for testing and demonstrations:
+</p>
+
+<ul>
+<li>  <p><code>RAF_MAP_graph </code>
+for the interactions in the “RAF/MAP kinase” cascade (17 vertices
+and 121 edges).
+</p>
+</li>
+<li>  <p><code>Pi3K_graph</code>
+for the phosphoinositide-3-kinase cascade (35 vertices and 251 edges).
+</p>
+</li>
+<li>  <p><code>Pi3K_AKT_graph</code>
+for the phosphoinositide-3-kinase activation of Protein kinase B
+pathway “PI3K/AKT activation” (275 vertices and 21106 edges).
+</p>
+</li>
+<li>  <p><code>TGFBeta_Smad_graph</code>
+for the TGF-<code class="reqn">\beta</code> receptor signaling activates SMADs
+pathway (32 vertices and 173 edges).
+</p>
+</li>
+</ul>
+<p>Please note that demonstrations on larger graph objects. These
+can be called directly from the pakage:
+</p>
+<pre>
+&gt; graphsim::Pi3K_graph
+IGRAPH 21437e3 DN-- 35 251 -- 
+  + attr: name (v/c)
+  + edges from 21437e3 (vertex names):
+     [1] AKT1-&gt;AKT2  AKT1-&gt;AKT3  AKT1-&gt;CASP9 AKT1-&gt;CASP9
+     [5] AKT1-&gt;CASP9 AKT1-&gt;FOXO1 AKT1-&gt;FOXO1 AKT1-&gt;FOXO1
+     [9] AKT1-&gt;FOXO3 AKT1-&gt;FOXO3 AKT1-&gt;FOXO3 AKT1-&gt;FOXO4
+     [13] AKT1-&gt;FOXO4 AKT1-&gt;FOXO4 AKT1-&gt;GSK3B AKT1-&gt;GSK3B
+     [17] AKT1-&gt;GSK3B AKT1-&gt;NOS1  AKT1-&gt;NOS2  AKT1-&gt;NOS3 
+     [21] AKT1-&gt;PDPK1 AKT2-&gt;AKT3  AKT2-&gt;CASP9 AKT2-&gt;CASP9
+     [25] AKT2-&gt;CASP9 AKT2-&gt;FOXO1 AKT2-&gt;FOXO1 AKT2-&gt;FOXO1
+     [29] AKT2-&gt;FOXO3 AKT2-&gt;FOXO3 AKT2-&gt;FOXO3 AKT2-&gt;FOXO4
+     + ... omitted several edges
+     + ... omitted several edges
+</pre>
+<p>They can also be imported into R:
+</p>
+<pre>
+data(Pi3K_graph)
+</pre>
+<p>You can assign them to your local environment
+by calling with from the package:
+</p>
+<pre>
+graph_object &lt;- identity(Pi3K_graph)
+</pre>
+<p>You can also change the object class directly
+from the package:
+</p>
+<pre>
+library("igraph")
+Pi3K_adjmat &lt;- as_adjacency_matrix(Pi3K_graph)
+</pre>
+<p><code>Pi3K_AKT_graph</code> and 
+<code>TGFBeta_Smad_graph</code>
+contain graph edge attributes for the ‘state’ parameter
+described below.
+</p>
+<pre>
+ &gt; TGFBeta_Smad_graph
+ IGRAPH f3eac04 DN-- 32 173 -- 
+   + attr: name (v/c), state (e/n)
+   + edges from f3eac04 (vertex names):
+     [1] BAMBI -&gt;SMAD7  BAMBI -&gt;TGFB1  BAMBI -&gt;TGFBR1 BAMBI -&gt;TGFBR2
+     [5] CBL   -&gt;NEDD8  CBL   -&gt;NEDD8  CBL   -&gt;TGFBR2 CBL   -&gt;TGFBR2
+     [9] CBL   -&gt;UBE2M  CBL   -&gt;UBE2M  FKBP1A-&gt;TGFB1  FKBP1A-&gt;TGFBR1
+     [13] FKBP1A-&gt;TGFBR2 FURIN -&gt;TGFB1  FURIN -&gt;TGFB1  MTMR4 -&gt;SMAD2 
+     [17] MTMR4 -&gt;SMAD2  MTMR4 -&gt;SMAD3  MTMR4 -&gt;SMAD3  NEDD4L-&gt;RPS27A
+     [21] NEDD4L-&gt;SMAD7  NEDD4L-&gt;SMURF1 NEDD4L-&gt;SMURF2 NEDD4L-&gt;TGFB1 
+     [25] NEDD4L-&gt;TGFBR1 NEDD4L-&gt;TGFBR2 NEDD4L-&gt;UBA52  NEDD4L-&gt;UBB   
+     [29] NEDD4L-&gt;UBC    NEDD8 -&gt;TGFBR2 NEDD8 -&gt;UBE2M  PMEPA1-&gt;SMAD2 
+     + ... omitted several edges
+     
+ &gt; E(TGFBeta_Smad_graph)$state
+ [1] 2 2 2 2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [32] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+ [63] 2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [94] 1 1 1 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+ [125] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [156] 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 1 1 1
+ 
+ &gt; states &lt;- E(TGFBeta_Smad_graph)$state
+ &gt; table(states)
+ states
+ 1   2 
+ 103  70 
+ </pre>
+
+
+<h3>Internal Functions</h3>
+
+<p>The following functions are used by
+<code>generate_expression</code>
+to compute a simulated dataset. They can be called separately
+to summarise the steps used to compute the final data matrix
+or for troubleshooting.
+</p>
+
+<ul>
+<li> <p><code>make_sigma_mat_adjmat</code>,
+<code>make_sigma_mat_comm</code>, 
+<code>make_sigma_mat_laplacian</code>, and
+<code>make_sigma_mat_graph</code> will
+compute a Sigma (<code class="reqn">\Sigma</code>) covariance matrix from an
+adjacency matrix, common link matrix, Laplacian matrix,
+or an ‘igraph’ object. There are computed as above
+and passed to <code>rmvnorm</code>.
+</p>
+</li>
+<li> <p><code>make_distance_adjmat</code>,
+<code>make_distance_comm</code>, 
+<code>make_distance_laplacian</code>, and
+<code>make_distance_graph</code> will
+compute a distance matrix of relationships from an
+adjacency matrix, common link matrix, Laplacian matrix,
+or an ‘igraph’ object. There are computed as above
+and passed to <code>make_sigma</code>.
+</p>
+</li>
+<li> <p><code>make_state_matrix</code>
+will compute a “state matrix” resolving positive and
+negative correlations from a vector of edge properties. This
+is called by <code>make_sigma</code>
+and <code>generate_expression</code>
+to ensure that the signs of correlations are consistent.
+</p>
+</li>
+</ul>
+<h3>Examining Step-by-Step</h3>
+
+<p>These internal functions can be called to compute steps of
+the simulation procedure and examine the results.
+</p>
+<p>1. first we create a graph structure and define the input parameters
+</p>
+<pre>
+library("igraph")
+graph_structure_edges &lt;- rbind(c("A", "C"), c("B", "C"), c("C", "D"),c("D", "E"),
+                               c("D", "F"), c("F", "G"), c("F", "I"), c("H", "I"))
+graph_structure &lt;- graph.edgelist(graph_structure_edges, directed = TRUE)
+#sample size
+data.n &lt;- 100
+#data distributions
+data.cor &lt;- 0.75
+data.mean &lt;- 3
+data.sd &lt;- 1.5
+#inhibition states
+edge_states &lt;- c(1, 1, -1, -1, 1, 1, 1, 1)
+</pre>
+<p>2. examine the relationships between the genes.
+</p>
+<p>Here we can see which nodes share an edge:
+</p>
+<pre>
+&gt; adjacency_matrix &lt;- make_adjmatrix_graph(graph_structure)
+&gt; adjacency_matrix
+  A C B D E F G I H
+A 0 1 0 0 0 0 0 0 0
+C 1 0 1 1 0 0 0 0 0
+B 0 1 0 0 0 0 0 0 0
+D 0 1 0 0 1 1 0 0 0
+E 0 0 0 1 0 0 0 0 0
+F 0 0 0 1 0 0 1 1 0
+G 0 0 0 0 0 1 0 0 0
+I 0 0 0 0 0 1 0 0 1
+H 0 0 0 0 0 0 0 1 0
+</pre>
+<p>Here we define a geometrically decreasing series of relationships
+between genes based on distance by paths in the graph:
+</p>
+<pre>
+&gt; relationship_matrix &lt;- make_distance_graph(graph_structure, absolute = FALSE)
+&gt; relationship_matrix
+  A          C          B          D          E          F          G          I          H
+A 1.00000000 0.20000000 0.10000000 0.10000000 0.06666667 0.06666667 0.05000000 0.05000000 0.04000000
+C 0.20000000 1.00000000 0.20000000 0.20000000 0.10000000 0.10000000 0.06666667 0.06666667 0.05000000
+B 0.10000000 0.20000000 1.00000000 0.10000000 0.06666667 0.06666667 0.05000000 0.05000000 0.04000000
+D 0.10000000 0.20000000 0.10000000 1.00000000 0.20000000 0.20000000 0.10000000 0.10000000 0.06666667
+E 0.06666667 0.10000000 0.06666667 0.20000000 1.00000000 0.10000000 0.06666667 0.06666667 0.05000000
+F 0.06666667 0.10000000 0.06666667 0.20000000 0.10000000 1.00000000 0.20000000 0.20000000 0.10000000
+G 0.05000000 0.06666667 0.05000000 0.10000000 0.06666667 0.20000000 1.00000000 0.10000000 0.06666667
+I 0.05000000 0.06666667 0.05000000 0.10000000 0.06666667 0.20000000 0.10000000 1.00000000 0.20000000
+H 0.04000000 0.05000000 0.04000000 0.06666667 0.05000000 0.10000000 0.06666667 0.20000000 1.00000000
+</pre>
+<p>Here we can see the resolved edge states through paths in the
+adjacency matrix:
+</p>
+<pre>
+&gt; names(edge_states) &lt;- apply(graph_structure_edges, 1, paste, collapse = "-")
+&gt; edge_states
+A-C B-C C-D D-E D-F F-G F-I H-I 
+1   1  -1  -1   1   1   1   1 
+&gt; state_matrix &lt;- make_state_matrix(graph_structure, state = edge_states)
+&gt; state_matrix
+   A  C  B  D  E  F  G  I  H
+A  1  1  1 -1  1 -1 -1 -1 -1
+C  1  1  1 -1  1 -1 -1 -1 -1
+B  1  1  1 -1  1 -1 -1 -1 -1
+D -1 -1 -1  1 -1  1  1  1  1
+E  1  1  1 -1  1 -1 -1 -1 -1
+F -1 -1 -1  1 -1  1  1  1  1
+G -1 -1 -1  1 -1  1  1  1  1
+I -1 -1 -1  1 -1  1  1  1  1
+H -1 -1 -1  1 -1  1  1  1  1
+</pre>
+<p>3. define a Sigma (<code class="reqn">\Sigma</code>) covariance matrix
+</p>
+<p>Here we can see that the signs match the <code>state_matrix</code>
+and the covariance is based on the <code>relationship_matrix</code>
+weighted by the correlation (<code>cor</code>) and standard
+deviation (<code>sd</code>) parameters.
+</p>
+<p>Note that where <code>sd = 1</code>, the diagonals will be <code>1</code>
+and the off-diagonal terms will be correlations.
+</p>
+<pre>
+&gt; sigma_matrix &lt;- make_sigma_mat_dist_graph(
++     graph_structure,
++     state = edge_states,
++     cor = data.cor,
++     sd = data.sd,
++     absolute = FALSE
++ )
+&gt; sigma_matrix
+   A         C         B        D         E        F         G         I         H
+A  2.250000  1.687500  0.843750 -0.84375  0.562500 -0.56250 -0.421875 -0.421875 -0.337500
+C  1.687500  2.250000  1.687500 -1.68750  0.843750 -0.84375 -0.562500 -0.562500 -0.421875
+B  0.843750  1.687500  2.250000 -0.84375  0.562500 -0.56250 -0.421875 -0.421875 -0.337500
+D -0.843750 -1.687500 -0.843750  2.25000 -1.687500  1.68750  0.843750  0.843750  0.562500
+E  0.562500  0.843750  0.562500 -1.68750  2.250000 -0.84375 -0.562500 -0.562500 -0.421875
+F -0.562500 -0.843750 -0.562500  1.68750 -0.843750  2.25000  1.687500  1.687500  0.843750
+G -0.421875 -0.562500 -0.421875  0.84375 -0.562500  1.68750  2.250000  0.843750  0.562500
+I -0.421875 -0.562500 -0.421875  0.84375 -0.562500  1.68750  0.843750  2.250000  1.687500
+H -0.337500 -0.421875 -0.337500  0.56250 -0.421875  0.84375  0.562500  1.687500  2.250000
+</pre>
+<p>4. generate an expression dataset using this sigma matrix
+</p>
+<p>We use <code>generate_expression</code> to compute and expression
+dataset, simulated using these parameters:
+</p>
+<pre>
+&gt; expression_data &lt;- generate_expression(
++     n = data.n,
++     graph_structure,
++     state = edge_states,
++     cor = data.cor,
++     mean = data.mean,
++     sd = data.sd,
++     comm = FALSE,
++     dist = FALSE,
++     absolute = FALSE,
++     laplacian = FALSE
++ )
+&gt; dim(expression_data)
+[1]   9 100
+</pre>
+<p>Here we also compute the final observed correlations
+in the simulated dataset:
+</p>
+<pre>
+&gt; cor_data &lt;- cor(t(expression_data))
+&gt; dim(cor_data)
+[1] 9 9
+</pre>
+<p>These functions are demonstrated in more detail
+in the <a href="https://CRAN.R-project.org/package=graphsim/vignettes/simulate_expression.html">main</a> vignette.
+</p>
+
+
+<h3>Data Visualization</h3>
+
+<p>Heatmaps can be used from the <code>gplots</code>
+package to display these simulated datasets.
+</p>
+<pre>
+library("gplots")
+heatmap.2(adjacency_matrix, scale = "none", trace = "none",
+          col = colorpanel(50, "white", "black"), key = FALSE)
+          
+heatmap.2(relationship_matrix, scale = "none", trace = "none",
+          col = colorpanel(50, "white", "red"))
+          
+heatmap.2(state_matrix, scale = "none", trace = "none",
+          col = colorpanel(50, "royalblue", "palevioletred"),
+          colsep = 1:length(V(graph_structure)),
+          rowsep = 1:length(V(graph_structure)))
+
+heatmap.2(sigma_matrix, scale = "none", trace = "none",
+          col = colorpanel(50, "royalblue", "white", "palevioletred"),
+          colsep = 1:length(V(graph_structure)),
+          rowsep = 1:length(V(graph_structure)))
+          
+heatmap.2(expression_data, scale = "none", trace = "none",
+          col = colorpanel(50, "royalblue", "white", "palevioletred"),
+          colsep = 1:length(V(graph_structure)),
+         rowsep = 1:length(V(graph_structure)))
+
+heatmap.2(cor_data, scale = "none", trace = "none",
+          col = colorpanel(50, "royalblue", "white", "palevioletred"),
+          colsep = 1:length(V(graph_structure)),
+          rowsep = 1:length(V(graph_structure)))
+</pre>
+<p>In particular we can see here that the expected correlations
+show by the <code>sigma_matrix</code> are similar to the observed
+correlations in the <code>cor_data</code>.
+</p>
+
+
+<h3>Graph Visualization</h3>
+
+<p>The ‘graphsim’ package comes with a built-in plotting
+function to display graph objects. 
+</p>
+<pre>
+graph_structure_edges &lt;- rbind(c("A", "C"), c("B", "C"), c("C", "D"),c("D", "E"),
+                               c("D", "F"), c("F", "G"), c("F", "I"), c("H", "I"))
+graph_structure &lt;- graph.edgelist(graph_structure_edges, directed = TRUE)
+plot_directed(graph_structure, layout = layout.kamada.kawai)
+</pre>
+<p>This supports the ‘state’ parameter to display
+activating relationships (with positive correlations)
+and inhibiting or repressive relationships (with
+negative correlations).
+</p>
+<pre>
+edge_states &lt;- c(1, 1, -1, -1, 1, -1, 1, -1)
+graph_structure &lt;- graph.edgelist(graph_structure_edges, directed = TRUE)
+plot_directed(graph_structure, state = edge_states,
+              col.arrow = c("darkgreen", "red")[edge_states / 2 + 1.5]
+              layout = layout.kamada.kawai)
+</pre>
+<p>These states can also be passed from the ‘state’ edge
+attribute of the graph object.
+</p>
+<pre>
+graph_pathway &lt;- identity(TGFBeta_Smad_graph)
+edge_properties &lt;- E(graph_pathway)$state
+plot_directed(graph_pathway,
+              col.arrow = c(alpha("navyblue", 0.25),
+                            alpha("red", 0.25))[edge_properties],
+              fill.node = c("lightblue"),
+              layout = layout.kamada.kawai)
+</pre>
+<p>This plotting function is demonstrated in more detail
+in the plots_directed.Rmd plotting vignette.
+</p>
+
+
+<h3>Further information</h3>
+
+<p>The graphsim package is published in the <em>Journal of Open Source Software</em>.
+See the paper here for more details:
+<a href="https://doi.org/10.21105/joss.02161">doi:10.21105/joss.02161</a>
+</p>
+<p>The graphsim GitHub repository is here:
+<a href="https://github.com/TomKellyGenetics/graphsim">TomKellyGenetics/graphsim</a>
+You can find the development version and submit an
+<a href="https://github.com/TomKellyGenetics/graphsim/issues/new/choose">issue</a>
+if you have questions or comments.
+</p>
+
+
+<h3>Citation</h3>
+
+<p>To cite package 'graphsim' in publications use:
+</p>
+<p>Kelly, S.T. and Black, M.A. (2020). graphsim: An R package for simulating gene
+expression data from graph structures of biological pathways.
+<em>Journal of Open Source Software</em>, <b>5</b>(51), 2161,
+<a href="https://doi.org/10.21105/joss.02161">doi:10.21105/joss.02161</a>
+</p>
+<p>A BibTeX entry for LaTeX users is: </p>
+<pre>
+  @article{Kelly2020joss02161,
+     doi = {10.21105/joss.02161},
+     year = {2020},
+     publisher = {The Open Journal},
+     volume = {5},
+     number = {51},
+     pages = {2161},
+     author = {S. Thomas Kelly and Michael A. Black},
+     title = {graphsim: An R package for simulating gene expression data from graph structures of biological pathways},
+     journal = {Journal of Open Source Software} 
+   }
+ </pre>
+
+
+<h3>Author(s)</h3>
+
+<p><b>Maintainer</b>:  Tom Kelly  <a href="mailto:tom.kelly@riken.jp">tom.kelly@riken.jp</a>
+</p>
+<p>Authors:
+</p>
+
+<ul>
+<li>
+<p> Tom Kelly (RIKEN IMS) <a href="https://orcid.org/0000-0003-3904-6690">ORCID</a>)
+</p>
+</li>
+<li>
+<p> Mik Black (Otago University) (<a href="https://orcid.org/0000-0003-1174-6054">ORCID</a>)
+</p>
+</li>
+</ul>
+<p>Reviewers:
+</p>
+
+<ul>
+<li>
+<p> Cory Brunson (UConn) (<a href="https://orcid.org/0000-0003-3126-9494">ORCID</a>)
+</p>
+</li>
+<li>
+<p> Robrecht Cannoodt (Ghent University) (<a href="https://orcid.org/0000-0003-3641-729X">ORCID</a>)
+</p>
+</li>
+</ul>
+<p>Editor: Mark Jensen (Frederick National Laboratory for Cancer Research)
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Publication at <em>Journal of Open Source Software</em>:
+</p>
+
+<ul><li> <p><a href="https://doi.org/10.21105/joss.02161">doi:10.21105/joss.02161</a>
+</p>
+</li></ul>
+<p>GitHub repository:
+</p>
+
+<ul><li> <p><a href="https://github.com/TomKellyGenetics/graphsim/">https://github.com/TomKellyGenetics/graphsim/</a>
+</p>
+</li></ul>
+<p>Report bugs:
+</p>
+
+<ul><li> <p><a href="https://github.com/TomKellyGenetics/graphsim/issues">https://github.com/TomKellyGenetics/graphsim/issues</a>
+</p>
+</li></ul>
+<p>Contributions:
+</p>
+
+<ul><li> <p><a href="https://github.com/TomKellyGenetics/graphsim/blob/master/CONTRIBUTING.md">https://github.com/TomKellyGenetics/graphsim/blob/master/CONTRIBUTING.md</a>
+</p>
+</li></ul>
+</div>

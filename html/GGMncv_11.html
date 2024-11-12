@@ -1,0 +1,469 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ggmncv</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>GGMncv</h2>
+
+<h3>Description</h3>
+
+<script id="MathJax-script" async src="../../mathjaxr/doc/mathjax/es5/tex-chtml-full.js"></script><p>Gaussian graphical modeling with nonconvex regularization. A thorough survey
+of these penalties, including simulation studies investigating their properties,
+is provided in Williams (2020).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ggmncv(
+  R,
+  n,
+  penalty = "atan",
+  ic = "bic",
+  select = "lambda",
+  gamma = NULL,
+  lambda = NULL,
+  n_lambda = 50,
+  lambda_min_ratio = 0.01,
+  n_gamma = 50,
+  initial = NULL,
+  LLA = FALSE,
+  unreg = FALSE,
+  maxit = 10000,
+  thr = 1e-04,
+  store = TRUE,
+  progress = TRUE,
+  ebic_gamma = 0.5,
+  penalize_diagonal = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>Matrix. A correlation matrix of dimensions <em>p</em> by <em>p</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Numeric. The sample size used to compute the information criterion.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalty</code></td>
+<td>
+<p>Character string. Which penalty should be used (defaults to <code>"atan"</code>)?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ic</code></td>
+<td>
+<p>Character string. Which information criterion should be used (defaults to <code>"bic"</code>)?
+The options include <code>aic</code>, <code>ebic</code> (ebic_gamma defaults to <code>0.5</code>),
+<code>ric</code>, or any of the generalized information criteria provided in section 5 of
+Kim et al. (2012). The options are <code>gic_1</code>
+(i.e., <code>bic</code>) to <code>gic_6</code> (see '<code>Details</code>').</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>select</code></td>
+<td>
+<p>Character string. Which tuning parameter should be selected
+(defaults to <code>"lambda"</code>)? The options include <code>"lambda"</code>
+(the regularization parameter), <code>"gamma"</code> (governs the 'shape'),
+and <code>"both"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>Numeric. Hyperparameter for the penalty function.
+Defaults to 3.7 (<code>scad</code>), 2 (<code>mcp</code>), 0.5 (<code>adapt</code>),
+and 0.01 with all other penalties. Note care must be taken when
+departing from the default values
+(see the references in '<code>note</code>')</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>Numeric vector. Regularization (or tuning) parameters.
+The defaults is <code>NULL</code> that provides default
+values with  <code>select = "lambda"</code> and <code>sqrt(log(p)/n)</code> with
+<code>select = "gamma"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_lambda</code></td>
+<td>
+<p>Numeric. The number of \(\lambda\)'s to be evaluated. Defaults to 50.
+This is disregarded if custom values are provided for <code>lambda</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda_min_ratio</code></td>
+<td>
+<p>Numeric. The smallest value for <code>lambda</code>, as a
+fraction of the upperbound of the
+regularization/tuning parameter. The default is
+<code>0.01</code>, which mimics the <code>R</code> package
+<strong>qgraph</strong>. To mimic the <code>R</code> package
+<strong>huge</strong>, set <code>lambda_min_ratio = 0.1</code>
+and <code>n_lambda = 10</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_gamma</code></td>
+<td>
+<p>Numeric. The number of \(\gamma\)'s to be evaluated. Defaults to 50.
+This is disregarded if custom values are provided in <code>lambda</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial</code></td>
+<td>
+<p>A matrix (<em>p</em> by <em>p</em>) or custom function that returns
+the inverse of the covariance matrix . This is used to compute
+the penalty derivative. The default is <code>NULL</code>, which results
+in using the inverse of <code>R</code> (see '<code>Note</code>').</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LLA</code></td>
+<td>
+<p>Logical. Should the local linear approximation be used (default to <code>FALSE</code>)?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unreg</code></td>
+<td>
+<p>Logical. Should the models be refitted (or unregularized) with maximum likelihood
+(defaults to <code>FALSE</code>)? Setting to <code>TRUE</code> results in the approach of
+Foygel and Drton (2010), but with the regularization path obtained from
+nonconvex regularization, as opposed to the \(\ell_1\)-penalty.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>Numeric. The maximum number of iterations for determining convergence of the LLA
+algorithm (defaults to <code>1e4</code>). Note this can be changed to, say,
+<code>2</code> or <code>3</code>, which will provide  two and three-step estimators
+without convergence check.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thr</code></td>
+<td>
+<p>Numeric. Threshold for determining convergence of the LLA algorithm
+(defaults to <code>1.0e-4</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>store</code></td>
+<td>
+<p>Logical. Should all of the fitted models be saved (defaults to <code>TRUE</code>)?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress</code></td>
+<td>
+<p>Logical. Should a progress bar be included (defaults to <code>TRUE</code>)?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ebic_gamma</code></td>
+<td>
+<p>Numeric. Value for the additional hyper-parameter for the
+extended Bayesian information criterion (defaults to 0.5,
+must be between 0 and 1). Setting <code>ebic_gamma = 0</code> results
+in BIC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalize_diagonal</code></td>
+<td>
+<p>Logical. Should the diagonal of the inverse covariance
+matrix be penalized (defaults to <code>TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to <code>initial</code> when a
+function is provided and ignored otherwise.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Several of the penalties are (continuous) approximations to the
+\(\ell_0\) penalty, that is, best subset selection. However, the solution
+does not require enumerating all possible models which results in a computationally
+efficient solution.
+</p>
+<p><strong>L0 Approximations</strong>
+</p>
+
+<ul>
+<li>
+<p> Atan: <code>penalty = "atan"</code> (Wang and Zhu 2016).
+This is currently the default.
+</p>
+</li>
+<li>
+<p> Seamless \(\ell_0\): <code>penalty = "selo"</code> (Dicker et al. 2013).
+</p>
+</li>
+<li>
+<p> Exponential: <code>penalty = "exp"</code>  (Wang et al. 2018)
+</p>
+</li>
+<li>
+<p> Log: <code>penalty = "log"</code> (Mazumder et al. 2011).
+</p>
+</li>
+<li>
+<p> Sica: <code>penalty = "sica"</code>  (Lv and Fan 2009)
+</p>
+</li>
+</ul>
+<p><strong>Additional penalties</strong>:
+</p>
+
+<ul>
+<li>
+<p> SCAD: <code>penalty = "scad"</code>  (Fan and Li 2001).
+</p>
+</li>
+<li>
+<p> MCP: <code>penalty = "mcp"</code> (Zhang 2010).
+</p>
+</li>
+<li>
+<p> Adaptive lasso (<code>penalty = "adapt"</code>): Defaults to  \(\gamma = 0.5\)
+(Zou 2006). Note that for consistency with the
+other penalties, \(\gamma \rightarrow 0\) provides more penalization and
+\(\gamma = 1\) results in \(\ell_1\) regularization.
+</p>
+</li>
+<li>
+<p> Lasso:  <code>penalty = "lasso"</code>  (Tibshirani 1996).
+</p>
+</li>
+</ul>
+<p><strong>gamma</strong> (\(\gamma\)):
+</p>
+<p>The <code>gamma</code> argument corresponds to additional hyperparameter for each penalty.
+The defaults are set to the recommended values from the respective papers.
+</p>
+<p><strong>LLA</strong>
+</p>
+<p>The local linear approximate is noncovex penalties was described in
+(Fan et al. 2009). This is essentially an iteratively
+re-weighted (g)lasso. Note that by default <code>LLA = FALSE</code>. This is due to
+the work of Zou and Li (2008), which suggested that,
+so long as the starting values are good enough, then a one-step estimator is
+sufficient to obtain an accurate estimate of the conditional dependence structure.
+In the case of low-dimensional data, the sample based inverse
+covariance matrix is used for the starting values. This is expected to work well,
+assuming that \(n\) is sufficiently larger than  \(p\).
+</p>
+<p><strong>Generalized Information Criteria</strong>
+</p>
+<p>The following are the available GIC:
+</p>
+
+<ul>
+<li> \(\textrm{GIC}_1:  |\textbf{E}| \cdot \textrm{log}(n)\)
+<p>(<code>ic = "gic_1"</code>  or <code>ic = "bic"</code>)
+</p>
+</li>
+<li>  \(\textrm{GIC}_2: |\textbf{E}| \cdot p^{1/3}\)
+<p>(<code>ic = "gic_2"</code>)
+</p>
+</li>
+<li>  \(\textrm{GIC}_3:  |\textbf{E}| \cdot 2 \cdot \textrm{log}(p)\)
+<p>(<code>ic = "gic_3"</code> or <code>ic = "ric"</code>)
+</p>
+</li>
+<li> \(\textrm{GIC}_4: |\textbf{E}| \cdot 2 \cdot \textrm{log}(p) +
+      \textrm{log}\big(\textrm{log}(p)\big)\)
+<p>(<code>ic = "gic_4"</code>)
+</p>
+</li>
+<li> \(\textrm{GIC}_5: |\textbf{E}| \cdot \textrm{log}(p) +
+       \textrm{log}\big(\textrm{log}(n)\big) \cdot \textrm{log}(p)\)
+<p>(<code>ic = "gic_5"</code>)
+</p>
+</li>
+<li> \(\textrm{GIC}_6: |\textbf{E}| \cdot \textrm{log}(n)
+       \cdot \textrm{log}(p)\)
+<p>(<code>ic = "gic_6"</code>)
+</p>
+</li>
+</ul>
+<p>Note that \(|\textbf{E}|\) denotes the number of edges (nonzero relations)
+in the graph, \(p\) the number of nodes (columns), and
+\(n\) the number of observations (rows).
+Further each can be understood as a penalty term added to
+negative 2 times the log-likelihood, that is,
+</p>
+\(-2 l_n(\hat{\boldsymbol{\Theta}}) = -2 \Big[\frac{n}{2} \textrm{log} \textrm{det}
+\hat{\boldsymbol{\Theta}} - \textrm{tr}(\hat{\textbf{S}}\hat{\boldsymbol{\Theta}})\Big]\)
+<p>where \(\hat{\boldsymbol{\Theta}}\) is the estimated precision matrix
+(e.g., for a given \(\lambda\) and \(\gamma\))
+and \(\hat{\textbf{S}}\) is the sample-based covariance matrix.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>ggmncv</code>, including:
+</p>
+
+<ul>
+<li> <p><code>Theta</code> Inverse covariance matrix
+</p>
+</li>
+<li> <p><code>Sigma</code> Covariance matrix
+</p>
+</li>
+<li> <p><code>P</code> Weighted adjacency matrix
+</p>
+</li>
+<li> <p><code>adj</code> Adjacency matrix
+</p>
+</li>
+<li> <p><code>lambda</code> Tuning parameter(s)
+</p>
+</li>
+<li> <p><code>fit</code> glasso fitted model (a list)
+</p>
+</li>
+</ul>
+<h3>Note</h3>
+
+<p><strong>initial</strong>
+</p>
+<p><code>initial</code> not only affects performance (to some degree) but also
+computational speed. In high dimensions (defined here as <em>p</em> &gt; <em>n</em>),
+or when <em>p</em> approaches <em>n</em>, the precision matrix can become quite unstable.
+As a result, with <code>initial = NULL</code>, the algorithm can take a very (very) long time.
+If this occurs, provide a matrix for <code>initial</code> (e.g., using <code>lw</code>).
+Alternatively, the penalty can be changed to <code>penalty = "lasso"</code>, if desired.
+</p>
+<p>The <code>R</code> package <strong>glassoFast</strong> is under the hood of <code>ggmncv</code>
+(Sustik and Calderhead 2012), which is much faster than
+<strong>glasso</strong> when there are many nodes.
+</p>
+
+
+<h3>References</h3>
+
+<p>Dicker L, Huang B, Lin X (2013).
+“Variable selection and estimation with the seamless-L 0 penalty.”
+<em>Statistica Sinica</em>, 929–962.<br><br> Fan J, Feng Y, Wu Y (2009).
+“Network exploration via the adaptive LASSO and SCAD penalties.”
+<em>The annals of applied statistics</em>, <b>3</b>(2), 521.<br><br> Fan J, Li R (2001).
+“Variable selection via nonconcave penalized likelihood and its oracle properties.”
+<em>Journal of the American statistical Association</em>, <b>96</b>(456), 1348–1360.<br><br> Foygel R, Drton M (2010).
+“Extended Bayesian Information Criteria for Gaussian Graphical Models.”
+<em>Advances in Neural Information Processing Systems</em>, 604–612.
+1011.6640.<br><br> Kim Y, Kwon S, Choi H (2012).
+“Consistent model selection criteria on high dimensions.”
+<em>The Journal of Machine Learning Research</em>, <b>13</b>, 1037–1057.<br><br> Lv J, Fan Y (2009).
+“A unified approach to model selection and sparse recovery using regularized least squares.”
+<em>The Annals of Statistics</em>, <b>37</b>(6A), 3498–3528.<br><br> Mazumder R, Friedman JH, Hastie T (2011).
+“Sparsenet: Coordinate descent with nonconvex penalties.”
+<em>Journal of the American Statistical Association</em>, <b>106</b>(495), 1125–1138.<br><br> Sustik MA, Calderhead B (2012).
+“GLASSOFAST: An efficient GLASSO implementation.”
+<em>UTCS Technical Report TR-12-29 2012</em>.<br><br> Tibshirani R (1996).
+“Regression shrinkage and selection via the lasso.”
+<em>Journal of the Royal Statistical Society: Series B (Methodological)</em>, <b>58</b>(1), 267–288.<br><br> Wang Y, Fan Q, Zhu L (2018).
+“Variable selection and estimation using a continuous approximation to the L0 penalty.”
+<em>Annals of the Institute of Statistical Mathematics</em>, <b>70</b>(1), 191–214.<br><br> Wang Y, Zhu L (2016).
+“Variable selection and parameter estimation with the Atan regularization method.”
+<em>Journal of Probability and Statistics</em>.<br><br> Williams DR (2020).
+“Beyond Lasso: A Survey of Nonconvex Regularization in Gaussian Graphical Models.”
+<em>PsyArXiv</em>.<br><br> Zhang C (2010).
+“Nearly unbiased variable selection under minimax concave penalty.”
+<em>The Annals of statistics</em>, <b>38</b>(2), 894–942.<br><br> Zou H (2006).
+“The adaptive lasso and its oracle properties.”
+<em>Journal of the American statistical association</em>, <b>101</b>(476), 1418–1429.<br><br> Zou H, Li R (2008).
+“One-step sparse estimates in nonconcave penalized likelihood models.”
+<em>Annals of statistics</em>, <b>36</b>(4), 1509.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+# data
+Y &lt;- GGMncv::ptsd
+
+S &lt;- cor(Y)
+
+# fit model
+# note: atan default
+fit_atan &lt;- ggmncv(S, n = nrow(Y),
+                   progress = FALSE)
+
+# plot
+plot(get_graph(fit_atan),
+     edge_magnify = 10,
+     node_names = colnames(Y))
+
+# lasso
+fit_l1 &lt;- ggmncv(S, n = nrow(Y),
+                 progress = FALSE,
+                 penalty = "lasso")
+
+# plot
+plot(get_graph(fit_l1),
+     edge_magnify = 10,
+     node_names = colnames(Y))
+
+
+# for these data, we might expect all relations to be positive
+# and thus the red edges are spurious. The following re-estimates
+# the graph, given all edges positive (sign restriction).
+
+# set negatives to zero (sign restriction)
+adj_new &lt;- ifelse( fit_atan$P &lt;= 0, 0, 1)
+
+check_zeros &lt;- TRUE
+
+# track trys
+iter &lt;- 0
+
+# iterate until all positive
+while(check_zeros){
+  iter &lt;- iter + 1
+  fit_new &lt;- constrained(S, adj = adj_new)
+  check_zeros &lt;- any(fit_new$wadj &lt; 0)
+  adj_new &lt;- ifelse( fit_new$wadj &lt;= 0, 0, 1)
+}
+
+# make graph object
+new_graph &lt;- list(P = fit_new$wadj,
+                  adj = adj_new)
+class(new_graph) &lt;- "graph"
+
+plot(new_graph,
+     edge_magnify = 10,
+     node_names = colnames(Y))
+
+
+</code></pre>
+
+
+</div>

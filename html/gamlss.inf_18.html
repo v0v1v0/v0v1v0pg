@@ -1,0 +1,142 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>summary.gamlssinf0to1</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Summarizes an inflated GAMLSS fitted model</h2>
+
+<h3>Description</h3>
+
+<p>These are specific methods for the generic function <code>summary</code> which summarize objects retuned by <code>gamlssinf0to1</code> or <code>gamlssZadj</code>. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'gamlssinf0to1'
+summary(object, type = c("vcov", "qr"),
+       robust=FALSE, save = FALSE, hessian.fun = c("R", "PB"), 
+       digits = max(3, getOption("digits") - 3),...)
+
+## S3 method for class 'gamlssZadj'
+summary(object, type = c("vcov", "qr"),
+       robust=FALSE, save = FALSE, hessian.fun = c("R", "PB"), 
+       digits = max(3, getOption("digits") - 3),...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>a gamlssinf0to1 or gamlssZadj fitted model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>the default value <code>vcov</code> uses the <code>vcov()</code> method for gamlss to get the 
+variance-covariance  matrix of the estimated beta coefficients, see details below. 
+The alternative <code>qr</code> is the original method used in gamlss to 
+estimated the standard errors but it is not reliable since it do not take into the account the inter-correlation between
+the distributional parameters <code>mu</code>, <code>sigma</code>, <code>nu</code> and <code>tau</code>, while the inflation  parameters <code>xi0</code> and <code>xi1</code> are uncorrelated anywway. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>robust</code></td>
+<td>
+<p>whether robust (sandwich) standard errors are required</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save</code></td>
+<td>
+<p>whether to save the environment of the function so to have access to its values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian.fun</code></td>
+<td>
+<p>whether when calculate the Hessian should use the "R" function <code>optimHess()</code> or a function based on Pinheiro and Bates <code>nlme</code> package, "PB".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>the number of digits in the output</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>for extra arguments</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Using the  default value <code>type="vcov"</code>, the <code>vcov()</code> method is used to get  
+the variance covariance matrix (and consequently the standard errors) of the beta parameters. 
+The variance covariance matrix is  calculated using the inverse of the numerical second derivatives
+of the observed information matrix. This is a more reliable method since it take into the account the 
+inter-correlation between the all the parameters. The <code>type="qr"</code> assumes that the parameters are fixed 
+at the estimated values. Note that both methods are not appropriate and should be used with caution if smoothing 
+terms are used in the fitting. </p>
+
+
+<h3>Value</h3>
+
+<p>Print summary of a gamlssinf0to1 or a gamlssZadj object
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Abu Hossain, Mikis Stasinopoulos <a href="mailto:mikis.stasinopoulos@gamlss.org">mikis.stasinopoulos@gamlss.org</a>, Bob Rigby and Marco Enea </p>
+
+
+<h3>References</h3>
+
+<p>Houssain, A., Stasinopoulos, M., Rigby, R. and Enea, M. (2015). Centile estimation for a proportion response variable. Accepted for publication on <em>Statistics in Medicine</em>.  <br></p>
+<p>Rigby, R. A. and  Stasinopoulos D. M. (2005). Generalized additive models for location, scale and shape,(with discussion), 
+<em>Appl. Statist.</em>, <b>54</b>, part 3, pp 507-554.
+</p>
+<p>Stasinopoulos D. M., Rigby R.A. and Akantziliotou C. (2003) Instructions on how to use the GAMLSS package in R.
+Accompanying documentation in the current GAMLSS  help files, (see also  <a href="http://www.gamlss.org/">http://www.gamlss.org/</a>).
+</p>
+<p>Stasinopoulos D. M. Rigby R.A. (2007) Generalized additive models for location scale and shape (GAMLSS) in R.
+<em>Journal of Statistical Software</em>, Vol. <b>23</b>, Issue 7, Dec 2007, <a href="http://www.jstatsoft.org/v23/i07">http://www.jstatsoft.org/v23/i07</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+  <p><code>gamlssInf0to1</code>, <code>gamlssZadj</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# The gamlssZadj example 
+set.seed(3210)
+x &lt;- (runif(1000)*4)-2
+data(sda)
+fmu &lt;- splinefun(sda$x, sda$mu)
+fsigma &lt;- splinefun(sda$x, sda$sigma)
+fnu &lt;- function(x)
+  {f &lt;- splinefun(sda$x, sda$nu)
+f(x)/6
+}
+y0 &lt;- rZAGA(1000, mu=fmu(x), sigma=fsigma(x), nu=fnu(x))
+da &lt;- data.frame(y0,x)
+t0p &lt;- gamlssZadj(y=y0, mu.fo=~pb(x), sigma.fo=~pb(x),data=da,
+                  trace=TRUE, xi0.fo=~pb(x), family="GA")
+summary(t0p)
+</code></pre>
+
+
+</div>

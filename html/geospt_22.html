@@ -1,0 +1,116 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rbf</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+gaussian, exponential, trigonometric, thin plate spline, inverse multiquadratic, and multiquadratic radial basis function prediction
+</h2>
+
+<h3>Description</h3>
+
+               
+<p>Function for gaussian (GAU), exponential (EXPON), trigonometric (TRI), thin plate spline (TPS), completely regularized spline (CRS), 
+spline with tension (ST), inverse multiquadratic (IM), and multiquadratic (M) radial basis function (<em>rbf</em>),
+where <em>rbf</em> is in a local neighbourhood
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rbf(formula, data, eta, rho, newdata, n.neigh, func)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>formula that defines the dependent variable as a linear model of independent variables; suppose the dependent variable has name <code>z</code>, for a <em>rbf</em> detrended use <code>z~1</code>, for a <em>rbf</em> with trend, suppose <code>z</code> is linearly dependent on <code>x</code> and <code>y</code>, use the formula <code>z~x+y</code> (linear trend).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>SpatialPointsDataFrame: should contain the dependent variable, independent variables, and coordinates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta</code></td>
+<td>
+<p>the optimal smoothing parameter, we recommend using the parameter
+found by minimizing the root-mean-square prediction errors using cross-validation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>the optimal parameter robustness, we recommend using the parameter
+found by minimizing the root-mean-square prediction errors using cross-validation.
+eta and rho parameters can be optimized simultaneously, through the <code>bobyqa</code> function from <code>nloptr</code> or <code>minqa</code> packages</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>data frame or spatial object with prediction/simulation locations; should contain attribute columns with the independent variables (if present) and (if locations is a formula) the coordinates with names, as defined in locations where you want to generate new predictions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.neigh</code></td>
+<td>
+<p>number of nearest observations that should be used for a <em>rbf</em>
+prediction, where nearest is defined in terms of the spatial locations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>func</code></td>
+<td>
+<p>radial basis function model type, e.g. "GAU", "EXPON", "TRI", "TPS", "CRS", "ST", "IM" and "M", are currently available</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>rbf function generates individual predictions from gaussian (GAU), exponential (EXPON), trigonometric (TRI)
+thin plate spline (TPS), completely regularized spline (CRS), spline with tension (ST), 
+inverse multiquadratic (IM), and multiquadratic (M) functions
+</p>
+
+
+<h3>Value</h3>
+
+<p>Attributes columns contain coordinates, predictions, and the variance
+column contains NA's
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(preci)
+coordinates(preci) &lt;- ~x+y
+
+# prediction case: one point
+point &lt;- data.frame(3,4)
+names(point) &lt;- c("x","y")
+coordinates(point) &lt;- ~x+y
+rbf(prec~x+y, preci, eta=0.1460814, rho=0, newdata=point,n.neigh=10, func="TPS")
+
+# prediction case: a grid of points
+puntos&lt;-expand.grid(x=seq(min(preci$x),max(preci$x),0.05), y=seq(min(preci$y),
+max(preci$y),0.05))
+coordinates(puntos) &lt;- ~x+y
+pred.rbf &lt;- rbf(prec~x+y, preci, eta=0.1460814, rho=0, newdata=puntos, n.neigh=10, func="TPS")
+coordinates(pred.rbf) = c("x", "y")
+gridded(pred.rbf) &lt;- TRUE
+
+# show prediction map
+spplot(pred.rbf["var1.pred"], cuts=40, col.regions=bpy.colors(100),
+main = "rainfall map TPS", key.space=list(space="right", cex=0.8))
+</code></pre>
+
+
+</div>

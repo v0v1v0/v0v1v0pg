@@ -1,0 +1,208 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>de</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Differential Evolution via Genetic Algorithms</h2>
+
+<h3>Description</h3>
+
+<p>Maximization of a fitness function using Differential Evolution (DE).
+DE is a population-based evolutionary algorithm for optimisation of fitness functions defined over a continuous parameter space.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">de(fitness,
+   lower, upper,
+   popSize = 10*d,
+   stepsize = 0.8,
+   pcrossover = 0.5,
+   ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fitness</code></td>
+<td>
+<p>the fitness function, any allowable R function which takes as input a vector of values representing a potential solution, and returns a numerical value describing its “fitness”.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>a vector of length equal to the decision variables providing the lower bounds of the search space.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>a vector of length equal to the decision variables providing the upper bounds of the search space.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>popSize</code></td>
+<td>
+<p>the population size. By default is set at 10 times the number of decision variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pcrossover</code></td>
+<td>
+<p>the probability of crossover, by default set to 0.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stepsize</code></td>
+<td>
+<p>the stepsize or weighting factor. A value in the interval [0,2], by default set to 0.8. If set at <code>NA</code> a random value is selected in the interval [0.5, 1.0] (so called dithering).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments to be passed to the <code>ga</code> function.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Differential Evolution (DE) is a stochastic evolutionary algorithm that optimises multidimensional real-valued fitness functions without requiring the optimisation problem to be differentiable.
+</p>
+<p>This implimentation follows the description in Simon (2013; Sec. 12.4, and Fig. 12.12) and uses the functionalities available in the <code>ga</code> function for Genetic Algorithms. 
+</p>
+<p>The DE selection operator is defined by <code>gareal_de</code> with parameters <code>p = pcrossover</code> and <code>F = stepsize</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns an object of class <code>de-class</code>. See <code>de-class</code> for a description of available slots information.</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Luca Scrucca <a href="mailto:luca.scrucca@unipg.it">luca.scrucca@unipg.it</a></p>
+
+
+<h3>References</h3>
+
+<p>Scrucca L. (2013). GA: A Package for Genetic Algorithms in R.
+<em>Journal of Statistical Software</em>, 53(4), 1-37, <a href="https://doi.org/10.18637/jss.v053.i04">doi:10.18637/jss.v053.i04</a>.
+</p>
+<p>Scrucca, L. (2017) On some extensions to GA package: hybrid optimisation, parallelisation and islands evolution. <em>The R Journal</em>, 9/1, 187-206,  <a href="https://doi.org/10.32614/RJ-2017-008">doi:10.32614/RJ-2017-008</a>.
+</p>
+<p>Simon D. (2013) <em>Evolutionary Optimization Algorithms</em>. John Wiley &amp; Sons.
+</p>
+<p>Price K., Storn R.M., Lampinen J.A. (2005) <em>Differential Evolution: A Practical Approach to Global Optimization</em>. Springer. 
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>summary,de-method</code>, 
+<code>plot,de-method</code>, 
+<code>de-class</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># 1) one-dimensional function
+f &lt;- function(x)  abs(x)+cos(x)
+curve(f, -20, 20)
+
+DE &lt;- de(fitness = function(x) -f(x), lower = -20, upper = 20)
+plot(DE)
+summary(DE)
+
+curve(f, -20, 20, n = 1000)
+abline(v = DE@solution, lty = 3)
+
+# 2) "Wild" function, global minimum at about -15.81515
+
+wild &lt;- function(x) 10*sin(0.3*x)*sin(1.3*x^2) + 0.00001*x^4 + 0.2*x + 80
+plot(wild, -50, 50, n = 1000)
+
+# from help("optim")
+SANN &lt;- optim(50, fn = wild, method = "SANN",
+              control = list(maxit = 20000, temp = 20, parscale = 20))
+unlist(SANN[1:2])
+
+DE &lt;- de(fitness = function(...) -wild(...), lower = -50, upper = 50)
+plot(DE)
+summary(DE)
+
+# 3) two-dimensional Rastrigin function
+
+Rastrigin &lt;- function(x1, x2)
+{
+  20 + x1^2 + x2^2 - 10*(cos(2*pi*x1) + cos(2*pi*x2))
+}
+
+x1 &lt;- x2 &lt;- seq(-5.12, 5.12, by = 0.1)
+f &lt;- outer(x1, x2, Rastrigin)
+persp3D(x1, x2, f, theta = 50, phi = 20, col.palette = bl2gr.colors)
+
+DE &lt;- de(fitness = function(x) -Rastrigin(x[1], x[2]),
+         lower = c(-5.12, -5.12), upper = c(5.12, 5.12),
+         popSize = 50)
+plot(DE)
+summary(DE)
+
+filled.contour(x1, x2, f, color.palette = bl2gr.colors,
+               plot.axes = { axis(1); axis(2); 
+                             points(DE@solution, 
+                                    col = "yellow", pch = 3, lwd = 2) })
+
+# 4) two-dimensional Ackley function
+
+Ackley &lt;- function(x1, x2)
+{
+  -20*exp(-0.2*sqrt(0.5*(x1^2 + x2^2))) - 
+  exp(0.5*(cos(2*pi*x1) + cos(2*pi*x2))) + exp(1) + 20
+}
+
+x1 &lt;- x2 &lt;- seq(-3, 3, by = 0.1)
+f &lt;- outer(x1, x2, Ackley)
+persp3D(x1, x2, f, theta = 50, phi = 20, col.palette = bl2gr.colors)
+
+DE &lt;- de(fitness = function(x) -Ackley(x[1], x[2]),
+         lower = c(-3, -3), upper = c(3, 3),
+         stepsize = NA)
+plot(DE)
+summary(DE)
+
+filled.contour(x1, x2, f, color.palette = bl2gr.colors,
+               plot.axes = { axis(1); axis(2); 
+                             points(DE@solution, 
+                                    col = "yellow", pch = 3, lwd = 2) })
+                                    
+# 5) Curve fitting example (see Scrucca JSS 2013)
+
+## Not run: 
+# subset of data from data(trees, package = "spuRs")
+tree &lt;- data.frame(Age = c(2.44, 12.44, 22.44, 32.44, 42.44, 52.44, 62.44, 
+                           72.44, 82.44, 92.44, 102.44, 112.44),
+                   Vol = c(2.2, 20, 93, 262, 476, 705, 967, 1203, 1409, 
+                           1659, 1898, 2106))
+richards &lt;- function(x, theta) 
+  { theta[1]*(1 - exp(-theta[2]*x))^theta[3] }
+fitnessL2 &lt;- function(theta, x, y) 
+  { -sum((y - richards(x, theta))^2) }
+DE &lt;- de(fitness = fitnessL2, x = tree$Age, y = tree$Vol, 
+         lower = c(3000, 0, 2), upper = c(4000, 1, 4),
+         popSize = 500, maxiter = 1000, run = 100, 
+         names = c("a", "b", "c"))
+summary(DE)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

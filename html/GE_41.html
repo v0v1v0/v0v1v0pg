@@ -1,0 +1,182 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemFirmAsConsumer</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some Examples of Treating Firms as Consumer-Type Agents</h2>
+
+<h3>Description</h3>
+
+<p>Some examples of equilibrium models wherein firms are treated as
+consumer-type agents instead of producer-type agents.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemFirmAsConsumer(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>See Also</h3>
+
+
+<p><code>gemIntertemporal_2_2</code>
+
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### an intertemporal model with firm
+## (see gemIntertemporal_2_2)
+np &lt;- 3 # the number of economic periods
+
+S0Exg &lt;- matrix(c(
+  0, 0, 150,
+  1000, 0, 0,
+  0, 1000, 0,
+  0, 0, 100,
+  0, 0, 100
+), 5, 3, TRUE)
+
+B &lt;- matrix(0, 5, 3, TRUE)
+
+dst.firm1 &lt;- node_new("util",
+  type = "StickyLinear",
+  beta = c(1, 1),
+  "prod2", "cc1"
+)
+node_set(dst.firm1, "cc1",
+  type = "CD",
+  alpha = 2, beta = c(0.5, 0.5),
+  "prod1", "lab1"
+)
+
+dst.firm2 &lt;- node_new("util",
+  type = "StickyLinear",
+  beta = c(1, 1),
+  "prod3", "cc1"
+)
+node_set(dst.firm2, "cc1",
+  type = "CD",
+  alpha = 2, beta = c(0.5, 0.5),
+  "prod2", "lab2"
+)
+
+dst.consumer &lt;- node_new(
+  "util",
+  type = "CD",
+  alpha = 1, beta = prop.table(rep(1, np)),
+  paste0("prod", 1:np)
+)
+
+ge &lt;- sdm2(
+  A = list(dst.firm1, dst.firm2, dst.consumer),
+  B = B,
+  S0Exg = S0Exg,
+  names.commodity = c(paste0("prod", 1:np), paste0("lab", 1:(np - 1))),
+  names.agent = c(paste0("firm", 1:(np - 1)), "consumer"),
+  numeraire = "prod1",
+  ts = TRUE
+)
+
+#### an intertemporal model with bank
+igr &lt;- 1.1
+beta.bank &lt;- c(1, 1 / igr, 1 / igr^2)
+
+dst.bank &lt;- node_new(
+  "output",
+  type = "StickyLinear",
+  beta = beta.bank,
+  "payoff1", "payoff2", "payoff3"
+)
+
+dst.consumer &lt;- node_new(
+  "util",
+  type = "CD", alpha = 1, beta = c(1 / 2, 1 / 6, 1 / 3),
+  "payoff1", "payoff2", "payoff3"
+)
+
+ge &lt;- sdm2(
+  A = list(dst.bank, dst.consumer),
+  B = matrix(0, 3, 2, TRUE),
+  S0Exg = matrix(c(
+    100, 0,
+    100, 2,
+    100, 1
+  ), 3, 2, TRUE),
+  names.commodity = c("payoff1", "payoff2", "payoff3"),
+  names.agent = c("bank", "consumer"),
+  numeraire = "payoff1"
+)
+
+#### an instantaneous sequential model
+dst.firm &lt;- node_new("output",
+  type = "StickyLinear",
+  beta = c(1, 1),
+  "prod", "cc1"
+)
+node_set(dst.firm, "cc1",
+  type = "CD",
+  alpha = 2, beta = c(0.5, 0.5),
+  "cap", "lab"
+)
+
+dst.consumer &lt;- node_new("util",
+  type = "Leontief",
+  a = 1,
+  "prod"
+)
+
+ge &lt;- sdm2(
+  A = list(dst.firm, dst.consumer),
+  B = matrix(0, 3, 2, TRUE),
+  S0Exg = matrix(c(
+    1000, 0,
+    0, 50,
+    0, 100
+  ), 3, 2, TRUE),
+  names.commodity = c("prod", "cap", "lab"),
+  names.agent = c("firm", "consumer"),
+  numeraire = "prod"
+)
+ge$p
+ge$z
+ge$D
+
+## the corresponding model treating a firm as a producer-type agent
+ge &lt;- sdm2(
+  A = function(state) {
+    a1 &lt;- CD_A(alpha = 2, Beta = c(0, 0.5, 0.5), p = state$p)
+    a2 &lt;- c(1, 0, 0)
+    cbind(a1, a2)
+  },
+  B = diag(c(1, 0), 3, 2),
+  S0Exg = matrix(c(
+    NA, NA,
+    NA, 50,
+    NA, 100
+  ), 3, 2, TRUE),
+  names.commodity = c("prod", "cap", "lab"),
+  names.agent = c("firm", "consumer"),
+  numeraire = "prod"
+)
+ge$p
+ge$z
+ge$D
+
+</code></pre>
+
+
+</div>

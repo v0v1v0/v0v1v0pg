@@ -1,0 +1,172 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>echelon</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Echelon Rotation</h2>
+
+<h3>Description</h3>
+
+<p>Rotate to an echelon parameterization.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">    echelon(L, reference=seq(NCOL(L)), ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+<p>a factor loading matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reference</code></td>
+<td>
+<p>indicates rows of loading matrix that should be 
+used to determine the rotation transformation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments discarded.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The loadings matrix is rotated so the <code class="reqn">k</code> rows of the loading matrix 
+indicated by <code>reference</code> are the Cholesky factorization given by 
+<code>t(chol(L[reference,] %*% t(L[reference,])))</code>.
+This defines the
+rotation transformation, which is then also applied to other rows to 
+give the new loadings matrix.
+</p>
+<p>The optimization is not iterative and does not use the GPA algorithm.  
+The function can be used directly or the
+function name can be passed to factor analysis functions like <code>factanal</code>.
+An orthogonal solution is assumed (so <code class="reqn">\Phi</code> is identity).
+</p>
+<p>The default uses the first <code class="reqn">k</code> rows 
+as the reference. If the submatrix of <code>L</code> indicated by reference is 
+singular then the rotation will fail and the
+user needs to supply a different choice of rows.
+</p>
+<p>One use of this parameterization is
+for obtaining good starting values (so it may appear strange
+to rotate towards this solution afterwards). It has a few other purposes: 
+</p>
+<p>(1) It can be useful for comparison with
+published results in this parameterization.
+</p>
+<p>(2) The S.E.s are more straightforward to compute, because it is the solution 
+to an unconstrained optimization (though not necessarily computed as such). 
+</p>
+<p>(3) The models with k and (k+1) factors are nested, so it
+is more straightforward to test the k-factor model versus the
+(k+1)-factor model. In particular, in addition to the LR test
+(which does not depend on the rotation), now the Wald test
+and LM test can be used as well. For these, the test of a
+k-factor model versus a (k+1)-factor model is a 
+joint test whether all the free parameters (loadings) in the (k+1)st 
+column of <code>L</code> are zero.
+</p>
+<p>(4) For some purposes, only the subspace spanned by the factors
+is important, not the specific parameterization within this subspace.
+</p>
+<p>(5) The back-predicted indicators (explained portion of the indicators) 
+do not depend
+on the rotation method. Combined with the greater ease to obtain
+correct standard errors of this method, this allows easier and more
+accurate prediction-standard errors.  
+</p>
+<p>(6) This parameterization and its standard errors can be used to
+detect identification problems (McDonald, 1999, pp. 181-182).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list (which includes elements used by <code>factanal</code>) with:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>loadings</code></td>
+<td>
+<p>The new loadings matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Th</code></td>
+<td>
+<p>The rotation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>A string indicating the rotation objective function ("echelon").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>orthogonal</code></td>
+<td>
+<p>For consistency with other rotation results. Always TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convergence</code></td>
+<td>
+<p>For consistency with other rotation results. Always TRUE.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Erik Meijer and Paul Gilbert.</p>
+
+
+<h3>References</h3>
+
+<p>Roderick P. McDonald (1999)
+<em>Test Theory: A Unified Treatment</em>, Mahwah, NJ: Erlbaum.
+</p>
+<p>Tom Wansbeek and Erik Meijer (2000) <em>Measurement Error and 
+Latent Variables in Econometrics</em>, Amsterdam: North-Holland.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>eiv</code>, 
+<code>rotations</code>, 
+<code>GPForth</code>, 
+<code>GPFoblq</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">  data("WansbeekMeijer", package="GPArotation")
+  fa.unrotated  &lt;- factanal(factors = 2, covmat=NetherlandsTV, rotation="none")
+
+  fa.ech &lt;- echelon(fa.unrotated$loadings)
+ 
+  fa.ech2 &lt;- factanal(factors = 2, covmat=NetherlandsTV, rotation="echelon")
+  
+  cbind(loadings(fa.unrotated), loadings(fa.ech), loadings(fa.ech2))
+
+  fa.ech3 &lt;- echelon(fa.unrotated$loadings, reference=6:7)
+  cbind(loadings(fa.unrotated), loadings(fa.ech), loadings(fa.ech3))
+  </code></pre>
+
+
+</div>

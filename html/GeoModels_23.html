@@ -1,0 +1,984 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GeoCovmatrix</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Spatial and Spatio-temporal Covariance Matrix of (non) Gaussian random fields</h2>
+
+<h3>Description</h3>
+
+<p>The function computes the  covariance matrix associated to 
+a spatial or spatio(-temporal) or a bivariate spatial Gaussian or non Gaussian randomm field
+with given  underlying covariance model and a  set of spatial location sites (and temporal instants).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GeoCovmatrix(estobj=NULL,coordx, coordy=NULL, coordt=NULL, coordx_dyn=NULL, corrmodel,
+          distance="Eucl", grid=FALSE, maxdist=NULL, maxtime=NULL,
+          model="Gaussian", n=1, param, anisopars=NULL, radius=6371, sparse=FALSE,
+          taper=NULL, tapsep=NULL, type="Standard",copula=NULL,X=NULL,spobj=NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>estobj</code></td>
+<td>
+<p>An object of class Geofit that includes information about data, model and estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordx</code></td>
+<td>
+<p>A numeric (<code class="reqn">d \times 2</code>)-matrix (where
+<code>d</code> is the number of spatial sites) giving 2-dimensions 
+of spatial coordinates or a numeric <code class="reqn">d</code>-dimensional vector giving
+1-dimension of spatial coordinates. Coordinates on a sphere for a 
+fixed radius <code>radius</code> are passed in lon/lat format expressed in decimal degrees.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordy</code></td>
+<td>
+<p>A numeric vector giving 1-dimension of
+spatial coordinates; <code>coordy</code> is interpreted only 
+if <code>coordx</code> is a numeric vector or <code>grid=TRUE</code> otherwise it 
+will be ignored. Optional argument, the default is <code>NULL</code> then
+<code>coordx</code> is expected to be numeric a (<code class="reqn">d \times 2</code>)-matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordt</code></td>
+<td>
+<p>A numeric vector giving 1-dimension of
+temporal coordinates. At the moment implemented only for the
+Gaussian case. Optional argument, the default is <code>NULL</code>
+then a spatial random field is expected.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordx_dyn</code></td>
+<td>
+<p>A list of <code class="reqn">T</code> numeric (<code class="reqn">d_t \times 2</code>)-matrices
+containing dynamical (in time) coordinates. Optional argument, the default is <code>NULL</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corrmodel</code></td>
+<td>
+<p>String; the name of a correlation model, for the
+description see the Section <b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distance</code></td>
+<td>
+<p>String; the name of the spatial distance. The default
+is <code>Eucl</code>, the euclidean distance. See <code>GeoFit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+<p>Logical; if <code>FALSE</code> (the default) the data
+are interpreted as spatial or spatial-temporal realisations on a set
+of non-equispaced spatial sites (irregular grid). See
+<code>GeoFit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxdist</code></td>
+<td>
+<p>Numeric; an optional positive value indicating the
+marginal spatial compact support in the case of tapered covariance matrix.
+See <code>GeoFit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxtime</code></td>
+<td>
+<p>Numeric; an optional positive value indicating the
+marginal temporal compact support in the case of  spacetime tapered 
+covariance matrix.  See <code>GeoFit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Numeric; the number of trials in a binomial random fields.
+Default is <code class="reqn">1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>String; the type of RF. See <code>GeoFit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>A list of parameter values required  for the covariance
+model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>anisopars</code></td>
+<td>
+<p> A list of two elements "angle" and "ratio" i.e. the anisotropy angle and the anisotropy ratio, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>radius</code></td>
+<td>
+<p>Numeric; a value indicating  the radius of the sphere 
+when using covariance models valid using the great circle distance. 
+Default value is the radius of the earth in Km (i.e. 6371)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sparse</code></td>
+<td>
+<p>Logical; if <code>TRUE</code> the function return an object of class spam.
+This option  should be used when  a parametric compactly supporte covariance is 
+used. Default is FALSE. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>taper</code></td>
+<td>
+<p>String; the name of the taper correlation
+function if type is  <code>Tapering</code>, see the Section <b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tapsep</code></td>
+<td>
+<p>Numeric; an optional  value indicating the separabe parameter in
+the space-time non separable taper or the colocated correlation parameter in a bivariate 
+spatial taper (see <b>Details</b>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>String; the type of covariance matrix
+<code>Standard</code> (the default) or <code>Tapering</code> for tapered covariance matrix. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>copula</code></td>
+<td>
+<p>String; the type of copula. It can be "Clayton" or "Gaussian"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Numeric; Matrix of space-time covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spobj</code></td>
+<td>
+<p>An object of class sp or spacetime</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In the spatial case, the covariance matrix of the 
+random vector </p>
+<p style="text-align: center;"><code class="reqn">[Z(s_1),\ldots,Z(s_n,)]^T</code>
+</p>
+  
+<p>with a specific spatial covariance model is computed. Here  <code class="reqn">n</code> is the number of the spatial location sites.
+</p>
+<p>In the space-time case,  the covariance matrix of the 
+random vector </p>
+<p style="text-align: center;"><code class="reqn">[Z(s_1,t_1),Z(s_2,t_1),\ldots,Z(s_n,t_1),\ldots,Z(s_n,t_m)]^T</code>
+</p>
+
+<p>with a specific  space time covariance model is computed.   Here <code class="reqn">m</code>  is the number of temporal instants.
+</p>
+<p>In the bivariate case, the covariance matrix of the 
+random vector </p>
+<p style="text-align: center;"><code class="reqn">[Z_1(s_1),Z_2(s_1),\ldots,Z_1(s_n),Z_2(s_n)]^T</code>
+</p>
+
+<p>with a specific spatial bivariate covariance model is computed.
+</p>
+<p>The location site <code class="reqn">s_i</code> can be a point in the <code class="reqn">d</code>-dimensional euclidean space with <code class="reqn">d=2</code>
+or a point (given in lon/lat degree format) on a  sphere of arbitrary radius.
+</p>
+<p>A list with all the implemented space and space-time and bivariate 
+correlation models is given below.
+The argument <code>param</code> is a list including all the parameters of a given
+correlation  model specified by  the argument <code>corrmodel</code>.
+For each correlation model one can check the associated  parameters' names using <code>CorrParam</code>.
+In what follows 
+<code class="reqn">\kappa&gt;0</code>, <code class="reqn">\beta&gt;0</code>, <code class="reqn"> \alpha, \alpha_s, \alpha_t \in (0,2] </code>,  and <code class="reqn">\gamma \in [0,1]</code>.
+The associated parameters in the argument <code>param</code> are 
+<code>smooth</code>, <code>power2</code>, <code>power</code>, <code>power_s</code>, <code>power_t</code> and <code>sep</code> respectively.
+Moreover let <code class="reqn">1(A)=1</code>  when <code class="reqn">A</code> is true and <code class="reqn">0</code> otherwise.
+</p>
+
+<ul>
+<li>
+<p> Spatial correlation models:
+</p>
+
+<ol>
+<li> <p><code class="reqn">GenCauchy</code> (generalised <code class="reqn">Cauchy</code> in Gneiting and Schlater (2004)) defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">R(h) = ( 1+h^{\alpha} )^{-\beta / \alpha}</code>
+</p>
+ 
+<p>If <code class="reqn">h</code> is the geodesic distance then <code class="reqn">\alpha \in (0,1]</code>.
+</p>
+</li>
+<li> <p><code class="reqn">Matern</code> defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">R(h) = 2^{1-\kappa} \Gamma(\kappa)^{-1} h^\kappa K_\kappa(h)</code>
+</p>
+
+<p>If <code class="reqn">h</code> is the geodesic distance then <code class="reqn">\kappa \in (0,0.5]</code>
+</p>
+</li>
+<li> <p><code class="reqn">Kummer</code> (Kummer hypergeometric in  Ma and Bhadra (2022)) defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">R(h) = \Gamma(\kappa+\alpha) U(\alpha,1-\kappa,\kappa h^2 ) / \Gamma(\kappa+\alpha)</code>
+</p>
+
+<p><code class="reqn">U(.,.,.)</code> is the Kummer hypergeometric function.
+If <code class="reqn">h</code> is the geodesic distance then <code class="reqn">\kappa \in (0,0.5]</code>
+</p>
+</li>
+<li> <p><code class="reqn">Kummer{\_}Matern</code> It is a rescaled version of the  <code class="reqn">Kummer</code> model  
+that is <code class="reqn">h</code> must be divided by <code class="reqn">2(\kappa(1+\alpha)^{0.5}</code>.  When  <code class="reqn">\alpha</code> goes to infinity it is the Matern model. 
+</p>
+</li>
+<li> <p><code class="reqn">Wave</code> defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">R(h)=sin(h)/h</code>
+</p>
+ 
+<p>This model is valid only for dimensions less than or equal to 3.
+</p>
+</li>
+<li> <p><code class="reqn">GenWend</code> (Generalized Wendland in  Bevilacqua et al.(2019)) defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">R(h) =  A (1-h^2)^{\beta+\kappa} F(\beta/2,(\beta+1)/2,2\beta+\kappa+1,1-h^2) 1(h \in [0,1]) </code>
+</p>
+
+<p>where   <code class="reqn">\mu \ge 0.5(d+1)+\kappa</code>
+and <code class="reqn">A=(\Gamma(\kappa)\Gamma(2\kappa+\beta+1))/(\Gamma(2\kappa)\Gamma(\beta+1-\kappa)2^{\beta+1})</code> and $F(.,.,.)$ 
+is the Gaussian hypergeometric function.
+The cases <code class="reqn">\kappa=0,1,2</code> correspond to the <code class="reqn">Wend0</code>, <code class="reqn">Wend1</code> and <code class="reqn">Wend2</code>  models respectively. 
+</p>
+</li>
+<li> <p><code class="reqn">GenWend_{\_}Matern</code> (Generalized Wendland Matern in  Bevilacqua et al. (2022)). It is defined as a rescaled version of the Generalized Wendland that is <code class="reqn">h</code> must be divided by 
+<code class="reqn">(\Gamma(\beta+2\kappa+1)/\Gamma(\beta))^{1/(1+2\kappa)}</code>. When  <code class="reqn">\beta</code> goes to infinity it is the Matern model.
+</p>
+</li>
+<li> <p><code class="reqn">GenWend_{\_}Matern2</code> (Generalized Wendland Matern second parametrization. It is defined as a rescaled version of the Generalized Wendland that is <code class="reqn">h</code> must be multiplied  by <code class="reqn">\beta</code>  and the smoothness parameter is
+<code class="reqn">\kappa-0.5</code>. When  <code class="reqn">\beta</code> goes to infinity it is the Matern model.
+</p>
+</li>
+<li> <p><code class="reqn">Hypergeometric</code> (Parsimonious Hypegeometric model in Alegria and Emery (2022)) defined as the model <code class="reqn">Hypergeometric2</code> with the restriction <code class="reqn">\beta=\alpha</code>. 
+</p>
+</li>
+<li> <p><code class="reqn">Multiquadric</code> defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">R(h) = (1-\alpha0.5)^{2\beta}/(1+(\alpha0.5)^{2}-\alpha cos(h))^{\beta}, \quad h \in [0,\pi]</code>
+</p>
+
+<p>This model is valid on the unit sphere and <code class="reqn">h</code> is the geodesic distance.
+</p>
+</li>
+<li> <p><code class="reqn">Sinpower</code> defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">R(h) = 1-(sin(h/2))^{\alpha},\quad h \in [0,\pi]</code>
+</p>
+
+<p>This model is valid on the unit sphere and <code class="reqn">h</code> is the geodesic distance.
+</p>
+</li>
+<li> <p><code class="reqn">Smoke</code> (F family in   Alegria et al. (2021)) defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">R(h) =   K*F(1/{\alpha},1/{\alpha}+0.5,
+                2/{\alpha}+0.5+{\kappa}),\quad h \in [0,\pi]</code>
+</p>
+
+<p>where      <code class="reqn">K =(\Gamma(a)\Gamma(i))/\Gamma(i)\Gamma(o)) </code>.      
+This model is valid on the unit sphere and <code class="reqn">h</code> is the geodesic distance.
+</p>
+</li>
+</ol>
+</li>
+<li>
+<p> Spatio-temporal correlation models. 
+</p>
+
+<ul>
+<li>
+<p> Non-separable models:
+</p>
+
+<ol>
+<li> <p><code class="reqn">Gneiting</code> defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">R(h, u) = e^{ -h^{\alpha_s}/((1+u^{\alpha_t})^{0.5 \gamma \alpha_s })}/(1+u^{\alpha_t})</code>
+</p>
+
+</li>
+<li> <p><code class="reqn">Gneiting</code><code>_</code><code class="reqn">GC</code> 
+</p>
+<p style="text-align: center;"><code class="reqn">R(h, u) =  e^{  -u^{\alpha_t} /((1+h^{\alpha_s})^{0.5 \gamma \alpha_t}) }/( 1+h^{\alpha_s}) </code>
+</p>
+
+<p>where <code class="reqn">h</code>  can be both the euclidean and the geodesic distance
+</p>
+</li>
+<li> <p><code class="reqn">Iacocesare</code> 
+</p>
+<p style="text-align: center;"><code class="reqn">R(h, u) = (1+h^{\alpha_s}+u^\alpha_t)^{-\beta}</code>
+</p>
+
+</li>
+<li> <p><code class="reqn">Porcu</code> 
+</p>
+<p style="text-align: center;"><code class="reqn">R(h, u) = (0.5 (1+h^{\alpha_s})^\gamma +0.5 (1+u^{\alpha_t})^\gamma)^{-\gamma^{-1}}</code>
+</p>
+
+</li>
+<li> <p><code class="reqn">Porcu1</code> 
+</p>
+<p style="text-align: center;"><code class="reqn">R(h, u) =(e^{ -h^{\alpha_s} ( 1+u^{\alpha_t})^{0.5 \gamma \alpha_s}}) / ((1+u^{\alpha_t})^{1.5})</code>
+</p>
+
+</li>
+<li> <p><code class="reqn">Stein</code> 
+</p>
+<p style="text-align: center;"><code class="reqn">R(h, u) = (h^{\psi(u)}K_{\psi(u)}(h))/(2^{\psi(u)}\Gamma(\psi(u)+1))</code>
+</p>
+
+<p>where <code class="reqn">\psi(u)=\nu+u^{0.5\alpha_t} </code>
+</p>
+</li>
+<li> <p><code class="reqn">Gneiting</code><code>_</code><code class="reqn">mat</code><code>_</code><code class="reqn">S</code>,  defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">R(h, u) =\phi(u)^{\tau_t}Mat(h\phi(u)^{-\beta},\nu_s)</code>
+</p>
+
+<p>where  <code class="reqn">\phi(u)=(1+u^{0.5\alpha_t})</code>,
+<code class="reqn">\tau_t \ge  3.5+\nu_s</code>, <code class="reqn">\beta \in [0,1]</code>
+</p>
+</li>
+<li> <p><code class="reqn">Gneiting</code><code>_</code><code class="reqn">mat</code><code>_</code><code class="reqn">T</code>,  defined interchanging h with u 
+in <code class="reqn">Gneiting</code><code>_</code><code class="reqn">mat</code><code>_</code><code class="reqn">S</code>
+</p>
+</li>
+<li> <p><code class="reqn">Gneiting</code><code>_</code><code class="reqn">wen</code><code>_</code><code class="reqn">S</code>,  defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">R(h, u) =\phi(u)^{\tau_t}GenWend(h \phi(u)^{\beta},\nu_s,\mu_s)</code>
+</p>
+
+<p>where  <code class="reqn">\phi(u)=(1+u^{0.5\alpha_t})</code>,
+<code class="reqn">\tau_t \geq 2.5+2\nu_s</code>, <code class="reqn">\beta \in [0,1]</code>
+</p>
+</li>
+<li> <p><code class="reqn">Gneiting</code><code>_</code><code class="reqn">wen</code><code>_</code><code class="reqn">T</code>,  defined interchanging h with u 
+in <code class="reqn">Gneiting</code><code>_</code><code class="reqn">wen</code><code>_</code><code class="reqn">S</code>
+</p>
+</li>
+<li> <p><code class="reqn">Multiquadric</code><code>_</code><code class="reqn">st</code> defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">R(h, u)= ((1-0.5\alpha_s)^2/(1+(0.5\alpha_s)^2-\alpha_s \psi(u) cos(h)))^{a_s} , \quad h \in [0,\pi]</code>
+</p>
+
+<p>where <code class="reqn">\psi(u)=(1+(u/a_t)^{\alpha_t})^{-1}</code>. This model is valid on the unit
+sphere and <code class="reqn">h</code> is the geodesic distance.
+</p>
+</li>
+<li> <p><code class="reqn">Sinpower</code><code>_</code><code class="reqn">st</code> defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">R(h, u)=(e^{\alpha_s cos(h) \psi(u)/a_s} (1+\alpha_s cos(h) \psi(u) /a_s))/k</code>
+</p>
+
+<p>where <code class="reqn">\psi(u)=(1+(u/a_t)^{\alpha_t})^{-1} </code>    and <code class="reqn">k=(1+\alpha_s/a_s) exp(\alpha_s/a_s), \quad h \in [0,\pi]</code>
+This model is valid on the unit sphere and <code class="reqn">h</code> is the geodesic distance.
+</p>
+</li>
+</ol>
+</li>
+<li>
+<p> Separable models.<br></p>
+<p>Space-time separable correlation models are easly obtained as the product of a spatial and a temporal correlation model, that is
+</p>
+<p style="text-align: center;"><code class="reqn">R(h,u)=R(h) R(u)</code>
+</p>
+
+<p>Several combinations are possible:
+</p>
+
+<ol>
+<li>  <p><code class="reqn">Exp</code><code>_</code><code class="reqn">Exp</code>  defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">R(h, u) =Exp(h)Exp(u)</code>
+</p>
+
+</li>
+<li>  <p><code class="reqn">Matern</code><code>_</code><code class="reqn">Matern</code> defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">R(h, u) =Matern(h;\kappa_s)Matern(u;\kappa_t)</code>
+</p>
+
+</li>
+<li>  <p><code class="reqn">GenWend</code><code>_</code><code class="reqn">GenWend</code> defined as 
+</p>
+<p style="text-align: center;"><code class="reqn">R(h, u) = GenWend(h;\kappa_s,\mu_s) GenWend(u;\kappa_t,\mu_t)</code>
+</p>
+<p>.
+</p>
+</li>
+<li>  <p><code class="reqn">Stable</code><code>_</code><code class="reqn">Stable</code> defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">R(h, u) =Stable(h;\alpha_s)Stable(u;\alpha_t)</code>
+</p>
+
+</li>
+</ol>
+<p>Note that some models are nested. (The <code class="reqn">Exp</code><code>_</code><code class="reqn">Exp</code> with <code class="reqn">Matern</code><code>_</code><code class="reqn">Matern</code> for instance.)
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> Spatial  bivariate correlation models (see below):
+</p>
+
+<ol>
+<li>  <p><code class="reqn">Bi</code><code>_</code><code class="reqn">Matern</code> (Bivariate  full Matern model) 
+</p>
+</li>
+<li>  <p><code class="reqn">Bi</code><code>_</code><code class="reqn">Matern</code><code>_</code><code class="reqn">contr</code> (Bivariate  Matern model with contrainsts) 
+</p>
+</li>
+<li>  <p><code class="reqn">Bi</code><code>_</code><code class="reqn">Matern</code><code>_</code><code class="reqn">sep</code> (Bivariate  separable Matern model ) 
+</p>
+</li>
+<li>  <p><code class="reqn">Bi</code><code>_</code><code class="reqn">LMC</code> (Bivariate  linear model of coregionalization)
+</p>
+</li>
+<li>  <p><code class="reqn">Bi</code><code>_</code><code class="reqn">LMC</code><code>_</code><code class="reqn">contr</code> (Bivariate  linear model of coregionalization with constraints ) 
+</p>
+</li>
+<li>  <p><code class="reqn">Bi</code><code>_</code><code class="reqn">Wendx</code> (Bivariate  full Wendland model) 
+</p>
+</li>
+<li>  <p><code class="reqn">Bi</code><code>_</code><code class="reqn">Wendx</code><code>_</code><code class="reqn">contr</code> (Bivariate  Wendland model with contrainsts) 
+</p>
+</li>
+<li>  <p><code class="reqn">Bi</code><code>_</code><code class="reqn">Wendx</code><code>_</code><code class="reqn">sep</code> (Bivariate  separable Wendland model) 
+</p>
+</li>
+<li>  <p><code class="reqn">Bi</code><code>_</code><code class="reqn">Smoke</code> (Bivariate  full Smoke model on the unit sphere) 
+</p>
+</li>
+</ol>
+</li>
+<li>
+<p> Spatial taper.<br>
+For spatial covariance tapering the taper functions are:
+</p>
+
+<ol>
+<li> <p><code class="reqn">Bohman</code> defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">T(h)=(1-h)(sin(2\pi h)/(2 \pi h))+(1-cos(2\pi h))/(2\pi^{2}h) 1_{[0,1]}(h)</code>
+</p>
+
+</li>
+<li> <p><code class="reqn">Wendlandx, \quad x=0,1,2</code> defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">T(h)=Wendx(h;x+2),   x=0,1,2</code>
+</p>
+<p>.
+</p>
+</li>
+</ol>
+</li>
+<li>
+<p> Spatio-temporal tapers. <br>
+For spacetime covariance tapering the taper functions are:
+</p>
+
+<ol>
+<li> <p><code class="reqn">Wendlandx</code><code>_</code><code class="reqn">Wendlandy</code>  (Separable tapers) <code class="reqn">x,y=0,1,2</code> defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">T(h,u)=Wendx(h;x+2) Wendy(h;y+2),    x,y=0,1,2.</code>
+</p>
+
+</li>
+<li> <p><code class="reqn">Wendlandx</code><code>_</code><code class="reqn">time</code> (Non separable temporal taper)  <code class="reqn">x=0,1,2</code> defined as:
+<code class="reqn">Wenx</code><code>_</code><code class="reqn">time</code>, <code class="reqn">x=0,1,2</code>  assuming <code class="reqn">\alpha_t=2</code>, <code class="reqn">\mu_s=3.5+x</code>
+and <code class="reqn">\gamma \in [0,1]</code> to be fixed using <code>tapsep</code>.
+</p>
+</li>
+<li> <p><code class="reqn">Wendlandx</code><code>_</code><code class="reqn">space</code> (Non separable spatial taper)  <code class="reqn">x=0,1,2</code> defined as:
+<code class="reqn">Wenx</code><code>_</code><code class="reqn">space</code>, <code class="reqn">x=0,1,2</code>  assuming <code class="reqn">\alpha_s=2</code>, <code class="reqn">\mu_t=3.5+x</code>
+and <code class="reqn">\gamma \in [0,1]</code> to be fixed using <code>tapsep</code>.
+</p>
+</li>
+</ol>
+</li>
+<li>
+<p> Spatial  bivariate taper (see below).
+</p>
+
+<ol><li> <p><code class="reqn">Bi</code><code>_</code><code class="reqn">Wendlandx, \quad x=0,1,2</code>
+</p>
+</li></ol>
+</li>
+</ul>
+<p><b>Remarks</b>:<br>
+In what follows we assume <code class="reqn">\sigma^2,\sigma_1^2,\sigma_2^2,\tau^2,\tau_1^2,\tau_2^2,
+ a,a_s,a_t,a_{11},a_{22},a_{12},\kappa_{11},\kappa_{22},\kappa_{12},f_{11},f_{12},f_{21},f_{22}</code> positive.
+</p>
+<p>The associated names of the parameters in  <code>param</code> are 
+<code>sill</code>, <code>sill_1</code>,<code>sill_2</code>,
+<code>nugget</code>, <code>nugget_1</code>,<code>nugget_2</code>,
+<code>scale</code>,<code>scale_s</code>,<code>scale_t</code>, <code>scale_1</code>,<code>scale_2</code>,<code>scale_12</code>,
+<code>smooth_1</code>,<code>smooth_2</code>,<code>smooth_12</code>, <code>a_1</code>,<code>a_12</code>,<code>a_21</code>,<code>a_2</code>
+respectively.
+</p>
+<p>Let <code class="reqn">R(h)</code> be a  spatial correlation model given in standard notation.
+Then the covariance model
+applied with arbitrary variance, nugget  and scale equals to <code class="reqn">\sigma^2</code> if <code class="reqn">h=0</code> and
+</p>
+<p style="text-align: center;"><code class="reqn">C(h)=\sigma^2(1-\tau^2 ) R( h/a,,...), \quad     h &gt; 0</code>
+</p>
+
+<p>with nugget parameter  <code class="reqn">\tau^2</code> between 0 and 1.
+Similarly if <code class="reqn">R(h,u)</code> is a spatio-temporal correlation model given in standard notation,
+then the covariance model is <code class="reqn">\sigma^2</code> if <code class="reqn">h=0</code> and <code class="reqn">u=0</code> and 
+</p>
+<p style="text-align: center;"><code class="reqn">C(h,u)=\sigma^2(1-\tau^2 )R(h/a_s ,u/a_t,...) \quad h&gt;0, u&gt;0 </code>
+</p>
+
+<p>Here ‘...’ stands for additional parameters.
+</p>
+<p>The bivariate models implemented are the following :
+</p>
+
+<ol>
+<li> <p><code class="reqn">Bi</code><code>_</code><code class="reqn">Matern</code>  defined as: 
+</p>
+<p style="text-align: center;"><code class="reqn">C_{ij}(h)=\rho_{ij} (\sigma_i  \sigma_j+\tau_i^2 1(i=j,h=0))  Matern(h/a_{ij},\kappa_{ij}) \quad i,j=1,2.\quad h\ge 0</code>
+</p>
+
+<p>where <code class="reqn">\rho=\rho_{12}=\rho_{21}</code> is the correlation colocated parameter and   <code class="reqn">\rho_{ii}=1</code>.
+The model  <code class="reqn">Bi</code><code>_</code><code class="reqn">Matern</code><code>_</code><code class="reqn">sep</code>  (separable matern) is a special case when
+<code class="reqn">a=a_{11}=a_{12}=a_{22}</code> and <code class="reqn">\kappa=\kappa_{11}=\kappa_{12}=\kappa_{22}</code>.
+The model  <code class="reqn">Bi</code><code>_</code><code class="reqn">Matern</code><code>_</code><code class="reqn">contr</code>  (constrained matern)
+is a special case when <code class="reqn">a_{12}=0.5  (a_{11} + a_{22})</code> and  <code class="reqn">\kappa_{12}=0.5  (\kappa_{11} + \kappa_{22})</code>
+</p>
+</li>
+<li> <p><code class="reqn">Bi</code><code>_</code><code class="reqn">GenWend</code>   defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">C_{ij}(h)=\rho_{ij} (\sigma_i  \sigma_j+\tau_i^2 1(i=j,h=0))   GenWend(h/a_{ij},\nu_{ij},\kappa_ij) \quad i,j=1,2.\quad h\ge 0</code>
+</p>
+
+<p>where <code class="reqn">\rho=\rho_{12}=\rho_{21}</code> is the correlation colocated parameter and   <code class="reqn">\rho_{ii}=1</code>.
+The model  <code class="reqn">Bi</code><code>_</code><code class="reqn">GenWend</code><code>_</code><code class="reqn">sep</code>  (separable Genwendland) is a special case when
+<code class="reqn">a=a_{11}=a_{12}=a_{22}</code> and <code class="reqn">\mu=\mu_{11}=\mu_{12}=\mu_{22}</code>.
+The model  <code class="reqn">Bi</code><code>_</code><code class="reqn">GenWend</code><code>_</code><code class="reqn">contr</code>  (constrained Genwendland)
+is a special case when <code class="reqn">a_{12}=0.5  (a_{11} + a_{22})</code> and  <code class="reqn">\mu_{12}=0.5  (\mu_{11} + \mu_{22})</code>
+</p>
+</li>
+<li>  <p><code class="reqn">Bi</code><code>_</code><code class="reqn">LMC</code> defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">C_{ij}(h)=\sum_{k=1}^{2} (f_{ik}f_{jk}+\tau_i^2 1(i=j,h=0))   R(h/a_{k})       </code>
+</p>
+
+<p>where  <code class="reqn">R(h)</code> is a correlation model.
+The model <code class="reqn">Bi</code><code>_</code><code class="reqn">LMC</code><code>_</code><code class="reqn">contr</code>
+is a special case when  <code class="reqn">f=f_{12}=f_{21}</code>.   
+Bivariate LMC models, in the current version of the package, is obtained with <code class="reqn">R(h)</code>  equal to the exponential correlation  model.
+</p>
+</li>
+</ol>
+<h3>Value</h3>
+
+<p>Returns an object of class <code>GeoCovmatrix</code>.
+An object of class <code>GeoCovmatrix</code> is a list containing
+at most the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>bivariate</code></td>
+<td>
+<p>Logical:<code>TRUE</code> if the Gaussian random field is bivariaete
+otherwise  <code>FALSE</code>;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordx</code></td>
+<td>
+<p>A <code class="reqn">d</code>-dimensional vector of spatial coordinates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordy</code></td>
+<td>
+<p>A <code class="reqn">d</code>-dimensional vector of spatial coordinates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordt</code></td>
+<td>
+<p>A <code class="reqn">t</code>-dimensional vector of temporal coordinates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordx_dyn</code></td>
+<td>
+<p>A  list of <code class="reqn">t</code>  matrices of spatial coordinates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covmatrix</code></td>
+<td>
+<p>The covariance matrix if <code>type</code> is<code>Standard</code>. An object of 
+class spam if <code>type</code> is <code>Tapering</code> or <code>Standard</code> and
+<code>sparse</code> is TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corrmodel</code></td>
+<td>
+<p>String: the correlation model;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distance</code></td>
+<td>
+<p>String: the type of spatial distance;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+<p>Logical:<code>TRUE</code> if the spatial data are in a regular grid, otherwise  <code>FALSE</code>;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nozero</code></td>
+<td>
+<p>In the case of tapered matrix  the percentage of non zero values in the 
+covariance matrix. Otherwise is NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxdist</code></td>
+<td>
+<p>Numeric: the marginal spatial compact support 
+if <code>type</code> is <code>Tapering</code>;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxtime</code></td>
+<td>
+<p>Numeric: the marginal temporal compact support 
+if <code>type</code> is <code>Tapering</code>; </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The number of trial for Binomial RFs</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>namescorr</code></td>
+<td>
+<p>String: The names of the correlation parameters; </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numcoord</code></td>
+<td>
+<p>Numeric: the number of spatial coordinates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numtime</code></td>
+<td>
+<p>Numeric: the number the temporal  coordinates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>The type of RF, see <code>GeoFit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>Numeric: The covariance parameters;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tapmod</code></td>
+<td>
+<p>String: the taper model if <code>type</code> is <code>Tapering</code>. Otherwise is NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spacetime</code></td>
+<td>
+<p><code>TRUE</code> if spatio-temporal and <code>FALSE</code> if spatial covariance model;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sparse</code></td>
+<td>
+<p>Logical: is the  returned object of class spam? ;</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Moreno Bevilacqua, <a href="mailto:moreno.bevilacqua89@gmail.com">moreno.bevilacqua89@gmail.com</a>,<a href="https://sites.google.com/view/moreno-bevilacqua/home">https://sites.google.com/view/moreno-bevilacqua/home</a>,
+Víctor Morales Oñate, <a href="mailto:victor.morales@uv.cl">victor.morales@uv.cl</a>, <a href="https://sites.google.com/site/moralesonatevictor/">https://sites.google.com/site/moralesonatevictor/</a>,
+Christian", Caamaño-Carrillo, <a href="mailto:chcaaman@ubiobio.cl">chcaaman@ubiobio.cl</a>,<a href="https://www.researchgate.net/profile/Christian-Caamano">https://www.researchgate.net/profile/Christian-Caamano</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Alegria, A.,Cuevas-Pacheco, F.,Diggle, P, Porcu E. (2021)
+The F-family of covariance functions: A Matérn analogue for modeling random fields on spheres.
+<em>Spatial Statistics</em> 43, 100512
+</p>
+<p>Bevilacqua, M., Faouzi, T., Furrer, R., and Porcu, E. (2019). Estimation and prediction 
+using generalized Wendland functions under fixed domain asymptotics. 
+<em>Annals of Statistics</em>, 47(2), 828–856.
+</p>
+<p>Bevilacqua, M., Caamano-Carrillo, C., and Porcu, E. (2022). Unifying compactly supported 
+and Matérn covariance functions in spatial statistics. 
+<em>Journal of Multivariate Analysis</em>, 189, 104949.
+</p>
+<p>Daley J. D., Porcu E., Bevilacqua M. (2015) 
+Classes of compactly supported covariance functions for multivariate random fields. 
+<em>Stochastic Environmental Research and Risk Assessment</em>. 29 (4), 1249–1263. 
+</p>
+<p>Emery, X. and Alegria, A. (2022). The gauss hypergeometric covariance kernel for modeling second-order stationary random fields in euclidean spaces: its compact support, properties and spectral representation. <em>Stochastic Environmental Research and Risk Assessment</em>. 36 2819–2834.
+</p>
+<p>Gneiting, T. (2002). Nonseparable, stationary covariance functions for space-time data.
+<em>Journal of the American Statistical Association</em>, 97, 590–600.
+</p>
+<p>Gneiting T, Kleiber W., Schlather M. 2010. Matern cross-covariance 
+functions for multivariate random fields.  
+<em>Journal of the American Statistical Association</em>, 105, 1167–1177.
+</p>
+<p>Ma, P., Bhadra, A. (2022). 
+Beyond Matérn: on a class of interpretable confluent hypergeometric covariance functions.
+<em>Journal of the American Statistical Association</em>,1–14.
+</p>
+<p>Porcu, E.,Bevilacqua, M. and Genton M.  (2015) 
+Spatio-Temporal Covariance and Cross-Covariance Functions of the Great Circle Distance on a Sphere. 
+<em>Journal of the American Statistical Association</em>. 
+DOI: 10.1080/01621459.2015.1072541
+</p>
+<p>Gneiting, T. and Schlater M. (2004) 
+Stochastic models that separate fractal dimension and the Hurst effect. 
+<em>SSIAM Rev</em> 46, 269–282.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GeoKrig</code>,
+<code>GeoSim</code>,
+<code>GeoFit</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(GeoModels)
+################################################################
+###
+### Example 1.Estimated  spatial covariance matrix associated to
+### a WCL estimates using the Matern correlation model
+###
+###############################################################
+
+set.seed(3)
+N=300  # number of location sites
+x &lt;- runif(N, 0, 1)
+y &lt;- runif(N, 0, 1)
+coords &lt;- cbind(x,y)
+# Set the covariance model's parameters:
+corrmodel &lt;- "Matern"
+mean=0.5; 
+sill &lt;- 1
+nugget &lt;- 0
+scale &lt;- 0.2/3
+smooth=0.5
+
+param&lt;-list(mean=mean,sill=sill,nugget=nugget,scale=scale,smooth=smooth)
+data &lt;- GeoSim(coordx=coords,corrmodel=corrmodel, param=param)$data
+fixed&lt;-list(nugget=nugget,smooth=smooth)
+start&lt;-list(mean=mean,scale=scale,sill=sill)
+
+fit0 &lt;- GeoFit(data=data,coordx=coords,corrmodel=corrmodel, 
+                    neighb=3,likelihood="Conditional",optimizer="BFGS",
+                    type="Pairwise", start=start,fixed=fixed)
+print(fit0)
+
+#estimated covariance matrix using Geofit object
+mm=GeoCovmatrix(fit0)$covmatrix
+#estimated covariance matrix
+mm1 = GeoCovmatrix(coordx=coords,corrmodel=corrmodel,
+           param=c(fit0$param,fit0$fixed))$covmatrix
+sum(mm-mm1)
+
+################################################################
+###
+### Example 2. Spatial covariance matrix associated to
+### the GeneralizedWendland-Matern correlation model
+###
+###############################################################
+
+# Correlation Parameters for Gen Wendland model 
+CorrParam("GenWend_Matern")
+# Gen Wendland Parameters 
+param=list(sill=1,scale=0.04,nugget=0,smooth=0,power2=1.5)
+
+matrix2 = GeoCovmatrix(coordx=coords, corrmodel="GenWend_Matern", param=param,sparse=TRUE)
+
+# Percentage of no zero values 
+matrix2$nozero
+
+
+################################################################
+###
+### Example 3. Spatial covariance matrix associated to
+### the Kummer correlation model
+###
+###############################################################
+
+# Correlation Parameters for kummer model 
+CorrParam("Kummer")
+param=list(sill=1,scale=0.2,nugget=0,smooth=0.5,power2=1)
+
+matrix3 = GeoCovmatrix(coordx=coords, corrmodel="Kummer", param=param)
+
+matrix3$covmatrix[1:4,1:4]
+
+
+################################################################
+###
+### Example 4. Covariance matrix associated to
+### the space-time double Matern correlation model
+###
+###############################################################
+
+# Define the temporal-coordinates:
+times = seq(1, 4, 1)
+
+# Correlation Parameters for double Matern model
+CorrParam("Matern_Matern")
+
+# Define covariance parameters
+param=list(scale_s=0.3,scale_t=0.5,sill=1,smooth_s=0.5,smooth_t=0.5)
+
+# Simulation of a spatial Gaussian random field:
+matrix4 = GeoCovmatrix(coordx=coords, coordt=times, corrmodel="Matern_Matern",
+                     param=param)
+
+dim(matrix4$covmatrix)
+
+################################################################
+###
+### Example 5. Spatial Covariance matrix associated to
+### a  skew gaussian RF with Matern correlation model
+###
+###############################################################
+
+param=list(sill=1,scale=0.3/3,nugget=0,skew=4,smooth=0.5)
+# Simulation of a spatial Gaussian random field:
+matrix5 = GeoCovmatrix(coordx=coords,  corrmodel="Matern", param=param, 
+                     model="SkewGaussian")
+
+# covariance matrix
+matrix5$covmatrix[1:4,1:4]
+
+################################################################
+###
+### Example 6. Spatial Covariance matrix associated to
+### a  Weibull RF with Genwend correlation model
+###
+###############################################################
+
+param=list(scale=0.3,nugget=0,shape=4,mean=0,smooth=1,power2=5)
+# Simulation of a spatial Gaussian random field:
+matrix6 = GeoCovmatrix(coordx=coords,  corrmodel="GenWend", param=param, 
+                     sparse=TRUE,model="Weibull")
+
+# Percentage of no zero values 
+matrix6$nozero
+
+################################################################
+###
+### Example 7. Spatial Covariance matrix associated to
+### a  binomial gaussian RF with Generalized Wendland correlation model
+###
+###############################################################
+
+param=list(mean=0.2,scale=0.2,nugget=0,power2=4,smooth=0)
+# Simulation of a spatial Gaussian random field:
+matrix7 = GeoCovmatrix(coordx=coords,  corrmodel="GenWend", param=param,n=5, 
+                     sparse=TRUE,
+                     model="Binomial")
+
+as.matrix(matrix7$covmatrix)[1:4,1:4]
+
+
+################################################################
+###
+### Example 8.  Covariance matrix associated to
+### a bivariate Matern exponential correlation model
+###
+###############################################################
+
+set.seed(8)
+# Define the spatial-coordinates of the points:
+x = runif(4, 0, 1)
+y = runif(4, 0, 1)
+coords = cbind(x,y)
+
+# Parameters 
+param=list(mean_1=0,mean_2=0,sill_1=1,sill_2=2,
+           scale_1=0.1,  scale_2=0.1,  scale_12=0.1,
+           smooth_1=0.5, smooth_2=0.5, smooth_12=0.5,
+            nugget_1=0,nugget_2=0,pcol=-0.25)
+
+# Covariance matrix 
+matrix8 = GeoCovmatrix(coordx=coords, corrmodel="Bi_matern", param=param)$covmatrix
+
+matrix8
+
+</code></pre>
+
+
+</div>

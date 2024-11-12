@@ -1,0 +1,90 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>isLMM.glmmTMB</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>support methods for parametric bootstrapping</h2>
+
+<h3>Description</h3>
+
+<p>see <code>refit</code> and <code>isLMM</code> for details
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'glmmTMB'
+isLMM(x, ...)
+
+## S3 method for class 'glmmTMB'
+refit(object, newresp, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a fitted glmmTMB object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments (for generic consistency; ignored)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>a fitted glmmTMB object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newresp</code></td>
+<td>
+<p>a new response vector</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>These methods are still somewhat experimental (check your results carefully!), but they should allow parametric bootstrapping.  They work by copying and replacing the original response column in the data frame passed to <code>glmmTMB</code>, so they will only work properly if (1) the data frame is still available in the environment and (2) the response variable is specified as a single symbol (e.g. <code>proportion</code> or a two-column matrix constructed on the fly with <code>cbind()</code>. Untested with binomial models where the response is specified as a factor.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if (requireNamespace("lme4")) {
+## Not run: 
+   fm1 &lt;- glmmTMB(count~mined+(1|spp),
+                  ziformula=~mined,
+                  data=Salamanders,
+                  family=nbinom1)
+   ## single parametric bootstrap step: refit with data simulated from original model
+   fm1R &lt;- refit(fm1, simulate(fm1)[[1]])
+   ## the bootMer function from lme4 provides a wrapper for doing multiple refits
+   ##   with a specified summary function
+   b1 &lt;- lme4::bootMer(fm1, FUN=function(x) fixef(x)$zi, nsim=20, .progress="txt")
+   if (requireNamespace("boot")) {
+      boot.ci(b1,type="perc")
+    }
+   ## can run in parallel: may need to set up cluster explicitly,
+   ## use clusterEvalQ() to load packages on workers
+   if (requireNamespace("parallel")) {
+      cl &lt;- parallel::makeCluster(2)
+      parallel::clusterEvalQ(cl, library("lme4"))
+      parallel::clusterEvalQ(cl, library("glmmTMB"))
+      b2 &lt;- lme4::bootMer(fm1, FUN = function(x) fixef(x)$cond,
+              nsim = 10, ncpus = 2, cl = cl, parallel = "snow")
+   }
+
+## End(Not run)
+}
+</code></pre>
+
+
+</div>

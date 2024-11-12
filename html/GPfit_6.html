@@ -1,0 +1,212 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GP_fit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gaussian Process Model fitting</h2>
+
+<h3>Description</h3>
+
+<p>For an (<em>n</em> x <em>d</em>) design matrix, <code>X</code>, 
+and the corresponding (<em>n</em> x 1) simulator output <code>Y</code>, 
+this function fits the GP model and returns the parameter estimates. 
+The optimization routine assumes that
+the inputs are scaled to the unit hypercube <code class="reqn">[0,1]^d</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GP_fit(X, Y, control = c(200 * d, 80 * d, 2 * d), nug_thres = 20,
+  trace = FALSE, maxit = 100, corr = list(type = "exponential", power
+  = 1.95), optim_start = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>the (<code>n x d</code>) design matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>the (<code>n x 1</code>) vector of simulator outputs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>a vector of parameters used in the search for optimal beta
+(search grid size, percent, number of clusters). See ‘Details’.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nug_thres</code></td>
+<td>
+<p>a parameter used in computing the nugget. See ‘Details’.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>logical, if <code>TRUE</code>, will provide information on the
+<code>optim</code> runs</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>the maximum number of iterations within <code>optim</code>,
+defaults to 100</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corr</code></td>
+<td>
+<p>a list of parameters for the specifing the correlation to be
+used. See <code>corr_matrix</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optim_start</code></td>
+<td>
+<p>a matrix of potentially likely starting values for
+correlation hyperparameters for the <code>optim</code> runs, i.e., initial
+guess of the d-vector <code>beta</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function fits the following GP model, 
+<code class="reqn">y(x) = \mu + Z(x)</code>, 
+<code class="reqn">x \in [0,1]^{d}</code>, where <code class="reqn">Z(x)</code> is
+a GP with mean 0, <code class="reqn">Var(Z(x_i)) = \sigma^2</code>, and
+<code class="reqn">Cov(Z(x_i),Z(x_j)) = \sigma^2R_{ij}</code>.  Entries in covariance matrix R are determined by
+<code>corr</code> and parameterized by <code>beta</code>, a <code>d</code>-vector of
+parameters. For computational stability <code class="reqn">R^{-1}</code> is replaced with
+<code class="reqn">R_{\delta_{lb}}^{-1}</code>, where <code class="reqn">R_{\delta{lb}} = R + \delta_{lb}I</code>
+and <code class="reqn">\delta_{lb}</code> is the nugget parameter described in Ranjan et al.
+(2011).
+</p>
+<p>The parameter estimate <code>beta</code> is obtained by minimizing 
+the deviance using a multi-start gradient based search (L-BFGS-B) 
+algorithm. The starting points are selected using the k-means 
+clustering algorithm on a large maximin LHD for values of 
+<code>beta</code>, after discarding <code>beta</code> vectors
+with high deviance. The <code>control</code> parameter determines the 
+quality of the starting points of the L-BFGS-B algoritm.
+</p>
+<p><code>control</code> is a vector of three tunable parameters used 
+in the deviance optimization algorithm. The default values 
+correspond to choosing 2*d clusters (using k-means clustering 
+algorithm) based on 80*d best points (smallest deviance, 
+refer to <code>GP_deviance</code>) from a 200*d - point
+random maximin LHD in <code>beta</code>. One can change these values 
+to balance the trade-off between computational cost and robustness 
+of likelihood optimization (or prediction accuracy).  
+For details see MacDonald et al. (2015).
+</p>
+<p>The <code>nug_thres</code> parameter is outlined in Ranjan et al. (2011) and is
+used in finding the lower bound on the nugget
+(<code class="reqn">\delta_{lb}</code>).
+</p>
+
+
+<h3>Value</h3>
+
+<p>an object of class <code>GP</code> containing parameter estimates
+<code>beta</code> and <code>sig2</code>, nugget parameter <code>delta</code>, the data
+(<code>X</code> and <code>Y</code>), and a specification of the correlation structure
+used.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Blake MacDonald, Hugh Chipman, Pritam Ranjan
+</p>
+
+
+<h3>References</h3>
+
+<p>MacDonald, K.B., Ranjan, P. and Chipman, H. (2015). GPfit: An R
+Package for Fitting a Gaussian Process Model to Deterministic Simulator
+Outputs. Journal of Statistical Software, 64(12), 1-23.
+<a href="http://www.jstatsoft.org/v64/i12/">http://www.jstatsoft.org/v64/i12/</a> <br></p>
+<p>Ranjan, P., Haynes, R., and Karsten, R. (2011). A Computationally Stable
+Approach to Gaussian Process Interpolation of Deterministic Computer
+Simulation Data, Technometrics, 53(4), 366 - 378.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plot</code> for plotting in 1 and 2 dimensions; <br><code>predict</code> for predicting the response and error surfaces; <br><code>optim</code> for information on the L-BFGS-B procedure; <br><code>GP_deviance</code> for computing the deviance.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## 1D Example 1
+n = 5
+d = 1 
+computer_simulator &lt;- function(x){
+    x = 2 * x + 0.5
+    y = sin(10 * pi * x) / (2 * x) + (x - 1)^4
+    return(y)
+}
+set.seed(3)
+library(lhs)
+x = maximinLHS(n, d)
+y = computer_simulator(x)
+GPmodel = GP_fit(x, y)
+print(GPmodel)
+
+
+## 1D Example 2
+n = 7
+d = 1
+computer_simulator &lt;- function(x) {
+    y &lt;- log(x + 0.1) + sin(5 * pi * x)
+    return(y)
+}
+set.seed(1)
+library(lhs)
+x = maximinLHS(n, d)
+y = computer_simulator(x)
+GPmodel = GP_fit(x, y)
+print(GPmodel, digits = 4)
+
+
+## 2D Example: GoldPrice Function
+computer_simulator &lt;- function(x) {
+    x1 = 4 * x[, 1] - 2
+    x2 = 4 * x[, 2] - 2
+    t1 = 1 + (x1 + x2 + 1)^2 * (19 - 14 * x1 + 3 * x1^2 - 14 * x2 + 
+        6 * x1 *x2 + 3 * x2^2)
+    t2 = 30 + (2 * x1 - 3 * x2)^2 * (18 - 32 * x1 + 12 * x1^2 + 48 * x2 - 
+        36 * x1 * x2 + 27 * x2^2)
+    y = t1 * t2
+    return(y)
+}
+n = 30
+d = 2
+set.seed(1)
+library(lhs)
+x = maximinLHS(n, d) 
+y = computer_simulator(x)
+GPmodel = GP_fit(x, y)
+print(GPmodel)
+
+</code></pre>
+
+
+</div>

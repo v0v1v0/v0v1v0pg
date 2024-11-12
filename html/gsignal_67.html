@@ -1,0 +1,122 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>czt</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Chirp Z-transform</h2>
+
+<h3>Description</h3>
+
+<p>Compute the Chirp Z-transform along a spiral contour on the z-plane.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">czt(x, m = NROW(x), w = exp(complex(real = 0, imaginary = -2 * pi/m)), a = 1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>input data, specified as a numeric vector or matrix. In case of a
+vector it represents a single signal; in case of a matrix each column is a
+signal.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m</code></td>
+<td>
+<p>transform length, specified as a positive integer scalar. Default:
+<code>NROW(x)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>ratio between spiral contour points in each step (i.e., radius
+increases exponentially, and angle increases linearly), specified as a
+complex scalar. Default: <code>exp(0-1i * 2 * pi / m)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+<p>initial spiral contour point, specified as a complex scalar.
+Default: 1.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The chirp Z-transform (CZT) is a generalization of the discrete Fourier
+transform (DFT). While the DFT samples the Z plane at uniformly-spaced points
+along the unit circle, the chirp Z-transform samples along spiral arcs in the
+Z-plane, corresponding to straight lines in the S plane. The DFT, real DFT,
+and zoom DFT can be calculated as special cases of the CZT[1]. For the
+specific case of the DFT, <code>a = 0</code>, <code>m = NCOL(x)</code>, and <code>w = 2 *
+pi / m</code>[2, p. 656].
+</p>
+
+
+<h3>Value</h3>
+
+<p>Chirp Z-transform, returned as a vector or matrix.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Daniel Gunyan.<br>
+Conversion to R by Geert van Boxtel, <a href="mailto:G.J.M.vanBoxtel@gmail.com">G.J.M.vanBoxtel@gmail.com</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>[1] <a href="https://en.wikipedia.org/wiki/Chirp_Z-transform">https://en.wikipedia.org/wiki/Chirp_Z-transform</a><br>
+[2]Oppenheim, A.V., Schafer, R.W., and Buck, J.R. (1999). Discrete-Time
+Signal Processing, 2nd edition. Prentice-Hall.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">fs &lt;- 1000                                           # sampling frequency
+secs &lt;- 10                                           # number of seconds
+t &lt;- seq(0, secs, 1/fs)                              # time series
+x &lt;- sin(100 * 2 * pi * t) + runif(length(t))        # 100 Hz signal + noise
+m &lt;- 32                                              # n of points desired
+f0 &lt;- 75; f1 &lt;- 175;                                 # desired freq range
+w &lt;- exp(-1i * 2 * pi * (f1 - f0) / ((m - 1) * fs))  # freq step of f1-f0/m
+a &lt;- exp(1i * 2 * pi * f0 / fs);                     # starting at freq f0
+y &lt;- czt(x, m, w, a)
+
+# compare DFT and FFT
+fs &lt;- 1000
+h &lt;- as.numeric(fir1(100, 125/(fs / 2), type = "low"))
+m &lt;- 1024
+y &lt;- stats::fft(postpad(h, m))
+
+f1 &lt;- 75; f2 &lt;- 175;
+w &lt;- exp(-1i * 2 * pi * (f2 - f1) / (m * fs))
+a &lt;- exp(1i * 2 * pi * f1 / fs)
+z &lt;- czt(h, m, w, a)
+
+fn &lt;- seq(0, m - 1, 1) / m
+fy &lt;- fs * fn
+fz = (f2 - f1) * fn + f1
+plot(fy, 10 * log10(abs(y)), type = "l", xlim = c(50, 200),
+  xlab = "Frequency", ylab = "Magnitude (dB")
+lines(fz, 10 * log10(abs(z)), col = "red")
+legend("topright", legend = c("FFT", "CZT"), col=1:2, lty = 1)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,104 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>parse.time</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Parses a character time representation to another format.</h2>
+
+<h3>Description</h3>
+
+<p>Converts a character vector in a variety of forms into either the raw second, second classed as POSIXct, or days since Unix epoch.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">parse.time(t="",format=c("seconds", "days", "POSIX"), tzone = 0,
+ start = NULL, startmidnight = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>t</code></td>
+<td>
+<p>A character string representation of a date-time expression.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>format</code></td>
+<td>
+<p>A character string indicating which representation to output.  Can be either <code>seconds</code>, <code>days</code> or <code>POSIX</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tzone</code></td>
+<td>
+<p>The time zone the time is given in, expressed as an offset from UTC in hours.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>Earliest allowable time stamp in the data, as seconds since Unix epoch.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startmidnight</code></td>
+<td>
+<p>Midnight of day '0' in the data, as seconds since Unix epoch.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function processes character vectors of the form "DATE TIME" – that is to say, a maximum of two terms separated by a space per value.
+</p>
+<p>"TIME" is given in 24 hour format, seperated by colons, in "hh:mm", "hh:mm:ss", "hh:mm:ss:ms" or "hh:mm:ss.ms" format. If ommitted, the time is taken to be 00:00:00.000.
+</p>
+<p>"DATE" can be a date representation as "YYYY-MM-DD", "DD/MM/YY" or "DD/MM/YYYY" (noting the use of a colon or backslash seperator to distinguish between the two). Alternatively, with <code>start</code> and/or <code>startmidnight</code> supplied, an integer "NN" or string "DOW" corresponding to a day of the week can be used instead. Then, the function will find the first timestamp matching the correct "TIME", that falls NN midnights after <code>startmidnight</code> and is after <code>start</code>, or, in the latter case, the first timestamp after the day of <code>start</code> that matches the appropriate day of the week. If a blank "DATE" is supplied, the function will either use the UNIX epoch, or find the first match, corresponding to the case NN = 0.
+</p>
+<p>Once this is done the time is converted to the required format: <code>POSIX</code> is the usual R POSIXct format; <code>days</code> is the julian days since UNIX epoch 1970-1-1; <code>seconds</code> is the number of seconds (including subseconds) since 1970-1-1. Note that for formats other than POSIX, the output is in the same timezone as <code>tzone</code>. POSIX stores the time internally as the time in UTC, and applies a format that gives this time local to the user.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A converted date-time string in the specified format. In the case of "seconds", or "days", a numeric. For POSIX, a <code>POSIXct</code> object.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>convert.time</code>, <code>get.intervals</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">t1 = parse.time("2012-06-21 13:04:01"); print(t1)
+parse.time("21/06/12 13:04:01") #gives the same result
+
+parse.time(c("19/07/70", "20/07/70"), format = "days")
+#results here will depend on your locale
+parse.time(c("19/07/70", "20/07/70"), format = "POSIX", tzone = -4)
+
+#one is the same day, one can only find a match the next day
+ parse.time("13:05", start = t1) - t1
+ parse.time("13:00", start = t1) - t1
+ #asking to wait 1 midnight means both times are considered as
+ #times on the same, full day of data
+ parse.time(c("1 13:05", "1 13:00"), start = t1) - t1
+ #2012-06-21 is a Thursday, so this is equivalent
+ parse.time(c("Fri 13:05", "Fri 13:00"), start = t1) - t1
+ #Longer form days of the week are also understood. Note that
+ #the first day does not get matched.
+ parse.time(c("Thursday 13:05", "Thursday 13:00"), start = t1) - t1
+
+</code></pre>
+
+
+</div>

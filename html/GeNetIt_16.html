@@ -1,0 +1,151 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.gravity</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict gravity model</h2>
+
+<h3>Description</h3>
+
+<p>predict method for class "gravity"
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'gravity'
+predict(
+  object,
+  newdata,
+  groups = NULL,
+  back.transform = c("none", "simple", "Miller", "Naihua"),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>Object of class gravity</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>New data used for obtaining the predictions, can
+be a data.frame or nffGroupedData</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groups</code></td>
+<td>
+<p>Grouping factor acting as random effect. If used,
+must match levels used in model, otherwise leave it
+null and do not convert to groupedData</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>back.transform</code></td>
+<td>
+<p>Method to back transform data, default is none and 
+log predictions will be returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to predict.lme or predict.lm</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Please note that the entire gravity equation is log transformed so, 
+your parameter space is on a log scale, not just y. This means that for 
+a meaningful prediction the "newdata" also needs to be on a log scale.
+</p>
+<p>For the back.transform argument, the simple back-transform method uses the 
+form exp(y-hat)0.5*variance whereas Miller uses exp(sigma)*0.5 as the 
+multiplicative bias factor. Naihua regresses y~exp(y-hat) with no intercept 
+and uses the resulting coefficient as the multiplicative bias factor. The
+Naihua method is intended for results with non-normal errors. You can check
+the functional form by simply plotting y (non-transformed) against the fit.    
+The default is to output the log scaled predictions.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Vector of model predictions
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Jeffrey S. Evans  &lt;jeffrey_evans@tnc.org&gt; and 
+Melanie A. Murphy &lt;melanie.murphy@uwyo.edu&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Miller, D.M. (1984) Reducing Transformation Bias in Curve Fitting
+The American Statistician. 38(2):124-126
+</p>
+<p>Naihua, D. (1983) Smearing Estimate: A Nonparametric Retransformation Method 
+Journal of the American Statistical Association, 78(383):605–610.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(nlme)
+  data(ralu.model)
+
+back.transform &lt;- function(y) exp(y + 0.5 * stats::var(y, na.rm=TRUE))
+rmse = function(p, o){ sqrt(mean((p - o)^2)) } 
+
+x = c("DEPTH_F", "HLI_F", "CTI_F", "cti", "ffp")
+ 
+sidx &lt;- sample(1:nrow(ralu.model), 100) 
+  train &lt;- ralu.model[sidx,]
+  test &lt;- ralu.model[-sidx,]
+ 
+ # Specify constrained gravity model	
+ ( gm &lt;- gravity(y = "DPS", x = x, d = "DISTANCE", group = "FROM_SITE", 
+                 data = train, ln = FALSE) )
+  
+( p &lt;- predict(gm, test[,c(x, "DISTANCE")]) )
+  rmse(back.transform(p), back.transform(ralu.model[,"DPS"][-sidx]))
+
+# WIth model sigma-based back transformation
+( p &lt;- predict(gm, test[,c(x, "DISTANCE")], back.transform = "simple") )
+( p &lt;- predict(gm, test[,c(x, "DISTANCE")], back.transform = "Miller") )
+( p &lt;- predict(gm, test[,c(x, "DISTANCE")], back.transform = "Naihua") )
+
+# Using grouped data
+test &lt;- nlme::groupedData(stats::as.formula(paste(paste("DPS", 1, sep = " ~ "), 
+          "FROM_SITE", sep = " | ")), 
+		  data = test[,c("DPS", "FROM_SITE", x, "DISTANCE")])
+
+( p &lt;- predict(gm, test, groups = "FROM_SITE") )
+( y.hat &lt;- back.transform(ralu.model[,"DPS"][-sidx]) )
+    na.idx &lt;- which(is.na(p))
+  rmse(back.transform(p)[-na.idx], y.hat[-na.idx])
+
+# Specify unconstrained gravity model (generally, not recommended)	
+( gm &lt;- gravity(y = "DPS", x = x, d = "DISTANCE", group = "FROM_SITE", 
+                data = train, ln = FALSE, constrained=TRUE) )
+
+( p &lt;- predict(gm, test[,c(x, "DISTANCE")]) )
+  rmse(back.transform(p), back.transform(ralu.model[,"DPS"][-sidx])) 
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,132 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>test_genesets</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Perform geneset enrichment testing using any supported method</h2>
+
+<h3>Description</h3>
+
+<p>Perform geneset enrichment testing using any supported method
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">test_genesets(
+  genesets,
+  genelist,
+  method,
+  padj_method = "BH",
+  padj_sources = TRUE,
+  padj_cutoff = 0.01,
+  padj_min_signifgenes = 0L,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>genesets</code></td>
+<td>
+<p>tibble with genesets, must contain columns 'source', 'source_version', 'id', 'name', 'genes', 'ngenes', 'ngenes_signif'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>genelist</code></td>
+<td>
+<p>tibble with genes, must contain column 'gene' and 'test'. gene = character column, which are matched against list column 'genes' in genesets tibble. test = boolean column (you can set all to FALSE if not performing Fisher-exact or hypergeometric test downstream)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>method for overrepresentation analysis. Options: "goat", "hypergeometric", "fisherexact", "fisherexact_ease", "gsea", "idea"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>padj_method</code></td>
+<td>
+<p>first step of multiple testing correction; method for p-value adjustment, passed to <code>stats::p.adjust()</code> via <code>padjust_genesets()</code>, e.g. set "BH" to compute FDR adjusted p-values (default) or "bonferroni" for a more stringent procedure</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>padj_sources</code></td>
+<td>
+<p>second step of multiple testing correction; apply Bonferroni adjustment to all p-values according to the number of geneset sources that were tested. Boolean parameter, set TRUE to enable (default) or FALSE to disable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>padj_cutoff</code></td>
+<td>
+<p>cutoff for adjusted p-value, <code>signif</code> column is set to TRUE for all values lesser-equals</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>padj_min_signifgenes</code></td>
+<td>
+<p>if a value larger than zero is provided, this will perform additional post-hoc filtering; after p-value adjustment, set the <code>pvalue_adjust</code> to <code>NA</code> and <code>signif</code> to <code>FALSE</code> for all genesets with fewer than <code>padj_min_signifgenes</code> 'input genes that were significant' (<code>ngenes_signif</code> column in genesets table).
+So this does not affect the accuracy of estimated p-values, in contrast to prefiltering genesets prior to p-value computation or adjusting p-values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further parameters are passed to the respective stats method</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>After application of the enrichment testing algorithm (e.g. GOAT, ORA or GSEA), multiple testing correction is applied to obtain adjusted p-values using <code>padjust_genesets</code>.
+That function will first apply the specified pvalue adjustment procedure in the <code>padj_method</code> parameter within each 'source' in the genesets table. Second, it applies Bonferroni adjustment to all p-values according to the number of different geneset sources that were tested (or set <code>padj_sources = FALSE</code> to disable).
+</p>
+<p>For example, if the input is a genesets table that contains GO_CC, GO_BP and GO_MF genesets, first multiple testing correction is applied within each source (e.g. using FDR if so desired) and afterwards a Bonferroni correction is applied based on 3 repeated analyses.
+</p>
+<p>Note that this is more rigorous than typical GO tools; hypothetically, one could split all GO_CC pathways into 1000 different databases/'sources' and then run enrichment testing. Consequently, the multiple testing burden is reduced if one doesn't adjust p-values for the number of 'sources' as we do here.
+</p>
+
+
+<h3>Value</h3>
+
+<p>the input <code>genesets</code>, with results stored in columns 'pvalue', 'pvalue_adjust' and 'signif'
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#' # note; this example downloads data when first run, and typically takes ~60seconds
+
+## Basic example for a complete GOAT workflow
+# Downloads test data to your computer and stores it at current working directory
+# Refer to the GitHub documentation for elaborate documentation and a worked example
+
+# store the downloaded files in the following directory. Here, the temporary file
+# directory is used. Alternatively, consider storing this data in a more permanent location.
+# e.g. output_dir="~/data/go" on unix systems or output_dir="C:/data/go" on Windows
+output_dir = tempdir()
+
+# download an example gene list
+datasets = download_goat_manuscript_data(output_dir)
+genelist = datasets$`Wingo 2020:mass-spec:PMID32424284`
+
+# download GO genesets
+genesets_asis = download_genesets_goatrepo(output_dir)
+
+# filter genesets for sufficient overlap with the genelist, then apply GOAT
+genesets_filtered = filter_genesets(genesets_asis, genelist)
+result = test_genesets(genesets_filtered, genelist, method = "goat",
+  score_type = "effectsize", padj_method = "bonferroni", padj_cutoff = 0.05)
+
+# print first 10 rows of the result table
+print(result |&gt; select(source, name, ngenes, pvalue_adjust) |&gt; utils::head(n=10))
+
+</code></pre>
+
+
+</div>

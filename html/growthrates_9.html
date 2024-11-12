@@ -1,0 +1,162 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>all_splines</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit Exponential Growth Model with Smoothing Spline</h2>
+
+<h3>Description</h3>
+
+<p>Determine maximum growth rates from log-linear part of the growth curve for
+a series of experiments by using smoothing splines.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">all_splines(...)
+
+## S3 method for class 'formula'
+all_splines(formula, data = NULL, optgrid = 50, subset = NULL, ...)
+
+## S3 method for class 'data.frame'
+all_splines(
+  data,
+  grouping = NULL,
+  time = "time",
+  y = "value",
+  optgrid = 50,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>generic parameters, including parameters passed to <code>smooth.spline</code>, see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>model formula specifying dependent, independent and grouping
+variables in the form:
+<code>dependent ~ independent | group1 + group2 + ...</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>data frame of observational data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optgrid</code></td>
+<td>
+<p>number of steps on the x-axis used for searching the maximum
+of the first derivative of the spline.
+The default should work in most cases, as long as the data are equally spaced.
+A smaller number may lead to non-detectable speed-up, but has the risk that
+the search is trapped in a local minimum.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>a specification of the rows to be used: defaults to all rows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grouping</code></td>
+<td>
+<p>vector of grouping variables defining subsets in the data frame.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>character vectors with name independent variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>character vector with name of dependent variable.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The method was inspired by an algorithm of Kahm et al. (2010),
+with different settings and assumptions. In the moment, spline fitting
+is always done with log-transformed data, assuming exponential growth
+at the time point of the maximum of its first derivative.
+</p>
+<p>All the hard work is done by function <code>smooth.spline</code> from package
+<span class="pkg">stats</span>, that is highly user configurable. Normally, smoothness is
+automatically determined via cross-validation. This works well in many cases,
+whereas manual adjustment is required otherwise, e.g. by setting <code>spar</code>
+to a fixed value <code class="reqn">[0,1]</code> that also disables cross-validation.
+A typical case where cross validation does not work is, if time dependent
+measurements are taken as pseudoreplicates from the same experimental unit.
+</p>
+
+
+<h3>Value</h3>
+
+<p>object with parameters of the fit.
+</p>
+
+
+<h3>References</h3>
+
+<p>Kahm, M., Hasenbrink, G., Lichtenberg-Frate, H., Ludwig, J., Kschischo, M.
+2010. grofit: Fitting Biological Growth Curves with R.
+Journal of Statistical Software, 33(7), 1-21,
+<a href="https://doi.org/10.18637/jss.v033.i07">doi:10.18637/jss.v033.i07</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other fitting functions: 
+<code>all_easylinear()</code>,
+<code>all_growthmodels()</code>,
+<code>fit_easylinear()</code>,
+<code>fit_growthmodel()</code>,
+<code>fit_spline()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(bactgrowth)
+L &lt;- all_splines(value ~ time | strain + conc + replicate,
+                 data = bactgrowth, spar = 0.5)
+
+par(mfrow=c(4, 3))
+plot(L)
+results &lt;- results(L)
+xyplot(mumax ~ log(conc + 1)|strain, data=results)
+
+## fit splines at lower grouping levels
+L2 &lt;- all_splines(value ~ time | conc + strain,
+                    data = bactgrowth, spar = 0.5)
+plot(L2)
+
+## total data set without any grouping
+L3 &lt;- all_splines(value ~ time,
+                    data = bactgrowth, spar = 0.5)
+par(mfrow=c(1, 1))
+plot(L3)
+
+</code></pre>
+
+
+</div>

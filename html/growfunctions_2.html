@@ -1,0 +1,199 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cluster_plot</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Plot estimated functions for experimental units faceted by cluster versus data to assess fit.</h2>
+
+<h3>Description</h3>
+
+<p>Uses as input the output object from the gpdpgrow() and gmrfdpgrow() functions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cluster_plot(
+  object,
+  N_clusters = NULL,
+  time_points = NULL,
+  units_name = "unit",
+  units_label = NULL,
+  date_field = NULL,
+  x.axis.label = NULL,
+  y.axis.label = NULL,
+  smoother = TRUE,
+  sample_rate = 1,
+  single_unit = FALSE,
+  credible = FALSE,
+  num_plot = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A <code>gpdpgrow</code> or <code>gmrfdpgrow</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N_clusters</code></td>
+<td>
+<p>Denotes the number of largest sized (in terms of membership) clusters to plot.
+Defaults to all clusters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_points</code></td>
+<td>
+<p>Inputs a vector of common time points at which the collections of functions were
+observed (with the possibility of intermittent missingness).  The length of <code>time_points</code>
+should be equal to the number of columns in the data matrix, <code>y</code>.  Defaults to 
+<code>time_points = 1:ncol(y)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>units_name</code></td>
+<td>
+<p>The plot label for observation units.  Defaults to <code>units_name = "function"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>units_label</code></td>
+<td>
+<p>A vector of labels to apply to the observation units with length equal to the number of
+unique units.  Defaults to sequential numeric values as input with data, <code>y</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>date_field</code></td>
+<td>
+<p>A vector of <code>Date</code> values for labeling the x-axis tick marks.
+Defaults to <code>1:T</code>  .</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x.axis.label</code></td>
+<td>
+<p>Text label for x-axis. Defaults to <code>"time"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y.axis.label</code></td>
+<td>
+<p>Text label for y-axis. Defaults to <code>"function values"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smoother</code></td>
+<td>
+<p>A scalar boolean input indicating whether to co-plot a smoother line 
+through the functions in each cluster.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sample_rate</code></td>
+<td>
+<p>A numeric value in (0,1] indicating percent of functions to randomly sample within
+each cluster to address over-plotting.  Defaults to 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>single_unit</code></td>
+<td>
+<p>A scalar boolean indicating whether to plot the fitted vs data curve for
+only a single experimental units (versus a random sample of 6). 
+Defaults to <code>single_unit = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>credible</code></td>
+<td>
+<p>A scalar boolean indicating whether to plot 95 percent credible intervals for
+estimated functions, <code>bb</code>, when plotting fitted functions versus data.  Defaults to
+<code>credible = FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_plot</code></td>
+<td>
+<p>A scalar integer indicating how many randomly-selected functions to plot
+(each in it's own plot panel) in the plot of functions versus the observed time series
+in the case that <code>single_unit == TRUE</code>.
+Defaults to <code>num_plot = 6</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list object containing the plot of estimated functions, faceted by cluster,
+and the associated <code>data.frame</code> object.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>p.cluster</code></td>
+<td>
+<p>A <code>ggplot2</code> plot object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dat.cluster</code></td>
+<td>
+<p>A <code>data.frame</code> object used to generate <code>p.cluster</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Terrance Savitsky <a href="mailto:tds151@gmail.com">tds151@gmail.com</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gpdpgrow</code>, <code>gmrfdpgrow</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">{
+library(growfunctions)
+
+## load the monthly employment count data for a collection of 
+## U.S. states from the Current 
+## Population Survey (cps)
+data(cps)
+## subselect the columns of N x T, y, associated with 
+## the years 2008 - 2013
+## to examine the state level employment levels 
+## during the "great recession"
+y_short             &lt;- cps$y[,(cps$yr_label %in% c(2008:2013))]
+
+## Run the DP mixture of iGMRF's to estimate posterior 
+## distributions for model parameters
+## Under default RW2(kappa) = order 2 trend 
+## precision term
+res_gmrf            &lt;- gmrfdpgrow(y = y_short, 
+                                     n.iter = 40, 
+                                     n.burn = 20, 
+                                     n.thin = 1) 
+                                     
+## 2 plots of estimated functions: 1. faceted by cluster and fit;
+## 2.  data for experimental units.
+## for a group of randomly-selected functions
+fit_plots_gmrf      &lt;- cluster_plot( object = res_gmrf, 
+                                     units_name = "state", 
+                                     units_label = cps$st, 
+                                     single_unit = FALSE, 
+                                     credible = TRUE )   
+}
+</code></pre>
+
+
+</div>

@@ -1,0 +1,153 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plot.combined_global_envelope2d</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Plotting function for combined 2d global envelopes</h2>
+
+<h3>Description</h3>
+
+<p>If fixedscales is FALSE (or 0) all images will have separate scale.
+If fixedscales is TRUE (or 1) each x[[i]] will have a common scale.
+If fixedscales is 2 all images will have common scale.
+</p>
+<p>If more than one envelope has been calculated (corresponding to several coverage/alpha),
+only the largest one is plotted.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'combined_global_envelope2d'
+plot(
+  x,
+  fixedscales = 2,
+  labels,
+  what = c("obs.sign", "obs", "lo", "hi", "lo.sign", "hi.sign"),
+  sign.type = c("circles", "contour", "col"),
+  sign.col = c("blue", "red"),
+  transparency = 155/255,
+  digits = 3,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A 'global_envelope' object for two-dimensional functions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixedscales</code></td>
+<td>
+<p>0, 1 or 2. See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>labels</code></td>
+<td>
+<p>A character vector of suitable length giving the labels for the separate plots.
+Default exists. This parameter allows replacing the default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>what</code></td>
+<td>
+<p>Character vector specifying what information should be plotted for 2d functions.
+A combination of:
+Observed (<code>"obs"</code>), upper envelope (<code>"hi"</code>), lower envelope (<code>"lo"</code>),
+observed with significantly higher values highlighted (<code>"hi.sign"</code>),
+observed with significantly lower values highlighted (<code>"lo.sign"</code>),
+observed with significantly (lower and higher) values highlighted (<code>"obs.sign"</code>).
+Default to the last one. Combination c("obs", "lo", "hi", "lo.sign", "hi.sign") can
+also be of interest (earlier default).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sign.type</code></td>
+<td>
+<p>Either <code>"col"</code> for color showing the significant region, or
+<code>"contour"</code> for colored contour showing the significant region, or
+<code>"circles"</code> for plotting circles at locations where the observed function
+exceeds the envelope: diameters proportional to (obs-hi)/(hi-lo) for values
+above the envelope and (lo-obs)/(hi-lo) for values below the envelope.
+In the one-sided (testing) case, the divisors are instead (hi-central) (case 'greater')
+and (central-lo) (case 'less').
+Default to <code>"circles"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sign.col</code></td>
+<td>
+<p>A vector of length two giving the colors for significant parts
+below the envelope (first value) and above the envelope (second value).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transparency</code></td>
+<td>
+<p>A number between 0 and 1 (default 155/255, 60
+Similar to alpha of <code>rgb</code>. Used in plotting the significant regions for 2d
+functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>The number of digits used for printing the p-value or p-interval
+in the default main.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Ignored.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">data("abide_9002_23")
+iset &lt;- subset(abide_9002_23[['curve_set']], 1:50)
+factors &lt;- abide_9002_23[['factors']][1:50,]
+
+res &lt;- graph.flm(nsim = 19, # Increase nsim for serious analysis!
+  formula.full = Y ~ Group + Sex + Age,
+  formula.reduced = Y ~ Sex + Age,
+  curve_sets = list(Y=iset), factors = factors,
+  contrasts = FALSE, GET.args = list(type="area"))
+plot(res)
+
+plot(res, what=c("obs", "hi"))
+
+plot(res, what=c("hi", "lo"), fixedscales=1)
+
+plot(res, what=c("obs", "lo", "hi"), fixedscales=FALSE)
+
+if(requireNamespace("gridExtra", quietly=TRUE)) {
+  # Edit style of "fixedscales = 2" plots
+  plot(res, what=c("obs", "hi")) + ggplot2::theme_minimal()
+  plot(res, what=c("obs", "hi")) + ggplot2::theme_bw()
+
+  # Edit style (e.g. theme) of "fixedscales = 1 or 0" plots
+  gs &lt;- lapply(res, function(x, what) { plot(x, what=what) +
+     ggplot2::ggtitle("") }, what=c("obs", "hi"))
+  gridExtra::grid.arrange(grobs=gs, ncol=1, top="My main")
+
+  gs &lt;- outer(res, c("obs", "hi"), FUN=Vectorize(function(res, what)
+    list(plot(res, what=what) + ggplot2::ggtitle("") +
+      ggplot2::theme(axis.ticks=ggplot2::element_blank(),
+      axis.text=ggplot2::element_blank(), axis.title=ggplot2::element_blank()))))
+  gridExtra::grid.arrange(grobs=t(gs))
+}
+
+</code></pre>
+
+
+</div>

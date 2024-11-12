@@ -1,0 +1,212 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>adonis3</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Permutational Multivariate Analysis of Variance Using Distance Matrices (Freedman-Lane permutation)</h2>
+
+<h3>Description</h3>
+
+<p>Analysis of variance using distance matrices — for
+partitioning distance matrices among sources of variation and fitting
+linear models (e.g., factors, polynomial regression) to distance 
+matrices; uses a permutation test (Freedman-Lane permutation) with pseudo-<code class="reqn">F</code> ratios.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">adonis3(formula, data, permutations = 999, method = "bray",
+    strata = NULL, contr.unordered = "contr.sum",
+    contr.ordered = "contr.poly", parallel = getOption("mc.cores"), ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>model formula. The LHS must be either a community
+data matrix or a dissimilarity matrix, e.g., from
+<code>vegdist</code> or <code>dist</code>.  If the LHS is a data
+matrix, function <code>vegdist</code> will be used to find the
+dissimilarities. The RHS defines the independent variables. These
+can be continuous variables or factors, they can be transformed
+within the formula, and they can have interactions as in a typical
+<code>formula</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p> the data frame for the independent variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>permutations</code></td>
+<td>
+<p>a list of control values for the permutations
+as returned by the function <code>how</code>, or the
+number of permutations required, or a permutation matrix where each
+row gives the permuted indices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p> the name of any method used in <code>vegdist</code> to
+calculate pairwise distances if the left hand side of the
+<code>formula</code> was a data frame or a matrix. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strata</code></td>
+<td>
+<p> groups (strata) within which to constrain permutations.  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contr.unordered, contr.ordered</code></td>
+<td>
+<p>contrasts used for the design
+matrix (default in R is dummy or treatment contrasts for unordered
+factors). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>number of parallel processes or a predefined socket
+cluster.  With <code>parallel = 1</code> uses ordinary, non-parallel
+processing. The parallel processing is done with <span class="pkg">parallel</span>
+package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed to <code>vegdist</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>adonis3</code> is the re-implementation of the <code>adonis</code> function in
+the <code>vegan</code> package based on the Freedman-Lane permutation scheme
+(Freedman &amp; Lane (1983), Hu &amp; Satten (2020)).  The original
+implementation in the <code>vegan</code> package is directly based on the algorithm of Anderson (2001) and
+performs a sequential test of terms. Statistical significance is assessed
+based on permuting the distance matrix. We found that such permutation
+will lead to power loss in testing the effect of a covariate of interest while adjusting
+for other covariates (confounders). The power loss is more evident  when the confounders' effects
+are strong, the correlation between the covariate of interest and the confounders is high, and
+the sample size is small. When the sample size is large than 100, the difference is usually small.
+The new implementation is revised on the <code>adonis</code> function with the same interface.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Function <code>adonis3</code> returns an object of class <code>"adonis"</code> with
+following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>aov.tab</code></td>
+<td>
+<p>typical AOV table showing sources of variation,
+degrees of freedom, sequential sums of squares, mean squares,
+<code class="reqn">F</code> statistics, partial <code class="reqn">R^2</code> and <code class="reqn">P</code>
+values, based on <code class="reqn">N</code> permutations. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p> matrix of coefficients of the linear model, with
+rows representing sources of variation and columns representing
+species; each column represents a fit of a species abundance to the
+linear model. These are what you get when you fit one species to
+your predictors. These are NOT available if you supply the distance
+matrix in the formula, rather than the site x species matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef.sites</code></td>
+<td>
+<p> matrix of coefficients of the linear model, with
+rows representing sources of variation and columns representing
+sites; each column represents a fit of a sites distances (from all
+other sites) to the  linear model. These are what you get when you
+fit distances of one site to
+your predictors. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>f.perms</code></td>
+<td>
+<p> an <code class="reqn">N</code> by <code class="reqn">m</code> matrix of the null <code class="reqn">F</code>
+statistics for each source of variation based on <code class="reqn">N</code>
+permutations of the data. The permutations can be inspected with
+<code>permustats</code> and its support functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.matrix</code></td>
+<td>
+<p>the <code>model.matrix</code> for the right hand
+side of the formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms</code></td>
+<td>
+<p>the <code>terms</code> component of the model.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Martin Henry H. Stevens (<code>adonis</code>) and Jun Chen
+(<code>adonis3</code>). </p>
+
+
+<h3>References</h3>
+
+<p>Anderson, M.J. 2001. A new method for non-parametric multivariate
+analysis of variance. <em>Austral Ecology</em>, <strong>26</strong>: 32–46.
+</p>
+<p>Freedman D. &amp; Lane D. 1983. A nonstochastic interpretation of reported significance
+levels. <em>Journal of Business and Economic Statistics</em>, <strong>1</strong>292–298.
+</p>
+<p>Hu, Y. J. &amp; Satten, G. A. 2020. Testing hypotheses about the microbiome using the 
+linear decomposition model (LDM). <em>JBioinformatics</em>, <strong> 36(14)</strong> : 4106-4115.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+data(throat.otu.tab)
+data(throat.tree)
+data(throat.meta)
+
+groups &lt;- throat.meta$SmokingStatus
+
+# Rarefaction
+otu.tab.rff &lt;- Rarefy(throat.otu.tab)$otu.tab.rff
+
+# Calculate the UniFrac distance
+unifracs &lt;- GUniFrac(otu.tab.rff, throat.tree, alpha=c(0, 0.5, 1))$unifracs
+
+# Test the smoking effect based on unweighted UniFrac distance, adjusting sex
+adonis3(as.dist(unifracs[, , 'd_UW']) ~ Sex + SmokingStatus, data = throat.meta)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,209 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>calculate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>calculate greta arrays given fixed values</h2>
+
+<h3>Description</h3>
+
+<p>Calculate the values that greta arrays would take, given
+temporary, or simulated values for the greta arrays on which they depend.
+This can be used to check the behaviour of your model, make predictions to
+new data after model fitting, or simulate datasets from either the prior or
+posterior of your model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">calculate(
+  ...,
+  values = list(),
+  nsim = NULL,
+  seed = NULL,
+  precision = c("double", "single"),
+  trace_batch_size = 100
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>one or more greta_arrays for which to calculate the value</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>values</code></td>
+<td>
+<p>a named list giving temporary values of the greta arrays with
+which <code>target</code> is connected, or a <code>greta_mcmc_list</code> object
+returned by <code>mcmc()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>an optional positive integer scalar for the number of responses
+to simulate if stochastic greta arrays are present in the model - see
+Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>an optional seed to be used in set.seed immediately before the
+simulation so as to generate a reproducible sample</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>precision</code></td>
+<td>
+<p>the floating point precision to use when calculating values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace_batch_size</code></td>
+<td>
+<p>the number of posterior samples to process at a time
+when <code>target</code> is a <code>greta_mcmc_list</code> object; reduce this to
+reduce memory demands</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The greta arrays named in <code>values</code> need not be variables, they
+can also be other operations or even data.
+</p>
+<p>At present, if <code>values</code> is a named list it must contain values for
+<em>all</em> of the variable greta arrays with which <code>target</code> is
+connected, even values are given for intermediate operations, or the target
+doesn't depend on the variable. That may be relaxed in a future release.
+</p>
+<p>If the model contains stochastic greta arrays; those with a distribution,
+calculate can be used to sample from these distributions (and all greta
+arrays that depend on them) by setting the <code>nsim</code> argument to a
+positive integer for the required number of samples. If <code>values</code> is
+specified (either as a list of fixed values or as draws), those values will
+be used, and remaining variables will be sampled conditional on them.
+Observed data with distributions (i.e. response variables defined with
+<code>distribution()</code> can also be sampled, provided they are defined as
+greta arrays. This behaviour can be used for a number of tasks, like
+simulating datasets for known parameter sets, simulating parameters and
+data from a set of priors, or simulating datasets from a model posterior.
+See some examples of these below.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Values of the target greta array(s), given values of the greta arrays
+on which they depend (either specified in <code>values</code> or sampled from
+their priors). If <code>values</code> is a
+<code>greta_mcmc_list()</code> and <code>nsim = NULL</code>, this will
+be a <code>greta_mcmc_list</code> object of posterior samples for the target
+greta arrays. Otherwise, the result will be a named list of numeric R
+arrays. If <code>nsim = NULL</code> the dimensions of returned numeric R arrays
+will be the same as the corresponding greta arrays, otherwise an additional
+dimension with <code>nsim</code> elements will be prepended, to represent
+multiple simulations.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+# define a variable greta array, and another that is calculated from it
+# then calculate what value y would take for different values of x
+x &lt;- normal(0, 1, dim = 3)
+a &lt;- lognormal(0, 1)
+y &lt;- sum(x^2) + a
+calculate(y, values = list(x = c(0.1, 0.2, 0.3), a = 2))
+
+# by setting nsim, you can also sample values from their priors
+calculate(y, nsim = 3)
+
+# you can combine sampling and fixed values
+calculate(y, values = list(a = 2), nsim = 3)
+
+# if the greta array only depends on data,
+# you can pass an empty list to values (this is the default)
+x &lt;- ones(3, 3)
+y &lt;- sum(x)
+calculate(y)
+
+# define a model
+alpha &lt;- normal(0, 1)
+beta &lt;- normal(0, 1)
+sigma &lt;- lognormal(1, 0.1)
+y &lt;- as_data(iris$Petal.Width)
+mu &lt;- alpha + iris$Petal.Length * beta
+distribution(y) &lt;- normal(mu, sigma)
+m &lt;- model(alpha, beta, sigma)
+
+# sample values of the parameters, or different observation data (y), from
+# the priors (useful for prior # predictive checking) - see also
+# ?simulate.greta_model
+calculate(alpha, beta, sigma, nsim = 100)
+calculate(y, nsim = 100)
+
+# calculate intermediate greta arrays, given some parameter values (useful
+# for debugging models)
+calculate(mu[1:5], values = list(alpha = 1, beta = 2, sigma = 0.5))
+calculate(mu[1:5], values = list(alpha = -1, beta = 0.2, sigma = 0.5))
+
+# simulate datasets given fixed parameter values
+calculate(y, values = list(alpha = -1, beta = 0.2, sigma = 0.5), nsim = 10)
+
+# you can use calculate in conjunction with posterior samples from MCMC, e.g.
+# sampling different observation datasets, given a random set of these
+# posterior samples - useful for posterior predictive model checks
+draws &lt;- mcmc(m, n_samples = 500)
+calculate(y, values = draws, nsim = 100)
+
+# you can use calculate on greta arrays created even after the inference on
+# the model - e.g. to plot response curves
+petal_length_plot &lt;- seq(min(iris$Petal.Length),
+  max(iris$Petal.Length),
+  length.out = 100
+)
+mu_plot &lt;- alpha + petal_length_plot * beta
+mu_plot_draws &lt;- calculate(mu_plot, values = draws)
+mu_est &lt;- colMeans(mu_plot_draws[[1]])
+plot(mu_est ~ petal_length_plot,
+  type = "n",
+  ylim = range(mu_plot_draws[[1]])
+)
+apply(mu_plot_draws[[1]], 1, lines,
+  x = petal_length_plot, col = grey(0.8)
+)
+lines(mu_est ~ petal_length_plot, lwd = 2)
+
+# trace_batch_size can be changed to trade off speed against memory usage
+# when calculating. These all produce the same result, but have increasing
+# memory requirements:
+mu_plot_draws_1 &lt;- calculate(mu_plot,
+  values = draws,
+  trace_batch_size = 1
+)
+mu_plot_draws_10 &lt;- calculate(mu_plot,
+  values = draws,
+  trace_batch_size = 10
+)
+mu_plot_draws_inf &lt;- calculate(mu_plot,
+  values = draws,
+  trace_batch_size = Inf
+)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

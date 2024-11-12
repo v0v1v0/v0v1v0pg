@@ -1,0 +1,100 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gr_join_rean</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Join reanalysis data</h2>
+
+<h3>Description</h3>
+
+<p>The function performs spatial join of meteorological variables (temperature and precipitation) from <a href="https://www.dropbox.com/sh/5xjnf620tlwfk7a/AABhTaPEDWLII8rV04dp0MWna?dl=0">grwat reanalysis</a> to the daily runoff time series. Reanalysis covers the East European Plain with 0.75 degrees spatial resolution and is obtained based on CIRES-DOE (1880-1949) and ERA5 (1950-2021) data. This function is useful when the data from meteorological stations are missing inside the basin.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gr_join_rean(hdata, rean, buffer)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>hdata</code></td>
+<td>
+<p><code>data.frame</code> containing 2 columns: <code>Date</code> and runoff</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rean</code></td>
+<td>
+<p><code>list</code> as returned by <code>gr_read_rean()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>buffer</code></td>
+<td>
+<p><code>sf</code> object containing the region to select reanalysis data. Usually a river basin is used to select the meteorological data. Use <code>gr_buffer_geo()</code> to buffer the basin by specified distance and get more data, if needed.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Download the reanalysis archive from <a href="https://www.dropbox.com/sh/5xjnf620tlwfk7a/AABhTaPEDWLII8rV04dp0MWna?dl=0">here</a>.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>data.frame</code> with four columns: date, runoff, temperature, precipitation.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if (require("sf") &amp;&amp; require("ncdf4")) {
+
+  library(grwat)
+  library(dplyr)
+
+  # example Spas-Zagorye daily runoff data is included with grwat package
+  data_path = system.file("extdata", "spas-zagorye.txt",
+                          package = "grwat")
+
+  hdata_raw = read.delim(data_path, header = FALSE, 
+                         sep = ' ', na.strings = c('-999', '-999.0', '-'),
+                         col.names = c('d', 'm', 'y', 'q'))
+
+  hdata = hdata_raw %&gt;%
+    transmute(Date = lubridate::make_date(y, m, d),
+              Q = q)
+
+  head(hdata)
+
+  # read basin
+  basin_path = system.file("extdata", "spas-zagorye.gpkg",
+                           package = "grwat")
+  basin = sf::st_read(basin_path, layer = 'basin') # read basin region
+  basin_buffer = gr_buffer_geo(basin, 25000)
+
+  ## Not run: 
+    # read reanalysis data
+    rean = gr_read_rean(
+      '/Volumes/Data/Spatial/Reanalysis/grwat/pre_1880-2021.nc',
+      '/Volumes/Data/Spatial/Reanalysis/grwat/temp_1880-2021.nc'
+    )
+
+    # spatial join of reanalysis data to runoff data
+    hdata_rean = gr_join_rean(hdata, rean, basin_buffer)
+
+    head(hdata_rean)
+  
+## End(Not run)
+
+}
+</code></pre>
+
+
+</div>

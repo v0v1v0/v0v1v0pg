@@ -1,0 +1,132 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fit_easylinear</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit Exponential Growth Model with a Heuristic Linear Method</h2>
+
+<h3>Description</h3>
+
+<p>Determine maximum growth rates from the log-linear part of a growth curve using
+a heuristic approach similar to the “growth rates made easy”-method of
+Hall et al. (2013).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fit_easylinear(time, y, h = 5, quota = 0.95)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>vector of independent variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>vector of dependent variable (concentration of organisms).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h</code></td>
+<td>
+<p>width of the window (number of data).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quota</code></td>
+<td>
+<p>part of window fits considered for the overall linear fit
+(relative to max. growth rate)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The algorithm works as follows:
+</p>
+
+<ol>
+<li>
+<p> Fit linear regressions to all subsets of <code>h</code> consecutive data
+points. If for example <code class="reqn">h=5</code>, fit a linear regression to points
+1 ... 5, 2 ... 6, 3... 7 and so on. The method seeks the highest
+rate of exponential growth, so the dependent variable is of course
+log-transformed.
+</p>
+</li>
+<li>
+<p> Find the subset with the highest slope <code class="reqn">b_{max}</code> and
+include also the data points of adjacent subsets that have a slope of
+at least <code class="reqn">quota \cdot b_{max}</code>,
+e.g. all data sets that have at least 95% of the maximum slope.
+</p>
+</li>
+<li>
+<p> Fit a new linear model to the extended data window identified in step 2.
+</p>
+</li>
+</ol>
+<h3>Value</h3>
+
+<p>object with parameters of the fit. The lag time is currently estimated
+as the intersection between the fit and the horizontal line with <code class="reqn">y=y_0</code>,
+where <code>y0</code> is the first value of the dependent variable. The intersection
+of the fit with the abscissa is indicated as <code>y0_lm</code> (lm for linear model).
+These identifieres and their assumptions may change in future versions.
+</p>
+
+
+<h3>References</h3>
+
+<p>Hall, BG., Acar, H, Nandipati, A and Barlow, M (2014) Growth Rates Made Easy.
+Mol. Biol. Evol. 31: 232-38, <a href="https://doi.org/10.1093/molbev/mst187">doi:10.1093/molbev/mst187</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other fitting functions: 
+<code>all_easylinear()</code>,
+<code>all_growthmodels()</code>,
+<code>all_splines()</code>,
+<code>fit_growthmodel()</code>,
+<code>fit_spline()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(bactgrowth)
+
+splitted.data &lt;- multisplit(bactgrowth, c("strain", "conc", "replicate"))
+dat &lt;- splitted.data[[1]]
+
+plot(value ~ time, data=dat)
+fit &lt;- fit_easylinear(dat$time, dat$value)
+
+plot(fit)
+plot(fit, log="y")
+plot(fit, which="diagnostics")
+
+fitx &lt;- fit_easylinear(dat$time, dat$value, h=8, quota=0.95)
+
+plot(fit, log="y")
+lines(fitx, pch="+", col="blue")
+
+plot(fit)
+lines(fitx, pch="+", col="blue")
+
+
+</code></pre>
+
+
+</div>

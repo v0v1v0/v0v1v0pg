@@ -1,0 +1,156 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gjamCensorY</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Censor gjam response data</h2>
+
+<h3>Description</h3>
+
+<p>Returns a <code>list</code> with censored values, intervals, and censored response <code>matrix y</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  gjamCensorY(values, intervals, y, type='CA', whichcol = c(1:ncol(y)))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>values</code></td>
+<td>
+<p>Values in <code>y</code> that are censored, specified by <code>intervals</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intervals</code></td>
+<td>
+<p><code>matrix</code> having two rows and one column for each value 
+in <code>values</code>. The first row holds lower bounds.  The second row holds
+upper bounds.  See <b>Examples</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Response <code>matrix</code>, <code>n</code> rows by <code>S</code> columns.  All values within <code>intervals</code> will be replaced with <code>values</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Response type, see <code>typeNames</code> in <code>gjam</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>whichcol</code></td>
+<td>
+<p>Columns in <code>y</code> that are censored (often not all responses are
+censored)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Any values in <code>y</code> that fall within censored <code>intervals</code> are replaced with censored <code>values</code>.  The example below simulates data collected on an 'octave scale': 0, 1, 2, 4, 8, ..., an approach to accelerate data collection with approximate bins.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list containing two elements.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>n by S matrix updated with censored values substituted for
+those falling within <code>intervals</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>censor</code></td>
+<td>
+<p><code>list</code> containing <code>$columns</code> that are censored and
+<code>$partition</code>, a matrix with 3 rows used in <code>gjam</code> 
+and <code>gjamPlot</code>, one column per censor interval.  Rows 
+are values, followed by lower and upper bounds.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>James S Clark, <a href="mailto:jimclark@duke.edu">jimclark@duke.edu</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2017.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs 87, 34-56.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gjamSimData</code> simulates data
+<code>gjam</code> analyzes data
+</p>
+<p>A more detailed vignette is can be obtained with:
+</p>
+<p><code>browseVignettes('gjam')</code>
+</p>
+<p>website 'http://sites.nicholas.duke.edu/clarklab/code/'.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# data in octaves
+v  &lt;- up &lt;- c(0, 2^c(0:4), Inf)         
+dn &lt;- c(-Inf, v[-length(v)])
+i  &lt;- rbind( dn, up )  # intervals
+
+f  &lt;- gjamSimData(n = 2000, S = 15, Q = 3, typeNames='CA')
+y  &lt;- f$y
+cc &lt;- c(3:6)                                                # censored columns
+g  &lt;- gjamCensorY(values = v, intervals = i, y = y, whichcol = cc)
+y[,cc] &lt;- g$y                                               # replace columns
+ml     &lt;- list(ng = 500, burnin = 100, censor = g$censor, typeNames = f$typeNames)
+output &lt;- gjam(f$formula, xdata = f$xdata, ydata = y, modelList = ml)
+
+#repeat with ng = 2000, burnin = 500, then:
+pl  &lt;- list(trueValues = f$trueValues, width = 3, height = 3)   
+gjamPlot(output, pl)
+
+# upper detection limit
+up &lt;- 5
+v  &lt;- up
+i  &lt;- matrix(c(up,Inf),2)
+rownames(i) &lt;- c('down','up')
+
+f   &lt;- gjamSimData(typeNames='CA')   
+g   &lt;- gjamCensorY(values = v, intervals = i, y = f$y)
+ml  &lt;- list(ng = 500, burnin = 100, censor = g$censor, typeNames = f$typeNames)
+out &lt;- gjam(f$formula, xdata = f$xdata, ydata = g$y, modelList = ml)
+
+#repeat with ng = 2000, burnin = 500, then:
+pl  &lt;- list(trueValues = f$trueValues, width = 3, height = 3)           
+gjamPlot(out, pl)
+
+# lower detection limit
+lo        &lt;- .001
+values    &lt;- upper &lt;- lo
+intervals &lt;- matrix(c(-Inf,lo),2)
+rownames(intervals) &lt;- c('lower','upper')
+
+## End(Not run)
+</code></pre>
+
+
+</div>

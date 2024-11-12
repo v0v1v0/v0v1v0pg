@@ -1,0 +1,164 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getCrudeAndAdjustedModelData</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>This function helps with printing regression models</h2>
+
+<h3>Description</h3>
+
+<p>This function is used for getting the adjusted and unadjusted values
+for a regression model. It takes a full model and walks through each
+variable, removes in the regression all variables except one then
+reruns that variable to get the unadjusted value. This functions not
+intended for direct use, it's better to use <code>printCrudeAndAdjustedModel()</code>
+that utilizes this function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getCrudeAndAdjustedModelData(
+  model,
+  level = 0.95,
+  remove_interaction_vars = TRUE,
+  remove_strata = FALSE,
+  remove_cluster = FALSE,
+  var_select,
+  ...
+)
+
+## S3 method for class 'getCrudeAndAdjustedModelData'
+x[i, j, ...]
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>The regression model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>The confidence interval level</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remove_interaction_vars</code></td>
+<td>
+<p>Removes the interaction terms as they in
+the raw state are difficult to understand</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remove_strata</code></td>
+<td>
+<p>Strata should most likely not be removed in the crude
+version. If you want to force the removal of stratas you can specify the
+<code>remove_strata = TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remove_cluster</code></td>
+<td>
+<p>Cluster information should most likely also retain
+just as the <code>remove_strata</code> option. Clusters are sometimes used in
+cox regression models, <code>cluster()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var_select</code></td>
+<td>
+<p>A vector with regular expressions for choosing what variables
+to return (the same format as for the <code>order</code> argument in
+<code>printCrudeAndAdjustedModel()</code> call). It can be useful when working with
+large datasets only to report a subsection of all tested variables. This
+makes the function both run faster and the data presentation more concise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Not used</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function saves a lot of time creating tables since it compiles a fully
+unadjusted list of all your used covariates.
+</p>
+<p>If the model is an exponential poisson/logit/cox regression model then it automatically
+reports the exp() values instead of the original values
+</p>
+<p>The function skips by default all spline variables since this becomes very complicated
+and there is no simple </p>
+<p style="text-align: center;"><code class="reqn">\beta</code>
+</p>
+<p> to display. For the same reason it skips
+any interaction variables since it's probably better to display these as a contrast table.
+</p>
+<p>Note that the rms regression has a separate function that uses the <code>rms:::summaryrms</code> function
+that returns a matrix that is then pruned.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a matrix with the columns:
+<code>c("Crude", "2.5 %", "97.5 %", "Adjusted", "2.5 %", "97.5 %")</code>.
+The row order is not changed from the original model. The percentages can vary depending
+on the set level.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>printCrudeAndAdjustedModel()</code>
+</p>
+<p>Other crudeAndAdjusted functions: 
+<code>printCrudeAndAdjustedModel()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># simulated data to use
+set.seed(10)
+ds &lt;- data.frame(
+  ftime = rexp(200),
+  fstatus = sample(0:1, 200, replace = TRUE),
+  x1 = runif(200),
+  x2 = runif(200),
+  x3 = runif(200),
+  x4 = runif(200),
+  x5 = runif(200)
+)
+
+library(rms)
+dd &lt;- datadist(ds)
+options(datadist = "dd")
+
+s &lt;- Surv(ds$ftime, ds$fstatus == 1)
+fit &lt;- cph(s ~ x1 + x2 + x3, data = ds)
+
+data_matrix &lt;- getCrudeAndAdjustedModelData(fit)
+
+print(data_matrix)
+
+# If we have interaction then those variable are not
+# reported
+fit &lt;- cph(s ~ x1 + x2 + x3 + x4 * x5, data = ds)
+data_matrix &lt;- getCrudeAndAdjustedModelData(fit)
+
+print(data_matrix)
+</code></pre>
+
+
+</div>

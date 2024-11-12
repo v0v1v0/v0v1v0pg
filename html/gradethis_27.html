@@ -1,0 +1,144 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fail_if_error</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fail if grading code produces an error</h2>
+
+<h3>Description</h3>
+
+<p>When grading code involves unit-style testing, you may want to use
+<span class="pkg">testthat</span> expectation function to test the user's submitted code. In
+these cases, to differentiate between expected errors and internal errors
+indicative of issues with the grading code, <span class="pkg">gradethis</span> requires that
+authors wrap assertion-style tests in <code>fail_if_error()</code>. This function
+catches any errors and converts them into <code>fail()</code> grades. It also makes the
+error and its message available for use in the <code>message</code> glue string as
+<code>.error</code> and <code>.error_message</code> respectively.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fail_if_error(
+  expr,
+  message = "{.error_message}",
+  ...,
+  env = parent.frame(),
+  hint = TRUE,
+  encourage = getOption("gradethis.fail.encourage", FALSE)
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>expr</code></td>
+<td>
+<p>An expression to evaluate that whose errors are safe to be
+converted into failing grades with <code>fail()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>message</code></td>
+<td>
+<p>A glue string containing the feedback message to be returned
+to the user. Additional <code>.error</code> and <code>.error_message</code> objects are made
+available for use in the message.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to <code>graded()</code> or additional data to be
+included in the feedback object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>env</code></td>
+<td>
+<p>environment to evaluate the glue <code>message</code>. Most users of
+<span class="pkg">gradethis</span> will not need to use this argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hint</code></td>
+<td>
+<p>Include a code feedback hint with the failing message? This
+argument only applies to <code>fail()</code> and <code>fail_if_equal()</code> and the message is
+added using the default options of <code>give_code_feedback()</code> and
+<code>maybe_code_feedback()</code>. The default value of <code>hint</code> can be set using
+<code>gradethis_setup()</code> or the <code>gradethis.fail.hint</code> option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>encourage</code></td>
+<td>
+<p>Include a random encouraging phrase with
+<code>random_encouragement()</code>? The default value of <code>encourage</code> can be set
+using <code>gradethis_setup()</code> or the <code>gradethis.fail.encourage</code> option.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>If an error occurs while evaluating <code>expr</code>, the error is returned as
+a <code>fail()</code> grade. Otherwise, no value is returned.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other grading helper functions: <code>graded()</code>, <code>pass()</code>, <code>fail()</code>,
+<code>pass_if()</code>, <code>fail_if()</code>, <code>pass_if_equal()</code>, <code>fail_if_equal()</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># The user is asked to add 2 + 2, but they take a shortcut
+ex &lt;- mock_this_exercise("'4'")
+
+# Normally, grading code with an author error returns an internal problem grade
+grade_author_mistake &lt;- grade_this({
+  if (identical(4)) {
+    pass("Great work!")
+  }
+  fail()
+})(ex)
+
+# This returns a "problem occurred" grade
+grade_author_mistake
+# ...that also includes information about the error (not shown to users)
+grade_author_mistake$error
+
+# But sometimes we'll want to use unit-testing helper functions where we know
+# that an error is indicative of a problem in the users' code
+grade_this({
+  fail_if_error({
+    testthat::expect_length(.result, 1)
+    testthat::expect_true(is.numeric(.result))
+    testthat::expect_equal(.result, 4)
+  })
+  pass("Good job!")
+})(ex)
+
+# Note that you don't need to reveal the error message to the user
+grade_this({
+  fail_if_error(
+    message = "Your result isn't a single numeric value.",
+    {
+      testthat::expect_length(.result, 1)
+      testthat::expect_true(is.numeric(.result))
+      testthat::expect_equal(.result, 4)
+    }
+  )
+  pass("Good job!")
+})(ex)
+</code></pre>
+
+
+</div>

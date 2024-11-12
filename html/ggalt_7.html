@@ -1,0 +1,128 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>coord_proj</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Similar to <code>coord_map</code> but uses the PROJ.4 library/package for projection
+transformation</h2>
+
+<h3>Description</h3>
+
+<p>The representation of a portion of the earth, which is approximately
+spherical, onto a flat 2D plane requires a projection. This is what
+<code>coord_proj</code> does, using the <code>proj4::project()</code> function from
+the <code>proj4</code> package.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">coord_proj(proj = NULL, inverse = FALSE, degrees = TRUE,
+  ellps.default = "sphere", xlim = NULL, ylim = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>proj</code></td>
+<td>
+<p>projection definition. If left <code>NULL</code> will default to
+a Robinson projection</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inverse</code></td>
+<td>
+<p>if <code>TRUE</code> inverse projection is performed (from a
+cartographic projection into lat/long), otherwise projects from
+lat/long into a cartographic projection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>degrees</code></td>
+<td>
+<p>if <code>TRUE</code> then the lat/long data is assumed to be in
+degrees, otherwise in radians</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ellps.default</code></td>
+<td>
+<p>default ellipsoid that will be added if no datum or
+ellipsoid parameter is specified in proj. Older versions of PROJ.4
+didn't require a datum (and used sphere by default), but 4.5.0 and
+higher always require a datum or an ellipsoid. Set to  <code>NA</code> if no
+datum should be added to proj (e.g. if you specify an ellipsoid
+directly).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlim</code></td>
+<td>
+<p>manually specify x limits (in degrees of longitude)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ylim</code></td>
+<td>
+<p>manually specify y limits (in degrees of latitude)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+<p>A sample of the output from <code>coord_proj()</code> using the Winkel-Tripel projection:
+</p>
+<p><img src="../help/figures/coordproj01.png" width="100%" alt="Figure: coordproj01.png"></p>
+
+
+
+<h3>Note</h3>
+
+<p>It is recommended that you use <code>geom_cartogram</code> with this coordinate system
+</p>
+<p>When <code>inverse</code> is <code>FALSE</code> <code>coord_proj</code> makes a fairly
+large assumption that the coordinates being transformed are within
+-180:180 (longitude) and -90:90 (latitude). As such, it truncates
+all longitude &amp; latitude input to fit within these ranges. More updates
+to this new <code>coord_</code> are planned.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# World in Winkel-Tripel
+
+# U.S.A. Albers-style
+usa &lt;- world[world$region == "USA",]
+usa &lt;- usa[!(usa$subregion %in% c("Alaska", "Hawaii")),]
+
+gg &lt;- ggplot()
+gg &lt;- gg + geom_cartogram(data=usa, map=usa,
+                    aes(x=long, y=lat, map_id=region))
+gg &lt;- gg + coord_proj(
+             paste0("+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96",
+                    " +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"))
+gg
+
+# Showcase Greenland (properly)
+greenland &lt;- world[world$region == "Greenland",]
+
+gg &lt;- ggplot()
+gg &lt;- gg + geom_cartogram(data=greenland, map=greenland,
+                    aes(x=long, y=lat, map_id=region))
+gg &lt;- gg + coord_proj(
+             paste0("+proj=stere +lat_0=90 +lat_ts=70 +lon_0=-45 +k=1 +x_0=0",
+                    " +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"))
+gg
+
+## End(Not run)
+</code></pre>
+
+
+</div>

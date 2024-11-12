@@ -1,0 +1,430 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gam</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting Generalized Additive Models</h2>
+
+<h3>Description</h3>
+
+<p><code>gam</code> is used to fit generalized additive models, specified by giving a
+symbolic description of the additive predictor and a description of the
+error distribution. <code>gam</code> uses the <em>backfitting algorithm</em> to
+combine different smoothing or fitting methods. The methods currently
+supported are local regression and smoothing splines.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gam(
+  formula,
+  family = gaussian,
+  data,
+  weights,
+  subset,
+  na.action,
+  start = NULL,
+  etastart,
+  mustart,
+  control = gam.control(...),
+  model = TRUE,
+  method = "glm.fit",
+  x = FALSE,
+  y = TRUE,
+  ...
+)
+
+gam.fit(
+  x,
+  y,
+  smooth.frame,
+  weights = rep(1, nobs),
+  start = NULL,
+  etastart = NULL,
+  mustart = NULL,
+  offset = rep(0, nobs),
+  family = gaussian(),
+  control = gam.control()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>a formula expression as for other regression models, of the
+form <code>response ~ predictors</code>. See the documentation of <code>lm</code> and
+<code>formula</code> for details.  Built-in nonparametric smoothing terms are
+indicated by <code>s</code> for smoothing splines or <code>lo</code> for <code>loess</code>
+smooth terms.  See the documentation for <code>s</code> and <code>lo</code> for their
+arguments. Additional smoothers can be added by creating the appropriate
+interface functions. Interactions with nonparametric smooth terms are not
+fully supported, but will not produce errors; they will simply produce the
+usual parametric interaction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>a description of the error distribution and link function to
+be used in the model. This can be a character string naming a family
+function, a family function or the result of a call to a family function.
+(See <code>family</code> for details of family functions.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>an optional data frame containing the variables in the model.
+If not found in <code>data</code>, the variables are taken from
+<code>environment(formula)</code>, typically the environment from which <code>gam</code>
+is called.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>an optional vector of weights to be used in the fitting
+process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>an optional vector specifying a subset of observations to be
+used in the fitting process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>a function which indicates what should happen when the data
+contain <code>NA</code>s.  The default is set by the <code>na.action</code> setting of
+<code>options</code>, and is <code>na.fail</code> if that is unset.  The
+“factory-fresh” default is <code>na.omit</code>. A special method
+<code>na.gam.replace</code> allows for mean-imputation of missing values
+(assumes missing at random), and works gracefully with <code>gam</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>starting values for the parameters in the additive predictor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>etastart</code></td>
+<td>
+<p>starting values for the additive predictor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mustart</code></td>
+<td>
+<p>starting values for the vector of means.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>a list of parameters for controlling the fitting process.
+See the documentation for <code>gam.control</code> for details. These can
+also be set as arguments to <code>gam()</code> itself.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>a logical value indicating whether <em>model frame</em> should be
+included as a component of the returned value. Needed if <code>gam</code> is
+called and predicted from inside a user function. Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>the method to be used in fitting the parametric part of the
+model.  The default method <code>"glm.fit"</code> uses iteratively reweighted
+least squares (IWLS).  The only current alternative is <code>"model.frame"</code>
+which returns the model frame and does no fitting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x, y</code></td>
+<td>
+<p>For <code>gam</code>: logical values indicating whether the response
+vector and model matrix used in the fitting process should be returned as
+components of the returned value.
+</p>
+<p>For <code>gam.fit</code>: <code>x</code> is a model matrix of dimension <code>n * p</code>,
+and <code>y</code> is a vector of observations of length <code>n</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments passed to or from other methods.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smooth.frame</code></td>
+<td>
+<p>for <code>gam.fit</code> only. This is essentially a subset of
+the model frame corresponding to the smooth terms, and has the ingredients
+needed for smoothing each variable in the backfitting algorithm. The
+elements of this frame are produced by the formula functions <code>lo</code> and
+<code>s</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>this can be used to specify an <em>a priori</em> known component
+to be included in the additive predictor during fitting.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The gam model is fit using the local scoring algorithm, which iteratively
+fits weighted additive models by backfitting. The backfitting algorithm is a
+Gauss-Seidel method for fitting additive models, by iteratively smoothing
+partial residuals.  The algorithm separates the parametric from the
+nonparametric part of the fit, and fits the parametric part using weighted
+linear least squares within the backfitting algorithm. This version of
+<code>gam</code> remains faithful to the philosophy of GAM models as outlined in
+the references below.
+</p>
+<p>An object <code>gam.slist</code> (currently set to <code>c("lo","s","random")</code>)
+lists the smoothers supported by <code>gam</code>. Corresponding to each of these
+is a smoothing function <code>gam.lo</code>, <code>gam.s</code> etc that take particular
+arguments and produce particular output, custom built to serve as building
+blocks in the backfitting algorithm. This allows users to add their own
+smoothing methods. See the documentation for these methods for further
+information. In addition, the object <code>gam.wlist</code> (currently set to
+<code>c("s","lo")</code>) lists the smoothers for which efficient backfitters are
+provided. These are invoked if all the smoothing methods are of one kind
+(either all <code>"lo"</code> or all <code>"s"</code>).
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>gam</code> returns an object of class <code>Gam</code>, which inherits
+from both <code>glm</code> and <code>lm</code>.
+</p>
+<p>Gam objects can be examined by <code>print</code>, <code>summary</code>, <code>plot</code>,
+and <code>anova</code>.  Components can be extracted using extractor functions
+<code>predict</code>, <code>fitted</code>, <code>residuals</code>, <code>deviance</code>,
+<code>formula</code>, and <code>family</code>. Can be modified using <code>update</code>. It
+has all the components of a <code>glm</code> object, with a few more. This also
+means it can be queried, summarized etc by methods for <code>glm</code> and
+<code>lm</code> objects. Other generic functions that have methods for <code>Gam</code>
+objects are <code>step</code> and <code>preplot</code>.
+</p>
+<p>The following components must be included in a legitimate ‘Gam’ object. The
+residuals, fitted values, coefficients and effects should be extracted by
+the generic functions of the same name, rather than by the <code>"$"</code>
+operator. The <code>family</code> function returns the entire family object used
+in the fitting, and <code>deviance</code> can be used to extract the deviance of
+the fit.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p> the coefficients of the parametric part of the
+<code>additive.predictors</code>, which multiply the columns of the model matrix.
+The names of the coefficients are the names of the single-degree-of-freedom
+effects (the columns of the model matrix). If the model is overdetermined
+there will be missing values in the coefficients corresponding to
+inestimable coefficients. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>additive.predictors</code></td>
+<td>
+<p> the additive fit,
+given by the product of the model matrix and the coefficients, plus the
+columns of the <code>$smooth</code> component. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p> the fitted
+mean values, obtained by transforming the component
+<code>additive.predictors</code> using the inverse link function. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smooth,
+nl.df, nl.chisq, var</code></td>
+<td>
+<p> these four characterize the nonparametric aspect of
+the fit. <code>smooth</code> is a matrix of smooth terms, with a column
+corresponding to each smooth term in the model; if no smooth terms are in
+the <code>Gam</code> model, all these components will be missing. Each column
+corresponds to the strictly nonparametric part of the term, while the
+parametric part is obtained from the model matrix. <code>nl.df</code> is a vector
+giving the approximate degrees of freedom for each column of <code>smooth</code>.
+For smoothing splines specified by <code>s(x)</code>, the approximate <code>df</code>
+will be the trace of the implicit smoother matrix minus 2. <code>nl.chisq</code>
+is a vector containing a type of score test for the removal of each of the
+columns of <code>smooth</code>. <code>var</code> is a matrix like <code>smooth</code>,
+containing the approximate pointwise variances for the columns of
+<code>smooth</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smooth.frame</code></td>
+<td>
+<p>This is essentially a subset of the
+model frame corresponding to the smooth terms, and has the ingredients
+needed for making predictions from a <code>Gam</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+
+<p>the residuals from the final weighted additive fit; also known as residuals,
+these are typically not interpretable without rescaling by the weights. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deviance</code></td>
+<td>
+<p> up to a constant, minus twice the maximized log-likelihood.
+Similar to the residual sum of squares. Where sensible, the constant is
+chosen so that a saturated model has deviance zero. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>null.deviance</code></td>
+<td>
+<p>The deviance for the null model, comparable with
+<code>deviance</code>. The null model will include the offset, and an intercept if
+there is one in the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p> the number of local scoring
+iterations used to compute the estimates. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bf.iter</code></td>
+<td>
+<p>a vector of
+length <code>iter</code> giving number of backfitting iterations used at each
+inner loop.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p> a three-element character vector giving the name
+of the family, the link, and the variance function; mainly for printing
+purposes. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>the <em>working</em> weights, that is the weights
+in the final iteration of the local scoring fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior.weights</code></td>
+<td>
+<p>the
+case weights initially supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df.residual</code></td>
+<td>
+<p>the residual degrees of
+freedom.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df.null</code></td>
+<td>
+<p>the residual degrees of freedom for the null
+model.</p>
+</td>
+</tr>
+</table>
+<p>The object will also have the components of a <code>lm</code> object:
+<code>coefficients</code>, <code>residuals</code>, <code>fitted.values</code>, <code>call</code>,
+<code>terms</code>, and some others involving the numerical fit.  See
+<code>lm.object</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Written by Trevor Hastie, following closely the design in the
+"Generalized Additive Models" chapter (Hastie, 1992) in Chambers and Hastie
+(1992), and the philosophy in Hastie and Tibshirani (1991).  This version of
+<code>gam</code> is adapted from the S version to match the <code>glm</code> and
+<code>lm</code> functions in R.
+</p>
+<p>Note that this version of <code>gam</code> is different from the function with the
+same name in the R library <code>mgcv</code>, which uses only smoothing splines
+with a focus on automatic smoothing parameter selection via GCV. To avoid
+issues with S3 method handling when both packages are loaded, the object
+class in package "gam" is now "Gam".
+</p>
+
+
+<h3>References</h3>
+
+<p>Hastie, T. J. (1991) <em>Generalized additive models.</em> Chapter
+7 of <em>Statistical Models in S</em> eds J. M. Chambers and T. J. Hastie,
+Wadsworth &amp; Brooks/Cole.
+</p>
+<p>Hastie, T. and Tibshirani, R. (1990) <em>Generalized Additive Models.</em>
+London: Chapman and Hall.
+</p>
+<p>Venables, W. N. and Ripley, B. D. (2002) <em>Modern Applied Statistics
+with S.</em> New York: Springer.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>glm</code>, <code>family</code>, <code>lm</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(kyphosis)
+gam(Kyphosis ~ s(Age,4) + Number, family = binomial, data=kyphosis,
+trace=TRUE)
+data(airquality)
+gam(Ozone^(1/3) ~ lo(Solar.R) + lo(Wind, Temp), data=airquality, na=na.gam.replace)
+gam(Kyphosis ~ poly(Age,2) + s(Start), data=kyphosis, family=binomial, subset=Number&gt;2)
+data(gam.data)
+Gam.object &lt;- gam(y ~ s(x,6) + z,data=gam.data)
+summary(Gam.object)
+plot(Gam.object,se=TRUE)
+data(gam.newdata)
+predict(Gam.object,type="terms",newdata=gam.newdata)
+
+</code></pre>
+
+
+</div>

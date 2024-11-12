@@ -1,0 +1,162 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>orgls</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting generalized least squares regression models with order restrictions</h2>
+
+<h3>Description</h3>
+
+<p><code>orgls</code> is used to fit generalised least square models analogously to the function <code>gls</code> in package <code>nlme</code> but with order restrictions on the parameters.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">orgls(formula, data, constr, rhs, nec, weights = NULL, correlation = NULL,
+  control = orlmcontrol())
+
+## S3 method for class 'formula'
+orgls(formula, data, constr, rhs, nec, weights = NULL,
+  correlation = NULL, control = orlmcontrol())
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>an optional data frame, list or environment (or object coercible by as.data.frame to a data frame) containing the variables in the model. If not found in data, the variables are taken from environment(formula), typically the environment from which orgls is called.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constr</code></td>
+<td>
+<p>matrix with constraints; with rows as constraint definition, columns should be in line with the parameters of the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rhs</code></td>
+<td>
+<p>vector of right hand side elements; <code class="reqn">Constr \; \theta \geq rhs</code>; number should equal the number of rows of the constr matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nec</code></td>
+<td>
+<p>number of equality constraints; a numeric value treating the first nec constr rows as equality constraints, or a logical vector with <code>TRUE</code> for equality- and <code>FALSE</code> for inequality constraints.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>a <code>varClasses</code> object; more details are provided on the help pages in R package <code>nlme</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correlation</code></td>
+<td>
+<p>a <code>corClasses</code> object; more details are provided on the help pages in R package <code>nlme</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>a list of control arguments; see <code>orlmcontrol</code> for details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The contraints in the hypothesis of interest are defined by <code class="reqn">constr</code>, <code class="reqn">rhs</code>, and <code class="reqn">nec</code>. The first <code class="reqn">nec</code> constraints are the equality contraints: <code class="reqn">Constr[1:nec, 1:tk] \theta = rhs[1:nec]</code>; and the remaing ones are the inequality contraints: <code class="reqn">Constr[nec+1:c_m, 1:tk] \theta \geq rhs[nec+1:c_m]</code>.
+Two requirements should be met:
+</p>
+
+<ol>
+<li>
+<p> The first <code class="reqn">nec</code> constraints must be the equality contraints (i.e., <code class="reqn">Constr[1:nec, 1:tk] \theta = rhs[1:nec]</code>) and the remaining ones the inequality contraints (i.e., <code class="reqn">Constr[nec+1:c_m, 1:tk] \theta \geq rhs[nec+1:c_m]</code>).
+</p>
+</li>
+<li>
+<p> When <code class="reqn">rhs</code> is not zero, <code class="reqn">Constr</code> should be of full rank (after discarding redundant restrictions).
+</p>
+</li>
+</ol>
+<h3>Value</h3>
+
+<p>an object of class orgls
+</p>
+
+
+<h3>References</h3>
+
+
+<ul>
+<li>
+<p> Kuiper R.M., Hoijtink H., Silvapulle M.J. (2011). An Akaike-type Information Criterion for Model Selection Under Inequality Constraints. <em>Biometrika</em>, <b>98</b>, 495–501.
+</p>
+</li>
+<li>
+<p> Kuiper R.M., Hoijtink H., Silvapulle M.J. (2012). Generalization of the Order-Restricted Information Criterion for Multivariate Normal Linear Models. <em>Journal of Statistical Planning and Inference</em>, <b>142</b>, 2454-2463. doi:10.1016//j.jspi.2012.03.007.
+</p>
+</li>
+<li>
+<p> Kuiper R.M. and Hoijtink H. (submitted). A Fortran 90 Program for the Generalization of the Order-Restricted Information Criterion. Journal of Statictical Software.
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>solve.QP</code>, <code>goric</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># generating example data
+library(mvtnorm)
+# group means
+m &lt;- c(0,5,5,7)
+# compound symmetry structure of residuals
+# (10 individuals per group, rho=0.7) 
+cormat &lt;- kronecker(diag(length(m)*10), matrix(0.7, nrow=length(m), ncol=length(m)))
+diag(cormat) &lt;- 1
+# different variances per group
+sds &lt;- rep(c(1,2,0.5,1), times=10*length(m))
+sigma &lt;- crossprod(diag(sds), crossprod(cormat, diag(sds)))
+response &lt;- as.vector(rmvnorm(1, rep(m, times=10*length(m)), sigma=sigma))
+dat &lt;- data.frame(response,
+                  grp=rep(LETTERS[1:length(m)], times=10*length(m)), 
+                  ID=as.factor(rep(1:(10*length(m)), each=length(m))))
+                  
+## set of gls models:
+# unconstrained model
+m1 &lt;- orgls(response ~ grp-1, data = dat,
+            constr=rbind(c(0,0,0,0)), rhs=0, nec=0,
+            weights=varIdent(form=~1|grp),
+            correlation=corCompSymm(form=~1|ID))
+
+# simple order
+m2 &lt;- orgls(response ~ grp-1, data = dat,
+            constr=rbind(c(-1,1,0,0),c(0,-1,1,0),c(0,0,-1,1)), rhs=c(0,0,0), nec=0,
+            weights=varIdent(form=~1|grp),
+            correlation=corCompSymm(form=~1|ID))
+
+# equality constraints
+m3 &lt;- orgls(response ~ grp-1, data = dat,
+            constr=rbind(c(-1,1,0,0),c(0,-1,1,0),c(0,0,-1,1)), rhs=c(0,0,0), nec=3,
+            weights=varIdent(form=~1|grp),
+            correlation=corCompSymm(form=~1|ID))
+</code></pre>
+
+
+</div>

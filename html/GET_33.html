@@ -1,0 +1,175 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GET.spatialF</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Testing global and local dependence of point patterns on covariates</h2>
+
+<h3>Description</h3>
+
+<p>Compute the spatial F- and S-statistics and perform the one-stage global envelope tests
+proposed by Myllymäki et al. (2020).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GET.spatialF(
+  X,
+  formula.full,
+  formula.reduced,
+  fitfun,
+  covariates,
+  nsim,
+  bw = spatstat.explore::bw.scott(X),
+  bw.S = bw,
+  dimyx = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>A <code>ppp</code> object of <span class="pkg">spatstat</span> representing the observed point pattern.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula.full</code></td>
+<td>
+<p>A formula for the trend of the full model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula.reduced</code></td>
+<td>
+<p>A formula for the trend of the reduced model
+that is a submodel of the full model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitfun</code></td>
+<td>
+<p>A function of a point pattern, model formula and covariates,
+giving a fitted model object that can be used with <code>simulate</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariates</code></td>
+<td>
+<p>A list of covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>The number of simulations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bw</code></td>
+<td>
+<p>The bandwidth for smoothed residuals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bw.S</code></td>
+<td>
+<p>The radius for the local S(u)-statistic.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dimyx</code></td>
+<td>
+<p>Pixel array dimensions for smoothed residuals. See <code>as.mask</code> of <span class="pkg">spatstat</span>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to be passed to <code>global_envelope_test</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>list with three components
+</p>
+
+<ul>
+<li>
+<p> F = the global envelope test based on the F(u) statistic
+</p>
+</li>
+<li>
+<p> S = the global envelope test based on the S(u) statistic
+</p>
+</li>
+<li>
+<p> coef = the coefficients of the full model given by fitfun
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Myllymäki, M., Kuronen, M. and Mrkvička, T. (2020). Testing global and local dependence of point patterns on covariates in parametric models. Spatial Statistics 42, 100436. doi: 10.1016/j.spasta.2020.100436
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(require("spatstat.model", quietly=TRUE)) {
+  # Example of tropical rain forest trees
+  data("bei")
+
+  fullmodel &lt;- ~ grad
+  reducedmodel &lt;- ~ 1
+  fitppm &lt;- function(X, model, covariates) {
+    ppm(X, model, covariates=covariates)
+  }
+  
+  
+  nsim &lt;- 19 # Increase nsim for serious analysis!
+  res &lt;- GET.spatialF(bei, fullmodel, reducedmodel, fitppm, bei.extra, nsim)
+  
+  plot(res$F)
+  plot(res$S)
+
+  
+  # Example of forest fires
+  data("clmfires")
+  # Choose the locations of the lightnings in years 2004-2007:
+  pp.lightning &lt;- unmark(subset(clmfires, cause == "lightning" &amp;
+                   date &gt;= "2004-01-01" &amp; date &lt; "2008-01-01"))
+
+  covariates &lt;- clmfires.extra$clmcov100
+  covariates$forest &lt;- covariates$landuse == "conifer" | covariates$landuse == "denseforest" |
+                        covariates$landuse == "mixedforest"
+
+  fullmodel &lt;- ~ elevation + landuse
+  reducedmodel &lt;- ~ landuse
+  nsim &lt;- 19 # Increase nsim for serious analysis!
+  res &lt;- GET.spatialF(pp.lightning, fullmodel, reducedmodel, fitppm, covariates, nsim)
+  plot(res$F)
+  plot(res$S)
+
+  # Examples of the fitfun functions for clustered and regular processes
+  # fitfun for the log Gaussian Cox Process with exponential covariance function
+  fitLGCPexp &lt;- function(X, model, covariates) {
+    kppm(X, model, clusters="LGCP", model="exponential", covariates=covariates)
+  }
+  # fitfun for the hardcore process with hardcore radius 0.01
+  fitHardcore &lt;- function(X, model, covariates) {
+    ppm(X, model, interaction=Hardcore(0.01), covariates=covariates)
+  }
+  
+}
+</code></pre>
+
+
+</div>

@@ -1,0 +1,125 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>raster_bathymetry</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simplify a bathymetry raster ready for vectorization</h2>
+
+<h3>Description</h3>
+
+<p>Simplifies bathymetry raster ready for the <code>vector_bathymetry</code> function. Warning: processing may take a long time if the bathymetry raster is large.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">raster_bathymetry(
+  bathy,
+  depths,
+  proj.out = NULL,
+  proj.bathy = NULL,
+  boundary = NULL,
+  warp = FALSE,
+  estimate.land = FALSE,
+  downsample = NULL,
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>bathy</code></td>
+<td>
+<p>A stars object or a string giving the path to a bathymetry NetCDF or grd file</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>depths</code></td>
+<td>
+<p>Numeric vector giving the cut points for depth contours (see <code>cut</code>). If <code>NULL</code>, no depth aggregation will be made. This option is suitable for raster bathymetries passed directly to <code>basemap</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>proj.out</code></td>
+<td>
+<p>A character string specifying the coordinate reference system (CRS)  argument for the output. See <code>st_crs</code> and <a href="https://proj.org/">proj.org</a>. If <code>NULL</code>, the projection is retrieved from <code>bathy</code> and the output will not be reprojected saving processing time (since <code>proj.out</code> and <code>proj.bathy</code> would match.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>proj.bathy</code></td>
+<td>
+<p>A character string specifying the <code>CRS</code> for the input (<code>bathy</code>). Only required if <code>bathy</code> lacks CRS information. If <code>NULL</code>, <code>"EPSG:4326"</code> is assumed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boundary</code></td>
+<td>
+<p>A st_polygon object, text string defining the file path to a spatial polygon, bounding box, or a numeric vector of length 4 giving the boundaries for which <code>bathy</code> should be cut to. Should be given as <strong>decimal degrees</strong>. If unnamed numeric vector, the first element defines the minimum longitude, the second element the maximum longitude, the third element the minimum latitude and the fourth element the maximum latitude of the bounding box. You can also use the sf bounding box format as named vector. Use <code>NULL</code> not to cut <code>bathy</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warp</code></td>
+<td>
+<p>Logical indicating whether the resulting grid should be resampled to a new CRS if <code>proj.out != proj.bathy</code> using the <code>st_warp</code> function. A time-consuming operation, but necessary when CRS changes in raster bathymetries. Not required if the next step is to vectorise the bathymetry.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimate.land</code></td>
+<td>
+<p>Logical indicating whether to include land to the output. Can be used in the following <code>vector_bathymetry</code> step to estimate land polygons.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>downsample</code></td>
+<td>
+<p>An integer defining how many rows in <code>bathy</code> should be skipped to reduce the size (and resolution). 1 skips every second row, 2 every second and third. See <code>st_downsample</code>. Set to <code>NULL</code> (default) to skip downsampling.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical indicating whether information about progress and guessed projection should be returned. Set to <code>FALSE</code> to make the function silent.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>You can use <a href="https://www.gebco.net/data_and_products/gridded_bathymetry_data/">GEBCO</a>, <a href="https://www.gebco.net/data_and_products/gridded_bathymetry_data/arctic_ocean/">IBCAO</a>, <a href="https://www.ncei.noaa.gov/products/etopo-global-relief-model">ETOPO</a> bathymetry grids downloaded from respective sources as the <code>bathy</code> argument. The bathymetry grids read from files must be in any format read by <code>read_stars</code>. Alternatively use the <code>marmap::getNOAA.bathy</code> function to download ETOPO1 bathymetry and convert it to a raster object using the <code>marmap::as.raster</code> function.
+</p>
+<p>Note that the size of the output is heavily influenced by the number of depth contours (<code>depths</code>) as well as the resolution of <code>bathy</code> and choice of <code>downsample</code>. To make the <code>vector_bathymetry</code> function and consequent plotting faster, limiting the details of the bathymetry raster may be desirable.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with a stars object the containing projected bathymetry defined by the <code>proj.out</code> argument and a data frame of depth intervals.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Mikko Vihtakari
+</p>
+
+
+<h3>References</h3>
+
+<p>GEBCO Compilation Group (2019) GEBCO 2019 15-arcsecond grid (doi:10.5285/836f016a-33be-6ddc-e053-6c86abc0788e). URL: <a href="https://www.gebco.net/data_and_products/gridded_bathymetry_data/gebco_2019/gebco_2019_info.html">https://www.gebco.net/data_and_products/gridded_bathymetry_data/gebco_2019/gebco_2019_info.html</a>.
+NOAA National Centers for Environmental Information. 2022: ETOPO 2022 15 Arc-Second Global Relief Model. NOAA National Centers for Environmental Information. <a href="https://doi.org/10.25921/fd45-gt74">doi:10.25921/fd45-gt74</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other create shapefiles: 
+<code>clip_shapefile()</code>,
+<code>geonorge_bathymetry()</code>,
+<code>vector_bathymetry()</code>
+</p>
+
+
+</div>

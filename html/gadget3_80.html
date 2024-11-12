@@ -1,0 +1,131 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>aaa_lang</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gadget3 language utilities</h2>
+
+<h3>Description</h3>
+
+<p>Produce objects with special meaning to gadget3
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">g3_native(r, cpp, depends = c())
+g3_global_formula(f = ~noop, init_val = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+
+<p>An R function to decorate with a 'C++' equivalent
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cpp</code></td>
+<td>
+<p>Either: </p>
+
+<ol>
+<li>
+<p>A character string containing the 'C++' equivalent as a Lambda function
+</p>
+</li>
+<li>
+<p>A character string containing 'C++' function template definition, calling the function <code> __fn__</code>
+</p>
+</li>
+<li>
+<p>A list of type-casts to use when calling an equivalently named native function
+</p>
+</li>
+</ol>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>depends</code></td>
+<td>
+
+<p>A list of string names of dependent functions.
+The content of this and the initial <code>[]</code> for any Lambda function should match.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>f</code></td>
+<td>
+
+<p>An optional formula to modify the content of a globablly-defined variable
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init_val</code></td>
+<td>
+
+<p>An optiona formula to set the initial value of a globally-defined variable
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>These functions are generally for gadget3 development, but made available so actions can be produced outside the package.
+</p>
+
+
+<h3>Value</h3>
+
+
+
+<h4>g3_native</h4>
+
+<p>Returns a function that can be used in formulas for both R and TMB-based models.
+</p>
+
+
+
+<h4>g3_global_formula</h4>
+
+<p>Returns a formula that will be defined globally, and this can preserve state across timesteps.
+</p>
+
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># The definition of g3_env$ratio_add_vec looks like:
+eg_ratio_add_vec &lt;- g3_native(r = function(orig_vec, orig_amount,
+                                        new_vec, new_amount) {
+    ((orig_vec * orig_amount + new_vec * new_amount)
+      /
+    avoid_zero_vec(orig_amount + new_amount))
+}, cpp = '[&amp;avoid_zero_vec](vector&lt;Type&gt; orig_vec, vector&lt;Type&gt; orig_amount,
+                            vector&lt;Type&gt; new_vec, vector&lt;Type&gt; new_amount)
+                            -&gt; vector&lt;Type&gt; {
+    return (orig_vec * orig_amount + new_vec * new_amount)
+             /
+           avoid_zero_vec(orig_amount + new_amount);
+}', depends = c('avoid_zero_vec'))
+# eg_ratio_add_vec() can then be used in formulas, both in R &amp; TMB.
+
+# Define a random walk action, using g3_global_formula to keep track of
+# previous value. NB: my_randomwalk_prevrec must be unique in a model
+random_walk_action &lt;- g3_formula(quote({
+    if (cur_time &gt; 0) nll &lt;- nll + dnorm(x, stock__prevrec, 1, 1)
+    my_randomwalk_prevrec &lt;- x
+}), x = 'TODO', my_randomwalk_prevrec = g3_global_formula(init_val = 0.0))
+
+</code></pre>
+
+
+</div>

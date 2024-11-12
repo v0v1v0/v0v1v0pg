@@ -1,0 +1,179 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>render_context</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Rendering information</h2>
+
+<h3>Description</h3>
+
+<p>These utility functions can help when creating custom filters (using
+<code>with_custom()</code>) as they can provide information about the current rendering
+context.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">viewport_location()
+
+index_raster(raster, cols, rows)
+
+get_raster_area(raster, xmin, ymin, xmax, ymax)
+
+set_raster_area(raster, value, xmin, ymin)
+
+get_viewport_area(raster)
+
+set_viewport_area(raster, value)
+
+viewport_is_clipping()
+
+current_resolution()
+
+to_pixels(x, y_axis = FALSE, location = FALSE)
+
+from_pixels(x)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>raster</code></td>
+<td>
+<p>A <code>raster</code> or <code>nativeRaster</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cols, rows</code></td>
+<td>
+<p>Column and row indices</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xmin, ymin, xmax, ymax</code></td>
+<td>
+<p>Boundaries of the area in pixels. 0,0 is the
+top-left corner</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>value</code></td>
+<td>
+<p>An object of the same type as <code>raster</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A numeric or unit object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y_axis</code></td>
+<td>
+<p>is the unit pertaining to the y-axis? Defaults to <code>FALSE</code> (i.e.
+it is measured on the x-axis)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>location</code></td>
+<td>
+<p>is the unit encoding a location? Defaults to <code>FALSE</code> (i.e. it
+is encoding a dimension). Pixel locations are encoded based on a top-left
+starting point, as opposed to grid's bottom-left coordinate system. This
+means that y-axis locations will flip around when converted to pixels.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+<ul>
+<li> <p><code>viewport_location()</code>: Returns the bounding box defining the current
+viewport in pixels in the order <code>xmin</code>, <code>ymin</code>, <code>xmax</code>, <code>ymax</code>
+</p>
+</li>
+<li> <p><code>index_raster()</code>: Is a version of the classic <code style="white-space: pre;">⁠[,]⁠</code> indexing that is aware
+of the row-major order of rasters
+</p>
+</li>
+<li> <p><code>get_raster_area()</code>: Extracts an area of a raster based on a bounding box
+</p>
+</li>
+<li> <p><code>set_raster_area()</code>: Sets an area of a raster to a new raster value
+</p>
+</li>
+<li> <p><code>get_viewport_area()</code>: A version of <code>get_raster_area()</code> that specifically
+extract the area defined by the current viewport
+</p>
+</li>
+<li> <p><code>set_viewport_area()</code>: A version of <code>set_raster_area()</code> that specifically
+sets the area defined by the current viewport
+</p>
+</li>
+<li> <p><code>viewport_is_clipping()</code>: Returns <code>TRUE</code> if the current viewport has
+clipping turned on
+</p>
+</li>
+<li> <p><code>current_resolution()</code>: Returns the resolution of the active device in ppi
+(pixels-per-inch)
+</p>
+</li>
+<li> <p><code>to_pixels(x)</code>: Converts <code>x</code> to pixels if <code>x</code> is given as a unit object. It
+is assumed that x encodes a dimension and not a location. If <code>x</code> is a
+numeric it is assumed to already be in pixels
+</p>
+</li>
+<li> <p><code>from_pixels</code>: Converts a numeric giving some pixel dimension to a unit
+object.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>Depends on the function - see details.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># These functions are intended to be used inside filter functions, e.g.
+library(ggplot2)
+
+flip_raster &lt;- function(raster, horizontal = TRUE) {
+  # Get the viewport area of the raster
+  vp &lt;- get_viewport_area(raster)
+
+  # Get the columns and rows of the raster - reverse order depending on
+  # the value of horizontal
+  dims &lt;- dim(vp)
+  rows &lt;- seq_len(dims[1])
+  cols &lt;- seq_len(dims[2])
+  if (horizontal) {
+    cols &lt;- rev(cols)
+  } else {
+    rows &lt;- rev(rows)
+  }
+
+  # change the order of columns or rows in the viewport raster
+  vp &lt;- index_raster(vp, cols, rows)
+
+  # Assign the modified viewport back
+  set_viewport_area(raster, vp)
+}
+
+ggplot() +
+  with_custom(
+    geom_text(aes(0.5, 0.75, label = 'Flippediflop!'), size = 10),
+    filter = flip_raster,
+    horizontal = TRUE
+  )
+
+</code></pre>
+
+
+</div>

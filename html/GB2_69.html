@@ -1,0 +1,131 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>MLprofGB2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Maximum Likelihood Estimation of the GB2 Based on the Profile Log-likelihood
+</h2>
+
+<h3>Description</h3>
+
+<p><code>profml.gb2</code> performs maximum likelihood estimation based on the profile log-likelihood through the general-purpose optimisation function <code>optim</code> from package <code>stats</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">profml.gb2(z, w=rep(1, length(z)), method=1, hess = FALSE) 
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>z</code></td>
+<td>
+<p>numeric; vector of data values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>numeric; vector of weights. Must have the same length as <code>z</code>. By default <code>w</code> is a vector of 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>numeric; the method to be used by <code>optim</code>. By default, codemethod = 1 and the used method is BFGS. If <code>method = </code>2, method L-BFGS-B is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hess</code></td>
+<td>
+<p>logical; By default, <code>hess = FALSE</code>, the hessian matrix is not calculated.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Two methods are considered: BFGS and L-BFGS-B (see <code>optim</code> documentation for more details). Initial values of the parameters to be optimized over (<code class="reqn">a</code> and <code class="reqn">b</code>) 
+are given from the Fisk distribution.  The function to be maximized by <code>optim</code> is the negative of the profile log-likelihood (<code>proflogl.gb2</code>) 
+and the gradient is equal to the negative of the scores (<code>profscores.gb2</code>).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with 1 argument: <code>opt1</code> for the output of the BFGS fit or <code>opt2</code> for the output of the L-BFGS fit. Further values are given by the values of <code>optim</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Monique Graf
+</p>
+
+
+<h3>References</h3>
+
+<p>Graf, M., Nedyalkova, D., Muennich, R., Seger, J. and Zins, S. (2011)
+AMELI Deliverable 2.1: Parametric Estimation of Income Distributions and
+Indicators of Poverty and Social Exclusion.
+<em>Technical report</em>, AMELI-Project.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>optim</code> for the general-purpose optimization, <code>link{ml.gb2}</code> for the fit using the full log-likelihood and <code>fisk</code> for the Fisk distribution.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(laeken)
+data(eusilc)
+
+# Income
+inc &lt;- as.vector(eusilc$eqIncome)
+
+# Weights
+w &lt;- eusilc$rb050
+
+# Data set
+d &lt;- data.frame(inc,w)
+d &lt;- d[!is.na(d$inc),]
+   
+# Truncate at 0
+inc &lt;- d$inc[d$inc &gt; 0]
+w   &lt;- d$w[d$inc &gt; 0]
+
+# Fit using the profile log-likelihood
+fitp &lt;- profml.gb2(inc, w)$opt1
+
+# Fitted GB2 parameters
+ap &lt;- fitp$par[1]
+bp &lt;- fitp$par[2]
+pp &lt;- prof.gb2(inc, ap, bp, w)[3]
+qp &lt;- prof.gb2(inc, ap, bp, w)[4]
+
+# Profile log-likelihood
+proflik &lt;- fitp$value
+
+# If we want to compare the indicators
+## Not run: 
+# GB2 indicators
+indicp &lt;- round(main.gb2(0.6,ap,bp,pp,qp), digits=3)
+# Empirical indicators
+indice &lt;- round(main.emp(inc,w), digits=3)
+
+## End(Not run)
+
+# Plots
+## Not run: plotsML.gb2(inc,ap,bp,pp,qp,w)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,111 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get_best</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Accessor function for the best learner estimates</h2>
+
+<h3>Description</h3>
+
+<p>The best learner is determined by maximizing the criteria <code class="reqn">\Lambda</code> and <code class="reqn">\bar{\Lambda}</code>, see Sections 5.2 and 5.3 of the paper. This function accesses the estimates of these two criteria,
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get_best(x)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of the class <code>"GenericML"</code>, as returned by the function <code>GenericML()</code>.</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>An object of class <code>"best"</code>, which consists of the following components:
+</p>
+
+<dl>
+<dt><code>BLP</code></dt>
+<dd>
+<p>A string holding the name of the best learner for a BLP analysis.</p>
+</dd>
+<dt><code>GATES</code></dt>
+<dd>
+<p>A string holding the name of the best learner for a GATES analysis.</p>
+</dd>
+<dt><code>CLAN</code></dt>
+<dd>
+<p>A string holding the name of the best learner for a CLAN analysis (same learner as in <code>GATES</code>).</p>
+</dd>
+<dt><code>overview</code></dt>
+<dd>
+<p>A numeric matrix of the estimates of the performance measures <code class="reqn">\Lambda</code> and <code class="reqn">\bar{\Lambda}</code> for each learner.</p>
+</dd>
+</dl>
+<h3>See Also</h3>
+
+<p><code>GenericML()</code>,
+<code>get_BLP()</code>,
+<code>get_GATES()</code>,
+<code>get_CLAN()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(require("rpart") &amp;&amp; require("ranger")){
+## generate data
+set.seed(1)
+n  &lt;- 150                                  # number of observations
+p  &lt;- 5                                    # number of covariates
+D  &lt;- rbinom(n, 1, 0.5)                    # random treatment assignment
+Z  &lt;- matrix(runif(n*p), n, p)             # design matrix
+Y0 &lt;- as.numeric(Z %*% rexp(p) + rnorm(n)) # potential outcome without treatment
+Y1 &lt;- 2 + Y0                               # potential outcome under treatment
+Y  &lt;- ifelse(D == 1, Y1, Y0)               # observed outcome
+
+## column names of Z
+colnames(Z) &lt;- paste0("V", 1:p)
+
+## specify learners
+learners &lt;- c("tree", "mlr3::lrn('ranger', num.trees = 10)")
+
+## perform generic ML inference
+# small number of splits to keep computation time low
+x &lt;- GenericML(Z, D, Y, learners, num_splits = 2,
+               parallel = FALSE)
+
+## access best learner
+get_best(x)
+
+## access BLP generic targets for best learner w/o plot
+get_BLP(x, learner = "best", plot = FALSE)
+
+## access BLP generic targets for ranger learner w/o plot
+get_BLP(x, learner = "mlr3::lrn('ranger', num.trees = 10)", plot = FALSE)
+
+## access GATES generic targets for best learner w/o plot
+get_GATES(x, learner = "best", plot = FALSE)
+
+## access GATES generic targets for ranger learner w/o plot
+get_GATES(x, learner = "mlr3::lrn('ranger', num.trees = 10)", plot = FALSE)
+
+## access CLAN generic targets for "V1" &amp; best learner, w/o plot
+get_CLAN(x, learner = "best", variable = "V1", plot = FALSE)
+
+## access CLAN generic targets for "V1" &amp; ranger learner, w/o plot
+get_CLAN(x, learner = "mlr3::lrn('ranger', num.trees = 10)",
+         variable = "V1", plot = FALSE)
+}
+
+</code></pre>
+
+
+</div>

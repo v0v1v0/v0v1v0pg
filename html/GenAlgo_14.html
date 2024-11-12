@@ -1,0 +1,142 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GenAlg-tools</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Utility functions for selection and mutation in genetic algorithms</h2>
+
+<h3>Description</h3>
+
+<p>These functions implement specific forms of mutation and fitness
+that can be used in genetic algorithms for feature selection.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">simpleMutate(allele, context)
+selectionMutate(allele, context)
+selectionFitness(arow, context)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>allele</code></td>
+<td>
+
+<p>In the <code>simpleMutate</code> function, <code>allele</code> is a binary
+vector filled with 0's and 1's.  In the <code>selectionMutate</code>
+function, <code>allele</code> is an integer (which is silently ignored;
+see Details). 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>arow</code></td>
+<td>
+
+<p>A vector of integer indices identifying the rows (features) to be
+selected from the <code>context$dataset</code> matrix.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>context</code></td>
+<td>
+
+<p>A list or data frame containing auxiliary information that is needed
+to resolve references from the mutation or fitness code.  In both 
+<code>selectionMutate</code> and <code>selectionFitness</code>, <code>context</code>
+must contain a <code>dataset</code> component that is either a matrix or a
+data frame.  In <code>selectionFitness</code>, the <code>context</code> must
+also include a grouping factor (with two levels) called <code>gps</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>These functions represent 'callbacks'. They can be used in the
+function <code>GenAlg</code>, which creates objects. They will then
+be called repeatedly (for each individual in the population) each time
+the genetic algorithm is updated to the next generation.
+</p>
+<p>The <code>simpleMutate</code> function assumes that chromosomes are binary
+vectors, so alleles simply take on the value 0 or 1. A mutation of an
+allele, therefore, flips its state between those two possibilities.
+</p>
+<p>The <code>selectionMutate</code> and <code>selectionFitness</code> functions, by
+contrast, are specialized to perform feature selection assuming a
+fixed number K of features, with a goal of learning how to
+distinguish between two different groups of samples. We assume that
+the underlying data consists of a data frame (or matrix), with the
+rows representing features (such as genes) and the columns
+representing samples. In addition, there must be a grouping vector
+(or factor) that assigns all of the sample columns to one of two
+possible groups. These data are collected into a list,
+<code>context</code>, containing a <code>dataset</code> matrix and a <code>gps</code>
+factor. An individual member of the population of potential
+solutions is encoded as a length K vector of indices into the rows
+of the <code>dataset</code>. An individual <code>allele</code>, therefore, is a
+single index identifying a row of the <code>dataset</code>. When mutating
+it, we assume that it can be changed into any other possible allele;
+i.e., any other row number. To compute the fitness, we use the
+Mahalanobis distance between the centers of the two groups defined by
+the <code>gps</code> factor.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Both <code>selectionMutate</code> and <code>simpleMutate</code> return an integer
+value; in the simpler case, the value is guaranteed to be a 0 or 1.
+The <code>selectionFitness</code> function returns a real number.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Kevin R. Coombes <a href="mailto:krc@silicovore.com">krc@silicovore.com</a>,
+P. Roebuck <a href="mailto:proebuck@mdanderson.org">proebuck@mdanderson.org</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GenAlg</code>,
+<code>GenAlg-class</code>,
+<code>maha</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># generate some fake data
+nFeatures &lt;- 1000
+nSamples &lt;- 50
+fakeData &lt;- matrix(rnorm(nFeatures*nSamples), nrow=nFeatures, ncol=nSamples)
+fakeGroups &lt;- sample(c(0,1), nSamples, replace=TRUE)
+myContext &lt;- list(dataset=fakeData, gps=fakeGroups)
+
+# initialize population
+n.individuals &lt;- 200
+n.features &lt;- 9
+y &lt;- matrix(0, n.individuals, n.features)
+for (i in 1:n.individuals) {
+  y[i,] &lt;- sample(1:nrow(fakeData), n.features)
+}
+
+# set up the genetic algorithm
+my.ga &lt;- GenAlg(y, selectionFitness, selectionMutate, myContext, 0.001, 0.75)
+
+# advance one generation
+my.ga &lt;- newGeneration(my.ga)
+
+</code></pre>
+
+
+</div>

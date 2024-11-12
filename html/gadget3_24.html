@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>action_naturalmortality</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gadget3 natural mortality action</h2>
+
+<h3>Description</h3>
+
+<p>Add natural mortality to a g3 model
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">g3a_naturalmortality_exp(
+        param_f = g3_parameterized('M', by_stock = by_stock, by_age = TRUE),
+        by_stock = TRUE,
+        action_step_size_f = ~cur_step_size)
+
+g3a_naturalmortality(
+        stock,
+        mortality_f = g3a_naturalmortality_exp(),
+        run_f = TRUE,
+        run_at = g3_action_order$naturalmortality)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>param_f</code></td>
+<td>
+
+<p>A formula to substitute for <code class="reqn">m</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>action_step_size_f</code></td>
+<td>
+
+<p>How much model time passes in between runs of action? defaults to <code>~cur_step_size</code>, i.e. every step.
+Use <code>action_step_size_f = 1</code> if action only runs yearly.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by_stock</code></td>
+<td>
+
+<p>Change the default parameterisation (e.g. to be by 'species'), see <code>g3_parameterized</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stock</code></td>
+<td>
+
+<p><code>g3_stock</code> mortality applies to.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mortality_f</code></td>
+<td>
+
+<p>A mortality formula, as defined by <code>g3a_naturalmortality_exp</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>run_f</code></td>
+<td>
+
+<p>formula specifying a condition for running this action, default always runs.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>run_at</code></td>
+<td>
+
+<p>Integer order that actions will be run within model, see <code>g3_action_order</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A model can have any number of <code>g3a_naturalmortality</code> actions, so long as the
+calling arguments are different. For instance, <code>run_f = ~age == 5</code> and
+<code>run_f = ~age == 7</code>.
+</p>
+
+
+<h3>Value</h3>
+
+
+
+<h4>g3a_naturalmortality_exp</h4>
+
+<p>A formula object with the following equation
+</p>
+<p style="text-align: center;"><code class="reqn"> e^{-m \Delta t} </code>
+</p>
+
+
+<dl>
+<dt><code class="reqn">\Delta t</code></dt>
+<dd>
+<p>length of current timestep</p>
+</dd>
+</dl>
+<h4>g3a_naturalmortality</h4>
+
+<p>An action (i.e. list of formula objects) that will, for the given <var>stock</var>...</p>
+
+<ol><li>
+<p>Remove a proportion of each stock group as calculated by the mortality formula <code>mortality_f</code>
+</p>
+</li></ol>
+<h3>See Also</h3>
+
+<p><a href="https://gadget-framework.github.io/gadget2/userguide/chap-stock.html#sec:stocknatmort">https://gadget-framework.github.io/gadget2/userguide/chap-stock.html#sec:stocknatmort</a>,
+<code>g3a_growmature</code>,
+<code>g3_stock</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+ling_imm &lt;- g3_stock('ling_imm', seq(20, 156, 4)) %&gt;% g3s_age(3, 10)
+
+# Natural mortality for immature ling
+naturalmortality_action &lt;- g3a_naturalmortality(ling_imm)
+
+# NB: M is used in both g3a_naturalmortality and g3a_renewal_initabund, to
+# customise, you need to make sure the definitions are in sync, for example:
+
+M &lt;- g3_parameterized('M', by_stock = TRUE, by_age = FALSE)
+actions &lt;- list(
+    g3a_naturalmortality(ling_imm,
+        g3a_naturalmortality_exp(M)),
+    g3a_initialconditions_normalparam(ling_imm,
+        factor_f = g3a_renewal_initabund(M = M)),
+    NULL)
+</code></pre>
+
+
+</div>

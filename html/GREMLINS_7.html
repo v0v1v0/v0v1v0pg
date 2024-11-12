@@ -1,0 +1,177 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>multipartiteBM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Model selection and parameter estimation of MBM</h2>
+
+<h3>Description</h3>
+
+<p>Select the number of blocks and identify the blocks per functional group using a variational EM algorithm
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">multipartiteBM(
+  list_Net,
+  v_distrib = NULL,
+  namesFG = NULL,
+  v_Kmin = 1,
+  v_Kmax = 10,
+  v_Kinit = NULL,
+  initBM = TRUE,
+  keep = FALSE,
+  verbose = TRUE,
+  nbCores = NULL,
+  maxiterVE = NULL,
+  maxiterVEM = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>list_Net</code></td>
+<td>
+<p>a list of networks (defined via the function defineNetwork) i.e. a multipartite network</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>v_distrib</code></td>
+<td>
+<p>an optional vector of characters of length the number of networks and specifying the distribution used in each network (possible values <code>bernoulli,poisson,gaussian,laplace</code>).   If not provided, the model will be 'bernoulli' for all the interactions  matrices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>namesFG</code></td>
+<td>
+<p>an optional vector of  characters containing the names of functional groups (FG) (If Specified, must correspond to the  names in <code>list_Net</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>v_Kmin</code></td>
+<td>
+<p>an optional vector of integers, specifying the minimal number of blocks per functional group (must be provided in the same order as in <code>namesFG</code>).
+v_Kmin may be a single value (same minimal number of blocks for all the FGs) or a vector with size equal to the number of FGs.
+Default value  <code>= 1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>v_Kmax</code></td>
+<td>
+<p>an optional vector of integers specifying the maximal number of blocks per functional group provided in the same order as in <code>namesFG</code>.
+v_Kmax may be a single value (same maximal number of blocks for all the FGs) or a vector with size equal to the number of FGs.
+Default value  <code>= 10</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>v_Kinit</code></td>
+<td>
+<p>an optional vector of integers specifying initial numbers of blocks per FG provided in the same order as in <code>namesFG</code>.
+if <code>v_Kinit</code> is not specified, then   <code>v_Kinit = v_Kmin</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initBM</code></td>
+<td>
+<p>an optional boolean. If initBM = TRUE  an aditional initialisation is done using simple LBM or SBM on each network separatly.
+Default value  <code>= TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep</code></td>
+<td>
+<p>an optional boolean. If TRUE  return the estimated parameters for intermediate visited models. Otherwise, only the better model (in ICL sense) is the ouput. Default value <code>= FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>an optional boolean. If  TRUE, display the current step of the search algorithm</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbCores</code></td>
+<td>
+<p>an optional integer specifying the number or cores used for the estimation. Not parallelized on windows. If <code>ncores = NULL</code>, then half of the cores are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiterVE</code></td>
+<td>
+<p>an optional integer  specifying the maximum number of iterations in the VE step of the VEM algorithm. If NULL then default value  <code>= 1000</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiterVEM</code></td>
+<td>
+<p>an optional integer  specifying the maximum number of iterations of the VEM algorithm. If NULL then default value Default value  <code>= 1000</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function <code>multipartiteBM</code> selects the better numbers of blocks in each FG (with a penalized likelihood criterion). The model selection is performed with a forward backward strategy and the likelihood of each model is maximized with a variational EM).
+</p>
+
+
+<h3>Value</h3>
+
+<p>a list of estimated parameters for the different models ordered by decreasing ICL. If keep <code>= FALSE</code>, the length is of length 1 (only the better model is returned).
+</p>
+
+<dl>
+<dt><code>fittedModel</code></dt>
+<dd>
+<p>contains the results of the inference. <code>res$fittedModel[[1]]</code>  is a list with fields
+</p>
+
+<dl>
+<dt><code>paramEstim</code></dt>
+<dd>
+<p>a MBMfit object.</p>
+</dd>
+<dt><code>ICL</code></dt>
+<dd>
+<p>the penalized likelihood criterion ICL.</p>
+</dd>
+<dt><code>vJ</code></dt>
+<dd>
+<p>the sequence of the varational bound of the likelihood through iterations of the VEM.</p>
+</dd>
+<dt><code>convergence</code></dt>
+<dd>
+<p>TRUE if the VEM reached convergence.</p>
+</dd>
+</dl>
+</dd>
+<dt><code>list_Net</code></dt>
+<dd>
+<p> contains the data.</p>
+</dd>
+</dl>
+<h3>Examples</h3>
+
+<pre><code class="language-R">namesFG &lt;- c('A','B')
+list_pi &lt;- list(c(0.5,0.5),c(0.3,0.7)) # prop of blocks in each FG
+E  &lt;-  rbind(c(1,2),c(2,2)) # architecture of the multipartite net.
+typeInter &lt;- c( "inc","diradj")
+v_distrib &lt;- c('gaussian','bernoulli')
+list_theta &lt;- list()
+list_theta[[1]] &lt;- list()
+list_theta[[1]]$mean  &lt;- matrix(c(6.1, 8.9, 6.6, 3), 2, 2)
+list_theta[[1]]$var  &lt;-  matrix(c(1.6, 1.6, 1.8, 1.5),2, 2)
+list_theta[[2]] &lt;- matrix(c(0.7,1.0, 0.4, 0.6),2, 2)
+list_Net &lt;- rMBM(v_NQ = c(30,30),E , typeInter, v_distrib, list_pi,
+                list_theta, namesFG = namesFG, seed = 2)$list_Net
+res_MBMsimu &lt;- multipartiteBM(list_Net, v_distrib,
+                              namesFG = c('A','B'), v_Kinit = c(2,2),
+                              nbCores = 2,initBM = FALSE)
+</code></pre>
+
+
+</div>

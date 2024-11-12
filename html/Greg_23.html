@@ -1,0 +1,146 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>isFitCoxPH</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Functions for checking regression type</h2>
+
+<h3>Description</h3>
+
+<p>The <em>isFitCoxPH</em> A simple check if object inherits either 
+"coxph" or "crr" class indicating
+that it is a survival function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">isFitCoxPH(fit)
+
+isFitLogit(fit)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>Regression object</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p><code>boolean</code> Returns <code>TRUE</code> if the object is of that type
+otherwise it returns <code>FALSE</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># simulated data to use
+set.seed(10)
+ds &lt;- data.frame(
+  ftime = rexp(200),
+  fstatus = sample(0:1, 200, replace = TRUE),
+  x1 = runif(200),
+  x2 = runif(200),
+  x3 = runif(200)
+)
+
+library(survival)
+library(rms)
+
+dd &lt;- datadist(ds)
+options(datadist = "dd")
+
+s &lt;- Surv(ds$ftime, ds$fstatus == 1)
+fit &lt;- cph(s ~ x1 + x2 + x3, data = ds)
+
+if (isFitCoxPH(fit)) {
+  print("Correct, the cph is of cox PH hazard type")
+}
+
+fit &lt;- coxph(s ~ x1 + x2 + x3, data = ds)
+if (isFitCoxPH(fit)) {
+  print("Correct, the coxph is of cox PH hazard type")
+}
+
+library(cmprsk)
+set.seed(10)
+ftime &lt;- rexp(200)
+fstatus &lt;- sample(0:2, 200, replace = TRUE)
+cov &lt;- matrix(runif(600), nrow = 200)
+dimnames(cov)[[2]] &lt;- c("x1", "x2", "x3")
+fit &lt;- crr(ftime, fstatus, cov)
+
+if (isFitCoxPH(fit)) {
+  print(paste(
+    "Correct, the competing risk regression is",
+    "considered a type of cox regression",
+    "since it has a Hazard Ratio"
+  ))
+}
+# ** Borrowed code from the lrm example **
+
+# Fit a logistic model containing predictors age, blood.pressure, sex
+# and cholesterol, with age fitted with a smooth 5-knot restricted cubic
+# spline function and a different shape of the age relationship for males
+# and females.
+
+n &lt;- 1000 # define sample size
+set.seed(17) # so can reproduce the results
+age &lt;- rnorm(n, 50, 10)
+blood.pressure &lt;- rnorm(n, 120, 15)
+cholesterol &lt;- rnorm(n, 200, 25)
+sex &lt;- factor(sample(c("female", "male"), n, TRUE))
+label(age) &lt;- "Age" # label is in Hmisc
+label(cholesterol) &lt;- "Total Cholesterol"
+label(blood.pressure) &lt;- "Systolic Blood Pressure"
+label(sex) &lt;- "Sex"
+units(cholesterol) &lt;- "mg/dl" # uses units.default in Hmisc
+units(blood.pressure) &lt;- "mmHg"
+
+# To use prop. odds model, avoid using a huge number of intercepts by
+# grouping cholesterol into 40-tiles
+
+# Specify population model for log odds that Y = 1
+L &lt;- .4 * (sex == "male") + .045 * (age - 50) +
+  (log(cholesterol - 10) - 5.2) * (-2 * (sex == "female") + 2 * (sex == "male"))
+# Simulate binary y to have Prob(y = 1) = 1/[1+exp(-L)]
+y &lt;- ifelse(runif(n) &lt; plogis(L), 1, 0)
+cholesterol[1:3] &lt;- NA # 3 missings, at random
+
+ddist &lt;- datadist(age, blood.pressure, cholesterol, sex)
+options(datadist = "ddist")
+
+fit_lrm &lt;- lrm(y ~ blood.pressure + sex * (age + rcs(cholesterol, 4)),
+  x = TRUE, y = TRUE
+)
+
+if (isFitLogit(fit_lrm) == TRUE) {
+  print("Correct, the lrm is a logistic regression")
+}
+
+fit_lm &lt;- lm(blood.pressure ~ sex)
+if (isFitLogit(fit_lm) == FALSE) {
+  print("Correct, the lm is not a logistic regression")
+}
+
+fit_glm_logit &lt;- glm(y ~ blood.pressure + sex * (age + rcs(cholesterol, 4)),
+  family = binomial()
+)
+
+if (isFitLogit(fit_glm_logit) == TRUE) {
+  print("Correct, the glm with a family of binomial is a logistic regression")
+}
+
+fit_glm &lt;- glm(blood.pressure ~ sex)
+if (isFitLogit(fit_glm) == FALSE) {
+  print("Correct, the glm without logit as a family is not a logistic regression")
+}
+</code></pre>
+
+
+</div>

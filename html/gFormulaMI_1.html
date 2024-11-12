@@ -1,0 +1,171 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gFormulaImpute</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>G-formula multiple imputation</h2>
+
+<h3>Description</h3>
+
+<p><code>gFormulaImpute</code> creates multiple imputed synthetic datasets of longitudinal histories under
+specified treatment regimes of interest, based on the G-formula.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gFormulaImpute(
+  data,
+  M = 50,
+  trtVars,
+  trtRegimes,
+  nSim = NULL,
+  micePrintFlag = FALSE,
+  silent = FALSE,
+  method = NULL,
+  predictorMatrix = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The observed data frame</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>The number of imputed datasets to generate</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trtVars</code></td>
+<td>
+<p>A vector of variable names indicating the time-varying treatment variables</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trtRegimes</code></td>
+<td>
+<p>A vector specifying the treatment regime of interest, or a list of
+vectors specifying the treatment regimes of interest</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nSim</code></td>
+<td>
+<p>The number of individuals to simulate in each imputed dataset. Defaults to
+number of individuals in observed data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>micePrintFlag</code></td>
+<td>
+<p>TRUE/FALSE specifying whether the output from the call(s) to mice
+should be printed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>silent</code></td>
+<td>
+<p>TRUE/FALSE indicating whether to print output to console (FALSE) or not (TRUE)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>An optional method argument to pass to mice. If not specified, the default
+is to impute continuous variables using normal linear regression (norm), binary variables using
+logistic regression (logreg), polytomous regression for unordered factors and
+proportional odds model for ordered factors</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predictorMatrix</code></td>
+<td>
+<p>An optional predictor matrix to specify which variables to use
+as predictors in the imputation models. The default is to impute sequentially, i.e. impute
+using all variables to the left of the variable being imputed as covariates</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>gFormulaImpute</code> creates multiple imputed synthetic datasets of longitudinal histories under
+specified treatment regimes of interest, based on the G-formula, as described in
+<a href="https://arxiv.org/abs/2301.12026">Bartlett et al 2023</a>. Specifically, to
+the observed data frame, an additional <code>nSim</code> rows are added in which all variables are set to
+missing, except the time-varying treatment variables. The latter are set to the values
+as specified in the <code>trtRegimes</code> argument. If multiple treatment regimes are specified,
+<code>nSim</code> rows are added for each of the specified treatment regimes.
+</p>
+<p><code>gFormulaImpute</code> uses the <code>mice</code> package to impute the potential outcome values of the
+time-varying confounders and outcome in the synthetic datasets. Imputation is performed
+sequentially from left to right in the data frame. As such, the variables must be ordered
+in time in the input data frame, with the time-varying confounders at each time followed
+by the corresponding treatment variable at that time.
+</p>
+<p>For the data argument, <code>gFormulaImpute</code> expects either a fully observed (complete) data frame,
+or else a set of multiple imputation stored in an object of class <code>mids</code> (from the <code>mice</code> package).
+</p>
+<p>Unlike with Rubin's regular multiple imputation pooling rules, it is possible
+for the pooling rules developed by Raghunathan et al (2003) to give negative
+variance estimates. The probability of this occurring is reduced by increasing
+<code>M</code> and/or <code>nSim</code>.
+</p>
+<p><code>gFormulaImpute</code> returns an object of class <code>mids</code>. This can be analysed using the same
+methods that imputed datasets from <code>mice</code> can be analysed with (see examples). However, Rubin's standard
+pooling rules are not valid for analysis of the synthetic datasets. Instead, the synthetic
+variance estimator of Raghunathan et al (2003) must be used, as implemented in the
+syntheticPool function.
+</p>
+<p>The development of the <code>gFormulaMI</code> package was supported by a grant from the UK
+Medical Research Council (MR/T023953/1).
+</p>
+
+
+<h3>Value</h3>
+
+<p>an S3 object of class mids (multiply imputed dataset)
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Jonathan Bartlett <a href="mailto:jonathan.bartlett1@lshtm.ac.uk">jonathan.bartlett1@lshtm.ac.uk</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Bartlett JW, Olarte Parra C, Daniel RM. G-formula for causal inference
+via multiple imputation. 2023 <a href="https://arxiv.org/abs/2301.12026">https://arxiv.org/abs/2301.12026</a>
+</p>
+<p>Raghunathan TE, Reiter JP, Rubin DB. 2003. Multiple imputation for statistical
+disclosure limitation. Journal of Official Statistics, 19(1), p.1-16.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(7626)
+#impute synthetic datasets under two regimes of interest
+imps &lt;- gFormulaImpute(data=simDataFullyObs,M=10,
+                        trtVars=c("a0","a1","a2"),
+                        trtRegimes=list(c(0,0,0),c(1,1,1)))
+#fit linear model to final outcome with regime as covariate
+fits &lt;- with(imps, lm(y~factor(regime)))
+#pool results using Raghunathan et al 2003 rules
+syntheticPool(fits)
+
+
+</code></pre>
+
+
+</div>

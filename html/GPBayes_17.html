@@ -1,0 +1,123 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gp.predict</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prediction at new inputs based on a Gaussian stochastic process model</h2>
+
+<h3>Description</h3>
+
+<p>This function provides the capability to make prediction based on a GaSP
+when different estimation methods are employed.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gp.predict(obj, input.new, method = "Bayes")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>obj</code></td>
+<td>
+<p>an <code>S4</code> object gp</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>input.new</code></td>
+<td>
+<p>a matrix of new input lomessageions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>a string indicating the parameter estimation method:
+</p>
+
+<dl>
+<dt>MPLE</dt>
+<dd>
+<p>This indicates that the <em>maximum profile likelihood estimation</em> 
+(<strong>MPLE</strong>) is used. This correponds to simple kriging formulas</p>
+</dd>
+<dt>MMLE</dt>
+<dd>
+<p>This indicates that the <em>maximum marginal likelihood estimation</em> 
+(<strong>MMLE</strong>) is used. This corresponds to universal kriging formulas when the vairance
+parameter is not integrated out. If the variance parameter is integrated out, 
+the predictive variance differs from the universal kriging variance by the 
+factor <code class="reqn">\frac{n-q}{n-q-2}</code>, since the predictive distribution is a 
+Student's <code class="reqn">t</code>-distribution with degrees of freedom <code class="reqn">n-q</code>.
+</p>
+</dd>
+<dt>MAP</dt>
+<dd>
+<p>This indicates that the posterior estimates of model parameters are plugged into 
+the posterior predictive distribution. Thus this approach does not take account into uncertainty 
+in model parameters (<strong>range</strong>, <strong>tail</strong>, <strong>nu</strong>, <strong>nugget</strong>).</p>
+</dd>
+<dt>Bayes</dt>
+<dd>
+<p>This indicates that a fully Bayesian approach is used
+for parameter estimation (and hence prediction). This approach takes into account uncertainty in 
+all model parameters.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a list of predictive mean, predictive standard deviation, 95% predictive intervals
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Pulong Ma <a href="mailto:mpulong@gmail.com">mpulong@gmail.com</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>GPBayes-package, <code>GaSP</code>, gp, <code>gp.mcmc</code>, <code>gp.optim</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+ 
+code = function(x){
+y = (sin(pi*x/5) + 0.2*cos(4*pi*x/5))*(x&lt;=9.6) + (x/10-1)*(x&gt;9.6) 
+return(y)
+}
+n=100
+input = seq(0, 20, length=n)
+XX = seq(0, 20, length=99)
+Ztrue = code(input)
+set.seed(1234)
+output = Ztrue + rnorm(length(Ztrue), sd=0.1)
+obj = gp(formula=~1, output, input, 
+        param=list(range=4, nugget=0.1,nu=2.5),
+        smooth.est=FALSE,
+        cov.model=list(family="matern", form="isotropic"))
+ 
+fit.optim = gp.optim(obj, method="MMLE")
+obj = fit.optim$obj
+pred = gp.predict(obj, input.new=XX, method="MMLE")
+                   
+                   
+                   
+                   
+
+</code></pre>
+
+
+</div>

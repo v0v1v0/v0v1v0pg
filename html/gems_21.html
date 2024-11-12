@@ -1,0 +1,226 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simulateCohort</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulate cohort</h2>
+
+<h3>Description</h3>
+
+<p>Simulates a cohort of patients from a set of functions associated to each
+possible transition in a multistate model. The multistate model is not
+required to be a Markov model and may take the history of previous events
+into account. In the basic version, it allows to simulate from
+transition-specific hazard function, whose parameters are multivariable
+normally distributed.  For each state, all transition-specific hazard
+functions and their parameters need to be specified. For simulating one
+transition, all possible event times are simulated and the minimum is
+chosen. Then simulation continues from the corresponding state until an
+absorbing state of time <code>to</code> is reached.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">simulateCohort(transitionFunctions, parameters, cohortSize = 1000,
+  parameterCovariances = FALSE, timeToTransition = array(FALSE, dim =
+  dim(transitionFunctions@list.matrix)), baseline = matrix(NA, nrow =
+  cohortSize), initialState = rep(1, cohortSize),
+  absorbing = transitionFunctions@states.number, to = 100,
+  report.every = 100, sampler.steps = 1000)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>transitionFunctions</code></td>
+<td>
+<p>a <code>transition.structure</code> of dimension 
+<code class="reqn">N \times N</code> that contains the hazard functions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameters</code></td>
+<td>
+<p>a <code>transition.structure</code> of dimension <code class="reqn">N \times
+N</code> that contains the parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cohortSize</code></td>
+<td>
+<p>a <code>numeric</code> indicating the number of patients to be
+simulated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameterCovariances</code></td>
+<td>
+<p>a <code>transition.structure</code> of dimension
+<code class="reqn">N \times N</code> of covariance matrices for the <code>parameters</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timeToTransition</code></td>
+<td>
+<p>a <code>logical</code> <code>matrix</code>; TRUE for all
+transitions whose <code>transitionFunction</code> is specified as the time until
+transition instead of as a hazard function or as a <code>character</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>baseline</code></td>
+<td>
+<p>a <code>matrix</code> or <code>data.frame</code> of dimension
+<code class="reqn">cohortSize \times M</code> with <code class="reqn">M</code> baseline
+characteristics of subjects to be simulated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initialState</code></td>
+<td>
+<p>a <code>numeric</code> of length <code>cohortSize</code> with the
+initial state for each subject simulated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>absorbing</code></td>
+<td>
+<p>a <code>numeric</code> containing all absorbing states.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>to</code></td>
+<td>
+<p>final time of the simulation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>report.every</code></td>
+<td>
+<p>a <code>numeric</code> to check progress of simulation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sampler.steps</code></td>
+<td>
+<p>a <code>numeric</code> indicating number of steps for
+discretization of hazard functions</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>transitionFunctions</code> contains hazard functions or time to event
+function associated to each possible transition. The elements of this
+<code>list</code> can be either expressed as an explicit R <code>function</code> or as a
+<code>character</code> ("impossible", "Weibull", "multWeibull", "exponential") in
+order to express impossible transitions or parametric forms for the
+distributions of time to event. If the functions should depend on time,
+baseline characteristics or be <em>history-dependent</em>, the function
+arguments <em>t</em>, <em>bl</em> or <em>history</em> can be used. Time <em>t</em>
+refers to the time since entry into the current state. For the time since
+the initial state, use <code>t+sum(history)</code>.
+</p>
+<p>The components of the <code>parameters</code> argument <code>list</code> the mean values
+for the parameters in the <code>transitionFunction</code>. If the corresponding
+<code>transitionFunction</code> is a <code>function</code>, the parameters should appear
+in the same order as in the <code>function</code>, leaving out <em>t</em>, <em>bl</em>
+and <em>history</em>. If the corresponding <code>transitionFunction</code> is the
+<code>character</code> "Weibull", the first argument is the shape and the second
+one the scale. If the corresponding <code>transitionFunction</code> is the
+<code>character</code> "multWeibull", specify weights, shapes, scales in this
+order.
+</p>
+<p>Note that when using the <code>parameterCovariances</code> argument it is the
+users responsibility to ensure that the functions are parametrized such that
+<code>parameters</code> for each transition are multivariate normally distributed
+and mutually independent.
+</p>
+
+
+<h3>Value</h3>
+
+<p>an object of class <code>"ArtCohort"</code> with <code>time.to.state</code> slot
+of dimension <code class="reqn">cohortSize \times N</code> with entry times for
+each patient into each of the states.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Luisa Salazar Vizcaya, Nello Blaser, Thomas Gsponer
+</p>
+
+
+<h3>References</h3>
+
+<p>Nello Blaser, Luisa Salazar Vizcaya, Janne Estill, Cindy Zahnd, 
+Bindu Kalesan, Matthias Egger, Olivia Keiser, Thomas Gsponer (2015). gems: 
+An R Package for Simulating from Disease Progression Models. Journal of 
+Statistical Software, 64(10), 1-22. URL http://www.jstatsoft.org/v64/i10/.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>generateHazardMatrix</code>,
+<code>generateParameterMatrix</code>,
+<code>generateParameterCovarianceMatrix</code>,
+<code>ArtCohort</code>, <code>transitionProbabilities</code>,
+<code>cumulativeIncidence</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Here is an example model with 3 states and 2 possible transitions. 
+ 
+# number of states in the model
+statesNumber &lt;- 3 
+
+# cohort size
+cohortSize &lt;- 100
+
+# specification of hazard functions
+hazardf &lt;- generateHazardMatrix(statesNumber)
+hazardf[[1,2]] &lt;- function(t, r1, r2) 
+{
+  ifelse(t&lt;=2, r1 , r2)
+}
+hazardf[[2,3]] &lt;- "Weibull" 
+
+# list of parameters for the hazard functions
+mu &lt;- generateParameterMatrix(hazardf) 
+mu[[1,2]] &lt;- list(0.33,  0.03) # r1, r2 
+mu[[2,3]] &lt;- list(1,0.84) # shape, scale
+
+# time
+maxTime &lt;- 10
+
+# simulate the cohort
+cohort &lt;- simulateCohort(
+  transitionFunctions = hazardf,
+  parameters = mu,
+  cohortSize = cohortSize,
+  to=maxTime)
+
+# output
+head(cohort)
+
+# transition probability
+tr &lt;- transitionProbabilities(cohort, times=seq(0,4,.1))
+plot(tr, ci=FALSE)
+
+# cumulative incidence
+inc &lt;- cumulativeIncidence(cohort, times=seq(0,4,.1))
+plot(inc, ci=FALSE, states=c(2,3))
+
+</code></pre>
+
+
+</div>

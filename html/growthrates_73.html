@@ -1,0 +1,142 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plot</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Plot Model Fits</h2>
+
+<h3>Description</h3>
+
+<p>Methods to plot growth model fits together with the data and, alternatively,
+plot diagnostics
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S4 method for signature 'nonlinear_fit,missing'
+plot(x, y, log = "", which = c("fit", "diagnostics"), ...)
+
+## S4 method for signature 'nonlinear_fit'
+lines(x, ...)
+
+## S4 method for signature 'easylinear_fit,missing'
+plot(x, y, log = "", which = c("fit", "diagnostics"), ...)
+
+## S4 method for signature 'smooth.spline_fit,missing'
+plot(x, y, ...)
+
+## S4 method for signature 'easylinear_fit'
+lines(x, ...)
+
+## S4 method for signature 'multiple_fits,missing'
+plot(x, y, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>an object returned by a model fitting function of package
+<span class="pkg">growthrates</span>, that can contain one or multiple fits.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>(ignored) for compatibility with the default plot method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log</code></td>
+<td>
+<p>a character string which contains <code>"y"</code> if the y axis is to
+be logarithmic.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>which</code></td>
+<td>
+<p>either <code>"fit"</code> (default) or <code>"diagnostics"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>other arguments pased to the plotting methods,
+see <code>plot.default</code> and <code>par</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The plot methods detect automatically which type of plot is
+appropriate, depending on the class of <code>x</code> and can plot either one
+single model fit or a complete series (multiple fits). In the latter case
+it may be wise to redirect the graphics to an external file (e.g. a pdf)
+and / or to use tomething like <code>par(mfrow=c(3,3))</code>.
+</p>
+<p>The <code>lines</code>-method is currently only available for single fits.
+</p>
+<p>If you need more control, you can of course also write own plotting functions.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plot.default</code>, <code>par</code>,
+<code>fit_growthmodel</code>, <code>fit_easylinear</code>,
+<code>all_growthmodels</code>, <code>all_easylinear</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(bactgrowth)
+splitted.data &lt;- multisplit(bactgrowth, c("strain", "conc", "replicate"))
+
+## get table from single experiment
+dat &lt;- splitted.data[["D:0:1"]]
+
+fit1 &lt;- fit_spline(dat$time, dat$value)
+plot(fit1, log="y")
+plot(fit1)
+
+## derive start parameters from spline fit
+p &lt;- coef(fit1)
+
+## subset of first 10 data
+first10 &lt;-  dat[1:10, ]
+fit2 &lt;- fit_growthmodel(grow_exponential, p=p, time=first10$time, y=first10$value)
+
+p &lt;- c(coef(fit1), K = max(dat$value))
+fit3 &lt;- fit_growthmodel(grow_logistic, p=p, time=dat$time, y=dat$value, transform="log")
+
+plot(fit1)
+lines(fit2, col="green")
+lines(fit3, col="red")
+
+
+all.fits &lt;- all_splines(value ~ time | strain + conc + replicate, data = bactgrowth)
+par(mfrow=c(3,3))
+plot(all.fits)
+
+## it is also possible to plot a single fit or a subset of the fits
+par(mfrow=c(1,1))
+plot(all.fits[["D:0:1"]])
+par(mfrow=c(2,2))
+plot(all.fits[1:4])
+
+## plot only the 'R' strain
+par(mfrow=c(4, 6))
+plot(all.fits[grep("R:", names(all.fits))])
+
+</code></pre>
+
+
+</div>

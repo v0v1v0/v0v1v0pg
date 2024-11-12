@@ -1,0 +1,162 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ghcm_test</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Conditional Independence Test using the GHCM</h2>
+
+<h3>Description</h3>
+
+<p>Test whether X is independent of Y given Z using the Generalised Hilbertian
+Covariance Measure. The function is applied to residuals from regressing
+each of X and Y on Z respectively. Its validity is contingent on the performance
+of the regression methods. For a more in-depth explanation see the package
+vignette or the paper mentioned in the references.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ghcm_test(
+  resid_X_on_Z,
+  resid_Y_on_Z,
+  X_limits = NULL,
+  Y_limits = NULL,
+  alpha = 0.05
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>resid_X_on_Z, resid_Y_on_Z</code></td>
+<td>
+<p>Residuals from regressing X (Y) on Z with
+a suitable regression method. If X (Y) is uni- or multivariate or
+functional on a constant, fixed grid, the residuals should be supplied as
+a vector or matrix with no missing values. If instead X (Y) is functional
+and observed on varying grids or with missing values, the residuals should
+be supplied as a "melted" data frame with
+</p>
+
+<dl>
+<dt>.obs</dt>
+<dd>
+<p>Integer indicating which curve the row corresponds to.</p>
+</dd>
+<dt>.index</dt>
+<dd>
+<p>Function argument that the curve is evaluated at.</p>
+</dd>
+<dt>.value</dt>
+<dd>
+<p>Value of the function.</p>
+</dd>
+</dl>
+<p>Note that in the irregular case, a minimum of 4 observations per curve is
+required.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X_limits, Y_limits</code></td>
+<td>
+<p>The minimum and maximum values of the function
+argument of the X (Y) curves. Ignored if X (Y) is not functional.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Numeric in the unit interval. Significance level of the test.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>ghcm</code> containing:
+</p>
+
+<dl>
+<dt><code>test_statistic</code></dt>
+<dd>
+<p>Numeric, test statistic of the test.</p>
+</dd>
+<dt><code>p</code></dt>
+<dd>
+<p>Numeric in the unit interval, estimated p-value of
+the test.</p>
+</dd>
+<dt><code>alpha</code></dt>
+<dd>
+<p>Numeric in the unit interval, significance level
+of the test.</p>
+</dd>
+<dt><code>reject</code></dt>
+<dd>
+<p><code>TRUE</code> if <code>p</code> &lt; <code>alpha</code>, <code>FALSE</code> otherwise.</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>Please cite the following paper: Anton Rask Lundborg, Rajen D. Shah and
+Jonas Peters: "Conditional Independence Testing in Hilbert Spaces with
+Applications to Functional Data Analysis" Journal of the Royal Statistical
+Society: Series B (Statistical Methodology) 2022 <a href="https://doi.org/10.1111/rssb.12544">doi:10.1111/rssb.12544</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if (require(refund)) {
+  set.seed(1)
+  data(ghcm_sim_data)
+  grid &lt;- seq(0, 1, length.out = 101)
+
+# Test independence of two scalars given a functional variable
+
+  m_1 &lt;- pfr(Y_1 ~ lf(Z), data=ghcm_sim_data)
+  m_2 &lt;- pfr(Y_2 ~ lf(Z), data=ghcm_sim_data)
+  ghcm_test(resid(m_1), resid(m_2))
+
+# Test independence of a regularly observed functional variable and a
+# scalar variable given a functional variable
+  
+    m_X &lt;- pffr(X ~ ff(Z), data=ghcm_sim_data, chunk.size=31000)
+    ghcm_test(resid(m_X), resid(m_1))
+  
+# Test independence of two regularly observed functional variables given
+# a functional variable
+  
+     m_W &lt;- pffr(W ~ ff(Z), data=ghcm_sim_data, chunk.size=31000)
+    ghcm_test(resid(m_X), resid(m_W))
+  
+
+
+  data(ghcm_sim_data_irregular)
+  n &lt;- length(ghcm_sim_data_irregular$Y_1)
+  Z_df &lt;- data.frame(.obs=1:n)
+  Z_df$Z &lt;- ghcm_sim_data_irregular$Z
+# Test independence of an irregularly observed functional variable and a
+# scalar variable given a functional variable
+  
+    m_1 &lt;- pfr(Y_1 ~ lf(Z), data=ghcm_sim_data_irregular)
+    m_X &lt;- pffr(X ~ ff(Z), ydata = ghcm_sim_data_irregular$X,
+    data=Z_df, chunk.size=31000)
+    ghcm_test(resid(m_X), resid(m_1), X_limits=c(0, 1))
+ 
+# Test independence of two irregularly observed functional variables given
+# a functional variable
+  
+    m_W &lt;- pffr(W ~ ff(Z), ydata = ghcm_sim_data_irregular$W,
+    data=Z_df, chunk.size=31000)
+    ghcm_test(resid(m_X), resid(m_W), X_limits=c(0, 1), Y_limits=c(0, 1))
+ 
+}
+
+</code></pre>
+
+
+</div>

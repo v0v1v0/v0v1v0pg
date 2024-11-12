@@ -1,0 +1,193 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tbl_hierarchical</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Hierarchical Table</h2>
+
+<h3>Description</h3>
+
+<p><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental"><img src="../help/figures/lifecycle-experimental.svg" alt="[Experimental]"></a><br><em>This is an preview of this function. There will be changes in the coming releases, and changes will not undergo a formal deprecation cycle.</em>
+</p>
+<p>Use these functions to generate hierarchical tables.
+</p>
+
+<ul>
+<li> <p><code>tbl_hierarchical()</code>: Calculates <em>rates</em> of events (e.g. adverse events)
+utilizing the <code>denominator</code> and <code>id</code> arguments to identify the rows in <code>data</code>
+to include in each rate calculation. If <code>variables</code> contains more than one
+variable and the last variable in <code>variables</code> is an ordered factor, then
+rates of events by highest level will be calculated.
+</p>
+</li>
+<li> <p><code>tbl_hierarchical_count()</code>: Calculates <em>counts</em> of events utilizing
+all rows for each tabulation.
+</p>
+</li>
+</ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R">tbl_hierarchical(
+  data,
+  variables,
+  by = NULL,
+  id = NULL,
+  denominator = NULL,
+  include = everything(),
+  statistic = "{n} ({p})",
+  overall_row = FALSE,
+  label = NULL
+)
+
+tbl_hierarchical_count(
+  data,
+  variables,
+  by = NULL,
+  denominator = NULL,
+  include = everything(),
+  overall_row = FALSE,
+  label = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>(<code>data.frame</code>)<br>
+a data frame.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variables</code></td>
+<td>
+<p>(<code>tidy-select</code>)<br>
+character vector or tidy-selector of columns in data used to create a hierarchy. Hierarchy will be built with
+variables in the order given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by</code></td>
+<td>
+<p>(<code>tidy-select</code>)<br>
+a single column from <code>data</code>. Summary statistics will be stratified by this variable.
+Default is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>(<code>tidy-select</code>)<br>
+argument used to subset <code>data</code> to identify rows in <code>data</code> to calculate
+event rates in <code>tbl_hierarchical()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>denominator</code></td>
+<td>
+<p>(<code>data.frame</code>, <code>integer</code>)<br>
+used to define the denominator and enhance the output.
+The argument is required for <code>tbl_hierarchical()</code> and optional for <code>tbl_hierarchical_count()</code>.
+The <code>denominator</code> argument must be specified when <code>id</code> is used to calculate event rates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include</code></td>
+<td>
+<p>(<code>tidy-select</code>)<br>
+variables from <code>hierarchy</code> for which summary statistics should be returned (on the variable label rows) Including
+the last element of <code>hierarchy</code> has no effect since each level has its own row for this variable.
+The default is <code>everything()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>statistic</code></td>
+<td>
+<p>(<code>string</code>)<br>
+used to specify the summary statistics to display for all variables in <code>tbl_hierarchical()</code>.
+The default is <code>"{n} ({p})"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>overall_row</code></td>
+<td>
+<p>(scalar <code>logical</code>)<br>
+whether an overall summary row should be included at the top of the table.
+The default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>label</code></td>
+<td>
+<p>(<code>formula-list-selector</code>)<br>
+used to override default labels in hierarchical table, e.g. <code>list(AESOC = "System Organ Class")</code>.
+The default for each variable is the column label attribute, <code>attr(., 'label')</code>.
+If no label has been set, the column name is used.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a gtsummary table of class <code>"tbl_hierarchical"</code> (for <code>tbl_hierarchical()</code>) or <code>"tbl_hierarchical_count"</code>
+(for <code>tbl_hierarchical_count()</code>).
+</p>
+
+
+<h3>Overall Row</h3>
+
+<p>An overall row can be added to the table as the first row by specifying <code>overall_row = TRUE</code>. Assuming that each row
+in <code>data</code> corresponds to one event record, this row will count the overall number of events recorded when used in
+<code>tbl_hierarchical_count()</code>, or the overall number of patients recorded with any event when used in
+<code>tbl_hierarchical()</code>.
+</p>
+<p>A label for this overall row can be specified by passing an <code>overall</code> element in <code>label</code>. If no <code>overall</code> label has
+been set and <code>overall_row = TRUE</code>, <code>"Total number of patients with any event"</code> will be used by <code>tbl_hierarchical()</code>
+and <code>"Total number of events"</code> will be used by <code>tbl_hierarchical_count()</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">ADAE_subset &lt;- cards::ADAE |&gt;
+  dplyr::filter(
+    AESOC %in% unique(cards::ADAE$AESOC)[1:5],
+    AETERM %in% unique(cards::ADAE$AETERM)[1:5]
+  )
+
+# Example 1 - Event Rates --------------------
+tbl_hierarchical(
+  data = ADAE_subset,
+  variables = c(AESOC, AETERM),
+  by = TRTA,
+  denominator = cards::ADSL |&gt; mutate(TRTA = ARM),
+  id = USUBJID,
+  overall_row = TRUE
+)
+
+# Example 2 - Rates by Highest Severity ------
+tbl_hierarchical(
+  data = ADAE_subset |&gt; mutate(AESEV = factor(AESEV, ordered = TRUE)),
+  variables = c(AESOC, AESEV),
+  by = TRTA,
+  id = USUBJID,
+  denominator = cards::ADSL |&gt; mutate(TRTA = ARM),
+  include = AESEV,
+  label = list(AESEV = "Highest Severity")
+)
+
+# Example 3 - Event Counts -------------------
+tbl_hierarchical_count(
+  data = ADAE_subset,
+  variables = c(AESOC, AETERM, AESEV),
+  by = TRTA,
+  overall_row = TRUE
+)
+
+</code></pre>
+
+
+</div>

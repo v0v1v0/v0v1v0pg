@@ -1,0 +1,277 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>autoGDINA</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Q-matrix validation, model selection and calibration in one run</h2>
+
+<h3>Description</h3>
+
+<p><code>autoGDINA</code> conducts a series of CDM analyses within the G-DINA framework. Particularly,
+the GDINA model is fitted to the data first using the <code>GDINA</code> function;
+then, the Q-matrix is validated using the function <code>Qval</code>.
+Based on the suggested Q-matrix, the data is fitted by the G-DINA model again, followed
+by an item level model selection via the Wald test using <code>modelcomp</code>. Lastly,
+the selected models are calibrated based on the suggested Q-matrix using the <code>GDINA</code> function.
+The Q-matrix validation and item-level model selection can be disabled by the users.
+Possible reduced CDMs for Wald test include the DINA model, the DINO model, A-CDM, LLM and RRUM.
+See <code>Details</code> for the rules of item-level model selection.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">autoGDINA(
+  dat,
+  Q,
+  modelselection = TRUE,
+  modelselectionrule = "simpler",
+  alpha.level = 0.05,
+  modelselection.args = list(),
+  Qvalid = TRUE,
+  Qvalid.args = list(),
+  GDINA1.args = list(),
+  GDINA2.args = list(),
+  CDM.args = list()
+)
+
+## S3 method for class 'autoGDINA'
+summary(object, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dat</code></td>
+<td>
+<p>A required <code class="reqn">N \times J</code> <code>matrix</code> or <code>data.frame</code> consisting of the
+responses of <code class="reqn">N</code> individuals to <code class="reqn">J</code> items. Missing values need to be coded as <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Q</code></td>
+<td>
+<p>A required matrix; The number of rows occupied by a single-strategy dichotomous item is 1, by a polytomous item is
+the number of nonzero categories, and by a mutiple-strategy dichotomous item is the number of strategies.
+The number of column is equal to the number of attributes if all items are single-strategy dichotomous items, but
+the number of attributes + 2 if any items are polytomous or have multiple strategies.
+For a polytomous item, the first column represents the item number and the second column indicates the nonzero category number.
+For a multiple-strategy dichotomous item, the first column represents the item number and the second column indicates the strategy number.
+For binary attributes, 1 denotes the attributes are measured by the items and 0 means the attributes are not
+measured. For polytomous attributes, non-zero elements indicate which level
+of attributes are needed (see Chen, &amp; de la Torre, 2013).  See <code>Examples</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modelselection</code></td>
+<td>
+<p>logical; conducting model selection or not?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modelselectionrule</code></td>
+<td>
+<p>how to conducted model selection? Possible options include
+<code>simpler</code>, <code>largestp</code> and <code>DS</code>. See <code>Details</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha.level</code></td>
+<td>
+<p>nominal level for the Wald test. The default is 0.05.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modelselection.args</code></td>
+<td>
+<p>arguments passed to <code>modelcomp</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Qvalid</code></td>
+<td>
+<p>logical; validate Q-matrix or not? <code>TRUE</code> is the default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Qvalid.args</code></td>
+<td>
+<p>arguments passed to <code>Qval</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GDINA1.args</code></td>
+<td>
+<p>arguments passed to GDINA function for initial G-DINA calibration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GDINA2.args</code></td>
+<td>
+<p>arguments passed to GDINA function for the second G-DINA calibration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CDM.args</code></td>
+<td>
+<p>arguments passed to GDINA function for final calibration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>GDINA object for various S3 methods</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>After the Wald statistics for each reduced CDM were calculated for each item, the
+reduced models with p values less than the pre-specified alpha level were rejected.
+If all reduced models were rejected for an item, the G-DINA model was used as the best model;
+if at least one reduced model was retained, three diferent rules can be implemented for selecting
+the best model:
+</p>
+<p>When <code>modelselectionrule</code> is <code>simpler</code>:
+</p>
+<p>If (a) the DINA or DINO model
+was one of the retained models, then the DINA or DINO model with the larger p
+value was selected as the best model; but if (b) both DINA and DINO were rejected, the reduced
+model with the largest p value was selected as the best model for this item. Note that
+when the p-values of several reduced models were greater than 0.05, the DINA and DINO models were
+preferred over the A-CDM, LLM, and R-RUM because of their simplicity. This procedure is originally
+proposed by Ma, Iaconangelo, and de la Torre (2016).
+</p>
+<p>When <code>modelselectionrule</code> is <code>largestp</code>:
+</p>
+<p>The reduced model with the largest p-values is selected as the most appropriate model.
+</p>
+<p>When <code>modelselectionrule</code> is <code>DS</code>:
+</p>
+<p>The reduced model with non-significant p-values but the smallest dissimilarity index is selected as the most appropriate model.
+Dissimilarity index can be viewed as an effect size measure, which quatifies how dis-similar the reduced model is from the
+G-DINA model (See Ma, Iaconangelo, and de la Torre, 2016 for details).
+</p>
+
+
+<h3>Value</h3>
+
+<p>a list consisting of the following elements:
+</p>
+
+<dl>
+<dt>GDINA1.obj</dt>
+<dd>
+<p>initial GDINA calibration of class <code>GDINA</code></p>
+</dd>
+<dt>GDINA2.obj</dt>
+<dd>
+<p>second GDINA calibration of class <code>GDINA</code></p>
+</dd>
+<dt>Qval.obj</dt>
+<dd>
+<p>Q validation object of class <code>Qval</code></p>
+</dd>
+<dt>Wald.obj</dt>
+<dd>
+<p>model comparison object of class <code>modelcomp</code></p>
+</dd>
+<dt>CDM.obj</dt>
+<dd>
+<p>Final CDM calibration of class <code>GDINA</code></p>
+</dd>
+</dl>
+<h3>Methods (by generic)</h3>
+
+
+<ul><li> <p><code>summary(autoGDINA)</code>: print summary information
+</p>
+</li></ul>
+<h3>Note</h3>
+
+<p>Returned <code>GDINA1.obj</code>, <code>GDINA2.obj</code> and <code>CDM.obj</code> are objects of class <code>GDINA</code>,
+and all S3 methods suitable for <code>GDINA</code> objects can be applied. See <code>GDINA</code> and <code>extract</code>.
+Similarly, returned <code>Qval.obj</code> and <code>Wald.obj</code> are objects of class <code>Qval</code> and <code>modelcomp</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Wenchao Ma, The University of Alabama, <a href="mailto:wenchao.ma@ua.edu">wenchao.ma@ua.edu</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Ma, W., &amp; de la Torre, J. (2020). GDINA: An R Package for Cognitive Diagnosis Modeling. <em>Journal of Statistical Software, 93(14)</em>, 1-26.
+</p>
+<p>Ma, W., Iaconangelo, C., &amp; de la Torre, J. (2016). Model similarity, model selection and attribute classification.
+<em>Applied Psychological Measurement, 40</em>, 200-217.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GDINA</code>, <code>modelcomp</code>, <code>Qval</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# simulated responses
+Q &lt;- sim10GDINA$simQ
+dat &lt;- sim10GDINA$simdat
+
+#misspecified Q
+misQ &lt;- Q
+misQ[10,] &lt;- c(0,1,0)
+out1 &lt;- autoGDINA(dat,misQ,modelselectionrule="largestp")
+out1
+summary(out1)
+AIC(out1$CDM.obj)
+
+# simulated responses
+Q &lt;- sim30GDINA$simQ
+dat &lt;- sim30GDINA$simdat
+
+#misspecified Q
+misQ &lt;- Q
+misQ[1,] &lt;- c(1,1,0,1,0)
+auto &lt;- autoGDINA(dat,misQ,Qvalid = TRUE, Qvalid.args = list(method = "wald"),
+                  modelselectionrule="simpler")
+auto
+summary(auto)
+AIC(auto$CDM.obj)
+
+#using the other selection rule
+out11 &lt;- autoGDINA(dat,misQ,modelselectionrule="simpler",
+                   modelselection.args = list(models = c("DINO","DINA")))
+out11
+summary(out11)
+
+# disable model selection function
+out12 &lt;- autoGDINA(dat,misQ,modelselection=FALSE)
+out12
+summary(out12)
+
+
+# Disable Q-matrix validation
+out3 &lt;- autoGDINA(dat = dat, Q = misQ, Qvalid = FALSE)
+out3
+summary(out3)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

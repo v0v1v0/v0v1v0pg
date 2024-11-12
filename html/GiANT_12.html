@@ -1,0 +1,197 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Gene set analysis</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Main interface for enrichment analyses.
+</h2>
+
+<h3>Description</h3>
+
+<p>The main function of the package that performs a gene set analysis for a list of gene sets.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">geneSetAnalysis(
+	...,
+	dat,
+	geneSets,
+	analysis,
+	signLevel = 0.05,
+	preprocessGeneSets = FALSE,
+	adjustmentMethod = p.adjust.methods,
+	cluster = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Additional parameters for the different steps of the analysis pipeline, depending on the concrete configuration supplied in <code>analysis</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dat</code></td>
+<td>
+
+<p>A numeric matrix of gene expression values for all analyzed genes. Here, each row corresponds to one gene, and each column corresponds to one sample. The rows must be named with the gene names used in the gene sets.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>geneSets</code></td>
+<td>
+
+<p>A list of gene sets, where each gene set is a vector of gene names corresponding to the row names of <code>dat</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>analysis</code></td>
+<td>
+
+<p>An object of type <code>gsAnalysis</code> as returned by <code>gsAnalysis</code> or by the predefined configurations (see <code>predefinedAnalyses</code>).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>signLevel</code></td>
+<td>
+
+<p>The significance level for the significance assessment of the gene sets (defaults to <code>0.05</code>). 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>preprocessGeneSets</code></td>
+<td>
+
+<p>Specifies whether the gene sets in <code>geneSets</code> should be preprocessed or not. If set to <code>TRUE</code>, all genes that are not part of the data set (i.e. not in <code>rownames(dat)</code>) are removed from the gene sets.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adjustmentMethod</code></td>
+<td>
+
+<p>The method to use for the adjustment for multiple testing (see <code>method</code> parameter of <code>p.adjust</code> for possible values).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cluster</code></td>
+<td>
+
+<p>If the analyses should be applied in parallel for the gene sets, this parameter must hold an initialized cluster as returned by <code>makeCluster</code>. If this parameter is <code>NULL</code>, the analyses are performed sequentially.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This is the main interface function of the package for gene set enrichment analyses. Analyses usually consist of a pipeline of steps. Often, the first step is the calculation of a summary statistic for the relation of each gene to the class labels. These values or transformations thereof are employed to calculate a gene set statistic for each of the supplied gene sets. The significance of gene set enrichments can be determined according to different methods, and the robustness of gene sets can be evaluated by slightly modifying the gene sets. To provide a flexible mechanism for the plethora of different approaches arising from the different choices, basic pipeline configurations are encapsulated in <code>gsAnalysis</code> objects which can be created using the <code>gsAnalysis</code> function. Ready-to-use configuration objects for certain well-known methods are included in the package (see <code>predefinedAnalyses</code>). Parameters of the chosen analysis pipeline can be set in the <code>...</code> parameter.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of the type <code>gsaResult</code> with the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>adjustedPValues</code></td>
+<td>
+<p>A vector of p-values, one for each gene set. These values are already adjusted for multiple testing according to the <code>adjustmentMethod</code> parameter.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rawPValues</code></td>
+<td>
+<p>The raw unadjusted p-values, one for each gene set.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res.all</code></td>
+<td>
+
+<p>A list comprising the detailed results for each gene set. Each element of this list is another list with the following components:
+</p>
+<p><code>pValue</code>: The raw (unadjusted) p-value for the gene set.
+</p>
+<p><code>geneSetValues</code>: If <code>analysis</code> is a global analysis, this is the object returned by the method for the corresponding gene set. For an analysis pipeline, this holds the values of the gene-level statistic, the transformed values and the values of the gene set statistic (see also <code>gsAnalysis</code>).
+</p>
+<p><code>significanceValues</code>: Gene set statistics for each randomly drawn gene set for significance assessment and a <code>list</code> of this gene sets. Only set for analysis of type 'geneSetAnalysis'. <code>NULL</code> for 'global' analysis.
+</p>
+<p><code>geneSet</code>: The supplied gene set.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>signLevel</code></td>
+<td>
+<p>The significance level used for this analysis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>analysis</code></td>
+<td>
+<p>The performed analysis (of type <code>gsAnalysis</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>analysisType</code></td>
+<td>
+<p>A character string identifying the analysis as an enrichment analysis pipeline (<code>"geneSetAnalysis"</code>) or as a global analysis (<code>"global"</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adjustmentMethod</code></td>
+<td>
+<p>The method used to adjust the p-values in <code>adjustedPValues</code></p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Ackermann, M., Strimmer, K. (2009) A general modular framework for gene set enrichment analysis. <em>BMC Bioinformatics</em>, <b>10</b>(1), 47.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gsAnalysis</code>, <code>gls</code>, <code>transformation</code>, <code>gss</code>, <code>global</code>, <code>significance</code>, <code>evaluateGeneSetUncertainty</code>, <code>hist.gsaResult</code>, <code>preprocessGs</code>
+
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># load data
+data(exampleData)
+  
+  # apply predefined analysis for gene set enrichment analysis
+  res &lt;- geneSetAnalysis(	
+  	# parameters for geneSetAnalysis
+  	dat = countdata,
+  	geneSets = pathways[1],
+  	analysis = analysis.averageCorrelation(),
+  	adjustmentMethod = "fdr",
+  	# additional parameters for analysis.averageCorrelation
+  	labs = labels,
+  	method = "pearson",
+  	numSamples = 10)
+</code></pre>
+
+
+</div>

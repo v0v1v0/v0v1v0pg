@@ -1,0 +1,420 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sdm_dstl</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Structural Dynamic Model (alias Structural Growth Model) with a Demand Structure Tree List</h2>
+
+<h3>Description</h3>
+
+<p>This is a wrapper of the function CGE::sdm.
+The parameter A of CGE::sdm is replaced with a demand structure tree list.
+This function can be replaced by the more comprehensive function <code>sdm2</code>,
+so it is not recommended.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sdm_dstl(dstl, names.commodity, names.agent, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dstl</code></td>
+<td>
+<p>a demand structure tree list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names.commodity</code></td>
+<td>
+<p>names of commodities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names.agent</code></td>
+<td>
+<p>names of agents.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function CGE::sdm.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A general equilibrium, which is a list with the following elements:
+</p>
+
+<ul>
+<li>
+<p> D - the demand matrix.
+</p>
+</li>
+<li>
+<p> DV - the demand value matrix.
+</p>
+</li>
+<li>
+<p> SV - the supply value matrix.
+</p>
+</li>
+<li>
+<p> ... - some elements returned by the CGE::sdm function
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>LI Wu (2019, ISBN: 9787521804225) General Equilibrium and Structural Dynamics: Perspectives of New Structural Economics. Beijing: Economic Science Press. (In Chinese)
+</p>
+<p>LI Wu (2010) A Structural Growth Model and its Applications to Sraffa's System. http://www.iioa.org/conferences/18th/papers/files/104_20100729011_AStructuralGrowthModelanditsApplicationstoSraffasSstem.pdf
+</p>
+<p>Manuel Alejandro Cardenete, Ana-Isabel Guerra, Ferran Sancho (2012, ISBN: 9783642247453) Applied General Equilibrium: An Introduction. Springer-Verlag Berlin Heidelberg.
+</p>
+<p>Torres, Jose L. (2016, ISBN: 9781622730452) Introduction to Dynamic Macroeconomic General Equilibrium Models (Second Edition). Vernon Press.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>sdm2</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### a pure exchange economy with two agents and two commodities
+dst.CHN &lt;- node_new("util.CHN",
+                    type = "SCES", alpha = 1, beta = c(0.8, 0.2), es = 2,
+                    "lab.CHN", "lab.ROW"
+)
+node_plot(dst.CHN)
+
+dst.ROW &lt;- node_new("util.ROW",
+                    type = "SCES", alpha = 1, beta = c(0.05, 0.95), es = 2,
+                    "lab.CHN", "lab.ROW"
+)
+
+dstl &lt;- list(dst.CHN, dst.ROW)
+
+ge &lt;- sdm_dstl(dstl,
+               names.commodity = c("lab.CHN", "lab.ROW"),
+               names.agent = c("CHN", "ROW"),
+               B = matrix(0, 2, 2, TRUE),
+               S0Exg = matrix(c(
+                 100, 0,
+                 0, 600
+               ), 2, 2, TRUE)
+)
+
+## supply change
+geSC &lt;- sdm_dstl(dstl,
+                 names.commodity = c("lab.CHN", "lab.ROW"),
+                 names.agent = c("CHN", "ROW"),
+                 B = matrix(0, 2, 2, TRUE),
+                 S0Exg = matrix(c(
+                   200, 0,
+                   0, 600
+                 ), 2, 2, TRUE)
+)
+
+geSC$p / ge$p
+
+## preference change
+dst.CHN$beta &lt;- c(0.9, 0.1)
+gePC &lt;- sdm_dstl(dstl,
+                 names.commodity = c("lab.CHN", "lab.ROW"),
+                 names.agent = c("CHN", "ROW"),
+                 B = matrix(0, 2, 2, TRUE),
+                 S0Exg = matrix(c(
+                   100, 0,
+                   0, 600
+                 ), 2, 2, TRUE)
+)
+
+gePC$p / ge$p
+
+
+#### a pure exchange economy with two agents and four basic commodities
+prod.CHN &lt;- node_new("prod.CHN",
+                     type = "SCES", alpha = 1, beta = c(0.5, 0.5), es = 0.75,
+                     "lab.CHN", "cap.CHN"
+)
+
+node_plot(prod.CHN)
+
+prod.ROW &lt;- node_new("prod.ROW",
+                     type = "SCES", alpha = 2, beta = c(0.4, 0.6), es = 0.75,
+                     "lab.ROW", "cap.ROW"
+)
+
+dst.CHN &lt;- node_new("CHN",
+                    type = "SCES", alpha = 1, beta = c(0.8, 0.2), es = 2,
+                    prod.CHN, prod.ROW
+)
+
+node_plot(dst.CHN)
+node_print(dst.CHN)
+p &lt;- c("lab.CHN" = 1, "cap.CHN" = 1, "lab.ROW" = 1, "cap.ROW" = 1)
+demand_coefficient(dst.CHN, p)
+
+
+dst.ROW &lt;- node_new("ROW",
+                    type = "SCES", alpha = 1, beta = c(0.05, 0.95), es = 2,
+                    prod.CHN, prod.ROW
+)
+
+node_plot(dst.ROW)
+node_print(dst.ROW)
+
+dstl &lt;- list(dst.CHN, dst.ROW)
+
+ge &lt;- sdm_dstl(dstl,
+               names.commodity = c("lab.CHN", "cap.CHN", "lab.ROW", "cap.ROW"),
+               names.agent = c("CHN", "ROW"),
+               B = matrix(0, 4, 2, TRUE),
+               S0Exg = matrix(c(
+                 100, 0,
+                 100, 0,
+                 0, 600,
+                 0, 800
+               ), 4, 2, TRUE)
+)
+
+
+## Add currencies to the example above.
+prod_money.CHN &lt;- node_new("prod_money.CHN",
+                           type = "FIN", rate = c(1, 0.1), # 0.1 is the interest rate.
+                           prod.CHN, "money.CHN"
+)
+
+prod_money.ROW &lt;- node_new("prod_money.ROW",
+                           type = "FIN", rate = c(1, 0.1),
+                           prod.ROW, "money.ROW"
+)
+
+dst.CHN &lt;- node_new("util.CHN",
+                    type = "SCES", alpha = 1, beta = c(0.8, 0.2), es = 2,
+                    prod_money.CHN, prod_money.ROW
+)
+
+dst.ROW &lt;- node_new("util.ROW",
+                    type = "SCES", alpha = 1, beta = c(0.05, 0.95), es = 2,
+                    prod_money.CHN, prod_money.ROW
+)
+
+dstl &lt;- list(dst.CHN, dst.ROW)
+
+ge &lt;- sdm_dstl(dstl,
+               names.commodity = c(
+                 "lab.CHN", "cap.CHN", "money.CHN",
+                 "lab.ROW", "cap.ROW", "money.ROW"
+               ),
+               names.agent = c("CHN", "ROW"),
+               B = matrix(0, 6, 2, TRUE),
+               S0Exg = matrix(c(
+                 100, 0,
+                 100, 0,
+                 100, 0,
+                 0, 600,
+                 0, 800,
+                 0, 100
+               ), 6, 2, TRUE)
+)
+
+ge$p["money.ROW"] / ge$p["money.CHN"] # the exchange rate
+
+
+#### Example 7.6 in Li (2019), which illustrates foreign exchange rates.
+interest.rate.CHN &lt;- 0.1
+interest.rate.ROW &lt;- 0.1
+
+firm.CHN &lt;- node_new("output.CHN",
+                     type = "FIN", rate = c(1, interest.rate.CHN),
+                     "cc1.CHN", "money.CHN"
+)
+node_set(firm.CHN, "cc1.CHN",
+         type = "CD", alpha = 1, beta = c(0.5, 0.5),
+         "lab.CHN", "iron"
+)
+
+household.CHN &lt;- node_new("util",
+                          type = "FIN", rate = c(1, interest.rate.CHN),
+                          "wheat", "money.CHN"
+)
+
+moneylender.CHN &lt;- Clone(household.CHN)
+
+
+firm.ROW &lt;- node_new("output.ROW",
+                     type = "FIN", rate = c(1, interest.rate.ROW),
+                     "cc1.ROW", "money.ROW"
+)
+node_set(firm.ROW, "cc1.ROW",
+         type = "CD", alpha = 1, beta = c(0.5, 0.5),
+         "iron", "lab.ROW"
+)
+
+household.ROW &lt;- node_new("util",
+                          type = "FIN", rate = c(1, interest.rate.ROW),
+                          "wheat", "money.ROW"
+)
+
+moneylender.ROW &lt;- Clone(household.ROW)
+
+
+dstl &lt;- list(
+  firm.CHN, household.CHN, moneylender.CHN,
+  firm.ROW, household.ROW, moneylender.ROW
+)
+
+ge &lt;- sdm_dstl(dstl,
+               names.commodity = c(
+                 "wheat", "lab.CHN", "money.CHN",
+                 "iron", "lab.ROW", "money.ROW"
+               ),
+               names.agent = c(
+                 "firm.CHN", "household.CHN", "moneylender.CHN",
+                 "firm.ROW", "household.ROW", "moneylender.ROW"
+               ),
+               B = {
+                 tmp &lt;- matrix(0, 6, 6)
+                 tmp[1, 1] &lt;- 1
+                 tmp[4, 4] &lt;- 1
+                 tmp
+               },
+               S0Exg = {
+                 tmp &lt;- matrix(NA, 6, 6)
+                 tmp[2, 2] &lt;- 100
+                 tmp[3, 3] &lt;- 600
+                 tmp[5, 5] &lt;- 100
+                 tmp[6, 6] &lt;- 100
+                 tmp
+               }
+)
+
+ge$p.money &lt;- ge$p
+ge$p.money["money.CHN"] &lt;- ge$p["money.CHN"] / interest.rate.CHN
+ge$p.money["money.ROW"] &lt;- ge$p["money.ROW"] / interest.rate.ROW
+ge$p.money &lt;- ge$p.money / ge$p.money["money.CHN"]
+
+ge$p.money["money.ROW"] / ge$p.money["money.CHN"] # the exchange rate
+
+
+#### the example (see Table 2.1 and 2.2) of the canonical dynamic
+#### macroeconomic general equilibrium model in Torres (2016).
+discount.factor &lt;- 0.97
+return.rate &lt;- 1 / discount.factor - 1
+depreciation.rate &lt;- 0.06
+
+production.firm &lt;- node_new("output",
+                            type = "CD", alpha = 1, beta = c(0.65, 0.35),
+                            "labor", "capital.goods"
+)
+
+household &lt;- node_new("util",
+                      type = "CD", alpha = 1, beta = c(0.4, 0.6),
+                      "product", "labor"
+)
+
+leasing.firm &lt;- node_new("output",
+                         type = "FIN", rate = c(1, return.rate),
+                         "product", "dividend"
+)
+
+dstl &lt;- list(
+  production.firm, household, leasing.firm
+)
+
+ge &lt;- sdm_dstl(dstl,
+               names.commodity = c("product", "labor", "capital.goods", "dividend"),
+               names.agent = c("production.firm", "household", "leasing.firm"),
+               B = matrix(c(
+                 1, 0, 1 - depreciation.rate,
+                 0, 1, 0,
+                 0, 0, 1,
+                 0, 1, 0
+               ), 4, 3, TRUE),
+               S0Exg = {
+                 tmp &lt;- matrix(NA, 4, 3)
+                 tmp[2, 2] &lt;- 1
+                 tmp[4, 2] &lt;- 1
+                 tmp
+               },
+               priceAdjustmentVelocity = 0.03,
+               maxIteration = 1,
+               numberOfPeriods = 15000,
+               ts = TRUE
+)
+
+ge$D # the demand matrix
+ge$p / ge$p[1]
+
+plot(ge$ts.z[, 1], type = "l")
+
+
+#### an example of applied general equilibrium (see section 3.4, Cardenete et al., 2012).
+dst.consumer1 &lt;- node_new("util",
+                          type = "CD", alpha = 1, beta = c(0.3, 0.7),
+                          "prod1", "prod2"
+)
+
+dst.consumer2 &lt;- node_new("util",
+                          type = "CD", alpha = 1, beta = c(0.6, 0.4),
+                          "prod1", "prod2"
+)
+
+dst.firm1 &lt;- node_new("output",
+                      type = "Leontief", a = c(0.5, 0.2, 0.3),
+                      "VA", "prod1", "prod2"
+)
+node_set(dst.firm1, "VA",
+         type = "CD",
+         alpha = 0.8^-0.8 * 0.2^-0.2, beta = c(0.8, 0.2),
+         "lab", "cap"
+)
+
+dst.firm2 &lt;- Clone(dst.firm1)
+dst.firm2$a &lt;- c(0.25, 0.5, 0.25)
+node_set(dst.firm2, "VA",
+         alpha = 0.4^-0.4 * 0.6^-0.6, beta = c(0.4, 0.6)
+)
+
+node_print(dst.firm2)
+
+dstl &lt;- list(dst.firm1, dst.firm2, dst.consumer1, dst.consumer2)
+
+ge &lt;- sdm_dstl(dstl,
+               names.commodity = c("prod1", "prod2", "lab", "cap"),
+               names.agent = c("firm1", "firm2", "consumer1", "consumer2"),
+               B = {
+                 tmp &lt;- matrix(0, 4, 4)
+                 tmp[1, 1] &lt;- 1
+                 tmp[2, 2] &lt;- 1
+                 tmp
+               },
+               S0Exg = {
+                 tmp &lt;- matrix(NA, 4, 4)
+                 tmp[3, 3] &lt;- 30
+                 tmp[4, 3] &lt;- 20
+                 tmp[3, 4] &lt;- 20
+                 tmp[4, 4] &lt;- 5
+                 tmp
+               }
+)
+
+
+</code></pre>
+
+
+</div>

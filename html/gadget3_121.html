@@ -1,0 +1,162 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>run_r</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gadget3 actions into R code</h2>
+
+<h3>Description</h3>
+
+<p>Convert g3 actions into an R function that can then be executed
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">g3_to_r(actions, trace = FALSE, strict = FALSE)
+
+## S3 method for class 'g3_r'
+print(x, ..., with_environment = FALSE, with_template = FALSE)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>actions</code></td>
+<td>
+
+<p>A list of actions (i.e. list of formula objects), as produced by <var>g3a_</var>* functions.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+
+<p>If TRUE, turn all comments into print statements.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strict</code></td>
+<td>
+
+<p>If TRUE, enable extra sanity checking in actions. Any invalid conditions
+(e.g. more/less fish after growth) will result in a warning.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+
+<p>The <code>g3_to_r</code>-generated function to print
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>with_environment</code></td>
+<td>
+
+<p>If TRUE, list data stored in function environment when printing
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>with_template</code></td>
+<td>
+
+<p>If TRUE, show parameter template when printing
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A function that takes a <var>params</var> variable, that defines all <var>g3_param</var>s required by the model.
+The following attributes will be set:
+</p>
+
+<dl>
+<dt>actions</dt>
+<dd>
+<p>The original <var>actions</var> list given to the function</p>
+</dd>
+<dt>parameter_template</dt>
+<dd>
+<p>A list of all parameters expected by the model, to fill in</p>
+</dd>
+</dl>
+<p>Use e.g. <code>attr(fn, 'parameter_template')</code> to retrieve them.
+</p>
+<p>Invariant model data will be stored as a closure, i.e. in <code>environment(fn)</code>.
+This can be fetched with <code>environment(fn)$cdist_sumofsquares_ldist_gil_obs__num</code>.
+</p>
+<p>The function will return <var>nll</var> produced by the model.
+You can also use <code>attributes(nll)</code> to get any report variables from the model.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+ling_imm &lt;- g3_stock(c(species = 'ling', 'imm'), seq(20, 156, 4)) %&gt;% g3s_age(3, 10)
+
+initialconditions_action &lt;- g3a_initialconditions_normalparam(
+    ling_imm,
+    factor_f = g3a_renewal_initabund(by_stock_f = 'species'),
+    by_stock = 'species',
+    by_age = TRUE)
+
+# Timekeeping action
+time_action &lt;- g3a_time(
+    start_year = 2000,
+    end_year = 2004,
+    c(3, 3, 3, 3))
+
+# Generate a model from the above 2 actions
+# NB: Obviously in reality we'd need more actions
+fn &lt;- g3_to_r(list(initialconditions_action, time_action))
+
+if (interactive()) {
+  # Edit the resulting function
+  fn &lt;- edit(fn)
+}
+
+param &lt;- attr(fn, 'parameter_template')
+param$project_years &lt;- 0
+param$ling.init.F &lt;- 0.4
+param$ling.Linf &lt;- 160
+param$ling.K &lt;- 90
+param$ling.recl &lt;- 12
+param$recage &lt;- g3_stock_def(ling_imm, 'minage')
+param[grepl('^ling.init.sd.', names(param))] &lt;- 50.527220
+param[grepl('^ling_imm.init.\\d+', names(param))] &lt;- 1
+param$ling_imm.init.scalar &lt;- 200
+param$ling_imm.walpha &lt;- 2.27567436711055e-06
+param$ling_imm.wbeta &lt;- 3.20200445996187
+param$ling_imm.M &lt;- 0.15
+
+# Run the model with the provided parameters
+nll &lt;- fn(param)
+
+# Get the report from the last model run
+report &lt;- attributes(nll)
+
+# Fetch a value from the model data
+environment(fn)$ling_imm__midlen
+
+</code></pre>
+
+
+</div>

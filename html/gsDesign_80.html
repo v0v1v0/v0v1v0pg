@@ -1,0 +1,190 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sfLinear</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Piecewise Linear and Step Function Spending Functions</h2>
+
+<h3>Description</h3>
+
+<p>The function <code>sfLinear()</code> allows specification of a piecewise linear
+spending function. The function <code>sfStep()</code> specifies a step function
+spending function. Both functions provide complete flexibility in setting
+spending at desired timepoints in a group sequential design. Normally these
+function will be passed to <code>gsDesign()</code> in the parameter <code>sfu</code> for
+the upper bound or <code>sfl</code> for the lower bound to specify a spending
+function family for a design. When passed to <code>gsDesign()</code>, the value of
+<code>param</code> would be passed to <code>sfLinear()</code> or <code>sfStep()</code> through
+the <code>gsDesign()</code> arguments <code>sfupar</code> for the upper bound and
+<code>sflpar</code> for the lower bound.
+</p>
+<p>Note that <code>sfStep()</code> allows setting a particular level of spending when
+the timing is not strictly known; an example shows how this can inflate Type
+I error when timing of analyses are changed based on knowing the treatment
+effect at an interim.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sfLinear(alpha, t, param)
+
+sfStep(alpha, t, param)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Real value <code class="reqn">&gt; 0</code> and no more than 1. Normally,
+<code>alpha=0.025</code> for one-sided Type I error specification or
+<code>alpha=0.1</code> for Type II error specification. However, this could be set
+to 1 if for descriptive purposes you wish to see the proportion of spending
+as a function of the proportion of sample size or information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t</code></td>
+<td>
+<p>A vector of points with increasing values from 0 to 1, inclusive.
+Values of the proportion of sample size or information for which the
+spending function will be computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>A vector with a positive, even length. Values must range from 0
+to 1, inclusive. Letting <code>m &lt;- length(param/2)</code>, the first <code>m</code>
+points in param specify increasing values strictly between 0 and 1
+corresponding to interim timing (proportion of final total statistical
+information). The last <code>m</code> points in <code>param</code> specify
+non-decreasing values from 0 to 1, inclusive, with the cumulative proportion
+of spending at the specified timepoints.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of type <code>spendfn</code>.  The cumulative spending returned
+in <code>sfLinear$spend</code> is 0 for <code>t &lt;= 0</code> and <code>alpha</code> for
+<code>t&gt;=1</code>.  For <code>t</code> between specified points, linear interpolation is
+used to determine <code>sfLinear$spend</code>.
+</p>
+<p>The cumulative spending returned in <code>sfStep$spend</code> is 0 for
+<code>t&lt;param[1]</code> and <code>alpha</code> for <code>t&gt;=1</code>.  Letting <code>m &lt;-
+length(param/2)</code>, for <code>i=1,2,...m-1</code> and <code> param[i]&lt;= t &lt;
+param[i+1]</code>, the cumulative spending is set at <code>alpha * param[i+m]</code>
+(also for <code>param[m]&lt;=t&lt;1</code>).
+</p>
+<p>Note that if <code>param[2m]</code> is 1, then the first time an analysis is
+performed after the last proportion of final planned information
+(<code>param[m]</code>) will be the final analysis, using any remaining error that
+was not previously spent.
+</p>
+<p>See <code>vignette("SpendingFunctionOverview")</code> for further details.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The gsDesign technical manual is available at
+<a href="https://keaven.github.io/gsd-tech-manual/">https://keaven.github.io/gsd-tech-manual/</a>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Keaven Anderson <a href="mailto:keaven_anderson@merck.com">keaven_anderson@merck.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Jennison C and Turnbull BW (2000), <em>Group Sequential
+Methods with Applications to Clinical Trials</em>. Boca Raton: Chapman and Hall.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>vignette("SpendingFunctionOverview")</code>, <code>gsDesign</code>,
+<code>vignette("gsDesignPackageOverview")</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(ggplot2)
+# set up alpha spending and beta spending to be piecewise linear
+sfupar &lt;- c(.2, .4, .05, .2)
+sflpar &lt;- c(.3, .5, .65, .5, .75, .9)
+x &lt;- gsDesign(sfu = sfLinear, sfl = sfLinear, sfupar = sfupar, sflpar = sflpar)
+plot(x, plottype = "sf")
+x
+
+# now do an example where there is no lower-spending at interim 1
+# and no upper spending at interim 2
+sflpar &lt;- c(1 / 3, 2 / 3, 0, .25)
+sfupar &lt;- c(1 / 3, 2 / 3, .1, .1)
+x &lt;- gsDesign(sfu = sfLinear, sfl = sfLinear, sfupar = sfupar, sflpar = sflpar)
+plot(x, plottype = "sf")
+x
+
+# now do an example where timing of interims changes slightly, but error spending does not
+# also, spend all alpha when at least &gt;=90 percent of final information is in the analysis
+sfupar &lt;- c(.2, .4, .9, ((1:3) / 3)^3)
+x &lt;- gsDesign(k = 3, n.fix = 100, sfu = sfStep, sfupar = sfupar, test.type = 1)
+plot(x, pl = "sf")
+# original planned sample sizes
+ceiling(x$n.I)
+# cumulative spending planned at original interims
+cumsum(x$upper$spend)
+# change timing of analyses;
+# note that cumulative spending "P(Cross) if delta=0" does not change from cumsum(x$upper$spend)
+# while full alpha is spent, power is reduced by reduced sample size
+y &lt;- gsDesign(
+  k = 3, sfu = sfStep, sfupar = sfupar, test.type = 1,
+  maxn.IPlan = x$n.I[x$k], n.I = c(30, 70, 95),
+  n.fix = x$n.fix
+)
+# note that full alpha is used, but power is reduced due to lowered sample size
+gsBoundSummary(y)
+
+# now show how step function can be abused by 'adapting' stage 2 sample size based on interim result
+x &lt;- gsDesign(k = 2, delta = .05, sfu = sfStep, sfupar = c(.02, .001), timing = .02, test.type = 1)
+# spending jumps from miniscule to full alpha at first analysis after interim 1
+plot(x, pl = "sf")
+# sample sizes at analyses:
+ceiling(x$n.I)
+# simulate 1 million stage 1 sum of 178 Normal(0,1) random variables
+# Normal(0,Variance=178) under null hypothesis
+s1 &lt;- rnorm(1000000, 0, sqrt(178))
+# compute corresponding z-values
+z1 &lt;- s1 / sqrt(178)
+# set stage 2 sample size to 1 if z1 is over final bound, otherwise full sample size
+n2 &lt;- rep(1, 1000000)
+n2[z1 &lt; 1.96] &lt;- ceiling(x$n.I[2]) - ceiling(178)
+# now sample n2 observations for second stage
+s2 &lt;- rnorm(1000000, 0, sqrt(n2))
+# add sum and divide by standard deviation
+z2 &lt;- (s1 + s2) / (sqrt(178 + n2))
+# By allowing full spending when final analysis is either
+# early or late depending on observed interim z1,
+# Type I error is now almost twice the planned .025
+sum(z1 &gt;= x$upper$bound[1] | z2 &gt;= x$upper$bound[2]) / 1000000
+# if stage 2 sample size is random and independent of z1 with same frequency,
+# this is not a problem
+s1alt &lt;- rnorm(1000000, 0, sqrt(178))
+z1alt &lt;- s1alt / sqrt(178)
+z2alt &lt;- (s1alt + s2) / sqrt(178 + n2)
+sum(z1alt &gt;= x$upper$bound[1] | z2alt &gt;= x$upper$bound[2]) / 1000000
+
+</code></pre>
+
+
+</div>

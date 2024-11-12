@@ -1,0 +1,466 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>galamm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a generalized additive latent and mixed model</h2>
+
+<h3>Description</h3>
+
+<p>This function fits a generalized additive latent and mixed model
+(GALAMMs), as described in
+Sørensen et al. (2023).
+The building blocks of these models are generalized additive mixed models
+(GAMMs) (Wood 2017), of which
+generalized linear mixed models
+(Breslow and Clayton 1993; Harville 1977; Henderson 1975; Laird and Ware 1982)
+are special cases. GALAMMs extend upon GAMMs by allowing factor structures,
+as commonly used to model hypothesized latent traits underlying observed
+measurements. In this sense, GALAMMs are an extension of generalized linear
+latent and mixed models (GLLAMMs)
+(Skrondal and Rabe-Hesketh 2004; Rabe-Hesketh et al. 2004)
+which allows semiparametric estimation. The implemented algorithm used to
+compute model estimates is described in
+Sørensen et al. (2023),
+and is an extension of the algorithm used for fitting generalized linear
+mixed models by the <code>lme4</code> package
+(Bates et al. 2015). The syntax used to
+define factor structures is based on that used by the <code>PLmixed</code>
+package, which is detailed in
+Rockwood and Jeon (2019).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">galamm(
+  formula,
+  weights = NULL,
+  data,
+  family = gaussian,
+  family_mapping = rep(1, nrow(data)),
+  load.var = NULL,
+  lambda = NULL,
+  factor = NULL,
+  factor_interactions = NULL,
+  na.action = getOption("na.action"),
+  start = NULL,
+  control = galamm_control()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A formula specifying the model. Smooth terms are defined in
+the style of the <code>mgcv</code> and <code>gamm4</code> packages, see
+(Wood 2017) for an
+introduction. Random effects are specified using <code>lme4</code> syntax, which
+is described in detail in
+(Bates et al. 2015). Factor loadings
+will also be part of the model formula, and is based on the syntax of the
+<code>PLmixed</code> package
+(Rockwood and Jeon 2019).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>An optional formula object specifying an expression for the
+residual variance. Defaults to <code>NULL</code>, corresponding to homoscedastic
+errors. The formula is defined in <code>lme4</code> style; see vignettes and
+examples for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data.frame containing all the variables specified by the model
+formula, with the exception of factor loadings.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A a list or character vector containing one or more model
+families. For each element in <code>family</code> there should be a corresponding
+element in <code>family_mapping</code> specifying which elements of the response
+are conditionally distributed according to the given family. Currently
+family can be one of <code>gaussian</code>, <code>binomial</code>, and <code>poisson</code>,
+and only canonical link functions are supported. The family arguments can
+either be provided as character values, e.g., <code>c("gaussian",
+  "poisson")</code> or <code>list("gaussian", "poisson")</code>, as function names, e.g.,
+<code>c(gaussian, poisson)</code> or <code>list(gaussian, poisson)</code>, or as
+function calls, e.g., <code>list(gaussian(), poisson())</code>. In the latter
+case, they must be provided in a list, and bot as a vector. Mixing the
+different ways of describing the family also works, e.g.,
+<code>list("gaussian", poisson())</code>, but in this case they must be provided
+in a list. When provided as character values, the argument is case
+sensitive.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family_mapping</code></td>
+<td>
+<p>Optional vector mapping from the elements of
+<code>family</code> to rows of <code>data</code>. Defaults to <code>rep(1,
+  nrow(data))</code>, which means that all observations are distributed according
+to the first element of <code>family</code>. The length of <code>family_mapping</code>
+must be identical to the number of observations, <code>nrow(data)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>load.var</code></td>
+<td>
+<p>Optional character specifying the name of the variable in
+<code>data</code> identifying what the factors load onto. Default to <code>NULL</code>,
+which means that there are no loading variables. Argument is case
+sensitive.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>Optional factor loading matrix. Numerical values indicate that
+the given value is fixed, while <code>NA</code> means that the entry is a
+parameter to be estimated. Numerical values can only take the values 0 or
+</p>
+
+<ol><li>
+<p> The number of columns of <code>lambda</code> must be identical to the number
+of elements in <code>factor</code>. Defaults to <code>NULL</code>, which means that
+there is no factor loading matrix. If <code>lambda</code> is provided as a
+vector, it will be converted to a <code>matrix</code> with a single column.
+</p>
+</li></ol>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>factor</code></td>
+<td>
+<p>Optional character vector whose <code class="reqn">j</code>th entry corresponds to
+the <code class="reqn">j</code>th column of the corresponding matrix in <code>lambda</code>. The
+number of elements in <code>factor</code> must be equal to the number of columns
+in <code>lambda</code>. Defaults to <code>NULL</code>, which means that there are no
+factor loadings. Argument is case sensitive.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>factor_interactions</code></td>
+<td>
+<p>Optional list of length equal to the number of
+columns in <code>lambda</code>. Each list element should be a <code>formula</code>
+object containing the write-hand side of a regression model, of the form
+<code>~ x + z</code>. Defaults to <code>NULL</code>, which means that no factor
+interactions are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>Character of length one specifying a function which
+indicates what should happen when the data contains <code>NA</code>s. The
+defaults is set to the <code>na.action</code> setting of <code>options</code>, which
+can be seen with <code>options("na.action")</code>. The other alternatives are
+<code>"na.fail"</code> or <code>"na.exclude"</code>, which means that the function
+fails if there as <code>NA</code>s in <code>data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>Optional named list of starting values for parameters. Possible
+names of list elements are <code>"theta"</code>, <code>"beta"</code>, <code>"lambda"</code>,
+and <code>"weights"</code>, all of should be numerical vectors with starting
+values. Default to <code>NULL</code>, which means that some relatively sensible
+defaults are used. Names of parameters must be given in all lower case.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>Optional control object for the optimization procedure of
+class <code>galamm_control</code> resulting from calling
+<code>galamm_control</code>. Defaults to <code>NULL</code>, which means that the
+defaults of <code>galamm_control</code> are used.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A model object of class <code>galamm</code>, containing the following
+elements:
+</p>
+
+<ul>
+<li> <p><code>call</code> the matched call used when fitting the model.
+</p>
+</li>
+<li> <p><code>random_effects</code> a list containing the following two elements:
+</p>
+
+<ul>
+<li> <p><code>b</code> random effects in original parametrization.
+</p>
+</li>
+<li> <p><code>u</code> random effects standardized to have identity covariance matrix.
+</p>
+</li>
+</ul>
+</li>
+<li> <p><code>model</code> a list with various elements related to the model setup and
+fit:
+</p>
+
+<ul>
+<li> <p><code>deviance</code> deviance of final model.
+</p>
+</li>
+<li> <p><code>deviance_residuals</code> deviance residuals of the final model.
+</p>
+</li>
+<li> <p><code>df</code> degrees of freedom of model.
+</p>
+</li>
+<li> <p><code>family</code> a list of one or more family objects, as specified in the
+<code>family</code> arguments to <code>galamm</code>.
+</p>
+</li>
+<li> <p><code>factor_interactions</code> List of formulas specifying interactions
+between latent and observed variables, as provided to the argument
+<code>factor_interactions</code> to <code>galamm</code>. If not provided, it is
+<code>NULL</code>.
+</p>
+</li>
+<li> <p><code>fit</code> a numeric vector with fitted values.
+</p>
+</li>
+<li> <p><code>fit_population</code> a numeric vector with fitted values excluding
+random effects.
+</p>
+</li>
+<li> <p><code>hessian</code> Hessian matrix of final model, i.e., the second
+derivative of the log-likelihood with respect to all model parameters.
+</p>
+</li>
+<li> <p><code>lmod</code> Linear model object returned by <code>lme4::lFormula</code>, which
+is used internally for setting up the models.
+</p>
+</li>
+<li> <p><code>loglik</code> Log-likelihood of final model.
+</p>
+</li>
+<li> <p><code>n</code> Number of observations.
+</p>
+</li>
+<li> <p><code>pearson_residual</code> Pearson residuals of final model.
+</p>
+</li>
+<li> <p><code>reduced_hessian</code> Logical specifying whether the full Hessian
+matrix was computed, or a Hessian matrix with derivatives only with respect
+to beta and lambda.
+</p>
+</li>
+<li> <p><code>response</code> A numeric vector containing the response values used when
+fitting the model.
+</p>
+</li>
+<li> <p><code>weights_object</code> Object with weights used in model fitting. Is
+<code>NULL</code> when no weights were used.
+</p>
+</li>
+</ul>
+</li>
+<li> <p><code>parameters</code> A list object with model parameters and related
+information:
+</p>
+
+<ul>
+<li> <p><code>beta_inds</code> Integer vector specifying the indices of fixed
+regression coefficients among the estimated model parameters.
+</p>
+</li>
+<li> <p><code>dispersion_parameter</code> One or more dispersion parameters of the
+final model.
+</p>
+</li>
+<li> <p><code>lambda_dummy</code> Dummy matrix of factor loadings, which shows the
+structure of the loading matrix that was supplied in the <code>lambda</code>
+arguments.
+</p>
+</li>
+<li> <p><code>lambda_inds</code> Integer vector specifying the indices of factor
+loadings among the estimated model parameters.
+</p>
+</li>
+<li> <p><code>lambda_interaction_inds</code> Integer vector specifying the indices
+of regression coefficients for interactions between latent and observed
+variables.
+</p>
+</li>
+<li> <p><code>parameter_estimates</code> Numeric vector of final parameter estimates.
+</p>
+</li>
+<li> <p><code>parameter_names</code> Names of all parameters estimates.
+</p>
+</li>
+<li> <p><code>theta_inds</code> Integer vector specifying the indices of variance
+components among the estimated model parameters. Technically these are the
+entries of the Cholesky decomposition of the covariance matrix.
+</p>
+</li>
+<li> <p><code>weights_inds</code> Integer vector specifying the indices of estimated
+weights (used in heteroscedastic Gaussian models) among the estimated model
+parameters.
+</p>
+</li>
+</ul>
+</li>
+<li> <p><code>gam</code> List containing information about smooth terms in the model.
+If no smooth terms are contained in the model, then it is a list of length
+zero.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Bates DM, Mächler M, Bolker B, Walker S (2015).
+“Fitting Linear Mixed-Effects Models Using Lme4.”
+<em>Journal of Statistical Software</em>, <b>67</b>(1), 1–48.
+ISSN 1548-7660, <a href="https://doi.org/10.18637/jss.v067.i01">doi:10.18637/jss.v067.i01</a>.<br><br> Breslow NE, Clayton DG (1993).
+“Approximate Inference in Generalized Linear Mixed Models.”
+<em>Journal of the American Statistical Association</em>, <b>88</b>(421), 9–25.
+ISSN 0162-1459, <a href="https://doi.org/10.2307/2290687">doi:10.2307/2290687</a>.<br><br> Harville DA (1977).
+“Maximum Likelihood Approaches to Variance Component Estimation and to Related Problems.”
+<em>Journal of the American Statistical Association</em>, <b>72</b>(358), 320–338.
+ISSN 0162-1459, <a href="https://doi.org/10.2307/2286796">doi:10.2307/2286796</a>.<br><br> Henderson CR (1975).
+“Best Linear Unbiased Estimation and Prediction under a Selection Model.”
+<em>Biometrics</em>, <b>31</b>(2), 423–447.
+ISSN 0006-341X, <a href="https://doi.org/10.2307/2529430">doi:10.2307/2529430</a>.<br><br> Laird NM, Ware JH (1982).
+“Random-Effects Models for Longitudinal Data.”
+<em>Biometrics</em>, <b>38</b>(4), 963–974.
+ISSN 0006-341X, <a href="https://doi.org/10.2307/2529876">doi:10.2307/2529876</a>.<br><br> Rabe-Hesketh S, Skrondal A, Pickles A (2004).
+“Generalized Multilevel Structural Equation Modeling.”
+<em>Psychometrika</em>, <b>69</b>(2), 167–190.
+ISSN 1860-0980, <a href="https://doi.org/10.1007/BF02295939">doi:10.1007/BF02295939</a>.<br><br> Rockwood NJ, Jeon M (2019).
+“Estimating Complex Measurement and Growth Models Using the R Package PLmixed.”
+<em>Multivariate Behavioral Research</em>, <b>54</b>(2), 288–306.
+ISSN 0027-3171, <a href="https://doi.org/10.1080/00273171.2018.1516541">doi:10.1080/00273171.2018.1516541</a>.<br><br> Skrondal A, Rabe-Hesketh S (2004).
+<em>Generalized Latent Variable Modeling</em>,  Interdisciplinary Statistics Series.
+Chapman and Hall/CRC, Boca Raton, Florida.<br><br> Sørensen Ø, Fjell AM, Walhovd KB (2023).
+“Longitudinal Modeling of Age-Dependent Latent Traits with Generalized Additive Latent and Mixed Models.”
+<em>Psychometrika</em>, <b>88</b>(2), 456–486.
+ISSN 1860-0980, <a href="https://doi.org/10.1007/s11336-023-09910-z">doi:10.1007/s11336-023-09910-z</a>.<br><br> Wood SN (2017).
+<em>Generalized Additive Models: An Introduction with R</em>, 2 edition.
+Chapman and Hall/CRC.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other modeling functions: 
+<code>s()</code>,
+<code>t2()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Mixed response model ------------------------------------------------------
+
+# The mresp dataset contains a mix of binomial and Gaussian responses.
+
+# We need to estimate a factor loading which scales the two response types.
+loading_matrix &lt;- matrix(c(1, NA), ncol = 1)
+
+# Define mapping to families.
+families &lt;- c(gaussian, binomial)
+family_mapping &lt;- ifelse(mresp$itemgroup == "a", 1, 2)
+
+
+# Fit the model
+mod &lt;- galamm(
+  formula = y ~ x + (0 + level | id),
+  data = mresp,
+  family = families,
+  family_mapping = family_mapping,
+  factor = "level",
+  load.var = "itemgroup",
+  lambda = loading_matrix
+)
+
+# Summary information
+summary(mod)
+
+
+# Heteroscedastic model -----------------------------------------------------
+# Residuals allowed to differ according to the item variable
+# We also set the initial value of the random intercept standard deviation
+# to 1
+mod &lt;- galamm(
+  formula = y ~ x + (1 | id), weights = ~ (1 | item),
+  data = hsced, start = list(theta = 1)
+)
+summary(mod)
+
+# Generalized additive mixed model with factor structures -------------------
+
+# The cognition dataset contains simulated measurements of three latent
+# time-dependent processes, corresponding to individuals' abilities in
+# cognitive domains. We focus here on the first domain, and take a single
+# random timepoint per person:
+dat &lt;- subset(cognition, domain == 1)
+dat &lt;- split(dat, f = dat$id)
+dat &lt;- lapply(dat, function(x) x[x$timepoint %in% sample(x$timepoint, 1), ])
+dat &lt;- do.call(rbind, dat)
+dat$item &lt;- factor(dat$item)
+
+# At each timepoint there are three items measuring ability in the cognitive
+# domain. We fix the factor loading for the first measurement to one, and
+# estimate the remaining two. This is specified in the loading matrix.
+loading_matrix &lt;- matrix(c(1, NA, NA), ncol = 1)
+
+# We can now estimate the model.
+mod &lt;- galamm(
+  formula = y ~ 0 + item + sl(x, factor = "loading") +
+    (0 + loading | id),
+  data = dat,
+  load.var = "item",
+  lambda = loading_matrix,
+  factor = "loading"
+)
+
+# We can plot the estimated smooth term
+plot_smooth(mod, shade = TRUE)
+
+
+# Interaction between observed and latent covariates ------------------------
+# Define the loading matrix
+lambda &lt;- matrix(c(1, NA, NA), ncol = 1)
+
+# Define the regression functions, one for each row in the loading matrix
+factor_interactions &lt;- list(~1, ~1, ~x)
+
+# Fit the model
+mod &lt;- galamm(
+  formula = y ~ type + x:response + (0 + loading | id),
+  data = latent_covariates,
+  load.var = "type",
+  lambda = lambda,
+  factor = "loading",
+  factor_interactions = factor_interactions
+)
+
+# The summary output now include an interaction between the latent variable
+# and x, for predicting the third element in "type"
+summary(mod)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,389 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>HS</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Hierarchical Spike</h2>
+
+<h3>Description</h3>
+
+<p>Run a Gibbs sampler for a multivariate Bayesian sparse group selection model with hierarchical spike prior for detecting pleiotropic effects on the traits. This function is designed for summary statistics containing estimated regression coefficients and their estimated covariance matrices.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">HS(
+  Betah,
+  Sigmah,
+  kappa0 = kappa0,
+  kappastar0 = kappastar0,
+  sigma20 = sigma20,
+  s20 = s20,
+  m,
+  K,
+  niter = 1000,
+  burnin = 500,
+  nthin = 2,
+  nchains = 2,
+  a1 = 0.1,
+  a2 = 0.1,
+  d1 = 0.1,
+  d2 = 0.1,
+  c1 = 1,
+  c2 = 1,
+  e2 = 1,
+  snpnames,
+  genename
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Betah</code></td>
+<td>
+<p>A list containing m-dimensional vectors of the regression coefficients for K studies.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sigmah</code></td>
+<td>
+<p>A list containing the positive definite covariance matrices (m*m-dimensional) which is the estimated covariance matrices of K studies.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kappa0</code></td>
+<td>
+<p>Initial value for kappa (its dimension is equal to nchains).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kappastar0</code></td>
+<td>
+<p>Initial value for kappastar (its dimension is equal to nchains).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma20</code></td>
+<td>
+<p>Initial value for sigma2 (its dimension is equal to nchains).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s20</code></td>
+<td>
+<p>Initial value for s2 (its dimension is equal to nchains).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m</code></td>
+<td>
+<p>Number of variables in the group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>Number of traits.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>niter</code></td>
+<td>
+<p>Number of iterations for the Gibbs sampler.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Number of burn-in iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nthin</code></td>
+<td>
+<p>The lag of the iterations used for the posterior analysis is defined (or thinning rate).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nchains</code></td>
+<td>
+<p>Number of Markov chains, when nchains&gt;1, the function calculates the Gelman-Rubin convergence statistic, as modified by Brooks and Gelman (1998).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a1, a2</code></td>
+<td>
+<p>Hyperparameters of kappa. Default is a1=0.1 and a2=0.1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d1, d2</code></td>
+<td>
+<p>Hyperparameters of sigma2. Default is d1=0.1 and d2=0.1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c1, c2</code></td>
+<td>
+<p>Hyperparameters of kappastar. Default is c1=0.1 and c2=0.1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>e2</code></td>
+<td>
+<p>Initial value for doing Monte Carlo EM algorithm to estimate hyperparameter of s2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>snpnames</code></td>
+<td>
+<p>Names of variables for the group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>genename</code></td>
+<td>
+<p>Name of group.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For considering the HS prior, a reparameterization of betah_k is considered as betah_k = V_k^0.5 b_k,  V_k^0.5 = diag(tau_k1,...,tau_km)$. Therfore, we have the following hirarchical model:
+</p>
+<p>b_k ~ (1 - kappa) delta_0(b_k) + kappa N_m(0,sigma2 I_m ),
+</p>
+<p>tau_kj ~ (1 - kappa^*) delta_0(tau_kj) + kappa TN(0,s2),
+</p>
+<p>kappa ~ Beta(a_1,a_2),
+</p>
+<p>kappa^* ~ Beta(c_1,c_2),
+</p>
+<p>sigma2 ~ inverseGamma (d_1,d_2).
+</p>
+<p>s2 ~ inverseGamma (e_1,e_2).
+</p>
+<p>where delta_0(betah_k) denotes a point mass at 0, such that delta_0(betah_k)=1 if beta_k=0 and  delta_0(betah_k)=0 if  at least one of the $m$ components of beta_k is non-zero and TN(0,s2)  denotes a univariate truncated normal distribution at zero with mean 0 and variance s2.
+</p>
+
+
+<h3>Value</h3>
+
+
+<ul>
+<li>
+<p> mcmcchain: The list of simulation output for all parameters.
+</p>
+</li>
+<li>
+<p> Summary: Summary statistics for regression coefficients in each study.
+</p>
+</li>
+<li>
+<p> Indicator 1: A table containing m rows of binary indicators for each study, the number of studies with nonzero signal and having pleiotropic effect by credible interval (CI). The first K columns show nonzero signals, K+1 th column includes the number of studies with nonzero signal and the last column shows an indicator for having pleiotropic effect of each SNP.
+</p>
+</li>
+<li>
+<p> Indicator 2: A table containing m rows of binary indicators for each study, the number of studies with nonzero signal and having pleiotropic effect by median. The first K columns show nonzero signals, K+1 th column includes the number of studies with nonzero signal and the last column shows an indicator for having pleiotropic effect of each SNP.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Taban Baghfalaki.
+</p>
+
+
+<h3>References</h3>
+
+<p>Baghfalaki, T., Sugier, P. E., Truong, T., Pettitt, A. N., Mengersen, K., &amp; Liquet, B. (2021). Bayesian meta analysis models for cross cancer genomic investigation of pleiotropic effects using group structure. Statistics in Medicine, 40(6), 1498-1518.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">############################# PARP2_summary ###############################################
+data(PARP2_summary)
+Breast &lt;- PARP2_summary$Breast
+Thyroid &lt;- PARP2_summary$Thyroid
+Betah &lt;- list(Breast$beta, Thyroid$beta)
+Sigmah &lt;- list(diag(Breast$se), diag(Thyroid$se))
+genename &lt;- "PARP2"
+snpnames &lt;- Breast$snp
+K &lt;- 2
+m &lt;- 6
+
+RES &lt;- HS(Betah, Sigmah,
+  kappa0 = 0.5, kappastar0 = 0.5, sigma20 = 1, s20 = 1,
+  m = m, K = K, niter = 1000, burnin = 500, nthin = 1, nchains = 1,
+  a1 = 0.1, a2 = 0.1, d1 = 0.1, d2 = 0.1, c1 = 1, c2 = 1, e2 = 1, snpnames, genename
+)
+## Not run: 
+  print(RES)
+  ############################# Gene DNAJC1 ###############################################
+  data(DNAJC1)
+  Breast &lt;- DNAJC1$Breast
+  Thyroid &lt;- DNAJC1$Thyroid
+  genename &lt;- "DNAJC1"
+  snpnames &lt;- Breast$snp
+  Betah &lt;- list(Breast$beta, Thyroid$beta)
+  Sigmah &lt;- list(diag(Breast$se^2), diag(Thyroid$se^2))
+  K &lt;- 2
+  m &lt;- 14
+
+  RES &lt;- HS(Betah, Sigmah,
+    kappa0 = 0.5, kappastar0 = 0.5, sigma20 = 1, s20 = 1,
+    m = m, K = K, niter = 2000, burnin = 1000, nthin = 1, nchains = 1,
+    a1 = 0.1, a2 = 0.1, d1 = 0.1, d2 = 0.1, c1 = 1, c2 = 1, e2 = 1, snpnames, genename
+  )
+  print(RES)
+
+  RES1 &lt;- HS(Betah, Sigmah,
+    kappa0 = c(0.5, 0.3), kappastar0 = c(0.5, 0.3), sigma20 = c(2, 1), s20 = c(1, 2),
+    m = m, K = K, niter = 2000, burnin = 1000, nthin = 2, nchains = 2,
+    a1 = 0.1, a2 = 0.1, d1 = 0.1, d2 = 0.1, c1 = 1, c2 = 1, e2 = 1, snpnames, genename
+  )
+  print(RES1)
+  ################### Simulated summary level data with K=5 ###############################
+  data(Simulated_summary)
+  genename &lt;- Simulated_summary$genename
+  snpnames &lt;- Simulated_summary$snpnames
+  Betah &lt;- Simulated_summary$simBeta
+  Sigmah &lt;- Simulated_summary$simSIGMA
+  K &lt;- 5
+  m &lt;- 10
+
+  RES &lt;- HS(Betah, Sigmah,
+    kappa0 = 0.5, kappastar0 = 0.5, sigma20 = 1, s20 = 1,
+    m = m, K = K, niter = 2000, burnin = 1000, nthin = 2, nchains = 1,
+    a1 = 0.1, a2 = 0.1, d1 = 0.1, d2 = 0.1, c1 = 1, c2 = 1, e2 = 1, snpnames, genename
+  )
+  print(RES)
+
+  RES1 &lt;- HS(Betah, Sigmah,
+    kappa0 = c(0.5, 0.3), kappastar0 = c(0.5, 0.3), sigma20 = c(2, 1), s20 = c(1, 2),
+    m = m, K = K, niter = 2000, burnin = 1000, nthin = 2, nchains = 2,
+    a1 = 0.1, a2 = 0.1, d1 = 0.1, d2 = 0.1, c1 = 1, c2 = 1, e2 = 1, snpnames, genename
+  )
+  print(RES1)
+  ################################### Gene PARP2 ##########################################
+  library(BhGLM)
+  data(PARP2)
+  Breast &lt;- PARP2$Breast
+  Thyroid &lt;- PARP2$Thyroid
+  genename &lt;- "PARP2"
+  snpnames &lt;- c("rs3093872", "rs3093921", "rs1713411", "rs3093926", "rs3093930", "rs878156")
+
+
+  Fit1 &lt;- BhGLM::bglm(y1 ~ ., family = binomial(link = "logit"), data = Breast)
+  Betah1 &lt;- Fit1$coefficients[-1]
+  Sigmah1 &lt;- cov(coef(arm::sim(Fit1)))[-1, -1]
+
+
+  Fit2 &lt;- BhGLM::bglm(y2 ~ ., family = binomial(link = "logit"), data = Thyroid)
+  Betah2 &lt;- Fit2$coefficients[-1]
+  Sigmah2 &lt;- cov(coef(arm::sim(Fit2)))[-1, -1]
+
+  Betah &lt;- list(Betah1, Betah2)
+  Sigmah &lt;- list(Sigmah1, Sigmah2)
+  K &lt;- 2
+  m &lt;- 6
+
+
+  RES &lt;- HS(Betah, Sigmah,
+    kappa0 = 0.5, kappastar0 = 0.5, sigma20 = 1, s20 = 1,
+    m = m, K = K, niter = 2000, burnin = 1000, nthin = 2, nchains = 1,
+    a1 = 0.1, a2 = 0.1, d1 = 0.1, d2 = 0.1, c1 = 1, c2 = 1, e2 = 1, snpnames, genename
+  )
+  print(RES)
+
+  RES1 &lt;- HS(Betah, Sigmah,
+    kappa0 = c(0.5, 0.3), kappastar0 = c(0.5, 0.3), sigma20 = c(2, 1), s20 = c(1, 2),
+    m = m, K = K, niter = 2000, burnin = 1000, nthin = 2, nchains = 2,
+    a1 = 0.1, a2 = 0.1, d1 = 0.1, d2 = 0.1, c1 = 1, c2 = 1, e2 = 1, snpnames, genename
+  )
+  print(RES1)
+  ########### Simulated individual level data with K=3 and continuous phynotype ###########
+  library(BhGLM)
+  data(Simulated_individual)
+  Study1 &lt;- Simulated_individual$Study1
+  Study2 &lt;- Simulated_individual$Study2
+  Study3 &lt;- Simulated_individual$Study3
+  K &lt;- 3
+  m &lt;- 30
+  genename &lt;- "Simulated"
+  snpnames &lt;- sprintf("SNP%s", seq(1:m))
+
+
+  Fit1 &lt;- BhGLM::bglm(Y1 ~ ., family = gaussian, data = data.frame(Study1))
+  Betah1 &lt;- Fit1$coefficients[-1]
+  Sigmah1 &lt;- cov(coef(arm::sim(Fit1)))[-1, -1]
+
+
+  Fit2 &lt;- BhGLM::bglm(Y2 ~ ., family = gaussian, data = data.frame(Study2))
+  Betah2 &lt;- Fit2$coefficients[-1]
+  Sigmah2 &lt;- cov(coef(arm::sim(Fit2)))[-1, -1]
+
+
+  Fit3 &lt;- BhGLM::bglm(Y3 ~ ., family = gaussian, data = data.frame(Study3))
+  Betah3 &lt;- Fit3$coefficients[-1]
+  Sigmah3 &lt;- cov(coef(arm::sim(Fit3)))[-1, -1]
+
+  Betah &lt;- list(Betah1, Betah2, Betah3)
+  Sigmah &lt;- list(Sigmah1, Sigmah2, Sigmah3)
+
+
+  RES &lt;- HS(Betah, Sigmah,
+    kappa0 = 0.5, kappastar0 = 0.5, sigma20 = 1, s20 = 1,
+    m = m, K = K, niter = 2000, burnin = 1000, nthin = 2, nchains = 1,
+    a1 = 0.1, a2 = 0.1, d1 = 0.1, d2 = 0.1, c1 = 1, c2 = 1, e2 = 1, snpnames, genename
+  )
+  print(RES)
+
+  RES1 &lt;- HS(Betah, Sigmah,
+    kappa0 = c(0.5, 0.3), kappastar0 = c(0.5, 0.3), sigma20 = c(2, 1), s20 = c(1, 2),
+    m = m, K = K, niter = 2000, burnin = 1000, nthin = 2, nchains = 2,
+    a1 = 0.1, a2 = 0.1, d1 = 0.1, d2 = 0.1, c1 = 1, c2 = 1, e2 = 1, snpnames, genename
+  )
+  print(RES1)
+
+  ########### Simulated individual level data with K=2 and gene expression data ###########
+  library(BhGLM)
+  data(Simulated_individual_survival)
+  Study1 &lt;- Simulated_individual_survival$Study1
+  Study2 &lt;- Simulated_individual_survival$Study2
+  K &lt;- 2
+  m &lt;- 10
+  genename &lt;- "Simulated"
+  snpnames &lt;- sprintf("G%s", seq(1:m))
+
+
+  Fit1 &lt;- BhGLM::bcoxph(Study1$T ~ Study1$X)
+  Betah1 &lt;- Fit1$coefficients
+  Sigmah1 &lt;- Fit1$var
+
+
+  Fit2 &lt;- BhGLM::bcoxph(Study2$T ~ Study2$X)
+  Betah2 &lt;- Fit2$coefficients
+  Sigmah2 &lt;- Fit2$var
+
+  Betah &lt;- list(Betah1, Betah2)
+  Sigmah &lt;- list(Sigmah1, Sigmah2)
+
+  RES1 &lt;- HS(Betah, Sigmah,
+    kappa0 = c(0.5, 0.3), kappastar0 = c(0.5, 0.3), sigma20 = c(2, 1), s20 = c(1, 2),
+    m = m, K = K, niter = 2000, burnin = 1000, nthin = 2, nchains = 2,
+    a1 = 0.1, a2 = 0.1, d1 = 0.1, d2 = 0.1, c1 = 1, c2 = 1, e2 = 1, snpnames, genename
+  )
+  print(RES1)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

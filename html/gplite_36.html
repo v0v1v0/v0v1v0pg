@@ -1,0 +1,164 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>method</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Initialize method or type of the model</h2>
+
+<h3>Description</h3>
+
+<p>Functions for initializing the method or type of the model, which can then be passed to
+<code>gp_init</code>.
+The supported methods are:
+</p>
+
+<dl>
+<dt><code>method_full</code></dt>
+<dd>
+<p> Full GP, so full exact covariance function is used, meaning
+that the inference will be for the <code>n</code> latent
+function values (fitting time scales cubicly in <code>n</code>).</p>
+</dd>
+<dt><code>method_fitc</code></dt>
+<dd>
+<p> Fully independent training (and test) conditional,
+or FITC, approximation (see Quiñonero-Candela and Rasmussen, 2005;
+Snelson and Ghahramani, 2006).
+The fitting time scales <code>O(n*m^2)</code>, where n is the number of data points and
+m the number of inducing points <code>num_inducing</code>.
+The inducing point locations are chosen using the k-means algorithm.
+</p>
+</dd>
+<dt><code>method_rf</code></dt>
+<dd>
+<p> Random features, that is, linearized GP.
+Uses random features (or basis functions) for approximating the covariance function,
+which means the inference
+time scales cubicly in the number of approximating basis functions <code>num_basis</code>.
+For stationary covariance functions random Fourier features (Rahimi and Recht, 2007)
+is used, and for non-stationary kernels using case specific method when possible
+(for example, drawing the hidden layer parameters randomly for <code>cf_nn</code>). For
+<code>cf_const</code> and <code>cf_lin</code> this means using standard linear model, and the
+inference is performed on the weight space (not in the function space). Thus if
+the model is linear (only <code>cf_const</code> and <code>cf_lin</code> are used), this will give
+a potentially huge speed-up if the number of features is considerably smaller than
+the number of data points.</p>
+</dd>
+</dl>
+<h3>Usage</h3>
+
+<pre><code class="language-R">method_full()
+
+method_fitc(
+  inducing = NULL,
+  num_inducing = 100,
+  bin_along = NULL,
+  bin_count = 10,
+  seed = 12345
+)
+
+method_rf(num_basis = 400, seed = 12345)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>inducing</code></td>
+<td>
+<p>Inducing points to use. If not given, then <code>num_inducing</code>
+points will be placed in the input space using a clustering algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_inducing</code></td>
+<td>
+<p>Number of inducing points for the approximation. Will be ignored
+if the inducing points are given by the user.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bin_along</code></td>
+<td>
+<p>Either an index or a name of the input variable along which to bin the
+values before placing the inducing inputs. For example, if <code>bin_along=3</code>, then the
+input data is divided into <code>bin_count</code> bins along 3rd input variable, and each bin
+will have the same number inducing points (or as close as possible). This can sometimes
+be useful to ensure that inducing points are spaced evenly with respect to some particular
+variable, for example time in spatio-temporal models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bin_count</code></td>
+<td>
+<p>The number of bins to use if <code>bin_along</code> given. Has effect only if
+<code>bin_along</code> is given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Random seed for reproducible results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_basis</code></td>
+<td>
+<p>Number of basis functions for the approximation.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The method object.
+</p>
+
+
+<h3>References</h3>
+
+<p>Rahimi, A. and Recht, B. (2008). Random features for large-scale kernel machines.
+In Advances in Neural Information Processing Systems 20.
+</p>
+<p>Quiñonero-Candela, J. and Rasmussen, C. E (2005). A unifying view of sparse approximate
+Gaussian process regression. Journal of Machine Learning Research 6:1939-1959.
+</p>
+<p>Snelson, E. and Ghahramani, Z. (2006). Sparse Gaussian processes using pseudo-inputs.
+In Advances in Neural Information Processing Systems 18.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+#' # Generate some toy data
+# NOTE: this is so small dataset that in reality there would be no point
+# use sparse approximation here; we use this small dataset only to make this
+# example run fast
+set.seed(1242)
+n &lt;- 50
+x &lt;- matrix(rnorm(n * 3), nrow = n)
+f &lt;- sin(x[, 1]) + 0.5 * x[, 2]^2 + x[, 3]
+y &lt;- f + 0.5 * rnorm(n)
+x &lt;- data.frame(x1 = x[, 1], x2 = x[, 2], x3 = x[, 3])
+
+# Full exact GP with Gaussian likelihood
+gp &lt;- gp_init(cf_sexp())
+gp &lt;- gp_optim(gp, x, y)
+
+# Approximate solution using random features (here we use a very small 
+# number of random features only to make this example run fast)
+gp &lt;- gp_init(cf_sexp(), method = method_rf(num_basis = 30))
+gp &lt;- gp_optim(gp, x, y)
+
+# Approximate solution using FITC (here we use a very small 
+# number of incuding points only to make this example run fast)
+gp &lt;- gp_init(cf_sexp(), method = method_fitc(num_inducing = 10))
+gp &lt;- gp_optim(gp, x, y)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,250 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>buffer</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Buffer signal vector into matrix of data segments</h2>
+
+<h3>Description</h3>
+
+<p>Partition a signal vector into nonoverlapping, overlapping, or underlapping
+data segments.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">buffer(x, n, p = 0, opt, zopt = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>The data to be buffered.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The number of rows in the produced data buffer. This is an positive
+integer value and must be supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>An integer less than <code>n</code> that specifies the under- or overlap
+between column in the data frame. Default 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>opt</code></td>
+<td>
+<p>In the case of an overlap, <code>opt</code> can be either a vector of
+length <code>p</code> or the string <code>'nodelay'</code>. If <code>opt</code> is a vector,
+then the first <code>p</code> entries in <code>y</code> will be filled with these
+values. If <code>opt</code> is the string <code>'nodelay'</code>, then the first value
+of <code>y</code> corresponds to the first value of <code>x</code>. In the case of an
+underlap, <code>opt</code> must be an integer between 0 and <code>-p</code>. The
+represents the initial underlap of the first <code>y</code>. The default value
+for <code>opt</code> the vector <code>matrix (0L, 1, p)</code> in the case of an
+overlap, or 0 otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zopt</code></td>
+<td>
+<p>Logical. If TRUE, return values for <code>z</code> and <code>opt</code> in
+addition to <code>y</code>. Default is FALSE (return only <code>y</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>y &lt;- buffer(x, n)</code> partitions a signal vector <code>x</code> of length
+<code>L</code> into nonoverlapping data segments of length <code>n</code>. Each data
+segment occupies one column of matrix output <code>y</code>, which has <code>n</code>
+rows and <code>ceil(L / n)</code> columns. If <code>L</code> is not evenly divisible by
+<code>n</code>, the last column is zero-padded to length <code>n</code>.
+</p>
+<p><code>y &lt;- buffer(x, n, p)</code> overlaps or underlaps successive frames in the
+output matrix by <code>p</code> samples.
+</p>
+
+<ul>
+<li> <p>For <code>0 &lt; p &lt; n</code> (overlap), buffer repeats the final <code>p</code>
+samples of each segment at the beginning of the following segment. See the
+example where <code>x = 1:30</code>, <code>n = 7</code>, and an overlap of <code>p = 3</code>.
+In this case, the first segment starts with <code>p</code> zeros (the default
+initial condition), and the number of columns in <code>y</code> is <code>ceil(L /
+(n - p))</code>.
+</p>
+</li>
+<li>  <p>For <code>p &lt; 0</code> (underlap), buffer skips <code>p</code> samples between
+consecutive segments. See the example where <code>x = 1:30</code>, <code>n = 7</code>,
+and <code>p = -3</code>. The number of columns in <code>y</code> is <code>ceil(L / (n -
+p))</code>.
+</p>
+</li>
+</ul>
+<p>In <code>y &lt;- buffer(x, n, p, opt)</code>, <code>opt</code> specifies a vector of samples
+to precede <code>x[1]</code> in an overlapping buffer, or the number of initial
+samples to skip in an underlapping buffer.
+</p>
+
+<ul>
+<li> <p>For <code>0 &lt; p &lt; n</code> (overlap), <code>opt</code> specifies a vector of
+length <code>p</code> to insert before <code>x[1]</code> in the buffer. This vector can
+be considered an initial condition, which is needed when the current
+buffering operation is one in a sequence of consecutive buffering
+operations. To maintain the desired segment overlap from one buffer to the
+next, <code>opt</code> should contain the final <code>p</code> samples of the previous
+buffer in the sequence. Set <code>opt</code> to <code>"nodelay"</code> to skip the
+initial condition and begin filling the buffer immediately with
+<code>x[1]</code>. In this case, <code>L</code> must be <code>length(p)</code> or longer. See
+the example where <code>x = 1:30</code>, <code>n = 7</code>, <code>p = 3</code>, and
+<code>opt = "nodelay"</code>.
+</p>
+</li>
+<li> <p>For <code>p &lt; 0</code> (underlap), <code>opt</code> is an integer value in the
+range <code>0 : -p</code> specifying the number of initial input samples,
+<code>x[1:opt]</code>, to skip before adding samples to the buffer. The first
+value in the buffer is therefore <code>x[opt + 1]</code>.
+</p>
+</li>
+</ul>
+<p>The <code>opt</code> option is especially useful when the current buffering
+operation is one in a sequence of consecutive buffering operations. To
+maintain the desired frame underlap from one buffer to the next, <code>opt</code>
+should equal the difference between the total number of points to skip
+between frames (<code>p</code>) and the number of points that were available to be
+skipped in the previous input to buffer. If the previous input had fewer than
+p points that could be skipped after filling the final frame of that buffer,
+the remaining opt points need to be removed from the first frame of the
+current buffer. See Continuous Buffering for an example of how this works in
+practice.
+</p>
+<p><code>buf &lt;- buffer(..., zopt = TRUE)</code> returns the last <code>p</code> samples of a
+overlapping buffer in output <code>buf$opt</code>. In an underlapping buffer,
+<code>buf$opt</code> is the difference between the total number of points to skip
+between frames (<code>-p</code>) and the number of points in <code>x</code> that were
+available to be skipped after filling the last frame:
+</p>
+
+<ul>
+<li> <p>For <code>0 &lt; p &lt; n</code> (overlap), <code>buf$opt</code> contains the final
+<code>p</code> samples in the last frame of the buffer. This vector can be used
+as the initial condition for a subsequent buffering operation in a sequence
+of consecutive buffering operations. This allows the desired frame overlap
+to be maintained from one buffer to the next. See Continuous Buffering
+below.
+</p>
+</li>
+<li> <p>For <code>p &lt; 0</code> (underlap), <code>buf$opt</code> is the difference
+between the total number of points to skip between frames <code>(-p)</code> and
+the number of points in <code>x</code> that were available to be skipped after
+filling the last frame: <code>buf$opt = m*(n-p) + opt - L</code> where <code>opt</code>
+on the right is the input argument to buffer, and <code>buf$opt</code> on the
+left is the output argument. Note that for an underlapping buffer output
+<code>buf$opt</code> is always zero when output <code>buf$z</code> contains data.<br>
+The opt output for an underlapping buffer is especially useful when the
+current buffering operation is one in a sequence of consecutive buffering
+operations. The <code>buf$opt</code> output from each buffering operation
+specifies the number of samples that need to be skipped at the start of the
+next buffering operation to maintain the desired frame underlap from one
+buffer to the next. If fewer than <code>p</code> points were available to be
+skipped after filling the final frame of the current buffer, the remaining
+opt points need to be removed from the first frame of the next buffer.
+</p>
+</li>
+</ul>
+<p>In a sequence of buffering operations, the <code>buf$opt</code> output from each
+operation should be used as the <code>opt</code> input to the subsequent buffering
+operation. This ensures that the desired frame overlap or underlap is
+maintained from buffer to buffer, as well as from frame to frame within the
+same buffer. See Continuous Buffering below for an example of how this works
+in practice.
+<br></p>
+<p><strong>Continuous Buffering</strong><br><br>
+In a continuous buffering operation, the vector input to the buffer function
+represents one frame in a sequence of frames that make up a discrete signal.
+These signal frames can originate in a frame-based data acquisition process,
+or within a frame-based algorithm like the FFT.<br>
+As an example, you might acquire data from an A/D card in frames of 64
+samples. In the simplest case, you could rebuffer the data into frames of 16
+samples; <code>buffer</code> with <code>n = 16</code> creates a buffer of four frames
+from each 64-element input frame. The result is that the signal of frame size
+64 has been converted to a signal of frame size 16; no samples were added or
+removed.<br>
+In the general case where the original signal frame size, <code>L</code>, is not
+equally divisible by the new frame size, <code>n</code>, the overflow from the last
+frame needs to be captured and recycled into the following buffer. You can do
+this by iteratively calling buffer on input x with the <code>zopt</code> parameter
+set to <code>TRUE</code>. This simply captures any buffer overflow in <code>buf$z</code>,
+and prepends the data to the subsequent input in the next call to buffer.<br>
+Note that continuous buffering cannot be done without the <code>zopt</code>
+parameter being set to <code>TRUE</code>, because the last frame of y (<code>buf$y</code>
+in this case) is zero padded, which adds new samples to the signal.<br>
+Continuous buffering in the presence of overlap and underlap is handled with
+the <code>opt</code> parameter, which is used as both an input (<code>opt</code> and
+output (<code>buf$opt</code>) to buffer. The two examples on this page demonstrate
+how the <code>opt</code> parameter should be used.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If <code>zopt</code> equals FALSE (the default), this function returns a
+single numerical array containing the buffered data (<code>y</code>). If
+<code>zopt</code> equals TRUE, then a <code>list</code> containing 3 variables is
+returned: <code>y</code>: the buffered data, <code>z</code>: the over or underlap (if
+any), <code>opt</code>: the over- or underlap that might be used for a future
+call to <code>buffer</code> to allow continuous buffering.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>David Bateman, <a href="mailto:adb014@gmail.com">adb014@gmail.com</a>.<br>
+Conversion to R by Geert van Boxtel, <a href="mailto:G.J.M.vanBoxtel@gmail.com">G.J.M.vanBoxtel@gmail.com</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Examples without continuous buffering
+y &lt;- buffer(1:10, 5)
+y &lt;- buffer(1:10, 4)
+y &lt;- buffer(1:30, 7, 3)
+y &lt;- buffer(1:30, 7, -3)
+y &lt;- buffer(1:30, 7, 3, 'nodelay')
+
+## Continuous buffering examples
+# with overlap:
+data &lt;- buffer(1:1100, 11)
+n &lt;- 4
+p &lt;- 1
+buf &lt;- list(y = NULL, z = NULL, opt = -5)
+for (i in 1:ncol(data)) {
+  x &lt;- data[,i]
+  buf &lt;- buffer(x = c(buf$z,x), n, p, opt=buf$opt, zopt = TRUE)
+}
+# with underlap:
+data &lt;- buffer(1:1100, 11)
+n &lt;- 4
+p &lt;- -2
+buf &lt;- list(y = NULL, z = NULL, opt = 1)
+for (i in 1:ncol(data)) {
+  x &lt;- data[,i]
+  buf &lt;- buffer(x = c(buf$z,x), n, p, opt=buf$opt, zopt = TRUE)
+}
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,167 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cr_build_list</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Lists the build</h2>
+
+<h3>Description</h3>
+
+<p>Get a list of builds within your project
+</p>
+<p>cr_build_list_filter outputs valid filters for <code>cr_build_list</code>'s filter argument
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cr_build_list(
+  filter = NULL,
+  projectId = cr_project_get(),
+  pageSize = 1000,
+  data_frame_output = TRUE
+)
+
+cr_build_list_filter(
+  field,
+  operator = c("=", "!=", "&gt;", "&gt;=", "&lt;", "&lt;="),
+  value
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>filter</code></td>
+<td>
+<p>Text filter for the list - use <code>cr_build_list_filter()</code> or a raw string</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>projectId</code></td>
+<td>
+<p>ID of the project</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pageSize</code></td>
+<td>
+<p>How many builds to fetch per page</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data_frame_output</code></td>
+<td>
+<p>If TRUE will output a data.frame of a subset of info from the builds, merged with the list of triggers from cr_buildtrigger_list.  Set to FALSE to return a list of Build objects similar to output from cr_build_status</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>field</code></td>
+<td>
+<p>The field you want to filter on.  Will validate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>operator</code></td>
+<td>
+<p>The type of comparision for the filter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>value</code></td>
+<td>
+<p>The value for the filter's field. Auto-formats <code>POSIXct</code> and <code>Date</code> objects</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>When <code>data_frame_output=TRUE</code> results are sorted with the latest buildStartTime in the first row
+</p>
+<p>If filter is <code>NULL</code> then this will return all historic builds.  To use filters, ensure you use <code>""</code> and not <code>''</code> to quote the fields e.g. <code>'status!="SUCCESS"'</code> and <code>'status="SUCCESS"'</code> - see <a href="https://cloud.google.com/build/docs/view-build-results#filtering_build_results_using_queries">Filtering build results docs</a>.  <code>cr_build_list_filter</code> helps you construct valid filters.  More complex filters can be done using a combination of paste and <code>cr_build_list_filter()</code> - see examples
+</p>
+<p>Use POSIXct via functions like Sys.time to have them formatted into valid timestamps for time related fields, or Date objects via functions like Sys.Date
+</p>
+
+
+<h3>See Also</h3>
+
+<p><a href="https://cloud.google.com/build/docs/api/reference/rest/v1/projects.builds/list">https://cloud.google.com/build/docs/api/reference/rest/v1/projects.builds/list</a>
+</p>
+<p>Other Cloud Build functions: 
+<code>Build()</code>,
+<code>RepoSource()</code>,
+<code>Source()</code>,
+<code>StorageSource()</code>,
+<code>cr_build_artifacts()</code>,
+<code>cr_build_logs()</code>,
+<code>cr_build_make()</code>,
+<code>cr_build_status()</code>,
+<code>cr_build_targets()</code>,
+<code>cr_build_upload_gcs()</code>,
+<code>cr_build_wait()</code>,
+<code>cr_build_write()</code>,
+<code>cr_build_yaml_artifact()</code>,
+<code>cr_build_yaml_secrets()</code>,
+<code>cr_build_yaml()</code>,
+<code>cr_build()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+# merge with buildtrigger list
+cr_build_list()
+
+# output a list of build objects
+cr_build_list(data_frame_output = FALSE)
+
+# output a list of builds that failed using raw string
+cr_build_list('status!="SUCCESS"')
+
+# output builds for a specific trigger using raw string
+cr_build_list('trigger_id="af2c7ddc-e4eb-4170-b938-a4babb53bac6"')
+
+# use cr_build_list_filter to help validate filters
+failed_builds &lt;- cr_build_list_filter("status", "!=", "SUCCESS")
+cr_build_list(failed_builds)
+
+f1 &lt;- cr_build_list_filter(
+  "trigger_id", "=", "af2c7ddc-e4eb-4170-b938-a4babb53bac6"
+)
+cr_build_list(f1)
+
+# do AND (and other) filters via paste() and cr_build_list_filter()
+cr_build_list(paste(f1, "AND", failed_builds))
+
+# builds in last 5 days
+last_five &lt;- cr_build_list_filter("create_time", "&gt;", Sys.Date() - 5)
+cr_build_list(last_five)
+
+# builds in last 60 mins
+last_hour &lt;- cr_build_list_filter("create_time", "&gt;", Sys.time() - 3600)
+cr_build_list(last_hour)
+
+# builds for this package's buildtrigger
+gcr_trigger_id &lt;- "0a3cade0-425f-4adc-b86b-14cde51af674"
+gcr_bt &lt;- cr_build_list_filter(
+  "trigger_id",
+  value = gcr_trigger_id
+)
+gcr_builds &lt;- cr_build_list(gcr_bt)
+
+# get logs for last build
+last_build &lt;- gcr_builds[1, ]
+last_build_logs &lt;- cr_build_logs(log_url = last_build$bucketLogUrl)
+tail(last_build_logs, 10)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

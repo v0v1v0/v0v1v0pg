@@ -1,0 +1,282 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simulate_gaussian</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create ideal data for a generalized linear model.</h2>
+
+<h3>Description</h3>
+
+<p>Create ideal data for a generalized linear model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">simulate_gaussian(
+  N = 10000,
+  link = "identity",
+  weights = 1:3,
+  x_range = 1,
+  unrelated = 0,
+  ancillary = 1
+)
+
+simulate_binomial(
+  N = 10000,
+  link = "logit",
+  weights = c(0.1, 0.2),
+  x_range = 1,
+  unrelated = 0
+)
+
+simulate_gamma(
+  N = 10000,
+  link = "inverse",
+  weights = 1:3,
+  x_range = 1,
+  unrelated = 0,
+  ancillary = 0.05
+)
+
+simulate_poisson(
+  N = 10000,
+  link = "log",
+  weights = c(0.5, 1),
+  x_range = 1,
+  unrelated = 0
+)
+
+simulate_inverse_gaussian(
+  N = 10000,
+  link = "1/mu^2",
+  weights = 1:3,
+  x_range = 1,
+  unrelated = 0,
+  ancillary = 0.3333
+)
+
+simulate_negative_binomial(
+  N = 10000,
+  link = "log",
+  weights = c(0.5, 1),
+  x_range = 1,
+  unrelated = 0,
+  ancillary = 1
+)
+
+simulate_tweedie(
+  N = 10000,
+  link = "log",
+  weights = 0.02,
+  x_range = 1,
+  unrelated = 0,
+  ancillary = 1.15
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>Sample size. (Default: 10000)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+<p>Link function. See <code>family</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Betas in glm model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x_range</code></td>
+<td>
+<p>range of x variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unrelated</code></td>
+<td>
+<p>Number of unrelated features to return. (Default: 0)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ancillary</code></td>
+<td>
+<p>Ancillary parameter for continuous families and negative
+binomial. See details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For many families, it is possible to pick weights that cause inverse
+link(X * weights) to be mathematically invalid. For example, the log link
+for binomial regression defines P(Y=1) as exp(X * weights) which can be above
+one. If this happens, the function will error with a helpful message.
+</p>
+<p>The intercept in the underlying link(Y) = X * weights + intercept is always
+max(weights). In simulate_gaussian(link = "inverse", weights = 1:3), the
+model is (1/Y) = 1*X1 + 2*X2 + 3*X3 + 3.
+</p>
+<p>links
+</p>
+
+<ul>
+<li>
+<p> gaussian: identity, log, inverse
+</p>
+</li>
+<li>
+<p> binomial: logit, probit, cauchit, loglog, cloglog, log, logc,
+identity
+</p>
+</li>
+<li>
+<p> gamma: inverse, identity, log
+</p>
+</li>
+<li>
+<p> poisson: log, identity, sqrt
+</p>
+</li>
+<li>
+<p> inverse gaussian: 1/mu^2, inverse, identity, log
+</p>
+</li>
+<li>
+<p> negative binomial: log, identity, sqrt
+</p>
+</li>
+<li>
+<p> tweedie: log, identity, sqrt, inverse
+</p>
+</li>
+</ul>
+<p>The default link is the first link listed for each family.
+</p>
+<p>ancillary parameter
+</p>
+
+<ul>
+<li>
+<p> gaussian: standard deviation
+</p>
+</li>
+<li>
+<p> binomial: N/A
+</p>
+</li>
+<li>
+<p> gamma: scale parameter
+</p>
+</li>
+<li>
+<p> poisson: N/A
+</p>
+</li>
+<li>
+<p> inverse gaussian: dispersion parameter
+</p>
+</li>
+<li>
+<p> negative binomial: theta.
+</p>
+</li>
+<li>
+<p> tweedie: rho
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>A tibble with a response variable and predictors.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(GlmSimulatoR)
+library(ggplot2)
+library(MASS)
+
+# Do glm and lm estimate the same weights? Yes
+set.seed(1)
+simdata &lt;- simulate_gaussian()
+linear_model &lt;- lm(Y ~ X1 + X2 + X3, data = simdata)
+glm_model &lt;- glm(Y ~ X1 + X2 + X3,
+  data = simdata,
+  family = gaussian(link = "identity")
+)
+summary(linear_model)
+summary(glm_model)
+rm(linear_model, glm_model, simdata)
+
+# If the link is not identity, will the response
+# variable still be normal? Yes
+set.seed(1)
+simdata &lt;- simulate_gaussian(N = 1000, link = "log", weights = c(.1, .2))
+
+ggplot(simdata, aes(x = Y)) +
+  geom_histogram(bins = 30)
+rm(simdata)
+
+# Is AIC lower for the correct link? For ten thousand data points, depends
+# on seed!
+set.seed(1)
+simdata &lt;- simulate_gaussian(N = 10000, link = "inverse", weights = 1)
+glm_correct_link &lt;- glm(Y ~ X1,
+  data = simdata,
+  family = gaussian(link = "inverse")
+)
+glm_wrong_link &lt;- glm(Y ~ X1,
+  data = simdata,
+  family = gaussian(link = "identity")
+)
+summary(glm_correct_link)$aic
+summary(glm_wrong_link)$aic
+rm(simdata, glm_correct_link, glm_wrong_link)
+
+
+# Does a stepwise search find the correct model for logistic regression? Yes
+# 3 related variables. 3 unrelated variables.
+set.seed(1)
+simdata &lt;- simulate_binomial(
+  N = 10000, link = "logit",
+  weights = c(.3, .4, .5), unrelated = 3
+)
+
+scope_arg &lt;- list(
+  lower = Y ~ 1,
+  upper = Y ~ X1 + X2 + X3 + Unrelated1 + Unrelated2 + Unrelated3
+)
+
+starting_model &lt;- glm(Y ~ 1,
+  data = simdata,
+  family = binomial(link = "logit")
+)
+glm_model &lt;- stepAIC(starting_model, scope_arg)
+summary(glm_model)
+rm(simdata, scope_arg, starting_model, glm_model)
+
+# When the resposne is a gamma distribution, what does a scatter plot between
+# X and Y look like?
+set.seed(1)
+simdata &lt;- simulate_gamma(weights = 1)
+ggplot(simdata, aes(x = X1, y = Y)) +
+  geom_point()
+rm(simdata)
+</code></pre>
+
+
+</div>

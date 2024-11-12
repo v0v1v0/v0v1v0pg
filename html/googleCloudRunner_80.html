@@ -1,0 +1,143 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cr_jwt_create</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a JSON Web Token (JWT) from your service client and call Google services</h2>
+
+<h3>Description</h3>
+
+<p>This can be used to call authenticated services such as Cloud Run.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cr_jwt_create(the_url, service_json = Sys.getenv("GCE_AUTH_FILE"))
+
+cr_jwt_token(signed_jwt, the_url)
+
+cr_jwt_with_httr(req, token)
+
+cr_jwt_with_curl(h = curl::new_handle(), token)
+
+cr_jwt_async(urls, token, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>the_url</code></td>
+<td>
+<p>The URL of the service you want to call</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>service_json</code></td>
+<td>
+<p>The account service key JSON that will be used to generate the JWT</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>signed_jwt</code></td>
+<td>
+<p>A JWT created from cr_jwt_create</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>req</code></td>
+<td>
+<p>A <code>httr</code> request to the service running on <code>the_url</code>, using httr verbs such as GET</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>token</code></td>
+<td>
+<p>The token created via cr_jwt_token</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h</code></td>
+<td>
+<p>A curl handle such as set with new_handle</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>urls</code></td>
+<td>
+<p>URLs to request asynchronously</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed to new_handle</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For certain Google services a JWT is needed to authenticate access, which is distinct from OAuth2.  An example of this is authenticated Cloud Run such as deployed when using cr_run and parameter <code>allowUnauthenticated = FALSE</code>.  These functions help you call your services by generating the JWT from your service account key.
+</p>
+<p>The token is set to expire in 1 hour, so it will need refreshing before then by calling this function again.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><a href="https://cloud.google.com/run/docs/authenticating/service-to-service">Service-to-service authentication on GCP</a>
+</p>
+<p>Other Cloud Run functions: 
+<code>cr_plumber_pubsub()</code>,
+<code>cr_run_email()</code>,
+<code>cr_run_get()</code>,
+<code>cr_run_list()</code>,
+<code>cr_run_schedule_http()</code>,
+<code>cr_run()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+# The private authenticated access only Cloud Run service
+the_url &lt;- "https://authenticated-cloudrun-ewjogewawq-ew.a.run.app/"
+
+# creating the JWT and token
+jwt &lt;- cr_jwt_create(the_url)
+token &lt;- cr_jwt_token(jwt, the_url)
+
+# call Cloud Run app using token with any httr verb
+library(httr)
+res &lt;- cr_jwt_with_httr(
+  GET("https://authenticated-cloudrun-ewjogewawq-ew.a.run.app/hello"),
+  token
+)
+content(res)
+
+# call Cloud Run app with curl - you can pass in a curl handle
+library(curl)
+h &lt;- new_handle()
+handle_setopt(h, customrequest = "PUT")
+handle_setform(h, a = "1", b = "2")
+h &lt;- cr_jwt_with_curl(h, token = token)
+r &lt;- curl_fetch_memory("https://authenticated-cloudrun-ewjogewawq-ew.a.run.app/hello", h)
+cat(rawToChar(r$content))
+
+# use curls multi-asynch functions
+many_urls &lt;- paste0(
+  "https://authenticated-cloudrun-ewjogewawq-ew.a.run.app/hello",
+  paste0("?param="), 1:6
+)
+cr_jwt_async(many_urls, token = token)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

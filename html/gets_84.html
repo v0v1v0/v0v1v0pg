@@ -1,0 +1,146 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>distorttestboot</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bootstrapped Jiao-Pretis-Schwarz Outlier Distortion Test</h2>
+
+<h3>Description</h3>
+
+<p>Implements the Jiao-Pretis-Schwarz bootstrap test for coefficient distortion due to outliers by comparing coefficient estimates obtained using OLS to estimates obtained using the robust IIS estimator implemented using <code>isat</code>. Three bootstrap schemes are available - using the original sample (not recommended), the clean (outlier-removed) data, and using the clean (outlier-removed) sample with scaled cut-offs used to detect outliers in IIS implemented using isat. See the referenced Jiao-Pretis-Schwarz Paper below for more information.
+
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">
+distorttestboot(x, nboot, clean.sample = TRUE, parametric = FALSE, scale.t.pval = 1, 
+parallel.options = NULL, quantiles = c(0.90, 0.95, 0.99), ...)
+
+##S3 printing method for objects of class 'distorttestboot':
+## S3 method for class 'distorttestboot'
+print(x, print.proportion = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>object of class <code>isat</code> or the output of the <code>distorttest</code> function. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nboot</code></td>
+<td>
+<p>numeric. Number of bootstrap replications. A high number of replications are recommended for final estimation (more than 200 at least).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clean.sample</code></td>
+<td>
+<p>logical. Whether the outlier-removed sample should be used in resampling.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parametric</code></td>
+<td>
+<p>logical. Whether to use a parametric bootstrap. Default is non-parametric (FALSE). Parametric currently not implemented for autoregressive models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale.t.pval</code></td>
+<td>
+<p>numeric. Scaled target p-value (for selection) relative to the initial p-value used in isat. Default is 1. E.g. a value of 0.5 would scale an initial target p-value of 0.05 to 0.025.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel.options</code></td>
+<td>
+<p>NULL (Default) or an integer, i.e. the number of cores/threads to be used for parallel computing (implemented w/makeCluster and parLapply).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print.proportion</code></td>
+<td>
+<p>logical. Should the bootstraped Jiao-Pretis Outlier Proportion Test be printed. Default is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quantiles</code></td>
+<td>
+<p>numeric vector. Quantiles to be shown based on the bootstrapped results. Default is c(0.90, 0.95, 0.99).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to <code>isat</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list including an object of class <code>h-test</code>.</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Xiyu Jiao <a href="https://sites.google.com/view/xiyujiao">https://sites.google.com/view/xiyujiao</a><br><br>
+Felix Pretis <a href="https://felixpretis.climateeconometrics.org/">https://felixpretis.climateeconometrics.org/</a> <br><br>
+Moritz Schwarz <a href="https://moritzschwarz.org">https://moritzschwarz.org</a><br><br></p>
+
+
+<h3>References</h3>
+
+<p>Xiyu Jiao, Felix Pretis,and Moritz Schwarz. Testing for Coefficient Distortion due to Outliers with an Application to the Economic Impacts of Climate Change. Available at SSRN: <a href="https://www.ssrn.com/abstract=3915040">https://www.ssrn.com/abstract=3915040</a> or <a href="https://doi.org/10.2139/ssrn.3915040">doi:10.2139/ssrn.3915040</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>isat, distorttest</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">  ## Not run: 
+  data(Nile)
+  nile &lt;- isat(Nile, sis=FALSE, iis=TRUE, plot=TRUE, t.pval=0.01)
+  
+  distorttest(nile)
+  # bootstrap (with nboot = 5 to save time. Higher replications are recommended)
+  distorttestboot(nile, nboot = 5)
+  
+  data("hpdata")
+  # Another example with co-variates
+  dat &lt;- hpdata[,c("GD", "GNPQ", "FSDJ")]
+  Y &lt;- ts(dat$GD,start = 1959, frequency = 4)
+  mxreg &lt;- ts(dat[,c("GNPQ","FSDJ")],start = 1959, frequency = 4)
+  m1 &lt;- isat(y = Y, mc = TRUE, sis = FALSE, iis = TRUE)
+  m2 &lt;- isat(y = Y, mc = TRUE, sis = FALSE, iis = TRUE, ar = 1)
+  m3 &lt;- isat(y = Y, mxreg = mxreg, mc = TRUE, sis = FALSE, iis = TRUE)
+  m4 &lt;- isat(y = Y, mxreg = mxreg, mc = TRUE, sis = FALSE, iis = TRUE, ar = 1, t.pval = 0.01)
+  distorttest(m1, coef = "all")
+  distorttest(m2, coef = "all")
+  distorttest(m3, coef = "GNPQ")
+  distorttest(m4, coef = c("ar1", "FSDJ"))
+  
+  # bootstrap (with nboot = 5 to save time. Higher replications are recommended)
+  distorttestboot(m1, nboot = 5)
+  distorttestboot(m2, nboot = 5)
+  distorttestboot(m3, nboot = 5)
+  distorttestboot(m4, nboot = 5)
+  distorttestboot(m4, nboot = 5, parametric = TRUE, scale.t.pval = 0.5)
+
+  
+## End(Not run)
+</code></pre>
+
+
+</div>

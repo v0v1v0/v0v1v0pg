@@ -1,0 +1,79 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gpb.load</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Load GPBoost model</h2>
+
+<h3>Description</h3>
+
+<p>Load GPBoost takes in either a file path or model string.
+If both are provided, Load will default to loading from file
+Boosters with gp_models can only be loaded from file.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gpb.load(filename = NULL, model_str = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>filename</code></td>
+<td>
+<p>path of model file</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model_str</code></td>
+<td>
+<p>a str containing the model</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>gpb.Booster
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Fabio Sigrist, authors of the LightGBM R package
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(gpboost)
+data(GPBoost_data, package = "gpboost")
+
+# Train model and make prediction
+gp_model &lt;- GPModel(group_data = group_data[,1], likelihood = "gaussian")
+bst &lt;- gpboost(data = X, label = y, gp_model = gp_model, nrounds = 16,
+               learning_rate = 0.05, max_depth = 6, min_data_in_leaf = 5,
+               verbose = 0)
+pred &lt;- predict(bst, data = X_test, group_data_pred = group_data_test[,1],
+                predict_var= TRUE, pred_latent = TRUE)
+# Save model to file
+filename &lt;- tempfile(fileext = ".json")
+gpb.save(bst,filename = filename)
+# Load from file and make predictions again
+bst_loaded &lt;- gpb.load(filename = filename)
+pred_loaded &lt;- predict(bst_loaded, data = X_test, group_data_pred = group_data_test[,1],
+                       predict_var= TRUE, pred_latent = TRUE)
+# Check equality
+pred$fixed_effect - pred_loaded$fixed_effect
+pred$random_effect_mean - pred_loaded$random_effect_mean
+pred$random_effect_cov - pred_loaded$random_effect_cov
+
+</code></pre>
+
+
+</div>

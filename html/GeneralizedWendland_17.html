@@ -1,0 +1,125 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mleFactory</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Function Factory for Generating mle Function with unified arguments</h2>
+
+<h3>Description</h3>
+
+<p>A factory function which returns a function of the form <code>function(y, X = data.frame(), distmat, init_parameters, theta_llim, theta_ulim)</code> which can be called to compute the maximum likelihood estimates for a Kriging model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mleFactory(covariance, cov.args = list(), chol.args = list(),
+  optim.args = list(), hessian = FALSE, optimParallel.args = list())
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>covariance</code></td>
+<td>
+<p>A function of the form <code>function(h, theta, ..., cov.args = list())</code>, where h is an object storing a distance matrix, theta is a numeric vector of parameters for the linear predictor and covariance function, and cov.args is a list of optional arguments for the covariance function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov.args</code></td>
+<td>
+<p>A list of optional settings for a covariance function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chol.args</code></td>
+<td>
+<p>A list of optional settings for a cholesky function. <em>Note</em>: Valid input arguments change depending on whether the distance matrix provided to the output function is sparse. This may change in a future version.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optim.args</code></td>
+<td>
+<p>A list of optional settings for optim. See <code>optim</code> for documentation of valid arguments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian</code></td>
+<td>
+<p>A logical value which specifies whether the hessian matrix is to be returned in the output. Is FALSE by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimParallel.args</code></td>
+<td>
+<p>A list of optional settings for optimParallel. See <code>optimParallel</code> for documentation of valid arguments.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The purpose of this function factory is to return an mle function with unified arguments. The returned function performs the same task as for example <code>spam::mle()</code>, but simplifies the process in two ways: The returned function detects whether the Gaussian process is a zero-mean process through the input argument X and whether methods from the <span class="pkg">spam</span> package should be used based on the type of input argument distmat, and autonomously chooses appropriate methods to compute the neg2loglikelihood. Hence the user does not need to choose a specialized method themselves.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A function of the form <code>function(y, X = data.frame(), distmat, beta0 = NULL, init_parameters, theta_llim, theta_ulim)</code> which returns the output of <code>optim</code> or <code>optimParallel</code> if <code>optimParallel.args</code> was specified.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Thomas Caspar Fischer</p>
+
+
+<h3>References</h3>
+
+<p>Hadley Wickham (2015) <em>Advanced R</em>, CRC Press.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>optim</code>,
+<code>optimParallel</code>,
+<code>covarianceFactory</code>,
+<code>choleskyFactory</code> and
+<code>optimFactory</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(57)
+n &lt;- 50
+range &lt;- 0.4
+theta  &lt;- c(range, 1, 1, 0, 0)
+
+locs &lt;- data.frame(x = runif(n), y = runif(n))
+dmat  &lt;- as.matrix(dist(locs))
+Sigma &lt;- cov.wendland(h = dmat, theta = theta)
+y &lt;- c(spam::rmvnorm(1, Sigma = Sigma))
+
+init_parameters   &lt;- c(0.7, 2, 0, 2, 2)
+lower_constraints &lt;- c(0.1, 0.1, 0, 0, 0)
+upper_constraints &lt;- c(sqrt(2), 2, 2, 2, 2)
+
+mleFunction &lt;- mleFactory(covariance = cov.wendland)
+mle_result1 &lt;- mleFunction(y = y, distmat = dmat,
+                           init_parameters = init_parameters, theta_llim = lower_constraints,
+                           theta_ulim = upper_constraints)
+
+mleFunctionDM &lt;- mleFactory(covariance = cov.wendland,
+                            cov.args = list(fixed_range_value = range))
+mle_result2 &lt;- mleFunctionDM(y = y, X = data.frame(), distmat = dmat,
+                             init_parameters = init_parameters[-1],
+                             theta_llim = lower_constraints[-1],
+                             theta_ulim = upper_constraints[-1])
+</code></pre>
+
+
+</div>

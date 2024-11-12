@@ -1,0 +1,180 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>MultiGASSim</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Simulate multivariate GAS processes
+</h2>
+
+<h3>Description</h3>
+
+<p>Simulate multivariate GAS processes.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  MultiGASSim(fit = NULL, T.sim = 1000, N = NULL,
+              kappa = NULL, A = NULL, B = NULL, Dist = NULL, ScalingType = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+
+<p>An estimated object of the class mGASFit. By default <code>fit = NULL</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>T.sim</code></td>
+<td>
+
+<p><code>numeric</code> Length of the simulated time series.</p>
+</td>
+</tr>
+</table>
+<table><tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+
+<p><code>numeric</code> Cross sectional dimension (Only N&lt;5 supported for now).</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>kappa</code></td>
+<td>
+
+<p><code>numeric</code> vector of unconditional level for the reparametrized vector of parameters.</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>A</code></td>
+<td>
+
+<p><code>matrix</code> of coefficients of dimension K x K that premultiply the
+conditional score in the GAS updating recursion, see Details.</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+
+<p><code>matrix</code> of autoregressive coefficients of dimension K x K, see Details.</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>Dist</code></td>
+<td>
+
+<p><code>character</code> Label of the conditional distribution, see DistInfo.</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>ScalingType</code></td>
+<td>
+
+<p><code>character</code> indicating the scaling mechanism for the conditional score.
+Only <code>ScalingType = "Identity"</code> is supported for multivariate distributions, see the function DistInfo.</p>
+</td>
+</tr></table>
+<h3>Details</h3>
+
+<p>The function permits to simulate from an estimated mGASFit object. If <code>fit</code> is not provided, the user
+can specify a GAS model via the additional arguments <code>kappa</code>, <code>A</code>, <code>B</code>, <code>Dist</code> and <code>ScalingType</code>.
+</p>
+<p>All the information regarding the supported multivariate conditional distributions can be
+investigated using the DistInfo function. The model is specified as: </p>
+<p style="text-align: center;"><code class="reqn">y_{t}\sim p(y|\theta_{t})</code>
+</p>
+
+<p>where <code class="reqn">\theta_{t}</code> is the vector of parameters for the density <code class="reqn">p(y|.)</code>. Note that, <code class="reqn">\theta_{t}</code>
+includes also those parameters that are not time-varying. The GAS recursion
+for <code class="reqn">\theta_{t}</code> is: </p>
+<p style="text-align: center;"><code class="reqn">\theta_{t} = \Lambda(\tilde{\theta}_{t})</code>
+</p>
+<p style="text-align: center;"><code class="reqn">\tilde{\theta}_{t}=\kappa + A*s_{t-1} + B*\tilde{\theta}_{t-1}</code>
+</p>
+
+<p>where <code class="reqn">h(.)</code> is the mapping function (see MultiMapParameters) and <code class="reqn">\tilde{\theta}_{t}</code> is
+the vector of reparametrised parameters. The process is initialized at <code class="reqn">\theta_{1}=(I - B)^{-1}\kappa</code>,
+where <code class="reqn">\kappa</code> is the <code>Kappa</code> vector. The vector <code class="reqn">s_{t}</code> is the scaled score of <code class="reqn">p(y|.)</code> with respect to <code class="reqn">\tilde{\theta}_{t}</code>.
+See Ardia et. al. (2016a) for further details.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of the class mGASSim
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Leopoldo Catania</p>
+
+
+<h3>References</h3>
+
+<p>Ardia D, Boudt K and Catania L (2016a).
+"Generalized Autoregressive Score Models in R: The GAS Package."
+<a href="https://www.ssrn.com/abstract=2825380">https://www.ssrn.com/abstract=2825380</a>.<br></p>
+<p>Creal D, Koopman SJ, Lucas A (2013).
+"Generalized Autoregressive Score Models with Applications."
+Journal of Applied Econometrics, 28(5), 777-795.
+<a href="https://doi.org/10.1002/jae.1279">doi:10.1002/jae.1279</a>.<br></p>
+<p>Harvey AC (2013).
+Dynamic Models for Volatility and Heavy Tails: With Applications to Financial and Economic Time Series.
+Cambridge University Press.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Simulate from a GAS process with Multivariate Student-t conditional
+# distribution, time-varying locations, scales, correlations
+# and fixed shape parameter.
+library("GAS")
+
+set.seed(786)
+
+T.sim = 1000  # Number of observations to simulate.
+N     = 3     # Trivariate series.
+Dist  = "mvt" # Conditional Multivariate Studen-t distribution.
+
+# Build unconditional vector of reparametrised parameters.
+
+Mu  = c(0.1, 0.2, 0.3) # Vector of location parameters (this is not transformed).
+Phi = c(1.0, 1.2, 0.3) # Vector of scale parameters for the firs, second and third variables.
+
+Rho = c(0.1, 0.2, 0.3) # This represents vec(R), where R is the correlation matrix.
+                       # Note that is up to the user to ensure that vec(R) implies a
+                       # proper correlation matrix.
+
+Theta = c(Mu, Phi, Rho, 7) # Vector of parameters such that the degrees of freedom are 7.
+
+kappa = MultiUnmapParameters(Theta, Dist, N)
+
+A = matrix(0, length(kappa), length(kappa))
+
+# Update scales and correlations, do not update locations and shape parameters.
+diag(A) = c(0, 0, 0, 0.05, 0.01, 0.09, 0.01, 0.04, 0.07, 0)
+
+B = matrix(0, length(kappa), length(kappa))
+
+# Update scales and correlations, do not update locations and shape parameters.
+diag(B) = c(0, 0, 0, 0.7, 0.7, 0.5, 0.94, 0.97, 0.92, 0)
+
+Sim = MultiGASSim(fit = NULL, T.sim, N, kappa, A, B, Dist, ScalingType = "Identity")
+
+Sim
+</code></pre>
+
+
+</div>

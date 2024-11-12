@@ -1,0 +1,130 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gmdbn</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a Gaussian mixture dynamic Bayesian network</h2>
+
+<h3>Description</h3>
+
+<p>This function creates a Gaussian mixture dynamic Bayesian network as an
+object of S3 class <code>gmdbn</code>. Assuming that the system evolves over time
+(possibly non-stationary) and denoting by <code class="reqn">X^{(t)}</code> its state at time
+slice <code class="reqn">t</code>, a dynamic Bayesian network is a probabilistic graphical model
+that encodes the joint distribution over any finite time sequence:
+</p>
+<p style="text-align: center;"><code class="reqn">p(X^{(1)}, \dots , X^{(T)}) = p(X^{(1)})
+\prod_{t = 2}^T p(X^{(t)} | X^{(t - 1)}, \dots , X^{(1)})</code>
+</p>
+
+<p>It is defined by a sequence of transition models
+<code class="reqn">\mathcal{B}_1, \mathcal{B}_2, \dots , \mathcal{B}_N</code> associated with
+transition time slices <code class="reqn">t_1 = 1 &lt; t_2 &lt; \dots &lt; t_N</code>, where:
+</p>
+
+<ul>
+<li> <p><code style="white-space: pre;">⁠⁠</code><code class="reqn">\mathcal{B}_1</code> is a Bayesian network that encodes the
+distribution <code class="reqn">p(X^{(t)})</code> for <code class="reqn">1 \le t \le t_2 - 1</code>, assuming that
+the states at these time slices do not depend on previous states;
+</p>
+</li>
+<li>
+<p> for each <code class="reqn">i \ge 2</code>, <code class="reqn">\mathcal{B}_i</code> is a (<code class="reqn">k_i + 1</code>)-slice
+temporal Bayesian network (where <code class="reqn">k_i &lt; t_i</code>) that encodes the transition
+distribution <code class="reqn">p(X^{(t)} | X^{(t - 1)}, \dots , X^{(t - k_i)})</code> for
+<code class="reqn">t_i \le t \le t_{i + 1} - 1</code> (or <code class="reqn">t \ge t_i</code> if <code class="reqn">i = N</code>),
+assuming that the states at these time slices only depend on the <code class="reqn">k_i</code>
+previous states (Hourbracq <em>et al.</em>, 2017).
+</p>
+</li>
+</ul>
+<p>In a Gaussian mixture dynamic Bayesian network, these transition models are
+Gaussian mixture Bayesian networks (Roos <em>et al.</em>, 2017).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gmdbn(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Objects of class <code>gmbn</code> corresponding to the transition
+models. Each <code>gmbn</code> object must be named with the prefix <code>b_</code>
+followed by its associated transition time slice (e.g. a transition model
+whose transition time slice is 8 is represented by the <code>gmbn</code> object
+<code>b_8</code>). If the first <code>gmbn</code> object (chronologically) is associated
+with a transition time slice <code class="reqn">t \ge 2</code> (i.e. <code>b_1</code> is not
+specified), it is duplicated to create transition models associated with
+<code class="reqn">1, \dots , t - 1</code> (removing the arcs whose time lags exceed the maximum
+temporal depths of these models).</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>A list of class <code>gmdbn</code> containing the <code>gmbn</code> objects
+passed as arguments.
+</p>
+
+
+<h3>References</h3>
+
+<p>Hourbracq, M., Wuillemin, P.-H., Gonzales, C. and Baumard, P. (2017).
+Learning and Selection of Dynamic Bayesian Networks for Non-Stationary
+Processes in Real Time. <em>In Proceedings of the 30th International
+Flairs Conference</em>, pages 742–747, Marco Island, FL, USA.
+</p>
+<p>Roos, J., Bonnevay, S. and Gavin, G. (2017). Dynamic Bayesian Networks with
+Gaussian Mixture Models for Short-Term Passenger Flow Forecasting. <em>In
+Proceedings of the 12th International Conference on Intelligent Systems and
+Knowledge Engineering</em>, Nanjing, China.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gmbn</code>, <code>gmm</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(dplyr)
+data(data_air)
+data &lt;- data_air %&gt;%
+  group_by(DATE) %&gt;%
+  mutate(NO2.1 = lag(NO2), O3.1 = lag(O3), TEMP.1 = lag(TEMP),
+         WIND.1 = lag(WIND)) %&gt;%
+  ungroup()
+gmdbn_1 &lt;- gmdbn(
+  b_2 = gmbn(
+    NO2 = split_comp(add_var(NULL, data[, c("NO2", "NO2.1", "WIND")]),
+                     n_sub = 3),
+    O3 = split_comp(add_var(NULL,
+                            data[, c("O3", "NO2", "NO2.1", "O3.1", "TEMP",
+                                     "TEMP.1")]),
+                    n_sub = 3),
+    TEMP = split_comp(add_var(NULL, data[, c("TEMP", "TEMP.1")]), n_sub = 3),
+    WIND = split_comp(add_var(NULL, data[, c("WIND", "WIND.1")]), n_sub = 3)
+  ),
+  b_13 = gmbn(
+    NO2 = split_comp(add_var(NULL, data[, c("NO2", "NO2.1", "WIND")]),
+                     n_sub = 3),
+    O3 = split_comp(add_var(NULL,
+                            data[, c("O3", "O3.1", "TEMP", "TEMP.1", "WIND")]),
+                    n_sub = 3),
+    TEMP = split_comp(add_var(NULL, data[, c("TEMP", "TEMP.1")]), n_sub = 3),
+    WIND = split_comp(add_var(NULL, data[, c("WIND", "WIND.1")]), n_sub = 3)
+  )
+)
+
+</code></pre>
+
+
+</div>

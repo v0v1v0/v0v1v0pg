@@ -1,0 +1,163 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>random_covmat</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create random VAR model error term covariance matrix</h2>
+
+<h3>Description</h3>
+
+<p><code>random_covmat</code> generates random VAR model <code class="reqn">(dxd)</code> error term covariance matrix <code class="reqn">\Omega</code>
+from (scaled) Wishart distribution for reduced form models and the parameters <code class="reqn">W</code>,<code class="reqn">\lambda_1,...,\lambda_M</code>
+for structural models (from normal distributions).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">random_covmat(d, M, omega_scale, W_scale, lambda_scale, structural_pars = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>the number of time series in the system.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+
+<dl>
+<dt>For <strong>GMVAR</strong> and <strong>StMVAR</strong> models:</dt>
+<dd>
+<p>a positive integer specifying the number of mixture components.</p>
+</dd>
+<dt>For <strong>G-StMVAR</strong> models:</dt>
+<dd>
+<p>a size (2x1) integer vector specifying the number of <em>GMVAR type</em> components <code>M1</code>
+in the first element and <em>StMVAR type</em> components <code>M2</code> in the second element. The total number of mixture components
+is <code>M=M1+M2</code>.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>omega_scale</code></td>
+<td>
+<p>a size <code class="reqn">(dx1)</code> strictly positive vector specifying the scale and variability of the
+random covariance matrices in random mutations. The covariance matrices are drawn from (scaled) Wishart
+distribution. Expected values of the random covariance matrices are <code>diag(omega_scale)</code>. Standard
+deviations of the diagonal elements are <code>sqrt(2/d)*omega_scale[i]</code>
+and for non-diagonal elements they are <code>sqrt(1/d*omega_scale[i]*omega_scale[j])</code>.
+Note that for <code>d&gt;4</code> this scale may need to be chosen carefully. Default in <code>GAfit</code> is
+<code>var(stats::ar(data[,i], order.max=10)$resid, na.rm=TRUE), i=1,...,d</code>. This argument is ignored if
+structural model is considered.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>W_scale</code></td>
+<td>
+<p>a size <code class="reqn">(dx1)</code> strictly positive vector partly specifying the scale and variability of the
+random covariance matrices in random mutations. The elements of the matrix <code class="reqn">W</code> are drawn independently
+from such normal distributions that the expectation of the main <strong>diagonal</strong> elements of the first
+regime's error term covariance matrix <code class="reqn">\Omega_1 = WW'</code> is <code>W_scale</code>. The distribution of <code class="reqn">\Omega_1</code>
+will be in some sense like a Wishart distribution but with the columns (elements) of <code class="reqn">W</code> obeying the given
+constraints. The constraints are accounted for by setting the element to be always zero if it is subject to a zero
+constraint and for sign constraints the absolute value or negative the absolute value are taken, and then the
+variances of the elements of <code class="reqn">W</code> are adjusted accordingly. This argument is ignored if reduced form model
+is considered.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda_scale</code></td>
+<td>
+<p>a length <code class="reqn">M - 1</code> vector specifying the <strong>standard deviation</strong> of the mean zero normal
+distribution from which the eigenvalue <code class="reqn">\lambda_{mi}</code> parameters are drawn from in random mutations.
+As the eigenvalues should always be positive, the absolute value is taken. The elements of <code>lambda_scale</code>
+should be strictly positive real numbers with the <code class="reqn">m-1</code>th element giving the degrees of freedom for the <code class="reqn">m</code>th
+regime. The expected value of the main <strong>diagonal</strong> elements <code class="reqn">ij</code> of the <code class="reqn">m</code>th <code class="reqn">(m&gt;1)</code> error term covariance
+matrix will be <code>W_scale[i]*(d - n_i)^(-1)*sum(lambdas*ind_fun)</code> where the <code class="reqn">(d x 1)</code> vector <code>lambdas</code> is
+drawn from the absolute value of the t-distribution, <code>n_i</code> is the number of zero constraints in the <code class="reqn">i</code>th
+row of <code class="reqn">W</code> and <code>ind_fun</code> is an indicator function that takes the value one iff the <code class="reqn">ij</code>th element of
+<code class="reqn">W</code> is not constrained to zero. Basically, larger lambdas (or smaller degrees of freedom) imply larger variance.
+</p>
+<p>If the lambda parameters are <strong>constrained</strong> with the <code class="reqn">(d(M - 1) x r)</code> constraint matrix <code class="reqn">C_lambda</code>,
+then provide a length <code class="reqn">r</code> vector specifying the standard deviation of the (absolute value of the) mean zero
+normal distribution each of the <code class="reqn">\gamma</code> parameters are drawn from (the <code class="reqn">\gamma</code> is a <code class="reqn">(r x 1)</code> vector).
+The expected value of the main diagonal elements of the covariance matrices then depend on the constraints.
+</p>
+<p>This argument is ignored if <code class="reqn">M==1</code> or a reduced form model is considered. Default is <code>rep(3, times=M-1)</code>
+if lambdas are not constrained and <code>rep(3, times=r)</code> if lambdas are constrained.
+</p>
+<p>As with omega_scale and W_scale, this argument should be adjusted carefully if specified by hand. <strong>NOTE</strong>
+that if lambdas are constrained in some other way than restricting some of them to be identical, this parameter
+should be adjusted accordingly in order to the estimation succeed!</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>structural_pars</code></td>
+<td>
+<p>If <code>NULL</code> a reduced form model is considered. Reduced models can be used directly as recursively
+identified structural models. For a structural model identified by conditional heteroskedasticity, should be a list containing
+at least the first one of the following elements:
+</p>
+
+<ul>
+<li> <p><code>W</code> - a <code class="reqn">(dxd)</code> matrix with its entries imposing constraints on <code class="reqn">W</code>: <code>NA</code> indicating that the element is
+unconstrained, a positive value indicating strict positive sign constraint, a negative value indicating strict
+negative sign constraint, and zero indicating that the element is constrained to zero.
+</p>
+</li>
+<li> <p><code>C_lambda</code> - a <code class="reqn">(d(M-1) x r)</code> constraint matrix that satisfies (<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{2}</code><code class="reqn">,...,</code>
+<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{M}) =</code> <strong><code class="reqn">C_{\lambda} \gamma</code></strong> where <strong><code class="reqn">\gamma</code></strong> is the new <code class="reqn">(r x 1)</code>
+parameter subject to which the model is estimated (similarly to AR parameter constraints). The entries of <code>C_lambda</code>
+must be either <strong>positive</strong> or <strong>zero</strong>. Ignore (or set to <code>NULL</code>) if the eigenvalues <code class="reqn">\lambda_{mi}</code>
+should not be constrained.
+</p>
+</li>
+<li> <p><code>fixed_lambdas</code> - a length <code class="reqn">d(M-1)</code> numeric vector (<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{2}</code><code class="reqn">,...,</code>
+<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{M})</code> with elements strictly larger than zero specifying the fixed parameter values for the
+parameters <code class="reqn">\lambda_{mi}</code> should be constrained to. This constraint is alternative <code>C_lambda</code>.
+Ignore (or set to <code>NULL</code>) if the eigenvalues <code class="reqn">\lambda_{mi}</code> should not be constrained.
+</p>
+</li>
+</ul>
+<p>See Virolainen (forthcoming) for the conditions required to identify the shocks and for the B-matrix as well (it is <code class="reqn">W</code> times
+a time-varying diagonal matrix with positive diagonal entries).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Note that for StMVAR type regimes, the error term covariance matrix is consists of an ARCH type scalar that
+multiplies a constant covariance matrix. This function generates the constant covariance matrix part of the
+error term covariance matrix.
+</p>
+
+
+<h3>Value</h3>
+
+
+<dl>
+<dt>For <strong>reduced form models</strong>:</dt>
+<dd>
+<p>Returns a <code class="reqn">(d(d+1)/2x1)</code> vector containing vech-vectorized covariance matrix
+<code class="reqn">\Omega</code>.</p>
+</dd>
+<dt>For <strong>structural models</strong>:</dt>
+<dd>
+<p>Returns a length <code class="reqn">d^2 - n_zeros - d*(M - 1)</code> vector of the form
+<code class="reqn">(Wvec(W),\lambda_2,...,\lambda_M)</code> where <code class="reqn">\lambda_m=(\lambda_{m1},...,\lambda_{md})</code>
+contains the eigenvalue parameters of the <code class="reqn">m</code>th regime <code class="reqn">(m&gt;1)</code> and <code class="reqn">n_zeros</code> is the number of zero constraints
+in <code class="reqn">W</code>. If lambdas are <code>C_lambda</code> constrained, replace <code class="reqn">d*(M - 1)</code> in the length with <code class="reqn">r</code> and
+<code class="reqn">\lambda_2,...,\lambda_M)</code> with <strong><code class="reqn">\gamma</code></strong>. If <code>fixed_lambdas</code> are used, the <code class="reqn">\lambda_{mi}</code> parameters
+are not included. The operator <code class="reqn">Wvec()</code> vectorizes a matrix and removes zeros.</p>
+</dd>
+</dl>
+</div>

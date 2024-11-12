@@ -1,0 +1,230 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ch5.solutions</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Solution code for Chapter 5: Smoothers</h2>
+
+<h3>Description</h3>
+
+<p>R code for Chapter 5 exercise solutions.</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Simon Wood &lt;simon@r-project.org&gt;
+</p>
+<p>Maintainer: Simon Wood &lt;simon@r-project.org&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Wood, S.N. (2017) <em>Generalized Additive Models: An Introduction with R</em>, CRC
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>mgcv</code>, <code>ch5</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(gamair); library(mgcv)
+## Q.4 P-spline
+## a)
+library(splines)
+pspline.XB &lt;- function(x,q=10,m=2,p.m=2)
+# Get model matrix and sqrt Penalty matrix for P-spline
+{ # first make knot sequence, k
+  k &lt;- seq(min(x),max(x),length=q-m)
+  dk &lt;- k[2]-k[1]
+  k &lt;- c(k[1]-dk*((m+1):1),k,k[q-m]+dk*(1:(m+1)))
+  # now get model matrix and root penalty
+  X &lt;- splineDesign(k,x,ord=m+2)
+  B &lt;- diff(diag(q),difference=p.m)
+  list(X=X,B=B)
+} ## pspline.XB
+
+## b)
+n&lt;-100
+x &lt;- sort(runif(n))
+ps &lt;- pspline.XB(x,q=9,m=2,p.m=2)
+par(mfrow=c(3,3)) # plot the original basis functions
+for (i in 1:9) plot(x,ps$X[,i],type="l")
+
+## c)
+S &lt;-  t(ps$B)%*%ps$B
+es &lt;- eigen(S);U &lt;- es$vectors
+XU &lt;- ps$X%*%U # last p.m cols are penalty null space
+par(mfrow=c(3,3)) # plot penalty eigenbasis functions
+for (i in 1:9) plot(x,XU[,i],type="l")
+
+## d)
+qrx &lt;- qr(ps$X) # QR of X
+R &lt;- qr.R(qrx)
+RSR &lt;- solve(t(R),S);RSR &lt;- t(solve(t(R),t(RSR)))
+ersr &lt;- eigen(RSR)
+U &lt;- ersr$vectors
+Q &lt;- qr.Q(qrx)
+QU &lt;- Q%*%U
+par(mfrow=c(3,3)) # plot the natural basis functions
+for (i in 1:9) plot(x,QU[,i],type="l")
+
+## Q.5
+
+test1&lt;-function(x,z,sx=0.3,sz=0.4)
+{ 1.2*exp(-(x-0.2)^2/sx^2-(z-0.3)^2/sz^2)+
+  0.8*exp(-(x-0.7)^2/sx^2-(z-0.8)^2/sz^2)
+}
+n &lt;- 200
+x &lt;- matrix(runif(2*n),n,2)
+f &lt;- test1(x[,1],x[,2])
+y &lt;- f + rnorm(n)*.1
+
+eta &lt;- function(r)
+{ # thin plate spline basis functions
+  ind &lt;- r&lt;=0
+  eta &lt;- r
+  eta[!ind] &lt;- r[!ind]^2*log(r[!ind])/(8*pi)
+  eta[ind] &lt;- 0
+  eta
+} ## eta
+
+XSC &lt;- function(x,xk=x)
+{ # set up t.p.s., given covariates, x, and knots, xk
+  n &lt;- nrow(x);k &lt;- nrow(xk)
+  X &lt;- matrix(1,n,k+3)  # tps model matrix
+  for (j in 1:k) {
+    r &lt;- sqrt((x[,1]-xk[j,1])^2+(x[,2]-xk[j,2])^2)
+    X[,j] &lt;- eta(r)
+  }
+  X[,j+2] &lt;- x[,1];X[,j+3] &lt;- x[,2]
+  C &lt;- matrix(0,3,k+3)  # tps constraint matrix
+  S &lt;- matrix(0,k+3,k+3)# tps penalty matrix
+  for (i in 1:k) {
+   C[1,i]&lt;-1;C[2,i] &lt;- xk[i,1];C[3,i] &lt;- xk[i,2]
+   for (j in i:k) S[j,i]&lt;-S[i,j] &lt;-
+                eta(sqrt(sum((xk[i,]-xk[j,])^2)))
+  }
+  list(X=X,S=S,C=C)
+} ## XSC
+
+absorb.con &lt;- function(X,S,C)
+{ # get constraint null space, Z...
+  qrc &lt;- qr(t(C)) # QR=C', Q=[Y,Z]
+  m &lt;- nrow(C);k &lt;- ncol(X)
+  X &lt;- t(qr.qty(qrc,t(X)))[,(m+1):k] # form XZ
+  # now form Z'SZ ...
+  S &lt;- qr.qty(qrc,t(qr.qty(qrc,t(S))))[(m+1):k,(m+1):k]
+  list(X=X,S=S,qrc=qrc)
+} ## absorb.con
+
+fit.tps &lt;- function(y,x,xk=x,lambda=0)
+{ tp &lt;- XSC(x,xk)                  # get tps matrices
+  tp &lt;- absorb.con(tp$X,tp$S,tp$C) # make unconstrained
+  ev &lt;- eigen(tp$S,symmetric=TRUE) # get sqrt penalty, rS
+  rS &lt;- ev$vectors%*%(ev$values^.5*t(ev$vectors))
+  X &lt;- rbind(tp$X,rS*sqrt(lambda)) # augmented model matrix
+  z &lt;- c(y,rep(0,ncol(rS)))        # augmented data
+  beta &lt;- coef(lm(z~X-1))          # fit model
+  beta &lt;- qr.qy(tp$qrc,c(0,0,0,beta)) # backtransform beta
+} ## fit.tps
+
+eval.tps &lt;- function(x,beta,xk)
+{ # evaluate tps at x, given parameters, beta, and knots, xk.
+  k &lt;- nrow(xk);n &lt;- nrow(x)
+  f &lt;- rep(beta[k+1],n)
+  for (i in 1:k) {
+    r &lt;- sqrt((x[,1]-xk[i,1])^2+(x[,2]-xk[i,2])^2)
+    f &lt;- f + beta[i]*eta(r)
+  }
+  f &lt;- f + beta[k+2]*x[,1] + beta[k+3]*x[,2]
+} ## eval.tps
+
+## select some `knots', xk ...
+ind &lt;- sample(1:n,100,replace=FALSE)
+xk &lt;- x[ind,]
+## fit model ...
+beta &lt;- fit.tps(y,x,xk=xk,lambda=.01)
+
+## contour truth and fit
+par(mfrow=c(1,2))
+xp &lt;- matrix(0,900,2)
+x1&lt;-seq(0,1,length=30);x2&lt;-seq(0,1,length=30)
+xp[,1]&lt;-rep(x1,30);xp[,2]&lt;-rep(x2,rep(30,30))
+truth&lt;-matrix(test1(xp[,1],xp[,2]),30,30)
+contour(x1,x2,truth)
+fit &lt;- matrix(eval.tps(xp,beta,xk),30,30)
+contour(x1,x2,fit)
+
+## Q.6 smooth.construct
+
+tf &lt;- function(x,xj,j) {
+## generate jth tent function from set defined by knots xj
+  dj &lt;- xj*0;dj[j] &lt;- 1
+  approx(xj,dj,x)$y
+}
+
+tf.X &lt;- function(x,xj) {
+## tent function basis matrix given data x
+## and knot sequence xj
+  nk &lt;- length(xj); n &lt;- length(x)
+  X &lt;- matrix(NA,n,nk)
+  for (j in 1:nk) X[,j] &lt;- tf(x,xj,j)
+  X
+}
+
+smooth.construct.pl.smooth.spec&lt;-function(object,data,knots) {
+## a piecewise linear smooth constructor method function
+  m &lt;- object$p.order[1]
+  if (is.na(m)) m &lt;- 2 ## default 
+  if (m&lt;1) stop("silly m supplied")
+  if (object$bs.dim&lt;0) object$bs.dim &lt;- 20 ## default
+  x &lt;- data[[object$term]]  ## the data
+  k &lt;- knots[[object$term]] ## will be NULL if none supplied
+  if (is.null(k)) { # space knots through data
+    k &lt;- seq(min(x),max(x),length=object$bs.dim)
+  } else {
+    if (length(k)!=object$bs.dim) # right number of knots?
+    k &lt;- seq(min(k),max(k),length=object$bs.dim)
+  }
+  object$X &lt;- tf.X(x,k)
+  if (!object$fixed) { # create the penalty matrix 
+    object$S[[1]] &lt;- crossprod(diff(diag(object$bs.dim),difference=m))
+  }
+  object$rank &lt;- object$bs.dim - m  # penalty rank
+  object$null.space.dim &lt;- m  # dim. of unpenalized space
+  ## store "tr" specific stuff ...
+  object$knots &lt;- k
+ 
+  object$df &lt;- ncol(object$X)     # maximum DoF (if unconstrained)
+ 
+  class(object) &lt;- "pl.smooth"  # Give object a class
+  object
+}
+
+Predict.matrix.pl.smooth&lt;-function(object,data)
+## prediction method function for the `pl' smooth class
+{ x &lt;- data[[object$term]]
+  X &lt;- tf.X(x,object$knots)
+  X # return the prediction matrix
+}
+
+# an example, using the new class....
+require(mgcv)
+set.seed(10)
+dat &lt;- gamSim(1,n=400,scale=2)
+b &lt;- gam(y~s(x0,bs="pl",m=2)+s(x1,bs="pl",m=2) +
+         s(x2,bs="pl",m=3)+s(x3,bs="pl",m=2),
+	 data=dat,method="REML")
+plot(b,pages=1)
+
+
+</code></pre>
+
+
+</div>

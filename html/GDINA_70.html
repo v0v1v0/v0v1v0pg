@@ -1,0 +1,1340 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GDINA</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>CDM calibration under the G-DINA model framework</h2>
+
+<h3>Description</h3>
+
+<p><code>GDINA</code> calibrates the generalized deterministic inputs, noisy and
+gate (G-DINA; de la Torre, 2011) model for dichotomous responses, and its extension, the sequential
+G-DINA model (Ma, &amp; de la Torre, 2016a; Ma, 2017) for ordinal and nominal responses.
+By setting appropriate constraints, the deterministic inputs,
+noisy and gate (DINA; de la Torre, 2009; Junker &amp; Sijtsma, 2001) model,
+the deterministic inputs, noisy or gate (DINO; Templin &amp; Henson, 2006)
+model, the reduced reparametrized unified model (R-RUM; Hartz, 2002),
+the additive CDM (A-CDM; de la Torre, 2011), the linear logistic
+model (LLM; Maris, 1999), and the multiple-strategy DINA model (MSDINA; de la Torre &amp; Douglas, 2008; Huo &amp; de la Torre, 2014)
+can also be calibrated. Note that the LLM is equivalent to
+the C-RUM (Hartz, 2002), a special case of the GDM (von Davier, 2008), and that the R-RUM
+is also known as a special case of the generalized NIDA model (de la Torre, 2011).
+</p>
+<p>In addition, users are allowed to specify design matrix and link function for each item, and
+distinct models may be used in a single test for different items.
+The attributes can be either dichotomous or polytomous
+(Chen &amp; de la Torre, 2013). Joint attribute distribution may be modelled using independent or saturated model,
+structured model, higher-order model (de la Torre &amp; Douglas, 2004), or loglinear model (Xu &amp; von Davier, 2008).
+Marginal maximum likelihood method with Expectation-Maximization (MMLE/EM) alogrithm is used for item parameter estimation.
+</p>
+<p>To compare two or more <code>GDINA</code> objects, use method <code>anova</code>.
+</p>
+<p>To calculate structural parameters for item and joint attribute distributions, use method <code>coef</code>.
+</p>
+<p>To calculate lower-order incidental (person) parameters
+use method <code>personparm</code>. To extract other components returned, use <code>extract</code>.
+To plot item/category response function, use <code>plot</code>. To
+check whether monotonicity is violated, use <code>monocheck</code>. To conduct anaysis in graphical user interface,
+use <code>startGDINA</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GDINA(
+  dat,
+  Q,
+  model = "GDINA",
+  sequential = FALSE,
+  att.dist = "saturated",
+  mono.constraint = FALSE,
+  group = NULL,
+  linkfunc = NULL,
+  design.matrix = NULL,
+  no.bugs = 0,
+  att.prior = NULL,
+  att.str = NULL,
+  verbose = 1,
+  higher.order = list(),
+  loglinear = 2,
+  catprob.parm = NULL,
+  control = list(),
+  item.names = NULL,
+  solver = NULL,
+  nloptr.args = list(),
+  auglag.args = list(),
+  solnp.args = list(),
+  ...
+)
+
+## S3 method for class 'GDINA'
+anova(object, ...)
+
+## S3 method for class 'GDINA'
+coef(
+  object,
+  what = c("catprob", "delta", "gs", "itemprob", "LCprob", "rrum", "lambda"),
+  withSE = FALSE,
+  SE.type = 2,
+  digits = 4,
+  ...
+)
+
+## S3 method for class 'GDINA'
+extract(object, what, SE.type = 2, ...)
+
+## S3 method for class 'GDINA'
+personparm(object, what = c("EAP", "MAP", "MLE", "mp", "HO"), digits = 4, ...)
+
+## S3 method for class 'GDINA'
+logLik(object, ...)
+
+## S3 method for class 'GDINA'
+deviance(object, ...)
+
+## S3 method for class 'GDINA'
+nobs(object, ...)
+
+## S3 method for class 'GDINA'
+vcov(object, ...)
+
+## S3 method for class 'GDINA'
+npar(object, ...)
+
+## S3 method for class 'GDINA'
+indlogLik(object, ...)
+
+## S3 method for class 'GDINA'
+indlogPost(object, ...)
+
+## S3 method for class 'GDINA'
+summary(object, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dat</code></td>
+<td>
+<p>A required <code class="reqn">N \times J</code> <code>matrix</code> or <code>data.frame</code> consisting of the
+responses of <code class="reqn">N</code> individuals to <code class="reqn">J</code> items. Missing values need to be coded as <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Q</code></td>
+<td>
+<p>A required matrix; The number of rows occupied by a single-strategy dichotomous item is 1, by a polytomous item is
+the number of nonzero categories, and by a mutiple-strategy dichotomous item is the number of strategies.
+The number of column is equal to the number of attributes if all items are single-strategy dichotomous items, but
+the number of attributes + 2 if any items are polytomous or have multiple strategies.
+For a polytomous item, the first column represents the item number and the second column indicates the nonzero category number.
+For a multiple-strategy dichotomous item, the first column represents the item number and the second column indicates the strategy number.
+For binary attributes, 1 denotes the attributes are measured by the items and 0 means the attributes are not
+measured. For polytomous attributes, non-zero elements indicate which level
+of attributes are needed (see Chen, &amp; de la Torre, 2013).  See <code>Examples</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>A vector for each item or nonzero category, or a scalar which will be used for all
+items or nonzero categories to specify the CDMs fitted. The possible options
+include <code>"GDINA"</code>,<code>"DINA"</code>,<code>"DINO"</code>,<code>"ACDM"</code>,<code>"LLM"</code>, <code>"RRUM"</code>, <code>"MSDINA"</code>, <code>"BUGDINO"</code>, <code>"SISM"</code>, and <code>"UDF"</code>. Note that
+model can also be <code>"logitGDINA"</code> and <code>"logGDINA"</code>, indicating the saturated G-DINA model in logit and log link functions. They are
+equivalent to the identity link saturated G-DINA model. The logit G-DINA model is identical to the log-linear CDM.
+When <code>"UDF"</code>, indicating user defined function, is specified for any item, arguments <code>design.matrix</code> and <code>linkfunc</code> need to be specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sequential</code></td>
+<td>
+<p>logical; <code>TRUE</code> if the sequential model is fitted for polytomous responses.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>att.dist</code></td>
+<td>
+<p>How is the joint attribute distribution estimated? It can be (1) <code>saturated</code>, which is the default, indicating that
+the proportion parameter for each permissible latent class is estimated separately; (2) <code>higher.order</code>, indicating
+that a higher-order joint attribute distribution is assumed (higher-order model can be specified in <code>higher.order</code> argument);
+(3) <code>fixed</code>, indicating that the weights specified in <code>att.prior</code> argument are fixed in the estimation process.
+If <code>att.prior</code> is not specified, a uniform joint attribute distribution is employed initially;  (4) <code>independent</code>, indicating
+that all attributes are assumed to be independent; and (5) <code>loglinear</code>, indicating a loglinear model is employed.
+If different groups have different joint attribute distributions,
+specify <code>att.dist</code> as a character vector with the same number of elements as the number of groups. However, if a higher-order model is used for any group,
+it must be used for all groups.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mono.constraint</code></td>
+<td>
+<p>logical; <code>TRUE</code> indicates that <code class="reqn">P(\boldsymbol{\alpha}_1) &lt;=P(\boldsymbol{\alpha}_2)</code> if
+for all <code class="reqn">k</code>, <code class="reqn">\alpha_{1k} &lt; \alpha_{2k}</code>. Can be a vector for each item or nonzero category or a scalar which will be used for all
+items to specify whether monotonicity constraint should be added.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>a factor or a vector indicating the group each individual belongs to. Its length must be equal to the number of individuals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linkfunc</code></td>
+<td>
+<p>a vector of link functions for each item/category; It can be <code>"identity"</code>,<code>"log"</code> or <code>"logit"</code>. Only applicable
+when, for some items, <code>model="UDF"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>design.matrix</code></td>
+<td>
+<p>a list of design matrices; Its length must be equal to the number of items (or nonzero categories for sequential models).
+If CDM for item j is specified as "UDF" in argument <code>model</code>, the corresponding design matrix must be provided; otherwise, the design matrix can be <code>NULL</code>,
+which will be generated automatically.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>no.bugs</code></td>
+<td>
+<p>A numeric scalar (whole numbers only) indicating the number of bugs or misconceptions in the Q-matrix. The bugs must be included in the last <code>no.bugs</code> columns.
+It can be used along with the <code>BUGDINO</code> and <code>SISM</code> models (see, Kuo, Chen, Yang &amp; Mok, 2016; Kuo, Chen, &amp; de la Torre, 2018). This argument will be ignored if the
+model is not specified in <code>model</code> argument. Note that the <code>BUGDINO</code> and <code>SISM</code> models are reparametrized - see <code>Details</code> below. By default,
+<code>no.bugs</code>=0, implying that there is no bugs/misconceptions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>att.prior</code></td>
+<td>
+<p>A vector of length <code class="reqn">2^K</code> for single group model, or a matrix of dimension <code class="reqn">2^K\times</code> no. of groups to specify
+attribute prior distribution for <code class="reqn">2^K</code> latent classes for all groups under a multiple group model. Only applicable for dichotomous attributes.
+The sum of all elements does not have to be equal to 1; however, it will be normalized so that the sum is equal to 1
+before calibration.
+The label for each latent class can be obtained by calling <code>attributepattern(K)</code>. See <code>examples</code> for more info.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>att.str</code></td>
+<td>
+<p>Specify attribute structures. <code>NULL</code>, by default, means there is no structure. Attribute structure needs be specified as a list -
+which will be internally handled by <code>att.structure</code> function. See examples. It can also be a matrix giving all permissible attribute profiles.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>How to print calibration information
+after each EM iteration? Can be 0, 1 or 2, indicating to print no information,
+information for current iteration, or information for all iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>higher.order</code></td>
+<td>
+<p>A list specifying the higher-order joint attribute distribution with the following components:
+</p>
+
+<ul>
+<li> <p><code>model</code> - a number indicating the model for higher-order joint attribute distribution. Can be
+1, 2 or 3, representing the intercept only approach, common slope approach and varied slope approach (see <code>Details</code>).
+</p>
+</li>
+<li> <p><code>nquad</code> - a scalar specifying the number of integral nodes. Default = 25.
+</p>
+</li>
+<li> <p><code>SlopeRange</code> - a vector of length two specifying the range of slope parameters. Default = [0.1, 5].
+</p>
+</li>
+<li> <p><code>InterceptRange</code> - a vector of length two specifying the range of intercept parameters. Default = [-4, 4].
+</p>
+</li>
+<li> <p><code>SlopePrior</code> - a vector of length two specifying the mean and variance of log(slope) parameters, which are assumed normally distributed. Default: mean = 0 and sd = 0.25.
+</p>
+</li>
+<li> <p><code>InterceptPrior</code> - a vector of length two specifying the mean and variance of intercept parameters, which are assumed normally distributed. Default: mean = 0 and sd = 1.
+</p>
+</li>
+<li> <p><code>Prior</code> - logical; indicating whether prior distributions should be imposed to slope and intercept parameters. Default is <code>FALSE</code>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loglinear</code></td>
+<td>
+<p>the order of loglinear smooth for attribute space. It can be either 1 or 2 indicating the loglinear model with main effect only
+and with main effect and first-order interaction; It can also be a matrix, representing the design matrix for the loglinear model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>catprob.parm</code></td>
+<td>
+<p>A list of initial success probability parameters for each nonzero category.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>A list of control parameters with elements:
+</p>
+
+<ul>
+<li> <p><code>maxitr</code> A vector for each item or nonzero category, or a scalar which will be used for all
+items or nonzero categories to specify the maximum number of EM cycles allowed. Default = 2000.
+</p>
+</li>
+<li> <p><code>conv.crit</code> The convergence criterion. Default = 0.0001.
+</p>
+</li>
+<li> <p><code>conv.type</code> How is the convergence criterion evaluated? A vector with possible elements: <code>"ip"</code>, indicating
+the maximum absolute change in item success probabilities, <code>"mp"</code>, representing
+the maximum absolute change in mixing proportion parameters, <code>"delta"</code>, indicating the maximum absolute change in delta
+parameters, <code>neg2LL</code> indicating the absolute change in negative two times loglikeihood,  or <code>neg2LL</code> indicating the
+relative absolute change in negative two times loglikeihood (i.e., the absolute change divided by -2LL of the previous iteration).
+Multiple criteria can be specified. If so, all criteria need to be met. Default = c("ip", "mp").
+</p>
+</li>
+<li> <p><code>nstarts</code> how many sets of starting values? Default = 3.
+</p>
+</li>
+<li> <p><code>lower.p</code> A vector for each item or nonzero category,
+or a scalar which will be used for all items or nonzero categories to specify the lower bound for success probabilities.
+Default = .0001.
+</p>
+</li>
+<li> <p><code>upper.p</code> A vector for each item or nonzero category, or a scalar which will be used for all
+items or nonzero categories to specify the upper bound for success probabilities. Default = .9999.
+</p>
+</li>
+<li> <p><code>lower.prior</code> The lower bound for mixing proportion parameters (latent class sizes). Default = .Machine$double.eps.
+</p>
+</li>
+<li> <p><code>randomseed</code> Random seed for generating initial item parameters. Default = 123456.
+</p>
+</li>
+<li> <p><code>smallNcorrection</code> A numeric vector with two elements specifying the corrections applied when the expected number of
+individuals in some latent groups are too small. If the expected no. of examinees is less than the second element,
+the first element and two times the first element will be added to the numerator and denominator of the closed-form solution of
+probabilities of success. Only applicable for the G-DINA, DINA and DINO model estimation without monotonic constraints.
+</p>
+</li>
+<li> <p><code>MstepMessage</code> Integer; Larger number prints more information from Mstep optimizer. Default = 1.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>item.names</code></td>
+<td>
+<p>A vector giving the item names. By default, items are named as "Item 1", "Item 2", etc.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>solver</code></td>
+<td>
+<p>A string indicating which solver should be used in M-step. By default, the solver is automatically chosen according to the models specified.
+Possible options include slsqp, nloptr, solnp and auglag.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nloptr.args</code></td>
+<td>
+<p>a list of control parameters to be passed to <code>opts</code> argument of nloptr function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>auglag.args</code></td>
+<td>
+<p>a list of control parameters to be passed to the alabama::auglag() function. It can contain two elements:
+<code>control.outer</code> and <code>control.optim</code>. See auglag.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>solnp.args</code></td>
+<td>
+<p>a list of control parameters to be passed to <code>control</code> argument of solnp function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>GDINA object for various S3 methods</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>what</code></td>
+<td>
+<p>argument for various S3 methods; For calculating structural parameters using <code>coef</code>,
+<code>what</code> can be
+</p>
+
+<ul>
+<li> <p><code>itemprob</code> - item success probabilities of each reduced attribute pattern.
+</p>
+</li>
+<li> <p><code>catprob</code> - category success probabilities of each reduced attribute pattern; the same as <code>itemprob</code> for dichtomous response data.
+</p>
+</li>
+<li> <p><code>LCprob</code> - item success probabilities of each attribute pattern.
+</p>
+</li>
+<li> <p><code>gs</code> - guessing and slip parameters of each item/category.
+</p>
+</li>
+<li> <p><code>delta</code> - delta parameters of each item/category, see G-DINA formula in details.
+</p>
+</li>
+<li> <p><code>rrum</code> - RRUM parameters when items are estimated using <code>RRUM</code>.
+</p>
+</li>
+<li> <p><code>lambda</code> - structural parameters for joint attribute distribution.
+</p>
+</li>
+</ul>
+<p>For calculating incidental parameters using <code>personparm</code>,
+<code>what</code> can be
+</p>
+
+<ul>
+<li> <p><code>EAP</code> - EAP estimates of attribute pattern.
+</p>
+</li>
+<li> <p><code>MAP</code> - MAP estimates of attribute pattern.
+</p>
+</li>
+<li> <p><code>MLE</code> - MLE estimates of attribute pattern.
+</p>
+</li>
+<li> <p><code>mp</code> -  marginal mastery probabilities.
+</p>
+</li>
+<li> <p><code>HO</code> -  EAP estimates of higher-order ability if a higher-order is fitted.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>withSE</code></td>
+<td>
+<p>argument for method <code>coef</code>; estimate standard errors or not?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SE.type</code></td>
+<td>
+<p>type of standard errors. For now, SEs are calculated based on outper-product of gradient.
+It can be <code>1</code> based on item-wise information, <code>2</code> based on incomplete information and <code>3</code>
+based on complete information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>How many decimal places in each number? The default is 4.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>GDINA</code> returns an object of class <code>GDINA</code>. Methods for <code>GDINA</code> objects
+include <code>extract</code> for extracting various components, <code>coef</code>
+for extracting structural parameters, <code>personparm</code>
+for calculating incidental (person) parameters, <code>summary</code> for summary information.
+<code>AIC</code>, <code>BIC</code>,<code>logLik</code>, <code>deviance</code> and <code>npar</code> can also be used to
+calculate AIC, BIC, observed log-likelihood, deviance and number of parameters.
+</p>
+
+
+<h3>Methods (by generic)</h3>
+
+
+<ul>
+<li> <p><code>anova(GDINA)</code>: Model comparison using likelihood ratio test
+</p>
+</li>
+<li> <p><code>coef(GDINA)</code>: extract structural parameter estimates
+</p>
+</li>
+<li> <p><code>extract(GDINA)</code>: extract various elements of GDINA estimates
+</p>
+</li>
+<li> <p><code>personparm(GDINA)</code>: calculate person attribute patterns and higher-order ability
+</p>
+</li>
+<li> <p><code>logLik(GDINA)</code>: calculate log-likelihood
+</p>
+</li>
+<li> <p><code>deviance(GDINA)</code>: calculate deviance
+</p>
+</li>
+<li> <p><code>nobs(GDINA)</code>: calculate number of observations
+</p>
+</li>
+<li> <p><code>vcov(GDINA)</code>: calculate covariance-matrix for delta parameters
+</p>
+</li>
+<li> <p><code>npar(GDINA)</code>: calculate the number of parameters
+</p>
+</li>
+<li> <p><code>indlogLik(GDINA)</code>: extract log-likelihood for each individual
+</p>
+</li>
+<li> <p><code>indlogPost(GDINA)</code>: extract log posterior for each individual
+</p>
+</li>
+<li> <p><code>summary(GDINA)</code>: print summary information
+</p>
+</li>
+</ul>
+<h3>The G-DINA model</h3>
+
+<p>The generalized DINA model (G-DINA; de la Torre, 2011) is an extension of the DINA model.
+Unlike the DINA model, which collaspes all latent classes into two latent groups for
+each item, if item <code class="reqn">j</code> requires <code class="reqn">K_j^*</code>
+attributes, the G-DINA model collapses <code class="reqn">2^K</code> latent classes into <code class="reqn">2^{K_j^*}</code>
+latent groups with unique success probabilities on item <code class="reqn">j</code>, where
+<code class="reqn">K_j^*=\sum_{k=1}^{K}q_{jk}</code>.
+</p>
+<p>Let <code class="reqn">\boldsymbol{\alpha}_{lj}^*</code> be the reduced attribute
+pattern consisting of the columns of the attributes required by item <code class="reqn">j</code>, where
+<code class="reqn">l=1,\ldots,2^{K_j^*}</code>. For example, if only the first and the last attributes are
+required, <code class="reqn">\boldsymbol{\alpha}_{lj}^*=(\alpha_{l1},\alpha_{lK})</code>. For notational
+convenience, the first <code class="reqn">K_j^*</code> attributes can be assumed to be the required attributes
+for item <code class="reqn">j</code> as in de la Torre (2011). The probability of success <code class="reqn">P(X_{j}=1|\boldsymbol{\alpha}_{lj}^*)</code> is denoted
+by <code class="reqn">P(\boldsymbol{\alpha}_{lj}^*)</code>. To model this probability of success, different link functions
+as in the generalized linear models are used in the G-DINA model. The item response
+function of the G-DINA model using the identity link can be written as
+</p>
+<p style="text-align: center;"><code class="reqn">
+f[P(\boldsymbol{\alpha}_{lj}^*)]=\delta_{j0}+\sum_{k=1}^{K_j^*}\delta_{jk}\alpha_{lk}+
+\sum_{k'=k+1}^{K_j^*}\sum_{k=1}^{K_j^*-1}\delta_{jkk'}\alpha_{lk}\alpha_{lk'}+\cdots+
+\delta_{j12{\cdots}K_j^*}\prod_{k=1}^{K_j^*}\alpha_{lk},
+</code>
+</p>
+
+<p>or in matrix form,
+</p>
+<p style="text-align: center;"><code class="reqn">
+f[\boldsymbol{P}_j]=\boldsymbol{M}_j\boldsymbol{\delta}_j,
+</code>
+</p>
+
+<p>where <code class="reqn">\delta_{j0}</code> is the intercept for item <code class="reqn">j</code>, <code class="reqn">\delta_{jk}</code> is the main effect
+due to <code class="reqn">\alpha_{lk}</code>, <code class="reqn">\delta_{jkk'}</code> is the interaction effect due to
+<code class="reqn">\alpha_{lk}</code> and <code class="reqn">\alpha_{lk'}</code>, <code class="reqn">\delta_{j12{\ldots}K_j^*}</code> is the interaction
+effect due to <code class="reqn">\alpha_{l1}, \cdots,\alpha_{lK_j^*}</code>. The log and logit links can also
+be employed.
+</p>
+
+
+<h3>Other CDMs as special cases</h3>
+
+<p>Several widely used CDMs can be obtained by setting appropriate constraints to the G-DINA model.
+This section introduces the parameterization
+of different CDMs within the G-DINA model framework very breifly. Readers interested in this please refer to
+de la Torre(2011) for details.
+</p>
+
+<dl>
+<dt><code>DINA model</code></dt>
+<dd>
+<p>In DINA model, each item has two item parameters - guessing (<code class="reqn">g</code>) and slip (<code class="reqn">s</code>). In traditional
+parameterization of the DINA model, a latent variable <code class="reqn">\eta</code> for person <code class="reqn">i</code> and
+item <code class="reqn">j</code> is defined as
+</p>
+<p style="text-align: center;"><code class="reqn">\eta_{ij}=\prod_{k=1}^K\alpha_{ik}^{q_{jk}}</code>
+</p>
+
+<p>Briefly speaking, if individual <code class="reqn">i</code> master all attributes required by item <code class="reqn">j</code>,
+<code class="reqn">\eta_{ij}=1</code>; otherwise, <code class="reqn">\eta_{ij}=0</code>.
+Item response function of the DINA model can be written by
+</p>
+<p style="text-align: center;"><code class="reqn">P(X_{ij}=1|\eta_{ij})=(1-s_j)^{\eta_{ij}}g_j^{1-\eta_{ij}}</code>
+</p>
+
+<p>To obtain the DINA model from the G-DINA model,
+all terms in identity link G-DINA model except <code class="reqn">\delta_0</code> and <code class="reqn">\delta_{12{\ldots}K_j^*}</code>
+need to be fixed to zero, that is,
+</p>
+<p style="text-align: center;"><code class="reqn">P(\boldsymbol{\alpha}_{lj}^*)=
+       \delta_{j0}+\delta_{j12{\cdots}K_j^*}\prod_{k=1}^{K_j^*}\alpha_{lk}</code>
+</p>
+
+<p>In this parameterization, <code class="reqn">\delta_{j0}=g_j</code> and <code class="reqn">\delta_{j0}+\delta_{j12{\cdots}K_j^*}=1-s_j</code>.
+</p>
+</dd>
+<dt><code>DINO model</code></dt>
+<dd>
+<p>The DINO model can be given by
+</p>
+<p style="text-align: center;"><code class="reqn">P(\boldsymbol{\alpha}_{lj}^{*})=
+       \delta_{j0}+\delta_{j1}I(\boldsymbol{\alpha}_{lj}^*\neq \boldsymbol{0})</code>
+</p>
+
+<p>where <code class="reqn">I(\cdot)</code> is an indicator variable. The DINO model is also a constrained identity
+link G-DINA model. As shown by de la Torre (2011), the appropriate constraint is
+</p>
+<p style="text-align: center;"><code class="reqn">\delta_{jk}=-\delta_{jk^{'}k^{''}}=\cdots=(-1)^{K_j^*+1}\delta_{j12{\cdots}K_j^*},</code>
+</p>
+<p> for
+<code class="reqn">k=1,\cdots,K_j^*, k^{'}=1,\cdots,K_j^*-1</code>, and <code class="reqn">k^{''}&gt;k^{'},\cdots,K_j^*</code>.
+</p>
+</dd>
+<dt><code>Additive models with different link functions</code></dt>
+<dd>
+<p>The A-CDM, LLM and R-RUM can be obtained by setting all interactions to be zero in
+identity, logit and log link G-DINA model, respectively. Specifically, the A-CDM can be formulated as
+</p>
+<p style="text-align: center;"><code class="reqn">P(\boldsymbol{\alpha}_{lj}^*)=
+       \delta_{j0}+\sum_{k=1}^{K_j^*}\delta_{jk}\alpha_{lk}</code>
+</p>
+
+<p>The item response function for
+LLM can be given by
+</p>
+<p style="text-align: center;"><code class="reqn"> logit[P(\boldsymbol{\alpha}_{lj}^*)]=\delta_{j0}+\sum_{k=1}^{K_j^*}\delta_{jk}\alpha_{lk},</code>
+</p>
+
+<p>and lastly, the RRUM, can be written as
+</p>
+<p style="text-align: center;"><code class="reqn">log[P(\boldsymbol{\alpha}_{lj}^*)]=\delta_{j0}+\sum_{k=1}^{K_j^*}\delta_{jk}\alpha_{lk}.</code>
+</p>
+<p> It should be
+noted that the LLM is equivalent to the compensatory RUM, which is subsumed by the GDM, and that
+the RRUM is a special case of the generalized noisy inputs, deterministic “And" gate model (G-NIDA).
+</p>
+</dd>
+<dt><code>Simultaneously identifying skills and misconceptions (SISM)</code></dt>
+<dd>
+<p>The SISM can be can be reformulated as
+</p>
+<p style="text-align: center;"><code class="reqn">P(\boldsymbol{\alpha}_{lj}^*)=
+       \delta_{j0}+\delta_{j1}I[{mastering all skills}]+
+       \delta_{j2}I[{having no bugs}]+\delta_{j12}I[{mastering all skills and having no bugs}].</code>
+</p>
+
+<p>As a result,the success probability of students who have mastered all the measured skills and possess
+none of the measured misconceptions (<code class="reqn">h_j</code> in Equation 4 of Kuo, et al, 2018) is
+<code class="reqn">\delta_{j0}+\delta_{j1}+\delta_{j2}+\delta_{j12}</code>, the success probability of students who have
+mastered all the measured skills but possess some of the measured misconceptions (<code class="reqn">\omega_j</code>)
+is <code class="reqn">\delta_{j0}+\delta_{j1}</code>, the success probability of students who have not mastered all the
+measured skills and possess none of the measured misconceptions (<code class="reqn">g_j</code>) is
+<code class="reqn">\delta_{j0}+\delta_{j2}</code> and success probability of students who have not mastered all the
+measured skills and possess at least one of the measured misconceptions(<code class="reqn">\epsilon_j</code>) is
+<code class="reqn">\delta_{j0}</code>.
+</p>
+<p>By specifying <code>no.bugs</code> being equal to the number of attributes, the Bug-DINO is obtained, as in
+</p>
+<p style="text-align: center;"><code class="reqn">P(\boldsymbol{\alpha}_{lj}^*)=\delta_{j0}+\delta_{j1}I[{having no bugs}].</code>
+</p>
+
+</dd>
+</dl>
+<h3>Joint Attribute Distribution</h3>
+
+<p>The joint attribute distribution can be modeled using various methods. This section mainly focuses on the so-called
+higher-order approach, which was originally proposed by de la Torre
+and Douglas (2004) for the DINA model. It has been extended in this package for all condensation rules.
+Particularly, three approaches are available for the higher-order attribute structure:
+intercept only approach, common slope approach and varied slope approach.
+For the intercept only approach, the probability of mastering attribute <code class="reqn">k</code> for individual <code class="reqn">i</code> is defined as
+</p>
+<p style="text-align: center;"><code class="reqn">P(\alpha_k=1|\theta_i,\lambda_{0k})=\frac{exp(\theta_i+\lambda_{0k})}{1+exp(\theta_i+\lambda_{0k})}</code>
+</p>
+
+<p>For the common slope approach, the probability of mastering attribute <code class="reqn">k</code> for individual <code class="reqn">i</code> is defined as
+</p>
+<p style="text-align: center;"><code class="reqn">P(\alpha_k=1|\theta_i,\lambda_{0k},\lambda_{1})=\frac{exp(\lambda_{1}\theta_i+\lambda_{0k})}{1+exp(\lambda_{1}\theta_i+\lambda_{0k})}</code>
+</p>
+
+<p>For the varied slope approach, the probability of mastering attribute <code class="reqn">k</code> for individual <code class="reqn">i</code> is defined as
+</p>
+<p style="text-align: center;"><code class="reqn">P(\alpha_k=1|\theta_i,\lambda_{0k},\lambda_{1k})=\frac{exp(\lambda_{1k}\theta_i+\lambda_{0k})}{1+exp(\lambda_{1k}\theta_i+\lambda_{0k})}</code>
+</p>
+
+<p>where <code class="reqn">\theta_i</code> is the ability of examinee <code class="reqn">i</code>. <code class="reqn">\lambda_{0k}</code> and <code class="reqn">\lambda_{1k}</code> are the intercept
+and slope parameters for attribute <code class="reqn">k</code>, respectively.
+The probability of joint attributes can be written as
+</p>
+<p style="text-align: center;"><code class="reqn">P(\boldsymbol{\alpha}|\theta_i,\boldsymbol{\lambda})=\prod_k P(\alpha_k|\theta_i,\boldsymbol{\lambda})</code>
+</p>
+<p>.
+</p>
+
+
+<h3>Model Estimation</h3>
+
+<p>The MMLE/EM algorithm is implemented in this package. For G-DINA, DINA and DINO models, closed-form solutions exist.
+See de la Torre (2009) and de la Torre (2011) for details.
+For ACDM, LLM and RRUM, closed-form solutions do not exist, and therefore some general optimization techniques are
+adopted in M-step (Ma, Iaconangelo &amp; de la Torre, 2016). The selection of optimization techniques mainly depends on whether
+some specific constraints need to be added.
+</p>
+<p>The sequential G-DINA model is a special case of the diagnostic tree model (DTM; Ma, 2019) and estimated using
+the mapping matrix accordingly (See Tutz, 1997; Ma, 2019).
+</p>
+
+
+<h3>The Number of Parameters</h3>
+
+<p>For dichotomous response models:
+Assume a test measures <code class="reqn">K</code> attributes and item <code class="reqn">j</code> requires <code class="reqn">K_j^*</code> attributes:
+The DINA and DINO model has 2 item parameters for each item;
+if item <code class="reqn">j</code> is ACDM, LLM or RRUM, it has <code class="reqn">K_j^*+1</code> item parameters; if it is G-DINA model, it has <code class="reqn">2^{K_j^*}</code> item parameters.
+Apart from item parameters, the parameters involved in the estimation of joint attribute distribution need to be estimated as well.
+When using the saturated attribute structure, there are <code class="reqn">2^K-1</code> parameters for joint attribute distribution estimation; when
+using a higher-order attribute structure, there are <code class="reqn">K</code>, <code class="reqn">K+1</code>, and <code class="reqn">2\times K</code> parameters for the intercept only approach, common slope approach and varied slope approach, respectively.
+For polytomous response data using the sequential G-DINA model, the number of item parameters
+are counted at category level.
+</p>
+
+
+<h3>Note</h3>
+
+<p>anova function does NOT check whether models compared are nested or not.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Wenchao Ma, The University of Alabama, <a href="mailto:wenchao.ma@ua.edu">wenchao.ma@ua.edu</a> <br> Jimmy de la Torre, The University of Hong Kong
+</p>
+
+
+<h3>References</h3>
+
+<p>Bock, R. D., &amp; Aitkin, M. (1981). Marginal maximum likelihood estimation of item parameters: Application of an EM algorithm. <em>Psychometrika, 46</em>, 443-459.
+</p>
+<p>Bock, R. D., &amp; Lieberman, M. (1970). Fitting a response model forn dichotomously scored items. <em>Psychometrika, 35</em>, 179-197.
+</p>
+<p>Bor-Chen Kuo, Chun-Hua Chen, Chih-Wei Yang, &amp; Magdalena Mo Ching Mok. (2016). Cognitive diagnostic models for tests with multiple-choice and constructed-response items. <em>Educational Psychology, 36</em>, 1115-1133.
+</p>
+<p>Carlin, B. P., &amp; Louis, T. A. (2000). Bayes and empirical bayes methods for data analysis. New York, NY: Chapman &amp; Hall
+</p>
+<p>de la Torre, J., &amp; Douglas, J. A. (2008). Model evaluation and multiple strategies in cognitive diagnosis: An analysis of fraction subtraction data. <em>Psychometrika, 73</em>, 595-624.
+</p>
+<p>de la Torre, J. (2009). DINA Model and Parameter Estimation: A Didactic. <em>Journal of Educational and Behavioral Statistics, 34</em>, 115-130.
+</p>
+<p>de la Torre, J. (2011). The generalized DINA model framework. <em>Psychometrika, 76</em>, 179-199.
+</p>
+<p>de la Torre, J., &amp; Douglas, J. A. (2004). Higher-order latent trait models for cognitive diagnosis. <em>Psychometrika, 69</em>, 333-353.
+</p>
+<p>de la Torre, J., &amp; Lee, Y. S. (2013). Evaluating the wald test for item-level comparison of
+saturated and reduced models in cognitive diagnosis. <em>Journal of Educational Measurement, 50</em>, 355-373.
+</p>
+<p>Haertel, E. H. (1989). Using restricted latent class models to map the skill structure of achievement items.
+<em>Journal of Educational Measurement, 26</em>, 301-321.
+</p>
+<p>Hartz, S. M. (2002). A bayesian framework for the unified model for assessing cognitive abilities:
+Blending theory with practicality (Unpublished doctoral dissertation). University of Illinois at Urbana-Champaign.
+</p>
+<p>Huo, Y., &amp; de la Torre, J. (2014). Estimating a Cognitive Diagnostic Model for Multiple Strategies via the EM Algorithm. <em>Applied Psychological Measurement, 38</em>, 464-485.
+</p>
+<p>Junker, B. W., &amp; Sijtsma, K. (2001). Cognitive assessment models with few assumptions, and connections with nonparametric
+item response theory. <em>Applied Psychological Measurement, 25</em>, 258-272.
+</p>
+<p>Kuo, B.-C., Chen.-H., &amp; de la Torre,J. (2018). A cognitive diagnosis model for identifying coexisting skills and misconceptions.<em>Applied Psychological Measuremet</em>, 179–191.
+</p>
+<p>Ma, W., &amp; de la Torre, J. (2016). A sequential cognitive diagnosis model for polytomous responses. <em>British Journal of Mathematical and Statistical Psychology. 69,</em> 253-275.
+</p>
+<p>Ma, W., &amp; de la Torre, J. (2020). GDINA: An R Package for Cognitive Diagnosis Modeling. <em>Journal of Statistical Software, 93(14)</em>, 1-26.
+</p>
+<p>Ma, W. (2019). A diagnostic tree model for polytomous responses with multiple strategies. <em>British Journal of Mathematical and Statistical Psychology, 72</em>, 61-82.
+</p>
+<p>Ma, W., Iaconangelo, C., &amp; de la Torre, J. (2016). Model similarity, model selection and attribute classification. <em>Applied Psychological Measurement, 40</em>, 200-217.
+</p>
+<p>Ma, W. (2017). <em>A Sequential Cognitive Diagnosis Model for Graded Response: Model Development, Q-Matrix Validation,and Model Comparison. Unpublished doctoral dissertation.</em> New Brunswick, NJ: Rutgers University.
+</p>
+<p>Maris, E. (1999). Estimating multiple classification latent class models. <em>Psychometrika, 64</em>, 187-212.
+</p>
+<p>Tatsuoka, K. K. (1983). Rule space: An approach for dealing with misconceptions based on item response theory. <em>Journal of Educational Measurement, 20</em>, 345-354.
+</p>
+<p>Templin, J. L., &amp; Henson, R. A. (2006). Measurement of psychological disorders using cognitive diagnosis models. <em>Psychological Methods, 11</em>, 287-305.
+</p>
+<p>Tutz, G. (1997). Sequential models for ordered responses. In W.J. van der Linden &amp; R. K. Hambleton (Eds.), Handbook of modern item response theory p. 139-152). New York, NY: Springer.
+</p>
+<p>Xu, X., &amp; von Davier, M. (2008). Fitting the structured general diagnostic model to NAEP data. ETS research report, RR-08-27.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>See <code>autoGDINA</code> for Q-matrix validation, item-level model comparison and model calibration
+in one run; See <code>modelfit</code> and <code>itemfit</code> for model and item fit analysis, <code>Qval</code> for Q-matrix validation,
+<code>modelcomp</code> for item level model comparison and <code>simGDINA</code> for data simulation.
+<code>GMSCDM</code> for a series of multiple strategy CDMs for dichotomous data,
+and <code>DTM</code> for diagnostic tree model for multiple strategies in polytomous response data
+Also see <code>gdina</code> in <span class="pkg">CDM</span> package for the G-DINA model estimation.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+####################################
+#        Example 1.                #
+#     GDINA, DINA, DINO            #
+#    ACDM, LLM and RRUM            #
+# estimation and comparison        #
+#                                  #
+####################################
+
+dat &lt;- sim10GDINA$simdat
+Q &lt;- sim10GDINA$simQ
+
+#--------GDINA model --------#
+
+mod1 &lt;- GDINA(dat = dat, Q = Q, model = "GDINA")
+mod1
+# summary information
+summary(mod1)
+
+AIC(mod1) #AIC
+BIC(mod1) #BIC
+logLik(mod1) #log-likelihood value
+deviance(mod1) # deviance: -2 log-likelihood
+npar(mod1) # number of parameters
+
+
+head(indlogLik(mod1)) # individual log-likelihood
+head(indlogPost(mod1)) # individual log-posterior
+
+# structural parameters
+# see ?coef
+coef(mod1) # item probabilities of success for each latent group
+coef(mod1, withSE = TRUE) # item probabilities of success &amp; standard errors
+coef(mod1, what = "delta") # delta parameters
+coef(mod1, what = "delta",withSE=TRUE) # delta parameters
+coef(mod1, what = "gs") # guessing and slip parameters
+coef(mod1, what = "gs",withSE = TRUE) # guessing and slip parameters &amp; standard errors
+
+# person parameters
+# see ?personparm
+personparm(mod1) # EAP estimates of attribute profiles
+personparm(mod1, what = "MAP") # MAP estimates of attribute profiles
+personparm(mod1, what = "MLE") # MLE estimates of attribute profiles
+
+#plot item response functions for item 10
+plot(mod1,item = 10)
+plot(mod1,item = 10,withSE = TRUE) # with error bars
+#plot mastery probability for individuals 1, 20 and 50
+plot(mod1,what = "mp", person =c(1,20,50))
+
+# Use extract function to extract more components
+# See ?extract
+
+# ------- DINA model --------#
+dat &lt;- sim10GDINA$simdat
+Q &lt;- sim10GDINA$simQ
+mod2 &lt;- GDINA(dat = dat, Q = Q, model = "DINA")
+mod2
+coef(mod2, what = "gs") # guess and slip parameters
+coef(mod2, what = "gs",withSE = TRUE) # guess and slip parameters and standard errors
+
+# Model comparison at the test level via likelihood ratio test
+anova(mod1,mod2)
+
+# -------- DINO model -------#
+dat &lt;- sim10GDINA$simdat
+Q &lt;- sim10GDINA$simQ
+mod3 &lt;- GDINA(dat = dat, Q = Q, model = "DINO")
+#slip and guessing
+coef(mod3, what = "gs") # guess and slip parameters
+coef(mod3, what = "gs",withSE = TRUE) # guess and slip parameters + standard errors
+
+# Model comparison at test level via likelihood ratio test
+anova(mod1,mod2,mod3)
+
+# --------- ACDM model -------#
+dat &lt;- sim10GDINA$simdat
+Q &lt;- sim10GDINA$simQ
+mod4 &lt;- GDINA(dat = dat, Q = Q, model = "ACDM")
+mod4
+# --------- LLM model -------#
+dat &lt;- sim10GDINA$simdat
+Q &lt;- sim10GDINA$simQ
+mod4b &lt;- GDINA(dat = dat, Q = Q, model = "LLM")
+mod4b
+# --------- RRUM model -------#
+dat &lt;- sim10GDINA$simdat
+Q &lt;- sim10GDINA$simQ
+mod4c &lt;- GDINA(dat = dat, Q = Q, model = "RRUM")
+mod4c
+
+# --- Different CDMs for different items --- #
+
+dat &lt;- sim10GDINA$simdat
+Q &lt;- sim10GDINA$simQ
+models &lt;- c(rep("GDINA",3),"LLM","DINA","DINO","ACDM","RRUM","LLM","RRUM")
+mod5 &lt;- GDINA(dat = dat, Q = Q, model = models)
+anova(mod1,mod2,mod3,mod4,mod4b,mod4c,mod5)
+
+
+####################################
+#        Example 2.                #
+#        Model estimations         #
+# With monotonocity constraints    #
+####################################
+
+dat &lt;- sim10GDINA$simdat
+Q &lt;- sim10GDINA$simQ
+# for item 10 only
+mod11 &lt;- GDINA(dat = dat, Q = Q, model = "GDINA",mono.constraint = c(rep(FALSE,9),TRUE))
+mod11
+mod11a &lt;- GDINA(dat = dat, Q = Q, model = "DINA",mono.constraint = TRUE)
+mod11a
+mod11b &lt;- GDINA(dat = dat, Q = Q, model = "ACDM",mono.constraint = TRUE)
+mod11b
+mod11c &lt;- GDINA(dat = dat, Q = Q, model = "LLM",mono.constraint = TRUE)
+mod11c
+mod11d &lt;- GDINA(dat = dat, Q = Q, model = "RRUM",mono.constraint = TRUE)
+mod11d
+coef(mod11d,"delta")
+coef(mod11d,"rrum")
+
+####################################
+#           Example 3a.            #
+#        Model estimations         #
+# With Higher-order att structure  #
+####################################
+
+dat &lt;- sim10GDINA$simdat
+Q &lt;- sim10GDINA$simQ
+# --- Higher order G-DINA model ---#
+mod12 &lt;- GDINA(dat = dat, Q = Q, model = "DINA",
+               att.dist="higher.order",higher.order=list(nquad=31,model = "2PL"))
+personparm(mod12,"HO") # higher-order ability
+# structural parameters
+# first column is slope and the second column is intercept
+coef(mod12,"lambda")
+# --- Higher order DINA model ---#
+mod22 &lt;- GDINA(dat = dat, Q = Q, model = "DINA", att.dist="higher.order",
+               higher.order=list(model = "2PL",Prior=TRUE))
+
+####################################
+#           Example 3b.            #
+#        Model estimations         #
+#   With log-linear att structure  #
+####################################
+
+# --- DINA model with loglinear smoothed attribute space ---#
+dat &lt;- sim10GDINA$simdat
+Q &lt;- sim10GDINA$simQ
+mod23 &lt;- GDINA(dat = dat, Q = Q, model = "DINA",att.dist="loglinear",loglinear=1)
+coef(mod23,"lambda") # intercept and three main effects
+
+####################################
+#           Example 3c.            #
+#        Model estimations         #
+#  With independent att structure  #
+####################################
+
+# --- GDINA model with independent attribute space ---#
+dat &lt;- sim10GDINA$simdat
+Q &lt;- sim10GDINA$simQ
+mod33 &lt;- GDINA(dat = dat, Q = Q, att.dist="independent")
+coef(mod33,"lambda") # mastery probability for each attribute
+
+####################################
+#          Example 4.              #
+#        Model estimations         #
+#    With fixed att structure      #
+####################################
+
+# --- User-specified attribute priors ----#
+# prior distribution is fixed during calibration
+# Assume each of 000,100,010 and 001 has probability of 0.1
+# and each of 110, 101,011 and 111 has probability of 0.15
+# Note that the sum is equal to 1
+#
+prior &lt;- c(0.1,0.1,0.1,0.1,0.15,0.15,0.15,0.15)
+# fit GDINA model  with fixed prior dist.
+dat &lt;- sim10GDINA$simdat
+Q &lt;- sim10GDINA$simQ
+modp1 &lt;- GDINA(dat = dat, Q = Q, att.prior = prior, att.dist = "fixed")
+extract(modp1, what = "att.prior")
+
+####################################
+#          Example 5a.             #
+#             G-DINA               #
+# with hierarchical att structure  #
+####################################
+
+# --- User-specified attribute structure ----#
+Q &lt;- sim30GDINA$simQ
+K &lt;- ncol(Q)
+# divergent structure A1-&gt;A2-&gt;A3;A1-&gt;A4-&gt;A5
+diverg &lt;- list(c(1,2),
+               c(2,3),
+               c(1,4),
+               c(4,5))
+struc &lt;- att.structure(diverg,K)
+set.seed(123)
+# data simulation
+N &lt;- 1000
+true.lc &lt;- sample(c(1:2^K),N,replace=TRUE,prob=struc$att.prob)
+table(true.lc) #check the sample
+true.att &lt;- attributepattern(K)[true.lc,]
+ gs &lt;- matrix(rep(0.1,2*nrow(Q)),ncol=2)
+ # data simulation
+ simD &lt;- simGDINA(N,Q,gs.parm = gs, model = "GDINA",attribute = true.att)
+ dat &lt;- extract(simD,"dat")
+
+modp1 &lt;- GDINA(dat = dat, Q = Q, att.str = diverg, att.dist = "saturated")
+modp1
+coef(modp1,"lambda")
+
+####################################
+#          Example 5b.             #
+#   Reduced model (e.g.,ACDM)      #
+# with hierarchical att structure  #
+####################################
+
+# --- User-specified attribute structure ----#
+Q &lt;- sim30GDINA$simQ
+K &lt;- ncol(Q)
+# linear structure A1-&gt;A2-&gt;A3-&gt;A4-&gt;A5
+linear &lt;- list(c(1,2),
+               c(2,3),
+               c(3,4),
+               c(4,5))
+struc &lt;- att.structure(linear,K)
+set.seed(123)
+# data simulation
+N &lt;- 1000
+true.lc &lt;- sample(c(1:2^K),N,replace=TRUE,prob=struc$att.prob)
+table(true.lc) #check the sample
+true.att &lt;- attributepattern(K)[true.lc,]
+ gs &lt;- matrix(rep(0.1,2*nrow(Q)),ncol=2)
+ # data simulation
+ simD &lt;- simGDINA(N,Q,gs.parm = gs, model = "ACDM",attribute = true.att)
+ dat &lt;- extract(simD,"dat")
+
+modp1 &lt;- GDINA(dat = dat, Q = Q, model = "ACDM",
+               att.str = linear, att.dist = "saturated")
+coef(modp1)
+coef(modp1,"lambda")
+
+####################################
+#           Example 6.             #
+# Specify initial values for item  #
+# parameters                       #
+####################################
+
+ # check initials to see the format for initial item parameters
+ initials &lt;- sim10GDINA$simItempar
+
+ dat &lt;- sim10GDINA$simdat
+ Q &lt;- sim10GDINA$simQ
+ mod.initial &lt;- GDINA(dat,Q,catprob.parm = initials)
+
+ # compare initial item parameters
+ Map(rbind, initials,extract(mod.initial,"initial.catprob"))
+
+####################################
+#           Example 7a.            #
+# Fix item and structure parameters#
+# Estimate person attribute profile#
+####################################
+
+ # check initials to see the format for initial item parameters
+ initials &lt;- sim10GDINA$simItempar
+ prior &lt;- c(0.1,0.1,0.1,0.1,0.15,0.15,0.15,0.15)
+ dat &lt;- sim10GDINA$simdat
+ Q &lt;- sim10GDINA$simQ
+ mod.ini &lt;- GDINA(dat,Q,catprob.parm = initials,att.prior = prior,
+                  att.dist = "fixed",control=list(maxitr = 0))
+ personparm(mod.ini)
+ # compare item parameters
+ Map(rbind, initials,coef(mod.ini))
+
+####################################
+#           Example 7b.            #
+#   Fix parameters for some items  #
+# Estimate person attribute profile#
+####################################
+
+ # check initials to see the format for initial item parameters
+ initials &lt;- sim10GDINA$simItempar
+ prior &lt;- c(0.1,0.1,0.1,0.1,0.15,0.15,0.15,0.15)
+ dat &lt;- sim10GDINA$simdat
+ Q &lt;- sim10GDINA$simQ
+ # fix parameters of the first 5 items; do not fix mixing proportion parameters
+ mod.ini &lt;- GDINA(dat,Q,catprob.parm = initials,
+                  att.dist = "saturated",control=list(maxitr = c(rep(0,5),rep(2000,5))))
+ personparm(mod.ini)
+ # compare item parameters
+ Map(rbind, initials,coef(mod.ini))
+
+####################################
+#           Example 8.             #
+#        polytomous attribute      #
+#          model estimation        #
+#    see Chen, de la Torre 2013    #
+####################################
+
+
+# --- polytomous attribute G-DINA model --- #
+dat &lt;- sim30pGDINA$simdat
+Q &lt;- sim30pGDINA$simQ
+#polytomous G-DINA model
+pout &lt;- GDINA(dat,Q)
+
+# ----- polymous DINA model --------#
+pout2 &lt;- GDINA(dat,Q,model="DINA")
+anova(pout,pout2)
+
+####################################
+#           Example 9.             #
+#        Sequential G-DINA model   #
+#    see Ma, &amp; de la Torre 2016    #
+####################################
+
+# --- polytomous attribute G-DINA model --- #
+dat &lt;- sim20seqGDINA$simdat
+Q &lt;- sim20seqGDINA$simQ
+Q
+#    Item Cat A1 A2 A3 A4 A5
+#       1   1  1  0  0  0  0
+#       1   2  0  1  0  0  0
+#       2   1  0  0  1  0  0
+#       2   2  0  0  0  1  0
+#       3   1  0  0  0  0  1
+#       3   2  1  0  0  0  0
+#       4   1  0  0  0  0  1
+#       ...
+
+#sequential G-DINA model
+sGDINA &lt;- GDINA(dat,Q,sequential = TRUE)
+sDINA &lt;- GDINA(dat,Q,sequential = TRUE,model = "DINA")
+anova(sGDINA,sDINA)
+coef(sDINA) # processing function
+coef(sDINA,"itemprob") # success probabilities for each item
+coef(sDINA,"LCprob") # success probabilities for each category for all latent classes
+
+####################################
+#           Example 10a.           #
+#    Multiple-Group G-DINA model   #
+####################################
+
+Q &lt;- sim10GDINA$simQ
+K &lt;- ncol(Q)
+# parameter simulation
+# Group 1 - female
+N1 &lt;- 3000
+gs1 &lt;- matrix(rep(0.1,2*nrow(Q)),ncol=2)
+# Group 2 - male
+N2 &lt;- 3000
+gs2 &lt;- matrix(rep(0.2,2*nrow(Q)),ncol=2)
+
+# data simulation for each group
+sim1 &lt;- simGDINA(N1,Q,gs.parm = gs1,model = "DINA",att.dist = "higher.order",
+                 higher.order.parm = list(theta = rnorm(N1),
+                 lambda = data.frame(a=rep(1.5,K),b=seq(-1,1,length.out=K))))
+sim2 &lt;- simGDINA(N2,Q,gs.parm = gs2,model = "DINO",att.dist = "higher.order",
+                 higher.order.parm = list(theta = rnorm(N2),
+                 lambda = data.frame(a=rep(1,K),b=seq(-2,2,length.out=K))))
+
+# combine data - all items have the same item parameters
+dat &lt;- rbind(extract(sim1,"dat"),extract(sim2,"dat"))
+gr &lt;- rep(c(1,2),c(3000,3000))
+# Fit G-DINA model
+mg.est &lt;- GDINA(dat = dat,Q = Q,group = gr)
+summary(mg.est)
+extract(mg.est,"posterior.prob")
+coef(mg.est,"lambda")
+
+
+####################################
+#           Example 10b.           #
+#    Multiple-Group G-DINA model   #
+####################################
+
+Q &lt;- sim30GDINA$simQ
+K &lt;- ncol(Q)
+# parameter simulation
+N1 &lt;- 3000
+gs1 &lt;- matrix(rep(0.1,2*nrow(Q)),ncol=2)
+N2 &lt;- 3000
+gs2 &lt;- matrix(rep(0.2,2*nrow(Q)),ncol=2)
+
+# data simulation for each group
+# two groups have different theta distributions
+sim1 &lt;- simGDINA(N1,Q,gs.parm = gs1,model = "DINA",att.dist = "higher.order",
+                 higher.order.parm = list(theta = rnorm(N1),
+                 lambda = data.frame(a=rep(1,K),b=seq(-2,2,length.out=K))))
+sim2 &lt;- simGDINA(N2,Q,gs.parm = gs2,model = "DINO",att.dist = "higher.order",
+                 higher.order.parm = list(theta = rnorm(N2,1,1),
+                 lambda = data.frame(a=rep(1,K),b=seq(-2,2,length.out=K))))
+
+# combine data - different groups have distinct item parameters
+# see ?bdiagMatrix
+dat &lt;- bdiagMatrix(list(extract(sim1,"dat"),extract(sim2,"dat")),fill=NA)
+Q &lt;- rbind(Q,Q)
+gr &lt;- rep(c(1,2),c(3000,3000))
+mg.est &lt;- GDINA(dat = dat,Q = Q,group = gr)
+# Fit G-DINA model
+mg.est &lt;- GDINA(dat = dat,Q = Q,group = gr,att.dist="higher.order",
+higher.order=list(model = "Rasch"))
+summary(mg.est)
+coef(mg.est,"lambda")
+personparm(mg.est)
+personparm(mg.est,"HO")
+extract(mg.est,"posterior.prob")
+
+
+####################################
+#           Example 11.            #
+#           Bug DINO model         #
+####################################
+
+set.seed(123)
+Q &lt;- sim10GDINA$simQ # 1 represents misconceptions/bugs
+N &lt;- 1000
+J &lt;- nrow(Q)
+
+gs &lt;- data.frame(guess=rep(0.1,J),slip=rep(0.1,J))
+
+sim &lt;- simGDINA(N,Q,gs.parm = gs,model = "BUGDINO")
+dat &lt;- extract(sim,"dat")
+est &lt;- GDINA(dat=dat,Q=Q,model = "BUGDINO")
+coef(est)
+
+####################################
+#           Example 12.            #
+#           SISM model             #
+####################################
+
+# The Q-matrix used in Kuo, et al (2018)
+# The first four columns are for Attributes 1-4
+# The last three columns are for Bugs 1-3
+Q &lt;- matrix(c(1,0,0,0,0,0,0,
+0,1,0,0,0,0,0,
+0,0,1,0,0,0,0,
+0,0,0,1,0,0,0,
+0,0,0,0,1,0,0,
+0,0,0,0,0,1,0,
+0,0,0,0,0,0,1,
+1,0,0,0,1,0,0,
+0,1,0,0,1,0,0,
+0,0,1,0,0,0,1,
+0,0,0,1,0,1,0,
+1,1,0,0,1,0,0,
+1,0,1,0,0,0,1,
+1,0,0,1,0,0,1,
+0,1,1,0,0,0,1,
+0,1,0,1,0,1,1,
+0,0,1,1,0,1,1,
+1,0,1,0,1,1,0,
+1,1,0,1,1,1,0,
+0,1,1,1,1,1,0),ncol = 7,byrow = TRUE)
+
+J &lt;- nrow(Q)
+N &lt;- 1000
+gs &lt;- data.frame(guess=rep(0.1,J),slip=rep(0.1,J))
+
+sim &lt;- simGDINA(N,Q,gs.parm = gs,model = "SISM",no.bugs=3)
+dat &lt;- extract(sim,"dat")
+est &lt;- GDINA(dat=dat,Q=Q,model="SISM",no.bugs=3)
+coef(est,"delta")
+
+####################################
+#           Example 13a.           #
+#     user specified design matrix #
+#        LCDM (logit G-DINA)       #
+####################################
+
+dat &lt;- sim30GDINA$simdat
+Q &lt;- sim30GDINA$simQ
+
+# LCDM
+lcdm &lt;- GDINA(dat = dat, Q = Q, model = "logitGDINA", control=list(conv.type="neg2LL"))
+
+#Another way is to find design matrix for each item first =&gt; must be a list
+D &lt;- lapply(rowSums(Q),designmatrix,model="GDINA")
+# for comparison, use change in -2LL as convergence criterion
+# LCDM
+lcdm2 &lt;- GDINA(dat = dat, Q = Q, model = "UDF", design.matrix = D,
+linkfunc = "logit", control=list(conv.type="neg2LL"),solver="slsqp")
+
+# identity link GDINA
+iGDINA &lt;- GDINA(dat = dat, Q = Q, model = "GDINA",
+control=list(conv.type="neg2LL"),solver="slsqp")
+
+# compare all three models =&gt; identical
+anova(lcdm,lcdm2,iGDINA)
+
+####################################
+#           Example 13b.           #
+#     user specified design matrix #
+#            RRUM                  #
+####################################
+
+dat &lt;- sim30GDINA$simdat
+Q &lt;- sim30GDINA$simQ
+
+# specify design matrix for each item =&gt; must be a list
+# D can be defined by the user
+D &lt;- lapply(rowSums(Q),designmatrix,model="ACDM")
+# for comparison, use change in -2LL as convergence criterion
+# RRUM
+logACDM &lt;- GDINA(dat = dat, Q = Q, model = "UDF", design.matrix = D,
+linkfunc = "log", control=list(conv.type="neg2LL"),solver="slsqp")
+
+# identity link GDINA
+RRUM &lt;- GDINA(dat = dat, Q = Q, model = "RRUM",
+              control=list(conv.type="neg2LL"),solver="slsqp")
+
+# compare two models =&gt; identical
+anova(logACDM,RRUM)
+
+####################################
+#           Example 14.            #
+#     Multiple-strategy DINA model #
+####################################
+
+Q &lt;- matrix(c(1,1,1,1,0,
+1,2,0,1,1,
+2,1,1,0,0,
+3,1,0,1,0,
+4,1,0,0,1,
+5,1,1,0,0,
+5,2,0,0,1),ncol = 5,byrow = TRUE)
+d &lt;- list(
+  item1=c(0.2,0.7),
+  item2=c(0.1,0.6),
+  item3=c(0.2,0.6),
+  item4=c(0.2,0.7),
+  item5=c(0.1,0.8))
+
+  set.seed(12345)
+sim &lt;- simGDINA(N=1000,Q = Q, delta.parm = d,
+               model = c("MSDINA","MSDINA","DINA",
+                         "DINA","DINA","MSDINA","MSDINA"))
+
+# simulated data
+dat &lt;- extract(sim,what = "dat")
+# estimation
+# MSDINA need to be specified for each strategy
+est &lt;- GDINA(dat,Q,model = c("MSDINA","MSDINA","DINA",
+                             "DINA","DINA","MSDINA","MSDINA"))
+coef(est,"delta")
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

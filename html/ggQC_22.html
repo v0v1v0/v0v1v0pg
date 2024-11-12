@@ -1,0 +1,247 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>QC_Lines</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate QC Limits</h2>
+
+<h3>Description</h3>
+
+<p>Calculates QC chart lines for the following chart types and reports in a dataframe:
+</p>
+
+<ul>
+<li> <p><b>Individuals Charts</b>: mR, XmR,
+</p>
+</li>
+<li> <p><b>Attribute Charts</b>: c, np, p, u,
+</p>
+</li>
+<li> <p><b>Studentized Charts</b>: xBar.rBar, xBar.rMedian, xBar.sBar, xMedian.rBar,
+xMedian.rMedian,
+</p>
+</li>
+<li> <p><b>Dispersion Charts</b>: rBar, rMedian, sBar.
+</p>
+</li>
+</ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R">QC_Lines(data = NULL, value = NULL, grouping = NULL,
+  formula = NULL, n = NULL, method = "xBar.rBar", na.rm = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>vector or dataframe, as indicated below for each chart type
+</p>
+
+<ul>
+<li> <p><b>Individuals &amp; Attribute Charts</b>: vector of values;
+</p>
+</li>
+<li> <p><b>Studentized &amp; Dispersion Charts</b>: dataframe
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>value</code></td>
+<td>
+<p>string, <b>Studentized Charts</b> and <b>Dispersion Charts</b>, numeric vector in dataframe with values of interest</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grouping</code></td>
+<td>
+<p>string, <b>Studentized Charts</b> and <b>Dispersion Charts</b>: single factor/variable to split
+the dataframe "values" by</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p><b>Studentized Charts</b> and <b>Dispersion Charts</b>: a formula,
+such as y ~ x1 + x2, where the y variable is
+numeric data to be split into groups according to the grouping x
+factors/variables</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>number or vector as indicated below for each chart type.
+</p>
+
+<ul>
+<li> <p><b>Individuals Charts</b>: No effect
+</p>
+</li>
+<li> <p><b>Attribute Charts</b>: (p and u) vector, indicating sample area of opportunity.
+</p>
+</li>
+<li> <p><b>Attribute Charts</b>: (np) number, indicating constant sampling area of opportunity.
+</p>
+</li>
+<li> <p><b>Studentized Charts</b>: number, user specified subgroup size.
+</p>
+</li>
+<li> <p><b>Dispersion Charts</b>: No effect
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>string, calling the following methods:
+</p>
+
+<ul>
+<li> <p><b>Individuals Charts</b>: mR, XmR,
+</p>
+</li>
+<li> <p><b>Attribute Charts</b>: c, np, p, u,
+</p>
+</li>
+<li> <p><b>Studentized Charts</b>: xBar.rBar, xBar.rMedian, xBar.sBar, xMedian.rBar,
+xMedian.rMedian
+</p>
+</li>
+<li> <p><b>Dispersion Charts</b>: rBar, rMedian, sBar.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.rm</code></td>
+<td>
+<p>a logical value indicating whether NA values should be
+stripped before the computation proceeds.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a dataframe,
+</p>
+
+<ul>
+<li> <p><b>Attribute Data:</b> (p and u) Center Line, Upper Control Limit and Lower Control limit for each point.
+</p>
+</li>
+<li> <p><b>Other Data</b>: single line dataframe, with relevant control limits noted in column headings.
+</p>
+</li>
+</ul>
+<h3>Note</h3>
+
+<p>If using the <b>formula</b> argument do not use <b>value</b> and <b>group</b> arguments.
+</p>
+
+
+<h3>References</h3>
+
+<p>Wheeler, DJ, and DS Chambers. Understanding Statistical Process Control, 2nd Ed. Knoxville, TN: SPC, 1992. Print.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#############################################
+#  Example 1: Charts other than "p" or "u"  #
+#############################################
+
+# Load Libraries ----------------------------------------------------------
+ require(ggQC)
+ require(plyr)
+ require(ggplot2)
+
+# Setup Data --------------------------------------------------------------
+ set.seed(5555)
+ Process1 &lt;- data.frame(processID = as.factor(rep(1,100)),
+                        metric_value = rnorm(100,0,1),
+                        subgroup_sample=rep(1:20, each=5),
+                        Process_run_id = 1:100)
+ set.seed(5555)
+ Process2 &lt;- data.frame(processID = as.factor(rep(2,100)),
+                        metric_value = rnorm(100,5, 1),
+                        subgroup_sample=rep(1:10, each=10),
+                        Process_run_id = 101:200)
+
+ Both_Processes &lt;- rbind(Process1, Process2)
+
+# QC Values For Individuals -----------------------------------------------
+ # All Together
+   QC_Lines(data = Both_Processes$metric_value, method = "XmR")
+
+
+ # For Each Process
+   ddply(Both_Processes, .variables = "processID",
+     .fun =function(df){
+       QC_Lines(data = df$metric_value, method = "XmR")
+     }
+   )
+
+# QC Values For Studentized Runs-------------------------------------------
+ # All Together
+   QC_Lines(data = Both_Processes,
+        formula = metric_value ~ subgroup_sample)
+
+
+ # For Each Process
+   ddply(Both_Processes, .variables = "processID",
+     .fun =function(df){
+       QC_Lines(data = df, formula = metric_value ~ subgroup_sample)
+     }
+   )
+
+
+########################
+#  Example 2 "p" data  #
+########################
+
+# Setup p Data ------------------------------------------------------------
+ set.seed(5555)
+ bin_data &lt;- data.frame(
+   trial = 1:30,
+   Num_Incomplete_Items = rpois(n = 30, lambda = 30),
+   Num_Items_in_Set = runif(n = 30, min = 50, max = 100))
+
+ bin_data$Proportion_Incomplete &lt;- bin_data$Num_Incomplete_Items/bin_data$Num_Items_in_Set
+
+# QC_Lines for "p" data ---------------------------------------------------
+ QC_Lines(data = bin_data$Proportion_Incomplete,
+        n = bin_data$Num_Items_in_Set, method="p")
+
+
+########################
+#  Example 3 "u" data  #
+########################
+
+# Setup u Data ------------------------------------------------------------
+ set.seed(5555)
+ bin_data &lt;- data.frame(
+   trial=1:30,
+   Num_of_Blemishes = rpois(n = 30, lambda = 30),
+   Num_Items_Inspected = runif(n = 30, min = 50, max = 100))
+
+ bin_data$Blemish_Rate &lt;- bin_data$Num_of_Blemishes/bin_data$Num_Items_Inspected
+
+
+# QC Lines for "u" data ---------------------------------------------------
+ QC_Lines(data = bin_data$Blemish_Rate,
+        n = bin_data$Num_Items_Inspected, method="u")
+</code></pre>
+
+
+</div>

@@ -1,0 +1,168 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sesu_opgd</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>comparison of size effects of spatial units based on OPGD</h2>
+
+<h3>Description</h3>
+
+<p>Function for comparison of size effects of spatial units in spatial heterogeneity analysis based on
+optimal parameters geographical detector(OPGD) model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sesu_opgd(
+  formula,
+  datalist,
+  su,
+  discvar,
+  discnum = 3:22,
+  discmethod = c("sd", "equal", "geometric", "quantile", "natural"),
+  cores = 1,
+  increase_rate = 0.05,
+  alpha = 0.95,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A formula of comparison of size effects of spatial units.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>datalist</code></td>
+<td>
+<p>A list of <code>data.frame</code> or <code>tibble</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>su</code></td>
+<td>
+<p>A vector of sizes of spatial units.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>discvar</code></td>
+<td>
+<p>Name of continuous variable columns that need to be discretized.Noted that
+when <code>formula</code> has <code>discvar</code>, <code>data</code> must have these columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>discnum</code></td>
+<td>
+<p>(optional) A vector of number of classes for discretization. Default is <code>3:22</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>discmethod</code></td>
+<td>
+<p>(optional) A vector of methods for discretization, default is using
+<code>c("sd","equal","geometric","quantile","natural")</code> by invoking <code>sdsfun</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>(optional) Positive integer (default is 1). When cores are greater than 1, use
+multi-core parallel computing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>increase_rate</code></td>
+<td>
+<p>(optional) The critical increase rate of the number of discretization.
+Default is <code style="white-space: pre;">⁠5%⁠</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>(optional) Specifies the size of confidence level. Default is <code>0.95</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>(optional) Other arguments passed to <code>gd_bestunidisc()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Firstly, the <code>OPGD</code> model is executed for each data in the datalist (all <code>significant</code>
+Q statistic of each data are averaged to represent the spatial association strength under
+this spatial unit), and then the <code>loess_optscale</code> function is used to select the optimal
+spatial analysis scale.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list.
+</p>
+
+<dl>
+<dt><code>sesu</code></dt>
+<dd>
+<p>a tibble representing size effects of spatial units</p>
+</dd>
+<dt><code>optsu</code></dt>
+<dd>
+<p>optimal spatial unit</p>
+</dd>
+<dt><code>increase_rate</code></dt>
+<dd>
+<p>the critical increase rate of q value</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Wenbo Lv <a href="mailto:lyu.geosocial@gmail.com">lyu.geosocial@gmail.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Song, Y., Wang, J., Ge, Y. &amp; Xu, C. (2020) An optimal parameters-based geographical detector
+model enhances geographic characteristics of explanatory variables for spatial heterogeneity
+analysis: Cases with different types of spatial data, GIScience &amp; Remote Sensing, 57(5), 593-610.
+doi: 10.1080/15481603.2020.1760434.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## The following code takes a long time to run:
+library(tidyverse)
+fvcpath = "https://github.com/SpatLyu/rdevdata/raw/main/FVC.tif"
+fvc = terra::rast(paste0("/vsicurl/",fvcpath))
+fvc1000 = fvc %&gt;%
+  terra::as.data.frame(na.rm = T) %&gt;%
+  as_tibble()
+fvc5000 = fvc %&gt;%
+  terra::aggregate(fact = 5) %&gt;%
+  terra::as.data.frame(na.rm = T) %&gt;%
+  as_tibble()
+sesu_opgd(fvc ~ .,
+          datalist = list(fvc1000,fvc5000),
+          su = c(1000,5000),
+          discvar = names(select(fvc5000,-c(fvc,lulc))),
+          cores = 6)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,256 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>action_mature</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gadget3 maturity action</h2>
+
+<h3>Description</h3>
+
+<p>Add maturity actions to a g3 model
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">g3a_mature_continuous(
+        alpha = g3_parameterized('mat.alpha', by_stock = by_stock),
+        l50 = g3_parameterized('mat.l50', by_stock = by_stock),
+        beta = 0,
+        a50 = 0,
+        by_stock = TRUE)
+
+g3a_mature_constant(alpha = NULL, l50 = NA, beta = NULL, a50 = NA, gamma = NULL, 
+    k50 = NA)
+
+g3a_mature(stock, maturity_f, output_stocks, output_ratios = rep(1/length(output_stocks), 
+    times = length(output_stocks)), run_f = ~TRUE,
+    run_at = g3_action_order$grow,
+    transition_at = g3_action_order$mature)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+
+<p>A formula to substitute for <code class="reqn">\alpha</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>l50</code></td>
+<td>
+
+<p>A formula to substitute for <code class="reqn">l_{50}</code>. Must be defined if <var>alpha</var> is defined.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+
+<p>A formula to substitute for <code class="reqn">\beta</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a50</code></td>
+<td>
+
+<p>A formula to substitute for <code class="reqn">a_{50}</code>. Must be defined if <var>beta</var> is defined.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+
+<p>A formula to substitute for <code class="reqn">\gamma</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k50</code></td>
+<td>
+
+<p>A formula to substitute for <code class="reqn">k_{50}</code>. Must be defined if <var>gamma</var> is defined.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by_stock</code></td>
+<td>
+
+<p>Change the default parameterisation (e.g. to be by 'species'), see <code>g3_parameterized</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stock</code></td>
+<td>
+
+<p><code>g3_stock</code> to mature.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maturity_f</code></td>
+<td>
+
+<p>A maturity formula, as defined by <code>g3a_mature_constant</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_stocks</code></td>
+<td>
+
+<p>List of <code>g3_stock</code>s that maturing <var>stock</var> should move into.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_ratios</code></td>
+<td>
+
+<p>Vector of proportions for how to distribute into <var>output_stocks</var>, summing to 1, default evenly spread.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>run_f</code></td>
+<td>
+
+<p>formula specifying a condition for running this action, default always runs.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>run_at</code></td>
+<td>
+
+<p>Integer order that actions will be run within model, see <code>g3_action_order</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transition_at</code></td>
+<td>
+
+<p>Integer order that transition actions will be run within model, see <code>g3_action_order</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Generally you would use <code>g3a_growmature</code>, which does both growth
+and maturity at the same time.
+</p>
+<p>A model can have any number of <code>g3a_mature</code> actions, so long as the
+calling arguments are different. For instance, <code>run_f = ~age == 5</code> and
+<code>run_f = ~age == 7</code>.
+</p>
+
+
+<h3>Value</h3>
+
+
+
+<h4>g3a_mature_continuous</h4>
+
+<p>A formula object representing
+</p>
+<p style="text-align: center;"><code class="reqn"> m_0 * (\alpha \Delta{L} + \beta \Delta{t})^\top </code>
+</p>
+
+
+<dl>
+<dt><code class="reqn">m_0</code></dt>
+<dd>
+<p>The <code>g3a_mature_constant</code> formula, as defined below, using parameters supplied to <code>g3a_mature_continuous</code></p>
+</dd>
+<dt><code class="reqn">\Delta{L}</code></dt>
+<dd>
+<p>Vector of all possible changes in length, as per current growth matrix (see g3a_grow_impl_bbinom)</p>
+</dd>
+<dt><code class="reqn">\Delta{t}</code></dt>
+<dd>
+<p>Length of the current timestep</p>
+</dd>
+</dl>
+<h4>g3a_mature_constant</h4>
+
+<p>A formula object with the following equation
+</p>
+<p style="text-align: center;"><code class="reqn"> \frac{1}{ 1 + e^{-\alpha(l - l_{50}) -\beta(a - a_{50}) -\gamma(k - k_{50})}} </code>
+</p>
+
+
+<dl>
+<dt><code class="reqn">l</code></dt>
+<dd>
+<p>length of stock</p>
+</dd>
+<dt><code class="reqn">l_{50}</code></dt>
+<dd>
+<p>length of stock when 50% are mature</p>
+</dd>
+<dt><code class="reqn">a</code></dt>
+<dd>
+<p>age of stock</p>
+</dd>
+<dt><code class="reqn">a_{50}</code></dt>
+<dd>
+<p>age of stock when 50% are mature</p>
+</dd>
+<dt><code class="reqn">k</code></dt>
+<dd>
+<p>weight of stock</p>
+</dd>
+<dt><code class="reqn">k_{50}</code></dt>
+<dd>
+<p>weight of stock when 50% are mature</p>
+</dd>
+</dl>
+<h4>g3a_mature</h4>
+
+<p>An action (i.e. list of formula objects) that will, for the given <var>stock</var>...</p>
+
+<ol>
+<li>
+<p>Move any maturing individuals into temporary storage, <code>stock__transitioning_num</code> / <code>stock__transitioning_wgt</code>
+</p>
+</li>
+<li>
+<p>Move the contents of the temporary storage into <var>output_stocks</var>
+</p>
+</li>
+</ol>
+<h3>See Also</h3>
+
+<p><a href="https://gadget-framework.github.io/gadget2/userguide/chap-stock.html#sec:stockmature">https://gadget-framework.github.io/gadget2/userguide/chap-stock.html#sec:stockmature</a>,
+<code>g3a_growmature</code>,
+<code>g3_stock</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">ling_imm &lt;- g3_stock('ling_imm', seq(20, 156, 4))
+ling_mat &lt;- g3_stock('ling_mat', seq(20, 156, 4))
+
+# Maturity for immature ling
+maturity_action &lt;- g3a_mature(ling_imm,
+    maturity_f = g3a_mature_continuous(),
+    output_stocks = list(ling_mat))
+</code></pre>
+
+
+</div>

@@ -1,0 +1,231 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GET.distrindep</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Test of independence of two general distributions</h2>
+
+<h3>Description</h3>
+
+<p>Permutation-based test of independence in a bivariate vector
+using as the test statistic either
+1) the empirical joint cumulative distribution function,
+2) the matrix of observed counts of a 2D contingency table, or
+3) the smoothed Q-Q plot.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GET.distrindep(
+  X,
+  nsim = 999,
+  statistic = c("cdf", "contingency", "qq"),
+  ngrid,
+  seq.x,
+  seq.y,
+  sigma,
+  atoms.x,
+  atoms.y,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>A matrix with n rows and 2 columns. Each row contains
+one bivariate observation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>The number of random permutations used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>statistic</code></td>
+<td>
+<p>Either "cdf", "contingency" or "qq" corresponding to the three
+test functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ngrid</code></td>
+<td>
+<p>Vector with two elements, giving the number of grid
+points to be used in the test statistic for each of the two marginals.
+The default is 20 in each marginal for "cdf" and 64 for "qq".
+(This is not relevant for "contingency".)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seq.x</code></td>
+<td>
+<p>For the first marginal, the values at which the
+empirical cumulative distribution function will be evaluated.
+If NULL (the default), sequence of quantiles will be used,
+equidistant in terms of probability.
+seq.x and seq.y only relevant for "cdf".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seq.y</code></td>
+<td>
+<p>For the second marginal, the values at which the
+empirical cumulative distribution function will be evaluated.
+If NULL (the default), sequence of quantiles will be used,
+equidistant in terms of probability.
+seq.x and seq.y only relevant for "cdf".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>Standard deviation of the smoothing kernel to be 
+used for smoothing the Q-Q plot when computing the test statistic.
+If NULL, sensible default value is used based on the number of observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>atoms.x</code></td>
+<td>
+<p>Vector specifying atomic values in the first marginal.
+Only relevant for "qq". See Examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>atoms.y</code></td>
+<td>
+<p>Vector specifying atomic values in the second marginal.
+Only relevant for "qq". See Examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional parameters to be passed to <code>global_envelope_test</code>.
+In particularly, <code>alpha</code> specifies the nominal significance level of the test,
+and <code>type</code> the type of the global envelope test.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function performs permutation-based test of independence in a bivariate sample
+based on three different test statistics chosen by the argument <code>statistic</code>.
+</p>
+<p>If the observed data are the pairs <code class="reqn">\{(X_1, Y_1), \ldots, (X_n, Y_n)\}</code>,
+the permutations are obtained by randomly permuting the values
+in the second marginal, i.e. <code class="reqn">\{(X_1, Y_{\pi(1)}), \ldots, (X_n, Y_{\pi(n)})\}</code>.
+</p>
+<p>The first alternative <code>statistic = "cdf"</code> is the empirical joint cumulative distribution function
+computed on a grid of <code>ngrid[1]</code> times <code>ngrid[2]</code> arguments.
+The grid points are chosen according to the quantiles of the
+marginal distributions.
+The second alternative <code>statistic = "contingency"</code> is to test of independence in a 2D contingency table,
+using the matrix of observed counts as the test statistic.
+The third alternative <code>statistic = "qq"</code> is based on Q-Q representation and estimate of the intensity function
+computed on a regular grid of <code>ngrid[1]</code> times <code>ngrid[2]</code> points.
+</p>
+<p>The test itself is in each case performed using the global envelope test of the chosen version,
+see the argument <code>type</code> of <code>global_envelope_test</code>.
+</p>
+<p>In the case of a 2D contingency table, instead of plotting,
+text output can be printed in the console by typing the object name.
+The cells in which the observed value exceeds the upper envelope printed in red,
+and cells in which the observed value is lower than the lower
+envelope printed in cyan. Standard output of the global envelope
+test is also returned and can be plotted or analyzed accordingly.
+</p>
+
+
+<h3>References</h3>
+
+<p>Dvořák, J. and Mrkvička, T. (2022). Graphical tests of independence for general distributions. Computational Statistics 37, 671–699.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#- Example of cdf
+#----------------
+# Generate sample data
+data &lt;- matrix(rnorm(n=200), ncol=2) %*% matrix(c(1,1,0,1), ncol=2)
+plot(data)
+
+# Compute the CDF test and plot the significant regions
+res &lt;- GET.distrindep(data, statistic="cdf", ngrid=c(20,15), nsim=1999)
+
+plot(res) + ggplot2::scale_radius(range = 2 * c(1, 6))
+
+# Extract the p-value
+attr(res,"p")
+
+#- Example of a 2D contingency table
+#-----------------------------------
+# Generate sample data:
+data &lt;- matrix(c(sample(4, size=100, replace=TRUE), sample(2, size=100, replace=TRUE)), ncol=2)
+data[,2] &lt;- data[,2] + data[,1]
+
+# Observed contingency table (with row names and column names)
+table(data[,1], data[,2])
+
+# Permutation-based envelope test
+res &lt;- GET.distrindep(data, statistic="contingency", nsim=999)
+
+res
+plot(res) + ggplot2::scale_radius(range = 5 * c(1, 6))
+
+# Extract the p-value
+attr(res,"p")
+
+# Example of QQ
+#--------------
+# Generate sample data
+data &lt;- matrix(rnorm(n=200), ncol=2) %*% matrix(c(1,1,0,1), ncol=2)
+
+plot(data)
+
+# Compute the QQ test and plot the significant regions
+res &lt;- GET.distrindep(data, statistic="qq", ngrid=c(30,20), nsim=999)
+
+plot(res)
+# Extract the p-value
+attr(res,"p")
+
+# With atoms, independent
+data &lt;- cbind(rnorm(n=100), sample(4, size=100, replace=TRUE))
+plot(data)
+res &lt;- GET.distrindep(data, statistic="qq", nsim=999, atoms.y=c(1,2,3,4))
+
+plot(res)
+
+
+# With atoms, dependent
+data &lt;- cbind(sort(rnorm(n=100)), sort(sample(4, size=100, replace=TRUE)))
+plot(data)
+res &lt;- GET.distrindep(data, statistic="qq", nsim=999, atoms.y=c(1,2,3,4))
+plot(res, sign.type="col", what=c("obs", "lo", "hi", "lo.sign", "hi.sign"))
+
+
+# Atoms in both variables
+data &lt;- cbind(rnorm(n=100), rnorm(n=100)) %*% matrix(c(1,1,0,1), ncol=2)
+data[,1][data[,1]&lt;=-1] &lt;- -1
+data[,2][data[,2]&lt;=-0.5] &lt;- -0.5
+plot(data)
+
+# Perform the test
+res &lt;- GET.distrindep(data, statistic="qq", nsim=999, atoms.x=c(-1), atoms.y=c(-0.5))
+
+plot(res, sign.type="col", what=c("obs", "lo", "hi", "lo.sign", "hi.sign"))
+</code></pre>
+
+
+</div>

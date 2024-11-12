@@ -1,0 +1,265 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemTax_5_4</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A General Equilibrium Model with Tax (see Cardenete et al., 2012).</h2>
+
+<h3>Description</h3>
+
+<p>A general equilibrium model with tax (see chapter 4, Cardenete et al., 2012),
+wherein there are 5 commodities (i.e. product 1, product 2, labor, capital goods,
+and tax receipt) and 4 agents (i.e. 2 firms and 2 consumers).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemTax_5_4(
+  dstl,
+  names.commodity = c("prod1", "prod2", "lab", "cap", "tax"),
+  names.agent = c("taxed.firm1", "taxed.firm2", "consumer1", "consumer2"),
+  delta = 1,
+  supply.lab.consumer1 = 30,
+  supply.cap.consumer1 = 20,
+  supply.lab.consumer2 = 20,
+  supply.cap.consumer2 = 5,
+  policy.tax = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dstl</code></td>
+<td>
+<p>the demand structure tree list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names.commodity</code></td>
+<td>
+<p>names of commodities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names.agent</code></td>
+<td>
+<p>names of agents.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>the proportion of tax revenue allocated to consumer 1.
+1-delta is the proportion of tax revenue allocated to consumer 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>supply.lab.consumer1</code></td>
+<td>
+<p>the labor supply of consumer 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>supply.cap.consumer1</code></td>
+<td>
+<p>the capital supply of consumer 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>supply.lab.consumer2</code></td>
+<td>
+<p>the labor supply of consumer 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>supply.cap.consumer2</code></td>
+<td>
+<p>the capital supply of consumer 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>policy.tax</code></td>
+<td>
+<p>a tax policy function (see <code>sdm2</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A general equilibrium (see <code>sdm2</code>), wherein labor is the numeraire.
+</p>
+
+
+<h3>References</h3>
+
+<p>Manuel Alejandro Cardenete, Ana-Isabel Guerra, Ferran Sancho (2012, ISBN: 9783642247453) Applied General Equilibrium: An Introduction. Springer-Verlag Berlin Heidelberg.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+dst.consumer1 &lt;- node_new("utility",
+  type = "CD",
+  alpha = 1,
+  beta = c(0.3, 0.7),
+  "prod1", "prod2"
+)
+
+dst.consumer2 &lt;- Clone(dst.consumer1)
+dst.consumer2$beta &lt;- c(0.6, 0.4)
+
+dst.firm1 &lt;- node_new("output",
+  type = "Leontief",
+  a = c(0.5, 0.2, 0.3),
+  "VA", "prod1", "prod2"
+)
+node_set(dst.firm1, "VA",
+  type = "CD",
+  alpha = 0.8^-0.8 * 0.2^-0.2,
+  beta = c(0.8, 0.2),
+  "lab", "cap"
+)
+
+dst.firm2 &lt;- Clone(dst.firm1)
+node_set(dst.firm2, "output",
+  a = c(0.25, 0.5, 0.25)
+)
+node_set(dst.firm2, "VA",
+  alpha = 0.4^-0.4 * 0.6^-0.6,
+  beta = c(0.4, 0.6)
+)
+
+## no taxation
+dstl &lt;- list(dst.firm1, dst.firm2, dst.consumer1, dst.consumer2)
+ge &lt;- gemTax_5_4(dstl, delta = 1)
+
+## ad valorem output tax (see Table 4.1)
+output.tax.rate &lt;- 0.1
+dst.taxed.firm1 &lt;- node_new("taxed.output",
+  type = "FIN", rate = c(1, output.tax.rate),
+  dst.firm1, "tax"
+)
+node_plot(dst.taxed.firm1)
+
+dst.taxed.firm2 &lt;- node_new("taxed.output",
+  type = "FIN", rate = c(1, output.tax.rate),
+  dst.firm2, "tax"
+)
+node_plot(dst.taxed.firm2)
+
+dstl &lt;- list(dst.taxed.firm1, dst.taxed.firm2, dst.consumer1, dst.consumer2)
+
+ge.output.tax1 &lt;- gemTax_5_4(dstl, delta = 1)
+ge.output.tax2 &lt;- gemTax_5_4(dstl, delta = 0.5)
+ge.output.tax3 &lt;- gemTax_5_4(dstl, delta = 0)
+
+## labor tax (see Table 4.3)
+lab.tax.rate &lt;- 0.1
+
+dst.taxed.lab &lt;- node_new("taxed.lab",
+  type = "FIN",
+  rate = c(1, lab.tax.rate),
+  "lab",
+  "tax"
+)
+
+dst.labor.taxed.firm1 &lt;- Clone(dst.firm1)
+node_prune(dst.labor.taxed.firm1, "lab", "cap")
+node_set(
+  dst.labor.taxed.firm1, "VA",
+  dst.taxed.lab,
+  "cap"
+)
+
+dst.labor.taxed.firm2 &lt;- Clone(dst.labor.taxed.firm1)
+node_set(dst.labor.taxed.firm2, "output",
+  a = c(0.25, 0.5, 0.25)
+)
+node_set(dst.labor.taxed.firm2, "VA",
+  alpha = 0.4^-0.4 * 0.6^-0.6,
+  beta = c(0.4, 0.6)
+)
+
+dstl.labor.tax &lt;- list(dst.labor.taxed.firm1, dst.labor.taxed.firm2, dst.consumer1, dst.consumer2)
+
+ge.lab.tax &lt;- gemTax_5_4(dstl.labor.tax, delta = 0.5)
+
+ge.lab.tax$p
+ge.lab.tax$z / ge$z - 1
+
+## income tax (see Table 4.3)
+income.tax.rate &lt;- 0.2
+consumption.tax.rate &lt;- income.tax.rate / (1 - income.tax.rate)
+dst.taxed.consumer1 &lt;- node_new("taxed.utility",
+  type = "FIN",
+  rate = c(1, consumption.tax.rate),
+  dst.consumer1,
+  "tax"
+)
+
+dst.taxed.consumer2 &lt;- node_new("taxed.utility",
+  type = "FIN",
+  rate = c(1, consumption.tax.rate),
+  dst.consumer2,
+  "tax"
+)
+
+dstl &lt;- list(dst.firm1, dst.firm2, dst.taxed.consumer1, dst.taxed.consumer2)
+
+ge.income.tax &lt;- gemTax_5_4(dstl, delta = 0.5)
+ge.income.tax$z / ge$z - 1
+
+## labor tax (see Table 4.3)
+lab.tax.rate &lt;- 0.3742
+node_set(dst.labor.taxed.firm1, "taxed.lab",
+  rate = c(1, lab.tax.rate)
+)
+node_set(dst.labor.taxed.firm2, "taxed.lab",
+  rate = c(1, lab.tax.rate)
+)
+
+ge.lab.tax &lt;- gemTax_5_4(list(
+  dst.labor.taxed.firm1,
+  dst.labor.taxed.firm2,
+  dst.consumer1,
+  dst.consumer2
+), delta = 0.5)
+ge.lab.tax$z / ge$z - 1
+
+## variable labor tax rate
+policy.var.tax.rate &lt;- function(time, A, state) {
+  current.tax.rate &lt;- NA
+  if (time &gt;= 200) {
+    tax.amount &lt;- (state$p / state$p[3])[5]
+    adjustment.ratio &lt;- ratio_adjust(tax.amount / 18.7132504, coef = 0.1)
+    last.tax.rate &lt;- node_set(A[[1]], "taxed.lab")$rate[2]
+    current.tax.rate &lt;- last.tax.rate / adjustment.ratio
+  } else {
+    current.tax.rate &lt;- 0.1
+  }
+  node_set(A[[1]], "taxed.lab", rate = c(1, current.tax.rate))
+  node_set(A[[2]], "taxed.lab", rate = c(1, current.tax.rate))
+
+  state$current.policy.data &lt;- c(time, current.tax.rate)
+  state
+}
+
+ge.var.lab.tax &lt;- gemTax_5_4(dstl.labor.tax, policy = policy.var.tax.rate)
+matplot(ge.var.lab.tax$ts.z, type = "l")
+matplot(ge.var.lab.tax$ts.p / ge.var.lab.tax$p[3], type = "l")
+plot(ge.var.lab.tax$policy.data[, 1], ge.var.lab.tax$policy.data[, 2],
+  ylab = "labor tax rate"
+)
+ge.var.lab.tax$p / ge.var.lab.tax$p[3]
+
+
+</code></pre>
+
+
+</div>

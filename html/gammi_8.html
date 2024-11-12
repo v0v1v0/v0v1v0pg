@@ -1,0 +1,169 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>spline.model.matrix</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Construct Design Matrices via Spectral Splines
+</h2>
+
+<h3>Description</h3>
+
+<p>Creates a design (or model) matrix using the <code>spline.basis</code> function to expand variables via a spectral spline basis. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">spline.model.matrix(object, data, ...)
+
+rowKronecker(X, Y)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+
+<p>a <code>formula</code> or <code>terms</code> object describing the fit model
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>a data frame containing the variables referenced in <code>object</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>additional arguments passed to the <code>spline.basis</code> function, e.g., <code>df</code>, <code>knots</code>, <code>m</code>, etc. Arguments must be passed as a named list, see Examples.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>matrix of dimension <code class="reqn">n \times p</code>  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+
+<p>matrix of dimension <code class="reqn">n \times q</code>  
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This is a reproduction of the <code>rk.model.matrix</code> function in the <b>grpnet</b> package (Helwig, 2024b). 
+</p>
+<p>Designed to be a more flexible alternative to the <code>model.matrix</code> function. The <code>spline.basis</code> function is used to construct a marginal basis for each variable that appears in the input <code>object</code>. Tensor product interactions are formed by taking a rowwise Kronecker product of marginal basis matrices. Interactions of any order are supported using standard formulaic conventions, see Note.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The design matrix corresponding to the input formula and data, which has the following attributes:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>assign</code></td>
+<td>
+<p>an integer vector with an entry for each column in the matrix giving the term in the formula which gave rise to the column</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>term.labels</code></td>
+<td>
+<p>a character vector containing the labels for each of the terms in the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>knots</code></td>
+<td>
+<p>a named list giving the knots used for each variable in the formula</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m</code></td>
+<td>
+<p>a named list giving the penalty order used for each variable in the formula</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>periodic</code></td>
+<td>
+<p>a named list giving the periodicity used for each variable in the formula</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlev</code></td>
+<td>
+<p>a named list giving the factor levels used for each variable in the formula</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>For formulas of the form <code>y ~ x + z</code>, the constructed model matrix has the form <code>cbind(spline.basis(x), spline.basis(z))</code>, which simply concatenates the two marginal basis matrices. For formulas of the form <code>y ~ x : z</code>, the constructed model matrix has the form <code>rowKronecker(spline.basis(x), spline.basis(z))</code>, where <code>rowKronecker</code> denotes the row-wise kronecker product. The formula <code>y ~ x * z</code> is a shorthand for <code>y ~ x + z + x : z</code>, which concatenates the two previous results. Unless it is suppressed (using <code>0+</code>), the first column of the basis will be a column of ones named <code>(Intercept)</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Nathaniel E. Helwig &lt;helwig@umn.edu&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Helwig, N. E. (2021). Spectrally sparse nonparametric regression via elastic net regularized smoothers. <em>Journal of Computational and Graphical Statistics, 30</em>(1), 182-191. <a href="https://doi.org/10.1080/10618600.2020.1806855">doi:10.1080/10618600.2020.1806855</a>
+</p>
+<p>Helwig, N. E. (2024a). Precise tensor product smoothing via spectral splines. <em>Stats, 7</em>(1), 34-53, <a href="https://doi.org/10.3390/stats7010003">doi:10.3390/stats7010003</a>
+</p>
+<p>Helwig, N. E. (2024b). grpnet: Group Elastic Net Regularized GLMs and GAMs. R package version 0.4. <a href="https://doi.org/10.32614/CRAN.package.grpnet">doi:10.32614/CRAN.package.grpnet</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>See <code>spline.basis</code> for details on the spectral spline basis
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># load data
+data(exam)
+
+# header of data
+head(exam)
+
+# make basis matrix 
+x &lt;- spline.model.matrix(Exam.score ~ ., data = exam)
+
+# check dimension (= 3435 by 178)
+dim(x)
+
+# check term labels
+attr(x, "term.labels")
+
+# check which columns of x belong to which terms
+attr(x, "assign")             # note: 0 = (Intercept)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,127 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simulate_new</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulate from covariate/metadata in the absence of a real data set (EXPERIMENTAL)</h2>
+
+<h3>Description</h3>
+
+<p>See <code>vignette("sim", package = "glmmTMB")</code> for more details and examples,
+and <code>vignette("covstruct", package = "glmmTMB")</code>
+for more information on the parameterization of different covariance structures.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">simulate_new(
+  object,
+  nsim = 1,
+  seed = NULL,
+  family = gaussian,
+  newdata,
+  newparams,
+  ...,
+  return_val = c("sim", "pars", "object")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>a <em>one-sided</em> model formula (e.g. <code>~ a + b + c</code>
+(peculiar naming is for consistency with the generic function, which typically
+takes a fitted model object)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>number of simulations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>random-number seed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>a family function, a character string naming a family function, or the result of a call to a family function (variance/link function) information. See <code>family</code> for a generic discussion of families or <code>family_glmmTMB</code> for details of <code>glmmTMB</code>-specific families.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>a data frame containing all variables listed in the formula,
+<em>including</em> the response variable (which needs to fall within
+the domain of the conditional distribution, and should probably not
+be all zeros, but whose value is otherwise irrelevant)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newparams</code></td>
+<td>
+<p>a list of parameters containing sub-vectors
+(<code>beta</code>, <code>betazi</code>, <code>betadisp</code>, <code>theta</code>, etc.) to
+be used in the model. If <code>b</code> is specified in this list, then the conditional modes/BLUPs
+will be set to these values; otherwise they will be drawn from the appropriate Normal distribution</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>other arguments to <code>glmmTMB</code> (e.g. <code>family</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_val</code></td>
+<td>
+<p>what information to return: "sim" (the default) returns a list of vectors of simulated outcomes; "pars" returns the default parameter vector (this variant does not require <code>newparams</code> to be specified, and is useful for figuring out the appropriate dimensions of the different parameter vectors); "object" returns a fake <code>glmmTMB</code> object (useful, e.g., for retrieving the Z matrix (<code>getME(simulate_new(...), "Z")</code>) or covariance matrices (<code>VarCorr(simulate_new(...))</code>) implied by a particular set of input data and parameter values)</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">## use Salamanders data for structure/covariates
+sim_count &lt;- simulate_new(~ mined + (1|site),
+             newdata = Salamanders,
+             zi = ~ mined,
+             family = nbinom2,
+             newparams = list(beta = c(2, 1),
+                         betazi = c(-0.5, 0.5), ## logit-linear model for zi
+                         betadisp = log(2), ## log(NB dispersion)
+                         theta = log(1)) ## log(among-site SD)
+)
+sim_obj &lt;- simulate_new(~ mined + (1|site),
+            return_val = "object",
+             newdata = Salamanders,
+             zi = ~ mined,
+             family = nbinom2,
+             newparams = list(beta = c(2, 1),
+                         betazi = c(-0.5, 0.5), ## logit-linear model for zi
+                         betad = log(2), ## log(NB dispersion)
+                         theta = log(1)) ## log(among-site SD)
+)
+data("sleepstudy", package = "lme4")
+sim_obj &lt;- simulate_new(~ 1 + (1|Subject) + ar1(0 + factor(Days)|Subject),
+             return_val = "pars",
+             newdata = sleepstudy,
+             family = gaussian,
+             newparams = list(beta = c(280, 1),
+                         betad = log(2), ## log(SD)
+                         theta = log(c(2, 2, 1))),
+)
+
+</code></pre>
+
+
+</div>

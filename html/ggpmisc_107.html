@@ -1,0 +1,771 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>stat_poly_eq</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Equation, p-value, <code class="reqn">R^2</code>, AIC and BIC of fitted polynomial</h2>
+
+<h3>Description</h3>
+
+<p><code>stat_poly_eq</code> fits a polynomial, by default with <code>stats::lm()</code>,
+but alternatively using robust regression. Using the fitted model it
+generates several labels including the fitted model equation, p-value,
+F-value, coefficient of determination (R^2), 'AIC', 'BIC', and number of
+observations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">stat_poly_eq(
+  mapping = NULL,
+  data = NULL,
+  geom = "text_npc",
+  position = "identity",
+  ...,
+  formula = NULL,
+  method = "lm",
+  method.args = list(),
+  n.min = 2L,
+  eq.with.lhs = TRUE,
+  eq.x.rhs = NULL,
+  small.r = getOption("ggpmisc.small.r", default = FALSE),
+  small.p = getOption("ggpmisc.small.p", default = FALSE),
+  CI.brackets = c("[", "]"),
+  rsquared.conf.level = 0.95,
+  coef.digits = 3,
+  coef.keep.zeros = TRUE,
+  decreasing = getOption("ggpmisc.decreasing.poly.eq", FALSE),
+  rr.digits = 2,
+  f.digits = 3,
+  p.digits = 3,
+  label.x = "left",
+  label.y = "top",
+  hstep = 0,
+  vstep = NULL,
+  output.type = NULL,
+  na.rm = FALSE,
+  orientation = NA,
+  parse = NULL,
+  show.legend = FALSE,
+  inherit.aes = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mapping</code></td>
+<td>
+<p>The aesthetic mapping, usually constructed with
+<code>aes</code>. Only needs to be
+set at the layer level if you are overriding the plot defaults.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A layer specific dataset, only needed if you want to override
+the plot defaults.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>geom</code></td>
+<td>
+<p>The geometric object to use display the data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>position</code></td>
+<td>
+<p>The position adjustment to use for overlapping points on this
+layer</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>other arguments passed on to <code>layer</code>. This
+can include aesthetics whose values you want to set, not map. See
+<code>layer</code> for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>a formula object. Using aesthetic names <code>x</code> and <code>y</code>
+instead of original variable names.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>function or character If character, "lm", "rlm" or the name of
+a model fit function are accepted, possibly followed by the fit function's
+<code>method</code> argument separated by a colon (e.g. <code>"rlm:M"</code>). If a
+function different to <code>lm()</code>, it must accept as a minimum a model
+formula through its first parameter, and have formal parameters named
+<code>data</code>, <code>weights</code>, and <code>method</code>, and return a model fit
+object of class <code>lm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method.args</code></td>
+<td>
+<p>named list with additional arguments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.min</code></td>
+<td>
+<p>integer Minimum number of distinct values in the explanatory
+variable (on the rhs of formula) for fitting to the attempted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eq.with.lhs</code></td>
+<td>
+<p>If <code>character</code> the string is pasted to the front of
+the equation label before parsing or a <code>logical</code> (see note).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eq.x.rhs</code></td>
+<td>
+<p><code>character</code> this string will be used as replacement for
+<code>"x"</code> in the model equation when generating the label before parsing
+it.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>small.r, small.p</code></td>
+<td>
+<p>logical Flags to switch use of lower case r and p for
+coefficient of determination and p-value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CI.brackets</code></td>
+<td>
+<p>character vector of length 2. The opening and closing
+brackets used for the CI label.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rsquared.conf.level</code></td>
+<td>
+<p>numeric Confidence level for the returned
+confidence interval. Set to NA to skip CI computation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef.digits, f.digits</code></td>
+<td>
+<p>integer Number of significant digits to use for
+the fitted coefficients and F-value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef.keep.zeros</code></td>
+<td>
+<p>logical Keep or drop trailing zeros when formatting
+the fitted coefficients and F-value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>decreasing</code></td>
+<td>
+<p>logical It specifies the order of the terms in the
+returned character string; in increasing (default) or decreasing powers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rr.digits, p.digits</code></td>
+<td>
+<p>integer Number of digits after the decimal point to
+use for <code class="reqn">R^2</code> and P-value in labels. If <code>Inf</code>, use exponential
+notation with three decimal places.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>label.x, label.y</code></td>
+<td>
+<p><code>numeric</code> with range 0..1 "normalized parent
+coordinates" (npc units) or character if using <code>geom_text_npc()</code> or
+<code>geom_label_npc()</code>. If using <code>geom_text()</code> or <code>geom_label()</code>
+numeric in native data units. If too short they will be recycled.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hstep, vstep</code></td>
+<td>
+<p>numeric in npc units, the horizontal and vertical step
+used between labels for different groups.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output.type</code></td>
+<td>
+<p>character One of "expression", "LaTeX", "text",
+"markdown" or "numeric".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.rm</code></td>
+<td>
+<p>a logical indicating whether NA values should be stripped before
+the computation proceeds.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>orientation</code></td>
+<td>
+<p>character Either "x" or "y" controlling the default for
+<code>formula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parse</code></td>
+<td>
+<p>logical Passed to the geom. If <code>TRUE</code>, the labels will be
+parsed into expressions and displayed as described in <code>?plotmath</code>.
+Default is <code>TRUE</code> if <code>output.type = "expression"</code> and
+<code>FALSE</code> otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show.legend</code></td>
+<td>
+<p>logical. Should this layer be included in the legends?
+<code>NA</code>, the default, includes if any aesthetics are mapped. <code>FALSE</code>
+never includes, and <code>TRUE</code> always includes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inherit.aes</code></td>
+<td>
+<p>If <code>FALSE</code>, overrides the default aesthetics, rather
+than combining with them. This is most useful for helper functions that
+define both data and aesthetics and shouldn't inherit behaviour from the
+default plot specification, e.g. <code>borders</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This statistic can be used to automatically annotate a plot with
+<code class="reqn">R^2</code>, adjusted <code class="reqn">R^2</code> or the fitted model equation. It supports
+linear regression and polynomial fits, and robust regression fitted
+with functions <code>lm</code>, or <code>rlm</code>, respectively.
+</p>
+<p>While strings for <code class="reqn">R^2</code>, adjusted <code class="reqn">R^2</code>, <code class="reqn">F</code>, and <code class="reqn">P</code>
+annotations are returned for all valid linear models, A character string
+for the fitted model is returned only for polynomials (see below), in which
+case the equation can still be assembled by the user. In addition, a label
+for the confidence interval of <code class="reqn">R^2</code>, based on values computed with
+function <code>ci_rsquared</code> from package 'confintr' is
+also returned.
+</p>
+<p>The model formula should be defined based on the names of aesthetics <code>x</code>
+and <code>y</code>, not the names of the variables in the data. Before fitting
+the model, data are split based on groupings created by any other mappings
+present in a plot panel: <em>fitting is done separately for each group
+in each plot panel</em>.
+</p>
+<p>Model formulas can use <code>poly()</code> or be defined algebraically including
+the intercept indicated by <code>+1</code>, <code>-1</code>, <code>+0</code> or implicit. If
+defined using <code>poly()</code> the argument <code>raw = TRUE</code> must be passed.
+The <code>model formula</code> is checked, and if not recognized as a polynomial
+with no missing terms and terms ordered by increasing powers, no equation
+label is generated. Thus, as the value returned for <code>eq.label</code> can be
+<code>NA</code>, the default aesthetic mapping to <em>label</em> is <code class="reqn">R^2</code>.
+</p>
+<p>By default, the character strings are generated as suitable for parsing into R's
+plotmath expressions. However, LaTeX (use TikZ device), markdown (use package
+'ggtext') and plain text are also supported, as well as returning numeric values for
+user-generated text labels. The argument of <code>parse</code> is set automatically
+based on <code>output-type</code>, but if you assemble labels that need parsing
+from <code>numeric</code> output, the default needs to be overridden.
+</p>
+<p>This statistic only generates annotation labels, the predicted values/line
+need to be added to the plot as a separate layer using
+<code>stat_poly_line</code> (or <code>stat_smooth</code>). Using
+the same formula in <code>stat_poly_line()</code> and in <code>stat_poly_eq()</code> in
+most cases ensures that the plotted curve and equation are consistent.
+Thus, unless the default formula is not overriden, it is best to save the
+model formula as an object and supply this named object as argument to the
+two statistics.
+</p>
+<p>A ggplot statistic receives as <code>data</code> a data frame that is not the one
+passed as argument by the user, but instead a data frame with the variables
+mapped to aesthetics. <code>stat_poly_eq()</code> mimics how <code>stat_smooth()</code>
+works.
+</p>
+<p>With method <code>"lm"</code>, singularity results in terms being dropped with a
+message if more numerous than can be fitted with a singular (exact) fit.
+In this case or if the model results in a perfect fit due to a low
+number of observations, estimates for various parameters are <code>NaN</code> or
+<code>NA</code>. When this is the case the corresponding labels are set to
+<code>character(0L)</code> and thus not visible in the plot.
+</p>
+<p>With methods other than <code>"lm"</code>, the model fit functions simply fail
+in case of singularity, e.g., singular fits are not implemented in
+<code>"rlm"</code>.
+</p>
+<p>In both cases the minimum number of observations with distinct values in
+the explanatory variable can be set through parameter <code>n.min</code>. The
+default <code>n.min = 2L</code> is the smallest suitable for method <code>"lm"</code>
+but too small for method <code>"rlm"</code> for which <code>n.min = 3L</code> is
+needed. Anyway, model fits with very few observations are of little
+interest and using larger values of <code>n.min</code> than the default is
+usually wise.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data frame, with a single row and columns as described under
+<strong>Computed variables</strong>. In cases when the number of observations is
+less than <code>n.min</code> a data frame with no rows or columns is returned,
+and rendered as an empty/invisible plot layer.
+</p>
+
+
+<h3>User-defined methods</h3>
+
+<p>User-defined functions can be passed as
+argument to <code>method</code>. The requirements are 1) that the signature is
+similar to that of function <code>lm()</code> (with parameters <code>formula</code>,
+<code>data</code>, <code>weights</code> and any other arguments passed by name through
+<code>method.args</code>) and 2) that the value returned by the function is an
+object of class <code>"lm"</code> or an atomic <code>NA</code> value.
+</p>
+<p>The <code>formula</code> used to build the equation label is extracted from the
+returned <code>"lm"</code> object and can safely differ from the argument passed to
+parameter <code>formula</code> in the call to <code>stat_poly_eq()</code>. Thus,
+user-defined methods can implement both model selection or conditional
+skipping of labelling.
+</p>
+
+
+<h3>Aesthetics</h3>
+
+<p><code>stat_poly_eq()</code> understands <code>x</code> and <code>y</code>,
+to be referenced in the <code>formula</code> and <code>weight</code> passed as argument
+to parameter <code>weights</code>. All three must be mapped to <code>numeric</code>
+variables. In addition, the aesthetics understood by the geom
+(<code>"text"</code> is the default) are understood and grouping respected.
+</p>
+<p>If the model formula includes a transformation of <code>x</code>, a
+matching argument should be passed to parameter <code>eq.x.rhs</code>
+as its default value <code>"x"</code> will not reflect the applied
+transformation. In plots, transformation should never be applied to the
+left hand side of the model formula, but instead in the mapping of the
+variable within <code>aes</code>, as otherwise plotted observations and fitted
+curve will not match. In this case it may be necessary to also pass
+a matching argument to parameter <code>eq.with.lhs</code>.
+</p>
+
+
+<h3>Computed variables</h3>
+
+<p>If output.type different from <code>"numeric"</code> the returned tibble contains
+columns listed below. If the model fit function used does not return a value,
+the label is set to <code>character(0L)</code>.
+</p>
+
+<dl>
+<dt>x,npcx</dt>
+<dd>
+<p>x position</p>
+</dd>
+<dt>y,npcy</dt>
+<dd>
+<p>y position</p>
+</dd>
+<dt>eq.label</dt>
+<dd>
+<p>equation for the fitted polynomial as a character string to be parsed or <code>NA</code></p>
+</dd>
+<dt>rr.label</dt>
+<dd>
+<p><code class="reqn">R^2</code> of the fitted model as a character string to be parsed</p>
+</dd>
+<dt>adj.rr.label</dt>
+<dd>
+<p>Adjusted <code class="reqn">R^2</code> of the fitted model as a character string to be parsed</p>
+</dd>
+<dt>rr.confint.label</dt>
+<dd>
+<p>Confidence interval for <code class="reqn">R^2</code> of the fitted model as a character string to be parsed</p>
+</dd>
+<dt>f.value.label</dt>
+<dd>
+<p>F value and degrees of freedom for the fitted model as a whole.</p>
+</dd>
+<dt>p.value.label</dt>
+<dd>
+<p>P-value for the F-value above.</p>
+</dd>
+<dt>AIC.label</dt>
+<dd>
+<p>AIC for the fitted model.</p>
+</dd>
+<dt>BIC.label</dt>
+<dd>
+<p>BIC for the fitted model.</p>
+</dd>
+<dt>n.label</dt>
+<dd>
+<p>Number of observations used in the fit.</p>
+</dd>
+<dt>grp.label</dt>
+<dd>
+<p>Set according to mapping in <code>aes</code>.</p>
+</dd>
+<dt>method.label</dt>
+<dd>
+<p>Set according <code>method</code> used.</p>
+</dd>
+<dt>r.squared, adj.r.squared, p.value, n</dt>
+<dd>
+<p>numeric values, from the model fit object</p>
+</dd>
+</dl>
+<p>If output.type is <code>"numeric"</code> the returned tibble contains columns
+listed below. If the model fit function used does not return a value,
+the variable is set to <code>NA_real_</code>.
+</p>
+
+<dl>
+<dt>x,npcx</dt>
+<dd>
+<p>x position</p>
+</dd>
+<dt>y,npcy</dt>
+<dd>
+<p>y position</p>
+</dd>
+<dt>coef.ls</dt>
+<dd>
+<p>list containing the "coefficients" matrix from the summary of the fit object</p>
+</dd>
+<dt>r.squared, rr.confint.level, rr.confint.low, rr.confint.high, adj.r.squared, f.value, f.df1, f.df2, p.value, AIC, BIC, n</dt>
+<dd>
+<p>numeric values, from the model fit object</p>
+</dd>
+<dt>grp.label</dt>
+<dd>
+<p>Set according to mapping in <code>aes</code>.</p>
+</dd>
+<dt>b_0.constant</dt>
+<dd>
+<p>TRUE is polynomial is forced through the origin</p>
+</dd>
+<dt>b_i</dt>
+<dd>
+<p>One or columns with the coefficient estimates</p>
+</dd>
+</dl>
+<p>To explore the computed values returned for a given input we suggest the use
+of <code>geom_debug</code> as shown in the last examples below.
+</p>
+
+
+<h3>Alternatives</h3>
+
+<p><code>stat_regline_equation()</code> in package 'ggpubr' is
+a renamed but almost unchanged copy of <code>stat_poly_eq()</code> taken from an
+old version of this package (without acknowledgement of source and
+authorship). <code>stat_regline_equation()</code> lacks important functionality
+and contains bugs that have been fixed in <code>stat_poly_eq()</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>For backward compatibility a logical is accepted as argument for
+<code>eq.with.lhs</code>. If <code>TRUE</code>, the default is used, either
+<code>"x"</code> or <code>"y"</code>, depending on the argument passed to <code>formula</code>.
+However, <code>"x"</code> or <code>"y"</code> can be substituted by providing a
+suitable replacement character string through <code>eq.x.rhs</code>.
+Parameter <code>orientation</code> is redundant as it only affects the default
+for <code>formula</code> but is included for consistency with
+<code>ggplot2::stat_smooth()</code>.
+</p>
+<p>R option <code>OutDec</code> is obeyed based on its value at the time the plot
+is rendered, i.e., displayed or printed. Set <code>options(OutDec = ",")</code>
+for languages like Spanish or French.
+</p>
+
+
+<h3>References</h3>
+
+<p>Originally written as an answer to question 7549694 at
+Stackoverflow but enhanced based on suggestions from users and my own
+needs.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>This statistics fits a model with function <code>lm</code>,
+function <code>rlm</code> or a user supplied function returning an
+object of class <code>"lm"</code>. Consult the documentation of these functions
+for the details and additional arguments that can be passed to them by name
+through parameter <code>method.args</code>.
+</p>
+<p>For quantile regression <code>stat_quant_eq</code> should be used instead
+of <code>stat_poly_eq</code> while for model II or major axis regression
+<code>stat_ma_eq</code> should be used. For other types of models such as
+non-linear models, statistics <code>stat_fit_glance</code> and
+<code>stat_fit_tidy</code> should be used and the code for construction of
+character strings from numeric values and their mapping to aesthetic
+<code>label</code> needs to be explicitly supplied by the user.
+</p>
+<p>Other ggplot statistics for linear and polynomial regression: 
+<code>stat_poly_line()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># generate artificial data
+set.seed(4321)
+x &lt;- 1:100
+y &lt;- (x + x^2 + x^3) + rnorm(length(x), mean = 0, sd = mean(x^3) / 4)
+y &lt;- y / max(y)
+my.data &lt;- data.frame(x = x, y = y,
+                      group = c("A", "B"),
+                      y2 = y * c(1, 2) + c(0, 0.1),
+                      w = sqrt(x))
+
+# give a name to a formula
+formula &lt;- y ~ poly(x, 3, raw = TRUE)
+
+# using defaults
+ggplot(my.data, aes(x, y)) +
+  geom_point() +
+  stat_poly_line() +
+  stat_poly_eq()
+
+# no weights
+ggplot(my.data, aes(x, y)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(formula = formula)
+
+# other labels
+ggplot(my.data, aes(x, y)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(use_label("eq"), formula = formula)
+
+# other labels
+ggplot(my.data, aes(x, y)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(use_label("eq"), formula = formula, decreasing = TRUE)
+
+ggplot(my.data, aes(x, y)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(use_label("eq", "R2"), formula = formula)
+
+ggplot(my.data, aes(x, y)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(use_label("R2", "R2.CI", "P", "method"), formula = formula)
+
+ggplot(my.data, aes(x, y)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(use_label("R2", "F", "P", "n", sep = "*\"; \"*"),
+               formula = formula)
+
+# grouping
+ggplot(my.data, aes(x, y2, color = group)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(formula = formula)
+
+# rotation
+ggplot(my.data, aes(x, y)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(formula = formula, angle = 90)
+
+# label location
+ggplot(my.data, aes(x, y)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(formula = formula, label.y = "bottom", label.x = "right")
+
+ggplot(my.data, aes(x, y)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(formula = formula, label.y = 0.1, label.x = 0.9)
+
+# modifying the explanatory variable within the model formula
+# modifying the response variable within aes()
+formula.trans &lt;- y ~ I(x^2)
+ggplot(my.data, aes(x, y + 1)) +
+  geom_point() +
+  stat_poly_line(formula = formula.trans) +
+  stat_poly_eq(use_label("eq"),
+               formula = formula.trans,
+               eq.x.rhs = "~x^2",
+               eq.with.lhs = "y + 1~~`=`~~")
+
+# using weights
+ggplot(my.data, aes(x, y, weight = w)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(formula = formula)
+
+# no weights, 4 digits for R square
+ggplot(my.data, aes(x, y)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(formula = formula, rr.digits = 4)
+
+# manually assemble and map a specific label using paste() and aes()
+ggplot(my.data, aes(x, y)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(aes(label =  paste(after_stat(rr.label),
+                                  after_stat(n.label), sep = "*\", \"*")),
+               formula = formula)
+
+# manually assemble and map a specific label using sprintf() and aes()
+ggplot(my.data, aes(x, y)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(aes(label =  sprintf("%s*\" with \"*%s*\" and \"*%s",
+                                    after_stat(rr.label),
+                                    after_stat(f.value.label),
+                                    after_stat(p.value.label))),
+               formula = formula)
+
+# x on y regression
+ggplot(my.data, aes(x, y)) +
+  geom_point() +
+  stat_poly_line(formula = formula, orientation = "y") +
+  stat_poly_eq(use_label("eq", "adj.R2"),
+               formula = x ~ poly(y, 3, raw = TRUE))
+
+# conditional user specified label
+ggplot(my.data, aes(x, y2, color = group)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(aes(label =  ifelse(after_stat(adj.r.squared) &gt; 0.96,
+                                   paste(after_stat(adj.rr.label),
+                                         after_stat(eq.label),
+                                         sep = "*\", \"*"),
+                                   after_stat(adj.rr.label))),
+               rr.digits = 3,
+               formula = formula)
+
+# geom = "text"
+ggplot(my.data, aes(x, y)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(geom = "text", label.x = 100, label.y = 0, hjust = 1,
+               formula = formula)
+
+# using numeric values
+# Here we use columns b_0 ... b_3 for the coefficient estimates
+my.format &lt;-
+  "b[0]~`=`~%.3g*\", \"*b[1]~`=`~%.3g*\", \"*b[2]~`=`~%.3g*\", \"*b[3]~`=`~%.3g"
+ggplot(my.data, aes(x, y)) +
+  geom_point() +
+  stat_poly_line(formula = formula) +
+  stat_poly_eq(formula = formula,
+               output.type = "numeric",
+               parse = TRUE,
+               mapping =
+                aes(label = sprintf(my.format,
+                                    after_stat(b_0), after_stat(b_1),
+                                    after_stat(b_2), after_stat(b_3))))
+
+# Inspecting the returned data using geom_debug()
+# This provides a quick way of finding out the names of the variables that
+# are available for mapping to aesthetics with after_stat().
+
+gginnards.installed &lt;- requireNamespace("gginnards", quietly = TRUE)
+
+if (gginnards.installed)
+  library(gginnards)
+
+if (gginnards.installed)
+  ggplot(my.data, aes(x, y)) +
+    geom_point() +
+    stat_poly_line(formula = formula) +
+    stat_poly_eq(formula = formula, geom = "debug")
+
+if (gginnards.installed)
+  ggplot(my.data, aes(x, y)) +
+    geom_point() +
+    stat_poly_line(formula = formula) +
+    stat_poly_eq(formula = formula, geom = "debug", output.type = "numeric")
+
+# names of the variables
+if (gginnards.installed)
+  ggplot(my.data, aes(x, y)) +
+    geom_point() +
+    stat_poly_line(formula = formula) +
+    stat_poly_eq(formula = formula, geom = "debug",
+                 summary.fun = colnames)
+
+# only data$eq.label
+if (gginnards.installed)
+  ggplot(my.data, aes(x, y)) +
+    geom_point() +
+    stat_poly_line(formula = formula) +
+    stat_poly_eq(formula = formula, geom = "debug",
+                 output.type = "expression",
+                 summary.fun = function(x) {x[["eq.label"]]})
+
+# only data$eq.label
+if (gginnards.installed)
+  ggplot(my.data, aes(x, y)) +
+    geom_point() +
+    stat_poly_line(formula = formula) +
+    stat_poly_eq(aes(label = after_stat(eq.label)),
+                 formula = formula, geom = "debug",
+                 output.type = "markdown",
+                 summary.fun = function(x) {x[["eq.label"]]})
+
+# only data$eq.label
+if (gginnards.installed)
+  ggplot(my.data, aes(x, y)) +
+    geom_point() +
+    stat_poly_line(formula = formula) +
+    stat_poly_eq(formula = formula, geom = "debug",
+                 output.type = "latex",
+                 summary.fun = function(x) {x[["eq.label"]]})
+
+# only data$eq.label
+if (gginnards.installed)
+  ggplot(my.data, aes(x, y)) +
+    geom_point() +
+    stat_poly_line(formula = formula) +
+    stat_poly_eq(formula = formula, geom = "debug",
+                 output.type = "text",
+                 summary.fun = function(x) {x[["eq.label"]]})
+
+# show the content of a list column
+if (gginnards.installed)
+  ggplot(my.data, aes(x, y)) +
+    geom_point() +
+    stat_poly_line(formula = formula) +
+    stat_poly_eq(formula = formula, geom = "debug", output.type = "numeric",
+                 summary.fun = function(x) {x[["coef.ls"]][[1]]})
+
+</code></pre>
+
+
+</div>

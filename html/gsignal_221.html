@@ -1,0 +1,230 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>specgram</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Spectrogram</h2>
+
+<h3>Description</h3>
+
+<p>Spectrogram using short-time Fourier transform.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">specgram(
+  x,
+  n = min(256, length(x)),
+  fs = 2,
+  window = hanning(n),
+  overlap = ceiling(n/2)
+)
+
+## S3 method for class 'specgram'
+plot(
+  x,
+  col = grDevices::gray(0:512/512),
+  xlab = "Time",
+  ylab = "Frequency",
+  ...
+)
+
+## S3 method for class 'specgram'
+print(
+  x,
+  col = grDevices::gray(0:512/512),
+  xlab = "Time",
+  ylab = "Frequency",
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Input signal, specified as a vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Size of the FFT window. Default: 256 (or less if <code>x</code> is
+shorter).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fs</code></td>
+<td>
+<p>Sample rate in Hz. Default: 2</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>window</code></td>
+<td>
+<p>Either an integer indicating the length of a Hanning window, or
+a vector of values representing the shape of the FFT tapering window.
+Default: hanning(n)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>overlap</code></td>
+<td>
+<p>Overlap with previous window. Default: half the window length</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col</code></td>
+<td>
+<p>Colormap to use for plotting. Default: <code>grDevices::gray(0:512
+/ 512)</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlab</code></td>
+<td>
+<p>Label for x-axis of plot. Default: <code>"Time"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ylab</code></td>
+<td>
+<p>Label for y-axis of plot. Default: <code>"Frequency"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to the <code>image</code> plotting function</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Generate a spectrogram for the signal <code>x</code>. The signal is chopped into
+overlapping segments of length <code>n</code>, and each segment is windowed and
+transformed into the frequency domain using the FFT. The default segment size
+is 256. If <code>fs</code> is given, it specifies the sampling rate of the input
+signal. The argument <code>window</code> specifies an alternate window to apply
+rather than the default of <code>hanning(n)</code>. The argument overlap specifies
+the number of samples overlap between successive segments of the input
+signal. The default overlap is <code>length (window)/2</code>.
+</p>
+<p>When results of <code>specgram</code> are printed, a spectrogram will be plotted.
+As with <code>lattice</code> plots, automatic printing does not work inside loops
+and function calls, so explicit calls to <code>print</code> or <code>plot</code> are
+needed there.
+</p>
+<p>The choice of window defines the time-frequency resolution. In speech for
+example, a wide window shows more harmonic detail while a narrow window
+averages over the harmonic detail and shows more formant structure. The shape
+of the window is not so critical so long as it goes gradually to zero on the
+ends.
+</p>
+<p>Step size (which is window length minus overlap) controls the horizontal
+scale of the spectrogram. Decrease it to stretch, or increase it to compress.
+Increasing step size will reduce time resolution, but decreasing it will not
+improve it much beyond the limits imposed by the window size (you do gain a
+little bit, depending on the shape of your window, as the peak of the window
+slides over peaks in the signal energy). The range 1-5 msec is good for
+speech.
+</p>
+<p>FFT length controls the vertical scale. Selecting an FFT length greater than
+the window length does not add any information to the spectrum, but it is a
+good way to interpolate between frequency points which can make for prettier
+spectrograms.
+</p>
+<p>AFTER you have generated the spectral slices, there are a number of decisions
+for displaying them. First the phase information is discarded and the energy
+normalized:
+</p>
+<p><code>S &lt;- abs(S); S &lt;- S / max(S)</code>
+</p>
+<p>Then the dynamic range of the signal is chosen. Since information in speech
+is well above the noise floor, it makes sense to eliminate any dynamic range
+at the bottom end. This is done by taking the max of the magnitude and some
+minimum energy such as minE = -40dB. Similarly, there is not much information
+in the very top of the range, so clipping to a maximum energy such as maxE =
+-3dB makes sense:
+</p>
+<p><code>S &lt;- max(S, 10^(minE / 10)); S &lt;- min(S, 10^(maxE / 10))</code>
+</p>
+<p>The frequency range of the FFT is from 0 to the Nyquist frequency of one half
+the sampling rate. If the signal of interest is band limited, you do not need
+to display the entire frequency range. In speech for example, most of the
+signal is below 4 kHz, so there is no reason to display up to the Nyquist
+frequency of 10 kHz for a 20 kHz sampling rate. In this case you will want to
+keep only the first 40
+More generally, to display the frequency range from minF to maxF, you could
+use the following row index:
+</p>
+<p><code>idx &lt;- (f &gt;= minF &amp; f &lt;= maxF)</code>
+</p>
+<p>Then there is the choice of colormap. A brightness varying colormap such as
+copper or bone gives good shape to the ridges and valleys. A hue varying
+colormap such as jet or hsv gives an indication of the steepness of the
+slopes. In the field that I am working in (neuroscience / electrophysiology)
+rainbow color palettes such as jet are very often used. This is an
+unfortunate choice mainly because (a) colors do not have a natural order, and
+(b) rainbow palettes are not perceptually linear. It would be better to use a
+grayscale palette or the 'cool-to-warm' scheme. The examples show how to do
+this in R.
+</p>
+<p>The final spectrogram is displayed in log energy scale and by convention has
+low frequencies on the bottom of the image.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class <code>specgram</code> consisting of the following elements:
+</p>
+
+<dl>
+<dt>S</dt>
+<dd>
+<p>the complex output of the FFT, one row per slice</p>
+</dd>
+<dt>f</dt>
+<dd>
+<p>the frequency indices corresponding to the rows of S</p>
+</dd>
+<dt>t</dt>
+<dd>
+<p>the time indices corresponding to the columns of S</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Paul Kienzle, <a href="mailto:pkienzle@users.sf.net">pkienzle@users.sf.net</a>.<br>
+Conversion to R by Tom Short<br>
+This conversion to R by Geert van Boxtel, <a href="mailto:G.J.M.vanBoxtel@gmail.com">G.J.M.vanBoxtel@gmail.com</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+sp &lt;- specgram(chirp(seq(-2, 15, by = 0.001), 400, 10, 100, 'quadratic'))
+specgram(chirp(seq(0, 5, by = 1/8000), 200, 2, 500,
+        "logarithmic"), fs = 8000)
+
+# use other color palettes than grayscale
+jet &lt;- grDevices::colorRampPalette(
+         c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F",
+           "yellow", "#FF7F00", "red", "#7F0000"))
+plot(specgram(chirp(seq(0, 5, by = 1/8000), 200, 2, 500, "logarithmic"),
+         fs = 8000), col = jet(20))
+c2w &lt;- grDevices::colorRampPalette(colors = c("red", "white", "blue"))
+plot(specgram(chirp(seq(0, 5, by = 1/8000), 200, 2, 500, "logarithmic"),
+         fs = 8000), col = c2w(50))
+
+</code></pre>
+
+
+</div>

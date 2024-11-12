@@ -1,0 +1,167 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>profilelogLik</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Profile Likelihood</h2>
+
+<h3>Description</h3>
+
+<p>The function <code>profilelogLik</code> computes for an array of fixed
+variogram parameters the profile log-likelihood by maximizing the
+(restricted) log-likelihood with respect to the remaining variogram
+parameters, the fixed and random effects.  </p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  profilelogLik(object, values, use.fitted = TRUE, verbose = 0,
+    ncores = min(parallel::detectCores(), NROW(values)))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>an object of class <code>"georob"</code> (mandatory argument),
+see <code>georobObject</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>values</code></td>
+<td>
+<p>a <code>data.frame</code> or a <code>matrix</code> with the values of
+the variogram and anisotropy parameters that should be kept fixed
+(mandatory argument, see <code>georob</code> and
+<code>georobPackage</code> for information about the parametrization of
+variogram models).  The names of the columns of <code>values</code> must match
+the names of variogram and anisotropy parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use.fitted</code></td>
+<td>
+<p>a logical scalar controlling whether the fitted variogram
+parameters of <code>object</code> should be used as initial values (default
+<code>TRUE</code>) when maximizing the profile log-likelihood or the initial
+values used to generate <code>object</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>a positive integer controlling logging of diagnostic
+messages to the console during model fitting, see <code>georob</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>a positive integer controlling how many cores are used for
+parallelized computations, see <em>Details</em>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For robust REML fits <code>profilelogLik</code> returns (possibly with a
+warning) the log-likelihood of the Gaussian (RE)ML fit of the equivalent
+Gaussian spatial linear model with heteroscedastic nugget.
+</p>
+<p><b>Note</b> that <em>the data frame passed as</em> <code>data</code>
+<em>argument to</em> <code>georob</code> <em>must exist in the user workspace
+when calling <code>profilelogLik</code></em>.
+</p>
+<p><code>profilelogLik</code> uses the packages <span class="pkg">parallel</span> and
+<span class="pkg">snowfall</span> for parallelized computation of the profile
+likelihood.  By default, the function uses <code>NROW(values)</code> CPUs but
+not more than are physically available (as returned by
+<code>detectCores</code>).
+</p>
+<p><code>profilelogLik</code> uses the function <code>update</code> to
+re-estimated the model with partly fixed variogram parameters.
+Therefore, any argument accepted by <code>georob</code> except
+<code>data</code> can be changed when re-fitting the model.  Some of them (e.g.
+<code>verbose</code>) are explicit arguments of
+<code>profilelogLik</code>, but also the remaining ones can be passed by
+<code>...</code> to the function.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>data.frame</code> with the columns of <code>values</code>, a column
+<code>loglik</code> (contains the maximized [restricted] log-likelihood),
+columns with the estimated variogram and fixed effect parameters, columns
+with the gradient of the (restricted) log-likelihood (or the roots of the
+estimating equations) and a column <code>converged</code>, indicating whether
+convergence has occurred when fitting the respective model.  </p>
+
+
+<h3>Author(s)</h3>
+
+<p>Andreas Papritz <a href="mailto:papritz@retired.ethz.ch">papritz@retired.ethz.ch</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>georobPackage</code> for a description of the model and a brief summary of the algorithms;
+</p>
+<p><code>georob</code> for (robust) fitting of spatial linear models;
+</p>
+<p><code>georobObject</code> for a description of the class <code>georob</code>;
+</p>
+
+<p><code>plot.georob</code> for display of RE(ML) variogram estimates;
+</p>
+<p><code>control.georob</code> for controlling the behaviour of <code>georob</code>;
+</p>
+<p><code>georobModelBuilding</code> for stepwise building models of class <code>georob</code>;
+</p>
+<p><code>cv.georob</code> for assessing the goodness of a fit by <code>georob</code>;
+</p>
+<p><code>georobMethods</code> for further methods for the class <code>georob</code>;
+</p>
+<p><code>predict.georob</code> for computing robust Kriging predictions;
+</p>
+
+<p><code>lgnpp</code> for unbiased back-transformation of Kriging prediction
+of log-transformed data;
+</p>
+<p><code>georobSimulation</code> for simulating realizations of a Gaussian process
+from model fitted by <code>georob</code>; and finally
+</p>
+<p><code>sample.variogram</code> and <code>fit.variogram.model</code>
+for robust estimation and modelling of sample variograms.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## define number of cores for parallel computations
+if(interactive()) ncpu &lt;- 2L else ncpu &lt;- 1L
+
+data(meuse)
+
+r.logzn.ml &lt;- georob(log(zinc)~sqrt(dist), data=meuse, locations=~x+y,
+    variogram.model="RMexp", param=c(variance=0.15, nugget=0.05, scale=200),
+    tuning.psi=1000, control=control.georob(ml.method="ML"))
+
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  r.prflik &lt;- profilelogLik(r.logzn.ml, values=expand.grid(scale=seq(75, 600, by=25)),
+      ncores = ncpu)
+
+  plot(loglik~scale, r.prflik, type="l")
+  abline(v=r.logzn.ml$variogram.object[[1]]$param["scale"], lty="dotted")
+  abline(h=r.logzn.ml$loglik-0.5*qchisq(0.95, 1), lty="dotted")
+}
+</code></pre>
+
+
+</div>

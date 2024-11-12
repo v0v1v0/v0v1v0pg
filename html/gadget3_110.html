@@ -1,0 +1,356 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>run_tmb</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gadget3 actions into TMB code</h2>
+
+<h3>Description</h3>
+
+<p>Turn g3 actions into CPP code that can be compiled using TMB
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">g3_to_tmb(actions, trace = FALSE, strict = FALSE)
+
+g3_tmb_adfun(cpp_code, parameters = attr(cpp_code, "parameter_template"),
+    compile_flags =
+        if (.Platform$OS.type == "windows") c("-O1", "-march=native")
+        else c("-O3", "-flto", "-march=native"),
+    work_dir = tempdir(),
+    output_script = FALSE, ...)
+
+g3_tmb_par(parameters, include_random = TRUE)
+
+g3_tmb_lower(parameters)
+
+g3_tmb_upper(parameters)
+
+g3_tmb_parscale(parameters)
+
+g3_tmb_relist(parameters, par)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>actions</code></td>
+<td>
+
+<p>A list of actions (i.e. list of formula objects), as produced by <var>g3a_</var>* functions.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+
+<p>If TRUE, turn all comments into print statements.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strict</code></td>
+<td>
+
+<p>If TRUE, enable extra sanity checking in actions. Any invalid conditions
+(e.g. more/less fish after growth) will result in a warning.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cpp_code</code></td>
+<td>
+
+<p>cpp_code as produced by <var>g3_to_tmb</var>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameters</code></td>
+<td>
+
+<p>Parameter table as produced by <code>attr(g3_to_tmb(...), 'parameter_template')</code>,
+modified to provide initial conditions, etc.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par</code></td>
+<td>
+
+<p>Parameter vector, as produced by one of </p>
+
+<ol>
+<li>
+<p><code>nlminb(...)$par</code>
+</p>
+</li>
+<li>
+<p><code>obj.fun$env$last.par</code>
+</p>
+</li>
+<li>
+<p><code>g3_tmb_par()</code>
+</p>
+</li>
+</ol>
+<p>The first will not include random parameters by default, the others will.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include_random</code></td>
+<td>
+
+<p>Should random parameters assumed to be part of par? Should be <code>TRUE</code>
+if using <code>obj.fun$fn</code>, <code>obj.fun$report</code> directly, e.g.
+<code>obj.fun$fn(g3_tmb_par(param_tbl))</code>. In other cases, <code>FALSE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compile_flags</code></td>
+<td>
+
+<p>List of extra flags to compile with, use e.g. "-g" to enable debugging output.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>work_dir</code></td>
+<td>
+
+<p>Directory to write and compile .cpp files in. Defaults to R's current temporary directory
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_script</code></td>
+<td>
+
+<p>If <code>TRUE</code>, create a temporary R script that runs MakeADFun, and return the location.
+This can then be directly used with gdbsource or <code>callr::rscript</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Any other options handed directly to MakeADFun
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+
+<h4>g3_tmb_adfun</h4>
+
+<p><code>g3_tmb_adfun</code> will do both the compile and MakeADFun
+steps of making a model. If the code is identical to an already-loaded model then it
+won't be recompiled, so repeated calls to g3_tmb_adfun to change <var>parameters</var> are fast.
+</p>
+<p>If MakeADFun is crashing your R session, then you can use <var>output_script</var> to run
+in a separate R session. Use this with gdbsource to debug your model.
+</p>
+
+
+
+<h3>Value</h3>
+
+
+
+<h4>g3_to_tmb</h4>
+
+<p>A string of C++ code that can be used as an input to <var>g3_tmb_adfun</var>, with the following attributes:
+</p>
+
+<dl>
+<dt>actions</dt>
+<dd>
+<p>The original <var>actions</var> list given to the function</p>
+</dd>
+<dt>model_data</dt>
+<dd>
+<p>An environment containing data attached to the model</p>
+</dd>
+<dt>parameter_template</dt>
+<dd>
+<p>A data.frame to be filled in and used as <var>parameters</var> in the other <code>g3_tmb_*</code> functions</p>
+</dd>
+</dl>
+<p>Use e.g. <code>attr(cpp_code, 'parameter_template')</code> to retrieve them.
+</p>
+
+
+
+<h4>g3_tmb_adfun</h4>
+
+<p>An ADFun as produced by TMB's MakeADFun, or location of temporary script if <var>output_script</var> is TRUE</p>
+
+
+
+<h4>g3_tmb_par</h4>
+
+<p>Values extracted from <var>parameters</var> table converted into a vector of values for <code>obj$fn(par)</code> or <code>nlminb</code></p>
+
+
+
+<h4>g3_tmb_lower</h4>
+
+<p>Lower bounds extracted from <var>parameters</var> table converted into a vector of values for <code>nlminb</code>. Random parameters are always excluded</p>
+
+
+
+<h4>g3_tmb_upper</h4>
+
+<p>Lower bounds extracted from <var>parameters</var> table converted into a vector of values for <code>nlminb</code>. Random parameters are always excluded</p>
+
+
+
+<h4>g3_tmb_parscale</h4>
+
+<p>Parscale extracted from <var>parameters</var> table, converted into a vector of values for <code>nlminb</code>. Random parameters are always excluded</p>
+
+
+
+<h4>g3_tmb_relist</h4>
+
+<p>The <var>parameters</var> table value column, but with optimised
+values replaced with contents of <var>par</var> vector.
+i.e. the inverse operation to g3_tmb_par.
+<var>par</var> can either include or discount random variables.
+</p>
+
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+ling_imm &lt;- g3_stock(c(species = 'ling', 'imm'), seq(20, 156, 4)) %&gt;% g3s_age(3, 10)
+
+initialconditions_action &lt;- g3a_initialconditions_normalparam(
+    ling_imm,
+    factor_f = g3a_renewal_initabund(by_stock_f = 'species'),
+    by_stock = 'species',
+    by_age = TRUE)
+
+abundance_action &lt;- g3l_abundancedistribution(
+    'abundance',
+    data.frame(year = 2000:2004, number = 100),
+    stocks = list(ling_imm),
+    function_f = g3l_distribution_sumofsquares())
+
+# Timekeeping action
+time_action &lt;- g3a_time(
+    start_year = 2000,
+    end_year = 2004,
+    c(3, 3, 3, 3))
+
+# Generate a model from the above 2 actions
+# NB: Obviously in reality we'd need more actions
+cpp &lt;- g3_to_tmb(list(initialconditions_action, abundance_action, time_action))
+
+if (interactive()) {
+  # Edit the resulting code
+  cpp &lt;- edit(cpp)
+}
+
+# Set initial conditions for parameters
+tmb_param &lt;- attr(cpp, 'parameter_template')
+tmb_param$value$project_years &lt;- 0
+tmb_param$value$ling.init.F &lt;- 0.4
+tmb_param$value$ling.Linf &lt;- 160
+tmb_param$value$ling.K &lt;- 90
+tmb_param$value$ling.t0 &lt;- 0
+tmb_param[grepl('^ling.init.sd.', rownames(tmb_param)), 'value'] &lt;- 50.527220
+tmb_param[grepl('^ling_imm.init.\\d+', rownames(tmb_param)), 'value'] &lt;- 1
+tmb_param$value$ling_imm.init.scalar &lt;- 200
+tmb_param$value$ling_imm.walpha &lt;- 2.27567436711055e-06
+tmb_param$value$ling_imm.wbeta &lt;- 3.20200445996187
+tmb_param[grepl('\\.M$', rownames(tmb_param)), 'value'] &lt;- 0.15
+
+# We can set lower/upper bounds for multiple properties at once with grepl()
+tmb_param[grepl('.', rownames(tmb_param)), 'lower'] &lt;- -1000
+tmb_param[grepl('.', rownames(tmb_param)), 'upper'] &lt;- 1000
+
+# parscale gives optim() a relative scale of parameters
+tmb_param['parscale'] &lt;- 1
+
+
+
+
+if (!( nzchar(Sys.getenv('GITHUB_CI')) &amp;&amp; .Platform$OS.type == "windows" )) {
+  # Compile to a TMB ADFun
+  tmb &lt;- g3_tmb_adfun(cpp, tmb_param)
+}
+
+# NB: TMB::gdbsource() requires both "R" and "gdb" to be available
+# NB: gdbsource hangs on windows - https://github.com/kaskr/adcomp/issues/385
+if (all(nzchar(Sys.which(c('gdb', 'R')))) &amp;&amp; .Platform$OS.type !="windows") {
+
+  cpp_broken &lt;- g3_to_tmb(list(
+    initialconditions_action,
+    abundance_action,
+    g3_formula(quote( stop("This model is broken") )),
+    time_action))
+
+  # Build the model in an isolated R session w/debugger
+  writeLines(TMB::gdbsource(g3_tmb_adfun(
+      cpp_broken,
+      compile_flags = "-g",
+      output_script = TRUE)))
+
+}
+
+if (!( nzchar(Sys.getenv('GITHUB_CI')) &amp;&amp; .Platform$OS.type == "windows" )) {
+  # Perform a single run, using values in table
+  result &lt;- tmb$fn(g3_tmb_par(tmb_param))
+}
+
+if (!( nzchar(Sys.getenv('GITHUB_CI')) &amp;&amp; .Platform$OS.type == "windows" )) {
+  # perform optimisation using upper/lower/parscale from table
+  fit &lt;- optim(tmb$par, tmb$fn, tmb$gr,
+      method = "L-BFGS-B",
+      upper = g3_tmb_upper(tmb_param),
+      lower = g3_tmb_lower(tmb_param),
+      control = list(maxit=10, parscale=g3_tmb_parscale(tmb_param)))
+}
+
+if (!( nzchar(Sys.getenv('GITHUB_CI')) &amp;&amp; .Platform$OS.type == "windows" )) {
+  # perform optimisation without bounds
+  fit &lt;- optim(tmb$par, tmb$fn, tmb$gr)
+}
+
+if (!( nzchar(Sys.getenv('GITHUB_CI')) &amp;&amp; .Platform$OS.type == "windows" )) {
+  # Go back to a list of parameters, suitable for the R version
+  # NB: This will not set the values for random parameters
+  param_list &lt;- g3_tmb_relist(tmb_param, fit$par)
+}
+
+if (!( nzchar(Sys.getenv('GITHUB_CI')) &amp;&amp; .Platform$OS.type == "windows" )) {
+  # Update parameters with values from last run, *including* random parameters.
+  param_list &lt;- g3_tmb_relist(tmb_param, tmb$env$last.par)
+}
+
+if (!( nzchar(Sys.getenv('GITHUB_CI')) &amp;&amp; .Platform$OS.type == "windows" )) {
+  # Rebuild, only including "Fun" (i.e. without auto-differentiation)
+  # Result will only work for tmb$report
+  tmb &lt;- g3_tmb_adfun(cpp, tmb_param, type = "Fun")
+  result &lt;- tmb$report(g3_tmb_par(tmb_param))
+}
+
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,145 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>boot.joint</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bootstrapping a <code>joint</code> object</h2>
+
+<h3>Description</h3>
+
+<p>Use an existing model fit by <code>joint</code> along with the data object originally
+used and obtain a mean estimate, standard errors and 95% confidence interval using the
+bootstrap. The original data is resampled by subject, not by observation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">boot.joint(
+  fit,
+  data,
+  boot.size = NULL,
+  nboot = 100L,
+  replace = TRUE,
+  progress = TRUE,
+  use.MLEs = TRUE,
+  control = list()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>a joint model fit by the <code>joint</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>the original data used to fit the above joint model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boot.size</code></td>
+<td>
+<p>integer, specifies the number of subjects to resample in the bootstrapping
+approach. The default value is <code>boot.size = NULL</code> which defaults to the number of unique
+subjects in the <code>joint</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nboot</code></td>
+<td>
+<p>integer, specifies the number of bootstrap samples, default value is 
+<code>nboot = 100L</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>replace</code></td>
+<td>
+<p>logical, should sampling be done with replacement? Defaults to 
+<code>replace = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress</code></td>
+<td>
+<p>logical, should a text progress bar showing overall progress be shown
+and updated after each successful bootstrapped model fit? Defaults to <code>progress=TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use.MLEs</code></td>
+<td>
+<p>logical, should the MLEs of the <code>fit</code> be used as initial conditions in 
+each of the bootstrapped calls to <code>joint</code>? Defaults to <code>use.MLEs=TRUE</code> which
+should help reduce the computational burden in fitting these bootstrap replicate <code>joint</code>
+objects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>a list of control arguments, with same possible arguments as shown in 
+<code>joint</code>. Note that by default the <em>same</em> <code>control</code> arguments used in the
+<code>joint</code> <code>fit</code> parameter are carried forwards, besides the items <code>return.dmats</code>,
+<code>post.process</code>, and <code>verbose</code> which are all set to <code>FALSE</code> in <code>boot.joint</code>
+in order to reduce memory overheads and computation time. Instead, the user
+could lessen computational burden of this intensive bootstrapping by changing convergence 
+criteria items e.g. <code>conv</code>, <code>tol.rel</code>, <code>tol.abs</code>, <code>tol.thr</code> in order to 
+speed-up convergence of the <code>nboot</code> individual bootstrapped model fits.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list of class <code>boot.joint</code> which contains the MLEs from supplied <code>joint</code>
+object, as well as the bootstrapped summaries and some model/computation information.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>James Murray (<a href="mailto:j.murray7@ncl.ac.uk">j.murray7@ncl.ac.uk</a>).
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>joint</code> <code>vcov.joint</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Bivariate fit on PBC data -----------------------------------------
+data(PBC)
+
+# Subset data and remove NAs
+PBC &lt;- subset(PBC, select = c('id', 'survtime', 'status', 'drug', 'time',
+                              'albumin', 'platelets'))
+PBC &lt;- na.omit(PBC) 
+
+# Specify bivariate fit
+long.formulas &lt;- list(
+  albumin ~ time*drug + (1 + time|id),
+  platelets ~ time * drug + (1 + time|id)
+)
+surv.formula &lt;- Surv(survtime, status) ~ drug
+
+fit &lt;- joint(long.formulas, surv.formula, PBC, family = list('gaussian', 'poisson'))
+# Set 50 bootstraps, with lower absolute tolerance and convergence of 'either'.
+BOOT &lt;- boot.joint(fit, PBC, nboot = 50L, control = list(tol.abs = 5e-3, conv = 'either'),
+                   use.MLEs = TRUE)
+BOOT # Print to console via S3 method
+
+</code></pre>
+
+
+</div>

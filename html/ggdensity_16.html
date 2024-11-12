@@ -1,0 +1,175 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get_hdr_1d</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Computing the highest density regions of a 1D density</h2>
+
+<h3>Description</h3>
+
+<p><code>get_hdr_1d</code> is used to estimate a 1-dimensional density and compute corresponding HDRs.
+The estimated density and HDRs are represented in a discrete form as a grid, defined by arguments <code>range</code> and <code>n</code>.
+<code>get_hdr_1d</code> is used internally by layer functions <code>stat_hdr_rug()</code> and <code>stat_hdr_rug_fun()</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get_hdr_1d(
+  x = NULL,
+  method = "kde",
+  probs = c(0.99, 0.95, 0.8, 0.5),
+  n = 512,
+  range = NULL,
+  hdr_membership = TRUE,
+  fun,
+  args = list()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A vector of data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Either a character (<code>"kde"</code>, <code>"norm"</code>, <code>"histogram"</code>, <code>"freqpoly"</code>, or <code>"fun"</code>) or <code style="white-space: pre;">⁠method_*_1d()⁠</code> function.
+See the "The <code>method</code> argument" section below for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>probs</code></td>
+<td>
+<p>Probabilities to compute HDRs for.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Resolution of grid representing estimated density and HDRs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>range</code></td>
+<td>
+<p>Range of grid representing estimated density and HDRs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hdr_membership</code></td>
+<td>
+<p>Should HDR membership of data points (<code>x</code>) be computed?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fun</code></td>
+<td>
+<p>Optional, a probability density function, must be vectorized in its first argument.
+See the "The <code>fun</code> argument" section below for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>args</code></td>
+<td>
+<p>Optional, a list of arguments to be provided to <code>fun</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>get_hdr_1d</code> returns a list with elements <code>df_est</code> (<code>data.frame</code>), <code>breaks</code> (named <code>numeric</code>), and <code>data</code> (<code>data.frame</code>).
+</p>
+
+<ul>
+<li> <p><code>df_est</code>: the estimated HDRs and density evaluated on the grid defined by <code>range</code> and <code>n</code>.
+The column of estimated HDRs (<code>df_est$hdr</code>) is a numeric vector with values from <code>probs</code>.
+The columns <code>df_est$fhat</code> and <code>df_est$fhat_discretized</code> correspond to the estimated density
+on the original scale and rescaled to sum to 1, respectively.
+</p>
+</li>
+<li> <p><code>breaks</code>: the heights of the estimated density (<code>df_est$fhat</code>) corresponding to the HDRs specified by <code>probs</code>.
+Will always have additional element <code>Inf</code> representing the cutoff for the 100% HDR.
+</p>
+</li>
+<li> <p><code>data</code>: the original data provided in the <code>data</code> argument.
+If <code>hdr_membership</code> is set to <code>TRUE</code>, this includes a column (<code>data$hdr_membership</code>)
+with the HDR corresponding to each data point.
+</p>
+</li>
+</ul>
+<h3>The <code>method</code> argument</h3>
+
+<p>The density estimator used to estimate the HDRs is specified with the <code>method</code> argument.
+The simplest way to specify an estimator is to provide a character value to <code>method</code>,
+for example <code>method = "kde"</code> specifies a kernel density estimator.
+However, this specification is limited to the default behavior of the estimator.
+</p>
+<p>Instead, it is possible to provide a function call, for example: <code>method = method_kde_1d()</code>.
+This is slightly different from the function calls provided in <code>get_hdr()</code>, note the <code style="white-space: pre;">⁠_1d⁠</code> suffix.
+In many cases, these functions accept parameters governing the density estimation procedure.
+Here, <code>method_kde_1d()</code> accepts several parameters related to the choice of kernel.
+For details, see <code>?method_kde_1d</code>.
+Every method of univariate density estimation implemented has such corresponding <code style="white-space: pre;">⁠method_*_1d()⁠</code> function,
+each with an associated help page.
+</p>
+<p>Note: <code>geom_hdr_rug()</code> and other layer functions also have <code>method</code> arguments which behave in the same way.
+For more details on the use and implementation of the <code style="white-space: pre;">⁠method_*_1d()⁠</code> functions,
+see <code>vignette("method", "ggdensity")</code>.
+</p>
+
+
+<h3>The <code>fun</code> argument</h3>
+
+<p>If <code>method</code> is set to <code>"fun"</code>, <code>get_hdr_1d()</code> expects a univariate probability
+density function to be specified with the <code>fun</code> argument.
+It is required that <code>fun</code> be a function of at least one argument (<code>x</code>).
+Beyond this first argument, <code>fun</code> can have arbitrarily many arguments;
+these can be set in <code>get_hdr_1d()</code> as a named list via the <code>args</code> parameter.
+</p>
+<p>Note: <code>get_hdr_1d()</code> requires that <code>fun</code> be vectorized in <code>x</code>.
+For an example of an appropriate choice of <code>fun</code>, see the final example below.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">x &lt;- rnorm(1e3)
+
+# Two ways to specify `method`
+get_hdr_1d(x, method = "kde")
+get_hdr_1d(x, method = method_kde_1d())
+
+## Not run: 
+
+# If parenthesis are omitted, `get_hdr_1d()` errors
+get_hdr_1d(df, method = method_kde_1d)
+
+# If the `_1d` suffix is omitted, `get_hdr_1d()` errors
+get_hdr_1d(x, method = method_kde())
+
+## End(Not run)
+
+# Adjust estimator parameters with arguments to `method_kde_1d()`
+get_hdr_1d(x, method = method_kde_1d(kernel = "triangular"))
+
+# Estimate different HDRs with `probs`
+get_hdr_1d(x, method = method_kde_1d(), probs = c(.975, .6, .2))
+
+# Compute "population" HDRs of specified univariate pdf with `method = "fun"`
+f &lt;- function(x, sd = 1) dnorm(x, sd = sd)
+get_hdr_1d(method = "fun", fun = f, range = c(-5, 5))
+get_hdr_1d(method = "fun", fun = f, range = c(-5, 5), args = list(sd = .5))
+
+
+</code></pre>
+
+
+</div>

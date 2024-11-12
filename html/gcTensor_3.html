@@ -1,0 +1,224 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GCTF</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Generalised Coupled Tensor Factorisation (GCTF)
+</h2>
+
+<h3>Description</h3>
+
+<p>The input data is assumed to be a list containing multiple matrices.
+GCTF decomposes N matrices (Xs) to M low-dimensional factor matices (Zs).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GCTF(X, R, M=NULL, pseudocount=.Machine$double.eps, initZ=NULL, fix=NULL, Ranks, Beta=1,
+    num.iter=30, thr=1E-10, verbose=FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>A list containing N data matrices.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+
+<p>Coupling matrix which has N-rows and M-columns. N is the number of data matrices and M is the number of factor matrices decomposed by GCTF algorithm. If i-th data (X_i) has j-th factor matrix (Z_j), 1 is filled in R[i,j], otherwise 0.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+
+<p>A list containing N mask matrices. If in n-th data matrix, i-th row/j-th column is missing value, 0 is filled, otherwise 0. Default value is NULL, which means all the values are filled with 1 (No missing value).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pseudocount</code></td>
+<td>
+
+<p>The pseudo count to avoid zero division, when the element is zero (Default: Machine Epsilon).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initZ</code></td>
+<td>
+
+<p>A M-length list, which is the initial values of factor matrix Z. If not specified, random matrices are generated and used (Default: NULL).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fix</code></td>
+<td>
+
+<p>Whether each factor matrix Z is updated in each iteration step
+(Default: NULL, which means all Zs are updated).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ranks</code></td>
+<td>
+
+<p>A M-length list, which is the correspondence between the dimension of data matrices and the lower dimension of factor matrices.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Beta</code></td>
+<td>
+
+<p>The parameter of Beta-divergence. Beta=0, 1, and 2 each mean Euclid Distance, KL-divergence, and Itakura-Saito divergence between the data matrices and reconstructed matrices by factor matrices (Default: 1).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num.iter</code></td>
+<td>
+
+<p>The number of interation step (Default: 30).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thr</code></td>
+<td>
+
+<p>When error change rate is lower than thr, the iteration is terminated
+(Default: 1E-10).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>If verbose == TRUE, Error change rate is generated in console window (Default: FALSE).
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>U : A matrix which has N-rows and J-columns (J &lt; N, M).
+V : A matrix which has M-rows and J-columns (J &lt; N, M).
+J : The number of dimension (J &lt; N, M).
+RecError : The reconstruction error between data tensor and reconstructed
+tensor from U and V.
+TrainRecError : The reconstruction error calculated by training set
+(observed values specified by M).
+TestRecError : The reconstruction error calculated by test set
+(missing values specified by M).
+TrainRecError : The reconstruction error calculated by training set
+(observed values specified by M).
+TestRecError : The reconstruction error calculated by test set
+(missing values specified by M).
+RelChange : The relative change of the error.
+Trial : All the results of the trials to estimate the rank.
+Runtime : The number of the trials to estimate the rank.
+RankMethod : The rank estimation method.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Koki Tsuyuzaki</p>
+
+
+<h3>References</h3>
+
+<p>Y. Kenan Yilmaz, et. al., (2011). Generalised Coupled Tensor Factorisation,  NIPS
+</p>
+<p>Beyza Ermis, et. al., (2015). Link prediction in heterogeneous data via generalized coupled tensor factorization, Data Mining and Knowledge Discovery
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">  if(interactive()){
+  # Simulation Datasets
+  set.seed(123)
+
+  # I times J times K
+  X1 &lt;- rand_tensor(modes = c(4, 5, 6))
+  X1 &lt;- X1@data^2
+  names(dim(X1)) &lt;- c("I", "J", "K")
+
+  # I times P
+  X2 &lt;- matrix(runif(4 * 7), nrow=4, ncol=7)
+  names(dim(X2)) &lt;- c("I", "M")
+
+  # J times Q
+  X3 &lt;- matrix(runif(5 * 8), nrow=5, ncol=8)
+  names(dim(X3)) &lt;- c("J", "N")
+
+  # Coupled Tensor/Matrix
+  X &lt;- list(X1 = X1, X2 = X2, X3 = X3)
+
+  # Coupling matrix R (CP)
+  R_CP &lt;- rbind(
+      c(1,1,1,0,0),
+      c(1,0,0,1,0),
+      c(0,1,0,0,1)
+  )
+  rownames(R_CP) &lt;- paste0("X", seq(3))
+  colnames(R_CP) &lt;- LETTERS[seq(5)]
+
+  # Size of Factor matrices (CP)
+  Ranks_CP &lt;- list(
+      A=list(I=4, r=3),
+      B=list(J=5, r=3),
+      C=list(K=6, r=3),
+      D=list(M=7, r=3),
+      E=list(N=8, r=3))
+
+  # Coupling matrix R (Tucker)
+  R_Tucker &lt;- rbind(
+      c(1,1,1,1,0,0),
+      c(1,0,0,0,1,0),
+      c(0,1,0,0,0,1)
+  )
+  rownames(R_Tucker) &lt;- paste0("X", seq(3))
+  colnames(R_Tucker) &lt;- LETTERS[seq(6)]
+
+  # Size of Factor matrices (Tucker)
+  Ranks_Tucker &lt;- list(
+      A=list(I=4, p=3),
+      B=list(J=5, q=4),
+      C=list(K=6, r=3),
+      D=list(p=3, q=4, r=3),
+      E=list(M=7, p=3),
+      F=list(N=8, q=4))
+
+  # CP
+  out.CP_EUC &lt;- GCTF(X, R_CP, Ranks=Ranks_CP, Beta=0, verbose=TRUE)
+  out.CP_KL &lt;- GCTF(X, R_CP, Ranks=Ranks_CP, Beta=1, verbose=TRUE)
+  out.CP_IS &lt;- GCTF(X, R_CP, Ranks=Ranks_CP, Beta=2, verbose=TRUE)
+
+  # Tucker
+  out.Tucker_EUC &lt;- GCTF(X, R_Tucker, Ranks=Ranks_Tucker, Beta=0, verbose=TRUE)
+  out.Tucker_KL &lt;- GCTF(X, R_Tucker, Ranks=Ranks_Tucker, Beta=1, verbose=TRUE)
+  out.Tucker_IS &lt;- GCTF(X, R_Tucker, Ranks=Ranks_Tucker, Beta=2, verbose=TRUE)
+  }
+</code></pre>
+
+
+</div>

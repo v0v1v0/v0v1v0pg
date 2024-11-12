@@ -1,0 +1,118 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>levinson</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Durbin-Levinson Recursion</h2>
+
+<h3>Description</h3>
+
+<p>Use the Durbin-Levinson algorithm to compute the coefficients of an
+autoregressive linear process.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">levinson(acf, p = NROW(acf))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>acf</code></td>
+<td>
+<p>autocorrelation function for lags 0 to <code>p</code>, specified as a
+vector or matrix. If r is a matrix, the function finds the coefficients for
+each column of <code>acf</code> and returns them in the rows of <code>a</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>model order, specified as a positive integer. Default:
+<code>NROW(acf) - 1</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>levinson</code> uses the Durbin-Levinson algorithm to solve:
+</p>
+<p style="text-align: center;"><code class="reqn">toeplitz(acf(1:p)) * x = -acf(2:p+1)</code>
+</p>
+<p> The solution <code>c(1, x)</code> is
+the denominator of an all pole filter approximation to the signal <code>x</code>
+which generated the autocorrelation function acf.
+</p>
+<p>From ref [2]: Levinson recursion or Levinson–Durbin recursion is a procedure
+in linear algebra to recursively calculate the solution to an equation
+involving a Toeplitz matrix. Other methods to process data include Schur
+decomposition and Cholesky decomposition. In comparison to these, Levinson
+recursion (particularly split Levinson recursion) tends to be faster
+computationally, but more sensitive to computational inaccuracies like
+round-off errors.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>list</code> containing the following elements:
+</p>
+
+<dl>
+<dt>a</dt>
+<dd>
+<p>vector or matrix containing <code>(p+1)</code> autoregression
+coefficients. If <code>x</code> is a matrix, then each row of a corresponds to
+a column of <code>x</code>. <code>a</code> has <code>p + 1</code> columns.</p>
+</dd>
+<dt>e</dt>
+<dd>
+<p>white noise input variance, returned as a vector. If <code>x</code> is
+a matrix, then each element of e corresponds to a column of <code>x</code>.</p>
+</dd>
+<dt>k</dt>
+<dd>
+<p>Reflection coefficients defining the lattice-filter embodiment
+of the model returned as vector or a matrix. If <code>x</code> is a matrix,
+then each column of <code>k</code> corresponds to a column of <code>x</code>.
+<code>k</code> has <code>p</code> rows.</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Paul Kienzle, <a href="mailto:pkienzle@users.sf.net">pkienzle@users.sf.net</a>,<br>
+Peter V. Lanspeary, <a href="mailto:pvl@mecheng.adelaide.edu.au">pvl@mecheng.adelaide.edu.au</a>.<br>
+Conversion to R by Geert van Boxtel, <a href="mailto:G.J.M.vanBoxtel@gmail.com">G.J.M.vanBoxtel@gmail.com</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>[1] Steven M. Kay and Stanley Lawrence Marple Jr. (1981).
+Spectrum analysis – a modern perspective. Proceedings of the IEEE, Vol 69,
+1380-1419.<br>
+[2] <a href="https://en.wikipedia.org/wiki/Levinson_recursion">https://en.wikipedia.org/wiki/Levinson_recursion</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Estimate the coefficients of an autoregressive process given by
+## x(n) = 0.1x(n-1) - 0.8x(n-2) - 0.27x(n-3) + w(n).
+a &lt;- c(1, 0.1, -0.8, -0.27)
+v &lt;- 0.4
+w &lt;- sqrt(v) * rnorm(15000)
+x &lt;- filter(1, a, w)
+xc &lt;- xcorr(x, scale = 'biased')
+acf &lt;- xc$R[-which(xc$lags &lt; 0)]
+lev &lt;- levinson(acf, length(a) - 1)
+
+</code></pre>
+
+
+</div>

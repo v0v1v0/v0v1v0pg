@@ -1,0 +1,190 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tfestimate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Transfer Function Estimate</h2>
+
+<h3>Description</h3>
+
+<p>Finds a transfer function estimate for signals.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tfestimate(
+  x,
+  window = nextpow2(sqrt(NROW(x))),
+  overlap = 0.5,
+  nfft = ifelse(isScalar(window), window, length(window)),
+  fs = 1,
+  detrend = c("long-mean", "short-mean", "long-linear", "short-linear", "none")
+)
+
+tfe(
+  x,
+  window = nextpow2(sqrt(NROW(x))),
+  overlap = 0.5,
+  nfft = ifelse(isScalar(window), window, length(window)),
+  fs = 1,
+  detrend = c("long-mean", "short-mean", "long-linear", "short-linear", "none")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>input data, specified as a numeric vector or matrix. In case of a
+vector it represents a single signal; in case of a matrix each column is a
+signal.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>window</code></td>
+<td>
+<p>If <code>window</code> is a vector, each segment has the same length
+as <code>window</code> and is multiplied by <code>window</code> before (optional)
+zero-padding and calculation of its periodogram. If <code>window</code> is a
+scalar, each segment has a length of <code>window</code> and a Hamming window is
+used. Default: <code>nextpow2(sqrt(length(x)))</code> (the square root of the
+length of <code>x</code> rounded up to the next power of two). The window length
+must be larger than 3.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>overlap</code></td>
+<td>
+<p>segment overlap, specified as a numeric value expressed as a
+multiple of window or segment length. 0 &lt;= overlap &lt; 1. Default: 0.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nfft</code></td>
+<td>
+<p>Length of FFT, specified as an integer scalar. The default is the
+length of the <code>window</code> vector or has the same value as the scalar
+<code>window</code> argument.  If <code>nfft</code> is larger than the segment length,
+(seg_len), the data segment is padded <code>nfft - seg_len</code> zeros. The
+default is no padding. Nfft values smaller than the length of the data
+segment (or window) are ignored. Note that the use of padding to increase
+the frequency resolution of the spectral estimate is controversial.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fs</code></td>
+<td>
+<p>sampling frequency (Hertz), specified as a positive scalar.
+Default: 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>detrend</code></td>
+<td>
+<p>character string specifying detrending option; one of:
+</p>
+
+<dl>
+<dt><code>"long-mean"</code></dt>
+<dd>
+<p>remove the mean from the data before
+splitting into segments (default)</p>
+</dd>
+<dt><code>"short-mean"</code></dt>
+<dd>
+<p>remove the mean value of each segment</p>
+</dd>
+<dt><code>"long-linear"</code></dt>
+<dd>
+<p>remove linear trend from the data before
+splitting into segments</p>
+</dd>
+<dt><code>"short-linear"</code></dt>
+<dd>
+<p>remove linear trend from each segment</p>
+</dd>
+<dt><code>"none"</code></dt>
+<dd>
+<p>no detrending</p>
+</dd>
+</dl>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>tfestimate</code> uses Welch's averaged periodogram method.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list containing the following elements:
+</p>
+
+<dl>
+<dt><code>freq</code></dt>
+<dd>
+<p>vector of frequencies at which the spectral variables
+are estimated. If <code>x</code> is numeric, power from negative frequencies is
+added to the positive side of the spectrum, but not at zero or Nyquist
+(fs/2) frequencies. This keeps power equal in time and spectral domains.
+If <code>x</code> is complex, then the whole frequency range is returned.</p>
+</dd>
+<dt><code>trans</code></dt>
+<dd>
+<p>NULL for univariate series. For multivariate series,
+a matrix containing the transfer function estimates between different
+series. Column <code class="reqn">i + (j - 1) * (j - 2)/2 </code> of <code>coh</code> contains the
+cross-spectral estimates between columns <code class="reqn">i</code> and <code class="reqn">j</code> of <code class="reqn">x</code>,
+where <code class="reqn">i &lt; j</code>.</p>
+</dd>
+</dl>
+<h3>Note</h3>
+
+<p>The function <code>tfestimate</code> (and its deprecated alias <code>tfe</code>)
+is a wrapper for the function <code>pwelch</code>, which is more complete and
+more flexible.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Peter V. Lanspeary, <a href="mailto:pvl@mecheng.adelaide.edu.au">pvl@mecheng.adelaide.edu.au</a>.<br>
+Conversion to R by Geert van Boxtel, <a href="mailto:G.J.M.vanBoxtel@gmail.com">G.J.M.vanBoxtel@gmail.com</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>pwelch</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">fs &lt;- 1000
+f &lt;- 250
+t &lt;- seq(0, 1 - 1/fs, 1/fs)
+s1 &lt;- sin(2 * pi * f * t) + runif(length(t))
+s2 &lt;- sin(2 * pi * f * t - pi / 3) + runif(length(t))
+rv &lt;- tfestimate(cbind(s1, s2), fs = fs)
+plot(rv$freq, 10*log10(abs(rv$trans)), type="l", xlab = "Frequency",
+ ylab = "Tranfer Function Estimate (dB)", main = colnames((rv$trans)))
+
+h &lt;- fir1(30, 0.2, window = rectwin(31))
+x &lt;- rnorm(16384)
+y &lt;- filter(h, x)
+tfe &lt;- tfestimate(cbind(x, y), 1024, fs = 500)
+plot(tfe$freq, 10*log10(abs(tfe$trans)), type="l", xlab = "Frequency",
+  ylab = "Tranfer Function Estimate (dB)", main = colnames((tfe$trans)))
+
+</code></pre>
+
+
+</div>

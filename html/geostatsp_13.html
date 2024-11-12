@@ -1,0 +1,177 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>profLlgm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Joint confidence regions
+</h2>
+
+<h3>Description</h3>
+
+<p>Calculates profile likelihoods and approximate joint confidence regions
+for covariance parameters in linear geostatistical models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">profLlgm(fit, mc.cores = 1, ...)
+informationLgm(fit,  ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+
+<p>Output from the <code>lgm</code> function
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.cores</code></td>
+<td>
+
+<p>Passed to <code>mclapply</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>For <code>profLlgm</code>, one or more vectors of parameter values 
+at which the profile likelihood will be calculated, with names 
+corresponding to elements of <code>fit$param</code>.  For <code>informationLgm</code>,
+arguments passed to  <code>hessian</code>
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>one or more vectors</code></td>
+<td>
+<p>of parameter values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logL</code></td>
+<td>
+
+<p>A vector, matrix, or multi-dimensional array of profile likelihood values for every 
+combination of parameter values supplied.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>full</code></td>
+<td>
+<p>Data frame with profile likelihood values and estimates of 
+model parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob,breaks</code></td>
+<td>
+<p>vector of probabilities and chi-squared derived 
+likelihood values associated with those probabilities</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MLE,maxLogL</code></td>
+<td>
+<p>Maximum Likelihood Estimates of parameters and 
+log likelihood evaluated at these values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>basepars</code></td>
+<td>
+<p>combination of starting values for parameters re-estimated for each
+profile likelihood and values of parameters which are fixed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col</code></td>
+<td>
+<p>vector of colours with one element fewer than the number of probabilities</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci,ciLong</code></td>
+<td>
+<p>when only one parameter is varying, a matrix of confidence intervals (in both wide and long format)
+is returned.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Patrick Brown
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>lgm</code>, <code>mcmapply</code>, <code>hessian</code> 
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# this example is time consuming
+# the following 'if' statement ensures the CRAN
+# computer doesn't run it
+if(interactive() | Sys.info()['user'] =='patrick') {
+
+library('geostatsp')
+data('swissRain')
+swissRain = unwrap(swissRain)
+swissAltitude = unwrap(swissAltitude)
+
+swissFit = lgm(data=swissRain, formula=rain~ CHE_alt,
+		grid=10, covariates=swissAltitude,
+		shape=1,  fixShape=TRUE, 
+		boxcox=0.5, fixBoxcox=TRUE, 
+		aniso=TRUE,reml=TRUE,
+		param=c(anisoAngleDegrees=37,anisoRatio=7.5,
+		range=50000))
+
+
+x=profLlgm(swissFit,
+		anisoAngleDegrees=seq(30, 43 , len=4)
+)
+
+
+plot(x[[1]],x[[2]], xlab=names(x)[1],
+		ylab='log L',
+		ylim=c(min(x[[2]]),x$maxLogL),
+		type='n')
+abline(h=x$breaks[-1],
+		col=x$col,
+		lwd=1.5)
+axis(2,at=x$breaks,labels=x$prob,line=-1.2,
+	tick=FALSE,
+		las=1,padj=1.2,hadj=0)
+abline(v=x$ciLong$par,
+		lty=2,
+		col=x$col[as.character(x$ciLong$prob)])
+lines(x[[1]],x[[2]], col='black')
+
+
+
+}
+
+</code></pre>
+
+
+</div>

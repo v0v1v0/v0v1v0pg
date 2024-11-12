@@ -1,0 +1,182 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>RFsimulate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulation of Random Fields</h2>
+
+<h3>Description</h3>
+
+<p>This function simulates conditional and unconditional Gaussian random fields, calling the function in the RandomFields package of the same name.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S4 method for signature 'ANY,SpatRaster'
+RFsimulate(model, x,	data=NULL,
+ err.model=NULL, n = 1, ...)
+## S4 method for signature 'numeric,SpatRaster'
+RFsimulate(model, x,data=NULL,
+ err.model=NULL, n = 1, ...)
+## S4 method for signature 'numeric,SpatVector'
+RFsimulate(model, x, data=NULL, 
+err.model=NULL, n = 1, ...)
+## S4 method for signature 'RMmodel,SpatRaster'
+RFsimulate(model, x, data=NULL, 
+ err.model=NULL, n = 1, ...)
+## S4 method for signature 'RMmodel,SpatVector'
+RFsimulate(model, x, data=NULL, 
+ err.model=NULL, n = 1, ...)
+## S4 method for signature 'matrix,SpatRaster'
+RFsimulate(model, x, 	data=NULL, 
+ err.model=NULL, n = nrow(model), ...)
+## S4 method for signature 'matrix,SpatVector'
+RFsimulate(model, x,	data=NULL, 
+	err.model=NULL, n = nrow(model), ...)
+## S4 method for signature 'data.frame,ANY'
+RFsimulate(model, x,	data=NULL, 
+	err.model=NULL, n = nrow(model), ...)
+modelRandomFields(param, includeNugget=FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>object of class 
+<code>RMmodel</code>, a vector of named model
+parameters, or a matrix where each column is a model parameter
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Object of type <code>SpatRaster</code> or <code>SpatVector</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>For conditional simulation and random imputing only.
+If <code>data</code> is missing, unconditional
+simulation is performed. Object of class
+<code>SpatVector</code>;
+coordinates and response values of
+measurements in case that conditional simulation is to
+be performed
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>err.model</code></td>
+<td>
+<p>For conditional simulation and random imputing only.<br>
+Usually <code>err.model=RMnugget(var=var)</code>, or not given at all
+(error-free measurements).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>number of realizations to generate.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>for advanced use:
+further options and control parameters for the simulation
+that are passed to and processed by 
+<code>RFoptions</code>in the <code>RandomFields</code>package 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>A vector of named parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>includeNugget</code></td>
+<td>
+<p>If <code>FALSE</code>, the <code>nugget</code> parameter is ignored. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If <code>model</code> is a matrix, a different set of parameters is used for each simulation.  If 
+<code>data</code> has the same number of columns as <code>model</code> has rows, 
+a different column <code>i</code> is used with parameters in row <code>i</code>.   
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of the same class as <code>x</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Patrick E. Brown <a href="mailto:patrick.brown@utoronto.ca">patrick.brown@utoronto.ca</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>RFsimulate</code>in the <code>RandomFields</code>package
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library('geostatsp')
+
+# exclude this line to use the RandomFields package
+options(useRandomFields = FALSE)
+
+model1 &lt;- c(var=5, range=1,shape=0.5)
+
+
+myraster = rast(nrows=20,ncols=30,extent = ext(0,6,0,4), 
+	crs="+proj=utm +zone=17 +datum=NAD27 +units=m +no_defs")
+
+set.seed(0) 
+
+simu &lt;- RFsimulate(model1, x=myraster, n=3)
+
+plot(simu[['sim2']])
+
+xPoints = suppressWarnings(as.points(myraster))
+# conditional simulation
+firstSample = RFsimulate(
+	c(model1, nugget=1), 
+	x=xPoints[seq(1,ncell(myraster), len=100), ],
+	n=3
+)
+
+secondSample = RFsimulate(
+	model = cbind(var=5:3, range=seq(0.05, 0.25, len=3), shape=seq(0.5, 1.5, len=3)),
+  err.model = 1,
+	x= myraster,
+	data=firstSample,n=4
+)
+
+plot(secondSample)
+
+
+
+</code></pre>
+
+
+</div>

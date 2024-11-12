@@ -1,0 +1,144 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tidy.rms</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Tidy a(n) rms model object</h2>
+
+<h3>Description</h3>
+
+<p>Tidy summarizes information about the components of a model. A model component 
+might be a single term in a regressions. Exactly what tidy considers to be a model 
+component varies across models but is usually self-evident. If a model has several 
+distinct types of components, you will need to specify which components to return.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'rms'
+tidy(
+  x,
+  conf.int = FALSE,
+  conf.level = 0.95,
+  exponentiate = FALSE,
+  ...,
+  .add_print_p_and_stat_values = getOption("Greg.tidy_add_p_and_stat_values", default =
+    FALSE)
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An rms model, e.g. ['rms::cph()'], ['rms::lrm()']</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.int</code></td>
+<td>
+<p>Logical indicating whether or not to include a confidence
+interval in the tidied output. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.level</code></td>
+<td>
+<p>The confidence level to use for the confidence interval
+if <code>conf.int = TRUE</code>. Must be strictly greater than 0 and less than 1.
+Defaults to 0.95, which corresponds to a 95 percent confidence interval.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exponentiate</code></td>
+<td>
+<p>Logical indicating whether or not to exponentiate the
+the coefficient estimates. This is typical for logistic and multinomial
+regressions, but a bad idea if there is no log or logit link. Defaults
+to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments. Not used. Needed to match generic
+signature only. <strong>Cautionary note:</strong> Misspelled arguments will be
+absorbed in <code>...</code>, where they will be ignored. If the misspelled
+argument has a default value, the default value will be used.
+For example, if you pass <code>conf.lvel = 0.9</code>, all computation will
+proceed using <code>conf.level = 0.95</code>. Two exceptions here are:
+</p>
+
+<ul>
+<li> <p><code>tidy()</code> methods will warn when supplied an <code>exponentiate</code> argument if
+it will be ignored.
+</p>
+</li>
+<li> <p><code>augment()</code> methods will warn when supplied a <code>newdata</code> argument if it
+will be ignored.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.add_print_p_and_stat_values</code></td>
+<td>
+<p>For estimating print values there is a workaround that
+relies on capturing output from the 'print(x)' and is not considered safe.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This is a quick fix for addressing the lack of 'rms'-compatibility with the 'broom'
+package, see [broom issue 30](https://github.com/tidymodels/broom/issues/30).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A tibble::tibble() with columns:
+- 'term' The name of the regression term.
+- 'factor' The factor if the term is a character/factor term.
+- 'column_term' The full name as in the original input data
+- 'estimate'	The estimated value of the regression term.
+- 'conf.high'	Upper bound on the confidence interval for the estimate.c
+- 'conf.low'	Lower bound on the confidence interval for the estimate.
+- 'p.value' The two-sided p-value associated with the observed statistic.
+- 'statistic' The value of a statistic to use in a hypothesis that the regression term is non-zero.
+- 'std.error' The standard error of the regression term.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(rms)
+library(broom)
+library(tidyverse)
+
+set.seed(10)
+cov &lt;- tibble(x1 = runif(200)) |&gt; 
+  mutate(x_bool_fact = if_else(x1 &gt; 0.5,
+                               "Yes",
+                               sample(c("Yes", "No"), size = n(), replace = TRUE)),
+         x_multi_fact = sample(c("Strange", "Factor", "Names"), size = n(), replace = TRUE),
+         ftime = rexp(n()),
+         fstatus = sample(0:1, size = n(), replace = TRUE),
+         x_good_predictor = fstatus * runif(n()))
+
+ddist &lt;- datadist(cov)
+options(datadist = "ddist")
+
+cph_fit &lt;- cph(Surv(ftime, fstatus) ~ x1 + x_bool_fact + 
+                 x_multi_fact + x_good_predictor, data = cov)
+tidy(cph_fit)
+</code></pre>
+
+
+</div>

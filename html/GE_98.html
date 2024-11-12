@@ -1,0 +1,327 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemOLG_StochasticSequential_3_3</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A 3-by-3 OLG Stochastic Sequential General Equilibrium Model</h2>
+
+<h3>Description</h3>
+
+<p>A 3-by-3 OLG stochastic sequential general equilibrium model.
+There are two-period lived consumers and a type of firm. There are three types of commodities, i.e. product, labor and security (i.e. paper asset, store of value).
+</p>
+<p>In each period there are a young (i.e. age1), an old (i.e. age2) and a firm.
+The young supplies a unit of labor and the old supplies a unit of security.
+</p>
+<p>Consumers only consume products. The young buys the security to save.
+</p>
+<p>The firm inputs labor to produce the product.
+Productivity is random.
+The amount of labor required to produce 1 unit of product is equal to 0.1 or 0.2,
+both of which occur with equal probability.
+</p>
+<p>All labor is used in production.
+Therefore, it can be known that the product output in each period
+(that is, the product supply in the next period) is equal to 10 or 5,
+that is to say, there are two natural states with equal probability of occurrence in each period: good state and bad state.
+The states are denoted as a and b, respectively.
+There are then four cases of natural states experienced by a consumer in two periods: aa, bb, ab and ba.
+</p>
+<p>Take the product as numeraire.
+The ratio of the security price in the latter period to the previous period of the two periods is the gross rate of return.
+The gross rates of return on the savings of the young in the four cases is denoted as Raa, Rbb, Rab and Rba, respectively.
+</p>
+<p>The utility function of the young is -0.5*x1^-1 - 0.25*x2^-1 - 0.25*x3^-1,
+where x1, x2 and x3 are the (expected) consumption in the current period and the next two natural states, respectively.
+It can be seen that the intertemporal substitution elasticity and the inter-natural-state substitution elasticity in the utility function are both 0.5,
+that is, the relative risk aversion coefficient is 2.
+</p>
+<p>In each period, the young determines the saving rate based on the expected gross rates of return on the security and the utility function.
+</p>
+<p>In each period the young adopts the following anticipation method for the gross rate of return of the savings: First, determine the two types of gross rates of return (Raa, Rab or Rbb, Rba) that need to be predicted according to the current state. Both interest rates are then forecasted using the adaptive expectation method.
+</p>
+<p>A spot market clearing path (alias instantaneous equilibrium path) and a disequilibrium path will be calculated below.
+The spot market clearing path will converge to the stochastic equilibrium consisting of two equilibrium states, and the disequilibrium paths not.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemOLG_StochasticSequential_3_3(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# a function to find the optimal saving rate given the expected gross rates of return.
+osr &lt;- function(Ra, Rb, es = 0.5, beta = c(0.5, 0.25, 0.25)) {
+  sigma &lt;- 1 - 1 / es
+  ((beta[2] * Ra^sigma / beta[1] + beta[3] * Rb^sigma / beta[1])^-es + 1)^-1
+}
+
+dst.firm &lt;- node_new(
+  "prod",
+  type = "Leontief", a = 0.2,
+  "lab"
+)
+
+dst.age1 &lt;-
+  node_new("util",
+    type = "FIN", rate = c(1, 1),
+    "prod", "secy",
+    last.price = c(1, 1, 1),
+    last.output = 10,
+    Raa = 1, Rbb = 1, Rab = 1, Rba = 1,
+    REbb = 1, REba = 1, REab = 1, REaa = 1,
+    sr.ts.1 = vector(),
+    sr.ts.2 = vector()
+  )
+
+dst.age2 &lt;-
+  node_new("util",
+    type = "Leontief", a = 1,
+    "prod"
+  )
+
+policyStochasticTechnology &lt;- function(time, A) {
+  A[[1]]$a &lt;- sample(c(0.1, 0.2), 1)
+}
+
+policySaving &lt;- function(time, A, state) {
+  output &lt;- state$S[1, 1]
+
+  lambda &lt;- 0.9
+
+  if (output &lt; 8) {
+    A[[2]]$REba &lt;- lambda * tail(A[[2]]$Rba, 1) + (1 - lambda) * A[[2]]$REba
+    A[[2]]$REbb &lt;- lambda * tail(A[[2]]$Rbb, 1) + (1 - lambda) * A[[2]]$REbb
+
+    saving.rate &lt;- osr(A[[2]]$REba, A[[2]]$REbb)
+    A[[2]]$sr.ts.1 &lt;- c(A[[2]]$sr.ts.1, saving.rate)
+  }
+
+  if (output &gt;= 8) {
+    A[[2]]$REaa &lt;- lambda * tail(A[[2]]$Raa, 1) + (1 - lambda) * A[[2]]$REaa
+    A[[2]]$REab &lt;- lambda * tail(A[[2]]$Rab, 1) + (1 - lambda) * A[[2]]$REab
+
+    saving.rate &lt;- osr(A[[2]]$REaa, A[[2]]$REab)
+    A[[2]]$sr.ts.2 &lt;- c(A[[2]]$sr.ts.2, saving.rate)
+  }
+
+  A[[2]]$rate &lt;- c(1, saving.rate / (1 - saving.rate))
+}
+
+
+policyRecord &lt;- function(time, A, state) {
+  last.p &lt;- A[[2]]$last.price
+  p &lt;- state$p / state$p[1]
+
+  last.output &lt;- A[[2]]$last.output
+  output &lt;- A[[2]]$last.output &lt;- state$S[1, 1]
+
+  if ((last.output &lt; 8) &amp;&amp; (output &lt; 8)) A[[2]]$Rbb &lt;- c(A[[2]]$Rbb, p[3] / last.p[3])
+  if ((last.output &lt; 8) &amp;&amp; (output &gt;= 8)) A[[2]]$Rba &lt;- c(A[[2]]$Rba, p[3] / last.p[3])
+  if ((last.output &gt;= 8) &amp;&amp; (output &lt; 8)) A[[2]]$Rab &lt;- c(A[[2]]$Rab, p[3] / last.p[3])
+  if ((last.output &gt;= 8) &amp;&amp; (output &gt;= 8)) A[[2]]$Raa &lt;- c(A[[2]]$Raa, p[3] / last.p[3])
+
+  A[[2]]$last.price &lt;- p
+}
+
+dstl &lt;- list(dst.firm, dst.age1, dst.age2)
+
+B &lt;- matrix(c(
+  1, 0, 0,
+  0, 0, 0,
+  0, 0, 0
+), 3, 3, TRUE)
+
+S0Exg &lt;- matrix(c(
+  NA, NA, NA,
+  NA, 1, NA,
+  NA, NA, 1
+), 3, 3, TRUE)
+
+## a spot market clearing path.
+set.seed(1)
+ge &lt;- sdm2(
+  A = dstl, B = B, S0Exg = S0Exg,
+  names.commodity = c("prod", "lab", "secy"),
+  names.agent = c("firm", "age1", "age2"),
+  numeraire = "prod",
+  policy = list(
+    policyStochasticTechnology,
+    policySaving,
+    policyMarketClearingPrice,
+    policyRecord
+  ),
+  z0 = c(5, 1, 1),
+  maxIteration = 1,
+  numberOfPeriods = 40,
+  ts = TRUE
+)
+
+matplot(ge$ts.z, type = "o", pch = 20)
+matplot(ge$ts.p, type = "o", pch = 20)
+
+## a disequilibrium path.
+set.seed(1)
+de &lt;- sdm2(
+  A = dstl, B = B, S0Exg = S0Exg,
+  names.commodity = c("prod", "lab", "secy"),
+  names.agent = c("firm", "age1", "age2"),
+  numeraire = "prod",
+  policy = list(
+    policyStochasticTechnology,
+    policySaving,
+    policyRecord
+  ),
+  maxIteration = 1,
+  numberOfPeriods = 400,
+  ts = TRUE
+)
+
+matplot(de$ts.z, type = "o", pch = 20)
+matplot(de$ts.p, type = "o", pch = 20)
+
+## an equilibrium model for solving the optimal saving
+# rate based on the expected gross rates of return.
+Ra &lt;- 1
+Rb &lt;- 0.4
+
+ge &lt;- sdm2(
+  A = function(state) {
+    a.bank &lt;- c(1, 0, 0)
+    a.consumer &lt;- CES_A(
+      sigma = (1 - 1 / 0.5), alpha = 1,
+      Beta = c(0.5, 0.25, 0.25), p = state$p
+    )
+    cbind(a.bank, a.consumer)
+  },
+  B = matrix(c(
+    0, 0,
+    Ra, 0,
+    Rb, 0
+  ), 3, 2, TRUE),
+  S0Exg = matrix(c(
+    NA, 1,
+    NA, 0,
+    NA, 0
+  ), 3, 2, TRUE),
+  names.commodity = c("payoff1", "payoff2", "payoff3"),
+  names.agent = c("bank", "consumer"),
+  numeraire = "payoff1",
+)
+
+ge$p
+addmargins(ge$D, 2)
+addmargins(ge$S, 2)
+
+ge$z[1]
+osr(Ra, Rb)
+
+## a pure exchange model.
+dst.age1 &lt;- node_new("util",
+  type = "FIN", rate = c(1, 1),
+  "payoff", "secy",
+  last.price = c(1, 1),
+  last.payoff = 1,
+  Rbb = 1, Rba = 1, Rab = 1, Raa = 1,
+  REbb = 1, REba = 1, REab = 1, REaa = 1,
+  sr.ts.1 = vector(),
+  sr.ts.2 = vector()
+)
+
+dst.age2 &lt;- node_new("util",
+  type = "Leontief", a = 1,
+  "payoff"
+)
+
+policyStochasticSupply &lt;- function(state) {
+  state$S[1, 1] &lt;- sample(c(5, 10), 1)
+  state
+}
+
+policySaving &lt;- function(time, A, state) {
+  payoff &lt;- state$S[1, 1]
+
+  lambda &lt;- 0.9
+  if (time &gt;= 5) {
+    if (payoff == 5) {
+      A[[1]]$REba &lt;- lambda * tail(A[[1]]$Rba, 1) + (1 - lambda) * A[[1]]$REba
+      A[[1]]$REbb &lt;- lambda * tail(A[[1]]$Rbb, 1) + (1 - lambda) * A[[1]]$REbb
+
+      saving.rate &lt;- osr(A[[1]]$REba, A[[1]]$REbb)
+      A[[1]]$sr.ts.1 &lt;- c(A[[1]]$sr.ts.1, saving.rate)
+    }
+
+    if (payoff == 10) {
+      A[[1]]$REaa &lt;- lambda * tail(A[[1]]$Raa, 1) + (1 - lambda) * A[[1]]$REaa
+      A[[1]]$REab &lt;- lambda * tail(A[[1]]$Rab, 1) + (1 - lambda) * A[[1]]$REab
+
+      saving.rate &lt;- osr(A[[1]]$REaa, A[[1]]$REab)
+      A[[1]]$sr.ts.2 &lt;- c(A[[1]]$sr.ts.2, saving.rate)
+    }
+
+    A[[1]]$rate &lt;- c(1, saving.rate / (1 - saving.rate))
+  }
+}
+
+policyRecord &lt;- function(time, A, state) {
+  last.p &lt;- A[[1]]$last.price
+  p &lt;- state$p / state$p[1]
+
+  last.payoff &lt;- A[[1]]$last.payoff
+  payoff &lt;- state$S[1, 1]
+
+  if ((last.payoff == 5) &amp;&amp; (payoff == 5)) A[[1]]$Rbb &lt;- c(A[[1]]$Rbb, p[2] / last.p[2])
+  if ((last.payoff == 5) &amp;&amp; (payoff == 10)) A[[1]]$Rba &lt;- c(A[[1]]$Rba, p[2] / last.p[2])
+  if ((last.payoff == 10) &amp;&amp; (payoff == 5)) A[[1]]$Rab &lt;- c(A[[1]]$Rab, p[2] / last.p[2])
+  if ((last.payoff == 10) &amp;&amp; (payoff == 10)) A[[1]]$Raa &lt;- c(A[[1]]$Raa, p[2] / last.p[2])
+
+
+  A[[1]]$last.price &lt;- p
+  A[[1]]$last.payoff &lt;- state$S[1, 1]
+}
+
+set.seed(1)
+ge &lt;- sdm2(
+  A = list(dst.age1, dst.age2),
+  B = matrix(0, 2, 2),
+  S0Exg = matrix(c(
+    1, NA,
+    NA, 1
+  ), 2, 2, TRUE),
+  names.commodity = c("payoff", "secy"),
+  names.agent = c("age1", "age2"),
+  numeraire = "payoff",
+  policy = list(
+    policyStochasticSupply,
+    policySaving,
+    policyMarketClearingPrice,
+    policyRecord
+  ),
+  maxIteration = 1,
+  numberOfPeriods = 40,
+  ts = TRUE
+)
+
+matplot(ge$ts.z, type = "o", pch = 20)
+matplot(ge$ts.p, type = "o", pch = 20)
+dst.age1$last.payoff
+dst.age1$last.price
+dst.age1$Rbb
+
+</code></pre>
+
+
+</div>

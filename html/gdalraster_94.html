@@ -1,0 +1,223 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>polygonize</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a polygon feature layer from raster data</h2>
+
+<h3>Description</h3>
+
+<p><code>polygonize()</code> creates vector polygons for all connected regions of pixels
+in a source raster sharing a common pixel value. Each polygon is created
+with an attribute indicating the pixel value of that polygon. A raster mask
+may also be provided to determine which pixels are eligible for processing.
+The function will create the output vector layer if it does not already
+exist, otherwise it will try to append to an existing one.
+This function is a wrapper of <code>GDALPolygonize</code> in the GDAL Algorithms API.
+It provides essentially the same functionality as the <code>gdal_polygonize.py</code>
+command-line program (<a href="https://gdal.org/programs/gdal_polygonize.html">https://gdal.org/programs/gdal_polygonize.html</a>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">polygonize(
+  raster_file,
+  out_dsn,
+  out_layer,
+  fld_name = "DN",
+  out_fmt = NULL,
+  connectedness = 4,
+  src_band = 1,
+  mask_file = NULL,
+  nomask = FALSE,
+  overwrite = FALSE,
+  dsco = NULL,
+  lco = NULL,
+  quiet = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>raster_file</code></td>
+<td>
+<p>Filename of the source raster.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>out_dsn</code></td>
+<td>
+<p>The destination vector filename to which the polygons will be
+written (or database connection string).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>out_layer</code></td>
+<td>
+<p>Name of the layer for writing the polygon features. For
+single-layer file formats such as <code>"ESRI Shapefile"</code>, the layer name is the
+same as the filename without the path or extension (e.g., <code>out_dsn = "path_to_file/polygon_output.shp"</code>, the layer name is <code>"polygon_output"</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fld_name</code></td>
+<td>
+<p>Name of an integer attribute field in <code>out_layer</code> to which
+the pixel values will be written. Will be created if necessary when using an
+existing layer.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>out_fmt</code></td>
+<td>
+<p>GDAL short name of the output vector format. If unspecified,
+the function will attempt to guess the format from the filename/connection
+string.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>connectedness</code></td>
+<td>
+<p>Integer scalar. Must be either <code>4</code> or <code>8</code>. For the
+default 4-connectedness, pixels with the same value are considered connected
+only if they touch along one of the four sides, while 8-connectedness
+also includes pixels that touch at one of the corners.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>src_band</code></td>
+<td>
+<p>The band on <code>raster_file</code> to build the polygons from
+(default is <code>1</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mask_file</code></td>
+<td>
+<p>Use the first band of the specified raster as a
+validity mask (zero is invalid, non-zero is valid). If not specified, the
+default validity mask for the input band (such as nodata, or alpha masks)
+will be used (unless <code>nomask</code> is set to <code>TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nomask</code></td>
+<td>
+<p>Logical scalar. If <code>TRUE</code>, do not use the default validity
+mask for the input band (such as nodata, or alpha masks).
+Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>overwrite</code></td>
+<td>
+<p>Logical scalar. If <code>TRUE</code>, overwrite <code>out_layer</code> if it
+already exists. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dsco</code></td>
+<td>
+<p>Optional character vector of format-specific creation options
+for <code>out_dsn</code> (<code>"NAME=VALUE"</code> pairs).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lco</code></td>
+<td>
+<p>Optional character vector of format-specific creation options
+for <code>out_layer</code> (<code>"NAME=VALUE"</code> pairs).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>Logical scalar. If <code>TRUE</code>, a progress bar will not be
+displayed. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Polygon features will be created on the output layer, with polygon
+geometries representing the polygons. The polygon geometries will be in the
+georeferenced coordinate system of the raster (based on the geotransform of
+the source dataset). It is acceptable for the output layer to already have
+features. If the output layer does not already exist, it will be created
+with coordinate system matching the source raster.
+</p>
+<p>The algorithm attempts to minimize memory use so that very large rasters can
+be processed. However, if the raster has many polygons or very large/complex
+polygons, the memory use for holding polygon enumerations and active polygon
+geometries may grow to be quite large.
+</p>
+<p>The algorithm will generally produce very dense polygon geometries, with
+edges that follow exactly on pixel boundaries for all non-interior pixels.
+For non-thematic raster data (such as satellite images) the result will
+essentially be one small polygon per pixel, and memory and output layer
+sizes will be substantial. The algorithm is primarily intended for
+relatively simple thematic rasters, masks, and classification results.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The source pixel band values are read into a signed 64-bit integer buffer
+(<code>Int64</code>) by <code>GDALPolygonize</code>, so floating point or complex bands will be
+implicitly truncated before processing.
+</p>
+<p>When 8-connectedness is used, many of the resulting polygons will likely be
+invalid due to ring self-intersection (in the strict OGC definition of
+polygon validity). They may be suitable as-is for certain purposes such as
+calculating geometry attributes (area, perimeter). Package <strong>sf</strong> has
+<code>st_make_valid()</code>, PostGIS has <code>ST_MakeValid()</code>, and QGIS has vector
+processing utility "Fix geometries" (single polygons can become MultiPolygon
+in the case of self-intersections).
+</p>
+<p>If writing to a SQLite database format as either <code>GPKG</code> (GeoPackage
+vector) or <code>SQLite</code> (Spatialite vector), setting the
+<code>SQLITE_USE_OGR_VFS</code> and <code>OGR_SQLITE_JOURNAL</code> configuration options may
+increase performance substantially. If writing to <code>PostgreSQL</code>
+(PostGIS vector), setting <code>PG_USE_COPY=YES</code> is faster:
+</p>
+<div class="sourceCode"><pre># SQLite: GPKG (.gpkg) and Spatialite (.sqlite)
+# enable extra buffering/caching by the GDAL/OGR I/O layer
+set_config_option("SQLITE_USE_OGR_VFS", "YES")
+# set the journal mode for the SQLite database to MEMORY
+set_config_option("OGR_SQLITE_JOURNAL", "MEMORY")
+
+# PostgreSQL / PostGIS
+# use COPY for inserting data rather than INSERT
+set_config_option("PG_USE_COPY", "YES")
+</pre></div>
+
+
+<h3>See Also</h3>
+
+<p><code>rasterize()</code>
+</p>
+<p><code>vignette("gdal-config-quick-ref")</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">evt_file &lt;- system.file("extdata/storml_evt.tif", package="gdalraster")
+dsn &lt;- file.path(tempdir(), "storm_lake.gpkg")
+layer &lt;- "lf_evt"
+fld &lt;- "evt_value"
+set_config_option("SQLITE_USE_OGR_VFS", "YES")
+set_config_option("OGR_SQLITE_JOURNAL", "MEMORY")
+polygonize(evt_file, dsn, layer, fld)
+set_config_option("SQLITE_USE_OGR_VFS", "")
+set_config_option("OGR_SQLITE_JOURNAL", "")
+deleteDataset(dsn)
+</code></pre>
+
+
+</div>

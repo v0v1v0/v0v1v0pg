@@ -1,0 +1,1369 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GauPro_base</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Class providing object with methods for fitting a GP model</h2>
+
+<h3>Description</h3>
+
+<p>Class providing object with methods for fitting a GP model
+</p>
+<p>Class providing object with methods for fitting a GP model
+</p>
+
+
+<h3>Format</h3>
+
+<p><code>R6Class</code> object.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Object of <code>R6Class</code> with methods for fitting GP model.
+</p>
+
+
+<h3>Methods</h3>
+
+
+<dl>
+<dt><code>new(X, Z, corr="Gauss", verbose=0, separable=T, useC=F,useGrad=T,
+         parallel=T, nug.est=T, ...)</code></dt>
+<dd>
+<p>This method is used to create object of this class with <code>X</code> and <code>Z</code> as the data.</p>
+</dd>
+<dt><code>update(Xnew=NULL, Znew=NULL, Xall=NULL, Zall=NULL,
+restarts = 5,
+param_update = T, nug.update = self$nug.est)</code></dt>
+<dd>
+<p>This method updates the model, adding new data if given, then running optimization again.</p>
+</dd>
+</dl>
+<h3>Public fields</h3>
+
+<div class="r6-fields">
+
+<dl>
+<dt><code>X</code></dt>
+<dd>
+<p>Design matrix</p>
+</dd>
+<dt><code>Z</code></dt>
+<dd>
+<p>Responses</p>
+</dd>
+<dt><code>N</code></dt>
+<dd>
+<p>Number of data points</p>
+</dd>
+<dt><code>D</code></dt>
+<dd>
+<p>Dimension of data</p>
+</dd>
+<dt><code>nug.min</code></dt>
+<dd>
+<p>Minimum value of nugget</p>
+</dd>
+<dt><code>nug</code></dt>
+<dd>
+<p>Value of the nugget, is estimated unless told otherwise</p>
+</dd>
+<dt><code>verbose</code></dt>
+<dd>
+<p>0 means nothing printed, 1 prints some, 2 prints most.</p>
+</dd>
+<dt><code>useGrad</code></dt>
+<dd>
+<p>Should grad be used?</p>
+</dd>
+<dt><code>useC</code></dt>
+<dd>
+<p>Should C code be used?</p>
+</dd>
+<dt><code>parallel</code></dt>
+<dd>
+<p>Should the code be run in parallel?</p>
+</dd>
+<dt><code>parallel_cores</code></dt>
+<dd>
+<p>How many cores are there? It will self detect,
+do not set yourself.</p>
+</dd>
+<dt><code>nug.est</code></dt>
+<dd>
+<p>Should the nugget be estimated?</p>
+</dd>
+<dt><code>param.est</code></dt>
+<dd>
+<p>Should the parameters be estimated?</p>
+</dd>
+<dt><code>mu_hat</code></dt>
+<dd>
+<p>Mean estimate</p>
+</dd>
+<dt><code>s2_hat</code></dt>
+<dd>
+<p>Variance estimate</p>
+</dd>
+<dt><code>K</code></dt>
+<dd>
+<p>Covariance matrix</p>
+</dd>
+<dt><code>Kchol</code></dt>
+<dd>
+<p>Cholesky factorization of K</p>
+</dd>
+<dt><code>Kinv</code></dt>
+<dd>
+<p>Inverse of K</p>
+</dd>
+</dl>
+</div>
+
+
+<h3>Methods</h3>
+
+
+
+<h4>Public methods</h4>
+
+
+<ul>
+<li> <p><a href="#method-GauPro-corr_func"><code>GauPro_base$corr_func()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-new"><code>GauPro_base$new()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-initialize_GauPr"><code>GauPro_base$initialize_GauPr()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-fit"><code>GauPro_base$fit()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-update_K_and_estimates"><code>GauPro_base$update_K_and_estimates()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-predict"><code>GauPro_base$predict()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-pred"><code>GauPro_base$pred()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-pred_one_matrix"><code>GauPro_base$pred_one_matrix()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-pred_mean"><code>GauPro_base$pred_mean()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-pred_meanC"><code>GauPro_base$pred_meanC()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-pred_var"><code>GauPro_base$pred_var()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-pred_LOO"><code>GauPro_base$pred_LOO()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-plot"><code>GauPro_base$plot()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-cool1Dplot"><code>GauPro_base$cool1Dplot()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-plot1D"><code>GauPro_base$plot1D()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-plot2D"><code>GauPro_base$plot2D()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-loglikelihood"><code>GauPro_base$loglikelihood()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-optim"><code>GauPro_base$optim()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-optimRestart"><code>GauPro_base$optimRestart()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-update"><code>GauPro_base$update()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-update_data"><code>GauPro_base$update_data()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-update_corrparams"><code>GauPro_base$update_corrparams()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-update_nugget"><code>GauPro_base$update_nugget()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-deviance_searchnug"><code>GauPro_base$deviance_searchnug()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-nugget_update"><code>GauPro_base$nugget_update()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-grad_norm"><code>GauPro_base$grad_norm()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-sample"><code>GauPro_base$sample()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-print"><code>GauPro_base$print()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GauPro-clone"><code>GauPro_base$clone()</code></a>
+</p>
+</li>
+</ul>
+<hr>
+<a id="method-GauPro-corr_func"></a>
+
+
+
+<h4>Method <code>corr_func()</code>
+</h4>
+
+<p>Correlation function
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$corr_func(...)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>...</code></dt>
+<dd>
+<p>Does nothing</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-new"></a>
+
+
+
+<h4>Method <code>new()</code>
+</h4>
+
+<p>Create GauPro object
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$new(
+  X,
+  Z,
+  verbose = 0,
+  useC = F,
+  useGrad = T,
+  parallel = FALSE,
+  nug = 1e-06,
+  nug.min = 1e-08,
+  nug.est = T,
+  param.est = TRUE,
+  ...
+)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>X</code></dt>
+<dd>
+<p>Matrix whose rows are the input points</p>
+</dd>
+<dt><code>Z</code></dt>
+<dd>
+<p>Output points corresponding to X</p>
+</dd>
+<dt><code>verbose</code></dt>
+<dd>
+<p>Amount of stuff to print. 0 is little, 2 is a lot.</p>
+</dd>
+<dt><code>useC</code></dt>
+<dd>
+<p>Should C code be used when possible? Should be faster.</p>
+</dd>
+<dt><code>useGrad</code></dt>
+<dd>
+<p>Should the gradient be used?</p>
+</dd>
+<dt><code>parallel</code></dt>
+<dd>
+<p>Should code be run in parallel? Make optimization
+faster but uses more computer resources.</p>
+</dd>
+<dt><code>nug</code></dt>
+<dd>
+<p>Value for the nugget. The starting value if estimating it.</p>
+</dd>
+<dt><code>nug.min</code></dt>
+<dd>
+<p>Minimum allowable value for the nugget.</p>
+</dd>
+<dt><code>nug.est</code></dt>
+<dd>
+<p>Should the nugget be estimated?</p>
+</dd>
+<dt><code>param.est</code></dt>
+<dd>
+<p>Should the kernel parameters be estimated?</p>
+</dd>
+<dt><code>...</code></dt>
+<dd>
+<p>Not used</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-initialize_GauPr"></a>
+
+
+
+<h4>Method <code>initialize_GauPr()</code>
+</h4>
+
+<p>Not used
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$initialize_GauPr()</pre></div>
+
+
+<hr>
+<a id="method-GauPro-fit"></a>
+
+
+
+<h4>Method <code>fit()</code>
+</h4>
+
+<p>Fit the model, never use this function
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$fit(X, Z)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>X</code></dt>
+<dd>
+<p>Not used</p>
+</dd>
+<dt><code>Z</code></dt>
+<dd>
+<p>Not used</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-update_K_and_estimates"></a>
+
+
+
+<h4>Method <code>update_K_and_estimates()</code>
+</h4>
+
+<p>Update Covariance matrix and estimated parameters
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$update_K_and_estimates()</pre></div>
+
+
+<hr>
+<a id="method-GauPro-predict"></a>
+
+
+
+<h4>Method <code>predict()</code>
+</h4>
+
+<p>Predict mean and se for given matrix
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$predict(XX, se.fit = F, covmat = F, split_speed = T)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>XX</code></dt>
+<dd>
+<p>Points to predict at</p>
+</dd>
+<dt><code>se.fit</code></dt>
+<dd>
+<p>Should the se be returned?</p>
+</dd>
+<dt><code>covmat</code></dt>
+<dd>
+<p>Should the covariance matrix be returned?</p>
+</dd>
+<dt><code>split_speed</code></dt>
+<dd>
+<p>Should the predictions be split up for speed</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-pred"></a>
+
+
+
+<h4>Method <code>pred()</code>
+</h4>
+
+<p>Predict mean and se for given matrix
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$pred(XX, se.fit = F, covmat = F, split_speed = T)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>XX</code></dt>
+<dd>
+<p>Points to predict at</p>
+</dd>
+<dt><code>se.fit</code></dt>
+<dd>
+<p>Should the se be returned?</p>
+</dd>
+<dt><code>covmat</code></dt>
+<dd>
+<p>Should the covariance matrix be returned?</p>
+</dd>
+<dt><code>split_speed</code></dt>
+<dd>
+<p>Should the predictions be split up for speed</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-pred_one_matrix"></a>
+
+
+
+<h4>Method <code>pred_one_matrix()</code>
+</h4>
+
+<p>Predict mean and se for given matrix
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$pred_one_matrix(XX, se.fit = F, covmat = F)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>XX</code></dt>
+<dd>
+<p>Points to predict at</p>
+</dd>
+<dt><code>se.fit</code></dt>
+<dd>
+<p>Should the se be returned?</p>
+</dd>
+<dt><code>covmat</code></dt>
+<dd>
+<p>Should the covariance matrix be returned?</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-pred_mean"></a>
+
+
+
+<h4>Method <code>pred_mean()</code>
+</h4>
+
+<p>Predict mean
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$pred_mean(XX, kx.xx)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>XX</code></dt>
+<dd>
+<p>Points to predict at</p>
+</dd>
+<dt><code>kx.xx</code></dt>
+<dd>
+<p>Covariance matrix between X and XX</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-pred_meanC"></a>
+
+
+
+<h4>Method <code>pred_meanC()</code>
+</h4>
+
+<p>Predict mean using C code
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$pred_meanC(XX, kx.xx)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>XX</code></dt>
+<dd>
+<p>Points to predict at</p>
+</dd>
+<dt><code>kx.xx</code></dt>
+<dd>
+<p>Covariance matrix between X and XX</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-pred_var"></a>
+
+
+
+<h4>Method <code>pred_var()</code>
+</h4>
+
+<p>Predict variance
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$pred_var(XX, kxx, kx.xx, covmat = F)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>XX</code></dt>
+<dd>
+<p>Points to predict at</p>
+</dd>
+<dt><code>kxx</code></dt>
+<dd>
+<p>Covariance matrix of XX with itself</p>
+</dd>
+<dt><code>kx.xx</code></dt>
+<dd>
+<p>Covariance matrix between X and XX</p>
+</dd>
+<dt><code>covmat</code></dt>
+<dd>
+<p>Not used</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-pred_LOO"></a>
+
+
+
+<h4>Method <code>pred_LOO()</code>
+</h4>
+
+<p>Predict at X using leave-one-out. Can use for diagnostics.
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$pred_LOO(se.fit = FALSE)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>se.fit</code></dt>
+<dd>
+<p>Should the standard error and t values be returned?</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-plot"></a>
+
+
+
+<h4>Method <code>plot()</code>
+</h4>
+
+<p>Plot the object
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$plot(...)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>...</code></dt>
+<dd>
+<p>Parameters passed to cool1Dplot(), plot2D(), or plotmarginal()</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-cool1Dplot"></a>
+
+
+
+<h4>Method <code>cool1Dplot()</code>
+</h4>
+
+<p>Make cool 1D plot
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$cool1Dplot(
+  n2 = 20,
+  nn = 201,
+  col2 = "gray",
+  xlab = "x",
+  ylab = "y",
+  xmin = NULL,
+  xmax = NULL,
+  ymin = NULL,
+  ymax = NULL
+)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>n2</code></dt>
+<dd>
+<p>Number of things to plot</p>
+</dd>
+<dt><code>nn</code></dt>
+<dd>
+<p>Number of things to plot</p>
+</dd>
+<dt><code>col2</code></dt>
+<dd>
+<p>color</p>
+</dd>
+<dt><code>xlab</code></dt>
+<dd>
+<p>x label</p>
+</dd>
+<dt><code>ylab</code></dt>
+<dd>
+<p>y label</p>
+</dd>
+<dt><code>xmin</code></dt>
+<dd>
+<p>xmin</p>
+</dd>
+<dt><code>xmax</code></dt>
+<dd>
+<p>xmax</p>
+</dd>
+<dt><code>ymin</code></dt>
+<dd>
+<p>ymin</p>
+</dd>
+<dt><code>ymax</code></dt>
+<dd>
+<p>ymax</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-plot1D"></a>
+
+
+
+<h4>Method <code>plot1D()</code>
+</h4>
+
+<p>Make 1D plot
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$plot1D(
+  n2 = 20,
+  nn = 201,
+  col2 = 2,
+  xlab = "x",
+  ylab = "y",
+  xmin = NULL,
+  xmax = NULL,
+  ymin = NULL,
+  ymax = NULL
+)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>n2</code></dt>
+<dd>
+<p>Number of things to plot</p>
+</dd>
+<dt><code>nn</code></dt>
+<dd>
+<p>Number of things to plot</p>
+</dd>
+<dt><code>col2</code></dt>
+<dd>
+<p>Color of the prediction interval</p>
+</dd>
+<dt><code>xlab</code></dt>
+<dd>
+<p>x label</p>
+</dd>
+<dt><code>ylab</code></dt>
+<dd>
+<p>y label</p>
+</dd>
+<dt><code>xmin</code></dt>
+<dd>
+<p>xmin</p>
+</dd>
+<dt><code>xmax</code></dt>
+<dd>
+<p>xmax</p>
+</dd>
+<dt><code>ymin</code></dt>
+<dd>
+<p>ymin</p>
+</dd>
+<dt><code>ymax</code></dt>
+<dd>
+<p>ymax</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-plot2D"></a>
+
+
+
+<h4>Method <code>plot2D()</code>
+</h4>
+
+<p>Make 2D plot
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$plot2D()</pre></div>
+
+
+<hr>
+<a id="method-GauPro-loglikelihood"></a>
+
+
+
+<h4>Method <code>loglikelihood()</code>
+</h4>
+
+<p>Calculate the log likelihood, don't use this
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$loglikelihood(mu = self$mu_hat, s2 = self$s2_hat)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>mu</code></dt>
+<dd>
+<p>Mean vector</p>
+</dd>
+<dt><code>s2</code></dt>
+<dd>
+<p>s2 param</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-optim"></a>
+
+
+
+<h4>Method <code>optim()</code>
+</h4>
+
+<p>Optimize parameters
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$optim(
+  restarts = 5,
+  param_update = T,
+  nug.update = self$nug.est,
+  parallel = self$parallel,
+  parallel_cores = self$parallel_cores
+)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>restarts</code></dt>
+<dd>
+<p>Number of restarts to do</p>
+</dd>
+<dt><code>param_update</code></dt>
+<dd>
+<p>Should parameters be updated?</p>
+</dd>
+<dt><code>nug.update</code></dt>
+<dd>
+<p>Should nugget be updated?</p>
+</dd>
+<dt><code>parallel</code></dt>
+<dd>
+<p>Should restarts be done in parallel?</p>
+</dd>
+<dt><code>parallel_cores</code></dt>
+<dd>
+<p>If running parallel, how many cores should be used?</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-optimRestart"></a>
+
+
+
+<h4>Method <code>optimRestart()</code>
+</h4>
+
+<p>Run a single optimization restart.
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$optimRestart(
+  start.par,
+  start.par0,
+  param_update,
+  nug.update,
+  optim.func,
+  optim.grad,
+  optim.fngr,
+  lower,
+  upper,
+  jit = T
+)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>start.par</code></dt>
+<dd>
+<p>Starting parameters</p>
+</dd>
+<dt><code>start.par0</code></dt>
+<dd>
+<p>Starting parameters</p>
+</dd>
+<dt><code>param_update</code></dt>
+<dd>
+<p>Should parameters be updated?</p>
+</dd>
+<dt><code>nug.update</code></dt>
+<dd>
+<p>Should nugget be updated?</p>
+</dd>
+<dt><code>optim.func</code></dt>
+<dd>
+<p>Function to optimize.</p>
+</dd>
+<dt><code>optim.grad</code></dt>
+<dd>
+<p>Gradient of function to optimize.</p>
+</dd>
+<dt><code>optim.fngr</code></dt>
+<dd>
+<p>Function that returns the function value
+and its gradient.</p>
+</dd>
+<dt><code>lower</code></dt>
+<dd>
+<p>Lower bounds for optimization</p>
+</dd>
+<dt><code>upper</code></dt>
+<dd>
+<p>Upper bounds for optimization</p>
+</dd>
+<dt><code>jit</code></dt>
+<dd>
+<p>Is jitter being used?</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-update"></a>
+
+
+
+<h4>Method <code>update()</code>
+</h4>
+
+<p>Update the model, can be data and parameters
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$update(
+  Xnew = NULL,
+  Znew = NULL,
+  Xall = NULL,
+  Zall = NULL,
+  restarts = 5,
+  param_update = self$param.est,
+  nug.update = self$nug.est,
+  no_update = FALSE
+)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>Xnew</code></dt>
+<dd>
+<p>New X matrix</p>
+</dd>
+<dt><code>Znew</code></dt>
+<dd>
+<p>New Z values</p>
+</dd>
+<dt><code>Xall</code></dt>
+<dd>
+<p>Matrix with all X values</p>
+</dd>
+<dt><code>Zall</code></dt>
+<dd>
+<p>All Z values</p>
+</dd>
+<dt><code>restarts</code></dt>
+<dd>
+<p>Number of optimization restarts</p>
+</dd>
+<dt><code>param_update</code></dt>
+<dd>
+<p>Should the parameters be updated?</p>
+</dd>
+<dt><code>nug.update</code></dt>
+<dd>
+<p>Should the nugget be updated?</p>
+</dd>
+<dt><code>no_update</code></dt>
+<dd>
+<p>Should none of the parameters/nugget be updated?</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-update_data"></a>
+
+
+
+<h4>Method <code>update_data()</code>
+</h4>
+
+<p>Update the data
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$update_data(Xnew = NULL, Znew = NULL, Xall = NULL, Zall = NULL)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>Xnew</code></dt>
+<dd>
+<p>New X matrix</p>
+</dd>
+<dt><code>Znew</code></dt>
+<dd>
+<p>New Z values</p>
+</dd>
+<dt><code>Xall</code></dt>
+<dd>
+<p>Matrix with all X values</p>
+</dd>
+<dt><code>Zall</code></dt>
+<dd>
+<p>All Z values</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-update_corrparams"></a>
+
+
+
+<h4>Method <code>update_corrparams()</code>
+</h4>
+
+<p>Update the correlation parameters
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$update_corrparams(...)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>...</code></dt>
+<dd>
+<p>Args passed to update</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-update_nugget"></a>
+
+
+
+<h4>Method <code>update_nugget()</code>
+</h4>
+
+<p>Update the nugget
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$update_nugget(...)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>...</code></dt>
+<dd>
+<p>Args passed to update</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-deviance_searchnug"></a>
+
+
+
+<h4>Method <code>deviance_searchnug()</code>
+</h4>
+
+<p>Optimize deviance for nugget
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$deviance_searchnug()</pre></div>
+
+
+<hr>
+<a id="method-GauPro-nugget_update"></a>
+
+
+
+<h4>Method <code>nugget_update()</code>
+</h4>
+
+<p>Update the nugget
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$nugget_update()</pre></div>
+
+
+<hr>
+<a id="method-GauPro-grad_norm"></a>
+
+
+
+<h4>Method <code>grad_norm()</code>
+</h4>
+
+<p>Calculate the norm of the gradient at XX
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$grad_norm(XX)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>XX</code></dt>
+<dd>
+<p>Points to calculate at</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-sample"></a>
+
+
+
+<h4>Method <code>sample()</code>
+</h4>
+
+<p>Sample at XX
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$sample(XX, n = 1)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>XX</code></dt>
+<dd>
+<p>Input points to sample at</p>
+</dd>
+<dt><code>n</code></dt>
+<dd>
+<p>Number of samples</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GauPro-print"></a>
+
+
+
+<h4>Method <code>print()</code>
+</h4>
+
+<p>Print object
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$print()</pre></div>
+
+
+<hr>
+<a id="method-GauPro-clone"></a>
+
+
+
+<h4>Method <code>clone()</code>
+</h4>
+
+<p>The objects of this class are cloneable with this method.
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GauPro_base$clone(deep = FALSE)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>deep</code></dt>
+<dd>
+<p>Whether to make a deep clone.</p>
+</dd>
+</dl>
+</div>
+
+
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#n &lt;- 12
+#x &lt;- matrix(seq(0,1,length.out = n), ncol=1)
+#y &lt;- sin(2*pi*x) + rnorm(n,0,1e-1)
+#gp &lt;- GauPro(X=x, Z=y, parallel=FALSE)
+</code></pre>
+
+
+</div>

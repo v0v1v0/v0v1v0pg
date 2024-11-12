@@ -1,0 +1,153 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>EEpost</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Post-processing step for edge-exploited graph matching.</h2>
+
+<h3>Description</h3>
+
+<p>Funtions <em>DPmatching</em> or <em>DPedge</em> can produce a
+preliminary graph matching result. This function, <em>EEPost</em> works on
+refining the result iteratively. In addition, <em>EEpost</em> is able to
+provide a convergence indicator vector <em>FLAG</em> for each matching as a
+reference for the certainty about the matching since in practice,it has
+been observed that the true matches usually reach the convergence and stay
+the same after a few iterations, while the false matches may keep changing
+in the iterations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">EEpost(W = NULL, A, B, rep, tau = NULL, d = NULL, matching = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>W</code></td>
+<td>
+<p>A distance matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A, B</code></td>
+<td>
+<p>Two 0/1 adjacency matrices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rep</code></td>
+<td>
+<p>A positive integer, indicating the number of iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p>A positive threshold. The default value is <code class="reqn">rep/10</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>A positive integer, indicating the number of candidate matching. The
+default value is 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>matching</code></td>
+<td>
+<p>A preliminary matching result for <em>EEpost</em>. If
+<code>matching</code> is null, <em>EEpost</em> will apply <em>DPedge</em> accordingly
+to generate the initial matching.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Similar to function <em>EEpre</em>, <em>EEpost</em> uses maximum
+bipartite matching to maximize the number of common neighbours for the
+matched vertices with the knowledge of a preliminary matching result by
+defining the similarity between <code class="reqn">i \in A</code> and <code class="reqn">j \in B</code> as the
+number of common neighbours between <code class="reqn">i</code> and <code class="reqn">j</code> according to the
+preliminary matching. Then, given a matching result <code class="reqn">\Pi_t</code>, post
+processing step is to seek a refinement <code class="reqn">\Pi_{t+1}</code> satisfying
+<code class="reqn">\Pi_{t+1} \in</code> argmax <code class="reqn">\langle \Pi, A \Pi_t B \rangle</code>, where
+<code class="reqn">\Pi</code> is a permutation matrix of dimension <code class="reqn">(n_A, n_B)</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Dist</code></td>
+<td>
+<p>The distance matrix between two graphs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>match</code></td>
+<td>
+<p>A
+vector containing matching results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FLAG</code></td>
+<td>
+<p>An indicator vector
+indicating whether the matching result is converged. 0 for No and 1 for
+Yes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>converged.match</code></td>
+<td>
+<p>Converged match result. <code>NA</code> indicates
+the matching result for a certain node is not v=convergent.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>converged.size</code></td>
+<td>
+<p>The number of converged nodes.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(2020)
+n = 10;p = 1; q = 1/2; s = 1
+Parent = matrix(rbinom(n*n, 1, q), nrow = n, ncol = n)
+Parent[lower.tri(Parent)] = t(Parent)[lower.tri(Parent)]
+diag(Parent) &lt;- 0
+### Generate graph A
+dA = matrix(rbinom(n*n, 1, s), nrow = n, ncol=n)
+dA[lower.tri(dA)] = t(dA)[lower.tri(dA)]
+A1 = Parent*dA;
+tmp = rbinom(n, 1, p)
+n.A = length(which(tmp == 1))
+indA = sample(1:n, n.A, replace = FALSE)
+A = A1[indA, indA]
+### Generate graph B
+dB = matrix(rbinom(n*n, 1, s), nrow = n, ncol=n)
+dB[lower.tri(dB)] = t(dB)[lower.tri(dB)]
+B1 = Parent*dB
+tmp = rbinom(n, 1, p)
+n.B = length(which(tmp == 1))
+indB = sample(1:n, n.B, replace = FALSE)
+B = B1[indB, indB]
+matching1= DPmatching(A, B)$Dist
+EEpost(A = A, B = B, rep = 10, d = 5)
+EEpost(A = A, B = B, rep = 10, d = 5, matching = matching1)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,154 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fitGwexModel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>fitGwexModel: fit a GWex model to observations.</h2>
+
+<h3>Description</h3>
+
+<p>fitGwexModel: fit a GWex model to observations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fitGwexModel(objGwexObs, parMargin = NULL, listOption = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>objGwexObs</code></td>
+<td>
+<p>an object of class <code>GwexObs</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parMargin</code></td>
+<td>
+<p>(not required for temperature) list parMargin where
+and each element corresponds to a month (1...12) and contains a 
+matrix nStation x 3 of pre-estimated parameters of the marginal distributions
+(EGPD or Mixture of Exponentials)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>listOption</code></td>
+<td>
+<p>for precipitation, a list with the following fields:
+</p>
+
+<ul>
+<li> <p><strong>th</strong>: threshold value in mm above which precipitation observations are considered to be non-zero (=0.2 by default)
+</p>
+</li>
+<li> <p><strong>nLag</strong>: order of the Markov chain for the transitions between dry and wet states (=2 by default)
+</p>
+</li>
+<li> <p><strong>typeMargin</strong>: 'EGPD' (Extended GPD) or 'mixExp' (Mixture of Exponentials). 'mixExp' by default
+</p>
+</li>
+<li> <p><strong>copulaInt</strong>: 'Gaussian' or 'Student': type of dependence for amounts (='Gaussian' by default)
+</p>
+</li>
+<li> <p><strong>isMAR</strong>: logical value, do we apply a Autoregressive Multivariate Autoregressive model (order 1) = FALSE by default
+</p>
+</li>
+<li> <p><strong>is3Damount</strong>: logical value, do we apply the model on 3D-amount. =FALSE by default
+</p>
+</li>
+<li> <p><strong>nChainFit</strong>: integer, length of the runs which are generated during the fitting procedure. =100000 by default
+</p>
+</li>
+<li> <p><strong>nCluster</strong>: integer, number of clusters which can be used for the parallel computation
+</p>
+</li>
+</ul>
+<p>and for temperature, a list with the following fields:
+</p>
+
+<ul>
+<li> <p><strong>hasTrend</strong>: logical value, do we fit a linear trend for the long-term change, =FALSE by default
+</p>
+</li>
+<li> <p><strong>objGwexPrec</strong>: object of class <code>GwexObs</code> containing precipitation observations. If provided, we assume 
+that temperature must be modelled and simulated according to the precipitation states 'dry' and 'wet'. For each state, a seasonal cycle is fitted (mean and sd).
+</p>
+</li>
+<li> <p><strong>typeMargin</strong>: 'SGED' (default) or 'Gaussian': type of marginal distribution.
+</p>
+</li>
+<li> <p><strong>depStation</strong>: 'MAR1' (default) or 'Gaussian': MAR1 (Multivariate Autoregressive model order 1) for the spatial and temporal dependence or 'Gaussian' 
+for the spatial dependence only.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Return an object of class <code>GwexFit</code> with:
+</p>
+
+<ul>
+<li> <p><strong>p</strong>: The number of station,
+</p>
+</li>
+<li> <p><strong>version</strong>: package version,
+</p>
+</li>
+<li> <p><strong>variable</strong>: the type of variable,
+</p>
+</li>
+<li> <p><strong>fit</strong>: a list containing the list of options <code>listOption</code>
+and the list of estimated parameters <code>listPar</code>.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Guillaume Evin
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Format dates corresponding to daily observations of precipitation and temperature
+vecDates = seq(from=as.Date("01/01/2005",format="%d/%m/%Y"),
+to=as.Date("31/12/2014",format="%d/%m/%Y"),by='day')
+
+###############################################################
+#               FIT THE PRECIPITATION MODEL
+###############################################################
+
+# Format observations: create a Gwex object for one station only to show a quick
+# example. The syntax is similar for multi-site applications.
+myObsPrec = GwexObs(variable='Prec',date=vecDates,obs=dailyPrecipGWEX[,1,drop=FALSE])
+
+# Fit precipitation model with a threshold of 0.5 mm to distinguish wet and dry 
+# states (th) and keep default options otherwise, e.g. a Gaussian
+# copula for the spatial dependence (copulaInt) and a mixExp distribution for 
+# marginal intensities ('typeMargin')
+myParPrec = fitGwexModel(myObsPrec,listOption=list(th=0.5))
+myParPrec # print object
+
+###############################################################
+#     FIT THE TEMPERATURE MODEL, COND. TO PRECIPITATION
+###############################################################
+# Format observations: create a G-Wex object
+myObsTemp = GwexObs(variable='Temp',date=vecDates,obs=dailyTemperGWEX)
+
+# Fit temperature model with a long-term linear trend ('hasTrend'), Gaussian margins 
+# ('typeMargin') and Gaussian spatial dependence ('depStation')
+myParTemp = fitGwexModel(myObsTemp,listOption=list(hasTrend=TRUE,typeMargin='Gaussian',
+depStation='Gaussian'))
+myParTemp # print object
+</code></pre>
+
+
+</div>

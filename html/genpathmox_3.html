@@ -1,0 +1,157 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bar_impvar</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bar Plot of a ranking of categorical variables by importance</h2>
+
+<h3>Description</h3>
+
+<p><code>"bar_impvar"</code> returns a bar plot to  visualize the ranking
+of variables by importance  in obtaining the terminal nodes of Pathmox.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bar_impvar(x, .cex.names = 1, .cex.axis = 1.2, .cex.main = 1, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of the class <code>"plstree"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.cex.names</code></td>
+<td>
+<p>Expansion factor for axis names (bar labels)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.cex.axis</code></td>
+<td>
+<p>Expansion factor for numeric axis labels</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.cex.main</code></td>
+<td>
+<p>Allows fixing the size of the main. Equal to 1 to default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments are ignored</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The importance of each variable is determined by adding the F-statistic 
+calculated for the variable in each split node of Pathmox.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Giuseppe Lamberti
+</p>
+
+
+<h3>References</h3>
+
+<p>Lamberti, G., Aluja, T. B., and Sanchez, G. (2016). The Pathmox approach for PLS path 
+modeling segmentation. <em>Applied Stochastic Models in Business and Industry</em>, <b>32</b>(4), 453-468.
+doi: <a href="https://doi.org/10.1002/asmb.2168">10.1002/asmb.2168</a>
+</p>
+<p>Lamberti, G. (2015). <em>Modeling with Heterogeneity</em>, PhD Dissertation.
+</p>
+<p>Sanchez, G. (2009). <em>PATHMOX Approach: Segmentation Trees in
+Partial Least Squares Path Modeling</em>, PhD Dissertation.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>summary.plstree</code>, <code>print.plstree</code>, <code>pls.pathmox</code>,  
+<code>bar_terminal</code>, and <code>plot.plstree</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> ## Not run: 
+# Example of PATHMOX approach in customer satisfaction analysis 
+# (Spanish financial company).
+# Model with 5 LVs (4 common factor: Image (IMAG), Value (VAL), 
+# Satisfaction (SAT), and Loyalty (LOY); and 1 composite construct: 
+# Quality (QUAL)
+
+# load library and dataset csibank
+library(genpathmx)
+data("csibank")
+
+# Define the model using the lavaan syntax. Use a set of regression formulas to define
+# first the structural model and then the measurement model
+
+CSImodel &lt;- "
+# Structural model
+VAL  ~ QUAL
+SAT  ~ IMAG  + QUAL + VAL
+LOY  ~ IMAG + SAT
+
+# Measurement model
+# Composite
+QUAL &lt;~ qual1 + qual2 + qual3 + qual4 + qual5 + qual6 + qual7 
+     
+# Common factor
+IMAG =~ imag1 + imag2 + imag3 + imag4 + imag5 + imag6 
+VAL  =~ val1  + val2  + val3  + val4
+SAT  =~ sat1  + sat2  + sat3           
+LOY  =~ loy1  + loy2  + loy3           
+
+"
+
+# Identify the categorical variable to be used as input variables 
+in the split process
+CSIcatvar = csibank[,1:5]
+
+# Check if variables are well specified (they have to be factors 
+# and/or ordered factors)
+str(CSIcatvar)
+
+# Transform age and education into ordered factors
+CSIcatvar$Age = factor(CSIcatvar$Age, levels = c("&lt;=25", 
+                                     "26-35", "36-45", "46-55", 
+                                     "56-65", "&gt;=66"),ordered = T)
+
+CSIcatvar$Education = factor(CSIcatvar$Education, 
+                            levels = c("Unfinished","Elementary", "Highschool",
+                            "Undergrad", "Graduated"),ordered = T)
+       
+# Run Pathmox analysis (Lamberti et al., 2016; 2017)
+csi.pathmox = pls.pathmox(
+ .model = CSImodel ,
+ .data  = csibank,
+ .catvar= CSIcatvar,
+ .alpha = 0.05,
+ .deep = 2
+)                     
+ 
+bar_impvar(csi.pathmox)
+
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

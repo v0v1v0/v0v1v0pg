@@ -1,0 +1,111 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GeoPit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Probability integral  or normal score tranformation</h2>
+
+<h3>Description</h3>
+
+<p>The procedure  for a given GeoFit object applies  the probability integral tranformation or the normal score transformation to the data
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GeoPit(object,type="Uniform")</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A GeoFit object</p>
+</td>
+</tr></table>
+<p>.
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>The type of transformation. If "Uniform" then  the probability integral tranformation is performed.
+If "Gaussian" then  the normal score transformation is performed. </p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>Returns an (updated) object of class <code>GeoFit</code></p>
+
+
+<h3>Author(s)</h3>
+
+<p>Moreno Bevilacqua, <a href="mailto:moreno.bevilacqua89@gmail.com">moreno.bevilacqua89@gmail.com</a>,<a href="https://sites.google.com/view/moreno-bevilacqua/home">https://sites.google.com/view/moreno-bevilacqua/home</a>,
+Víctor Morales Oñate, <a href="mailto:victor.morales@uv.cl">victor.morales@uv.cl</a>, <a href="https://sites.google.com/site/moralesonatevictor/">https://sites.google.com/site/moralesonatevictor/</a>,
+Christian", Caamaño-Carrillo, <a href="mailto:chcaaman@ubiobio.cl">chcaaman@ubiobio.cl</a>,<a href="https://www.researchgate.net/profile/Christian-Caamano">https://www.researchgate.net/profile/Christian-Caamano</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(GeoModels)
+
+model="Beta2"
+copula="Clayton"
+
+set.seed(221)
+NN=800
+x &lt;- runif(NN);y &lt;- runif(NN)
+coords=cbind(x,y)
+
+
+shape=1.5
+scale=0.2;power2=4
+smooth=0
+nugget=0
+nu=8
+
+corrmodel="GenWend"
+
+min=-2;max=1
+mean=0
+
+
+param=list(smooth=smooth,power2=power2, min=min,max=max,
+             mean=mean, nu=nu,
+             scale=scale,nugget=nugget,shape=shape)
+
+optimizer="nlminb"
+
+data &lt;- GeoSimCopula(coordx=coords, corrmodel=corrmodel, 
+model=model,param=param,copula=copula)$data
+
+I=50
+fixed&lt;-list(nugget=nugget,sill=1,scale=scale,smooth=smooth,power2=power2,min=min,max=max,nu=nu)
+start&lt;-list(shape=shape,mean=mean)
+lower&lt;-list(shape=0,mean=-I)
+upper&lt;-list(shape=10,mean=I)
+
+#### maximum independence likelihood
+fit1 &lt;- GeoFit(data=data,coordx=coords,corrmodel=corrmodel,
+model=model,likelihood="Marginal",type="Independence",
+                      optimizer=optimizer,lower=lower,
+                      upper=upper,copula=copula,
+                    start=start,fixed=fixed)
+
+## PIT transformation
+aa=GeoPit(fit1,type="Uniform")
+hist(aa$data,freq=FALSE)
+GeoScatterplot(aa$data,coords,neighb=c(1,2))
+## Normal score transformation
+bb=GeoPit(fit1,type="Gaussian")
+hist(bb$data,freq=FALSE)
+GeoScatterplot(bb$data,coords,neighb=c(1,2))
+
+
+</code></pre>
+
+
+</div>

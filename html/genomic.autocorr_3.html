@@ -1,0 +1,161 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>block.glm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>block.glm</h2>
+
+<h3>Description</h3>
+
+<p>Regression models for genomic data often assume there is
+independence between neighbouring genomic elements when, in
+reality, there is spatial dependence.  This function implements a
+block bootstrap method for estimating correct variances of
+parameter estimates.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">block.glm(f.lhs, f.rhs, data, order.by = NULL, strat.by = NULL,
+  block.size = 20, B = 200, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>f.lhs</code></td>
+<td>
+<p>character vector, left hand side of a formula, the
+model(s) to be fit will be defined by
+'paste(f.lhs, f.rhs, sep=" ~ ")'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>f.rhs</code></td>
+<td>
+<p>character string, right hand side of a formula</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>data.table containing the columns referred to in f.lhs
+and f.rhs</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order.by</code></td>
+<td>
+<p>if not 'NULL', the name of a column in 'data' on
+which it should be sorted</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strat.by</code></td>
+<td>
+<p>if not 'NULL', the name of a column in 'data' on
+which it should be stratified before block sampling.  Eg, if
+you are considering genomic data, you should stratify by
+chromosome as there should be no spatial correlation between
+chromosomes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>block.size</code></td>
+<td>
+<p>size of blocks of contiguous observations that
+will be sampled for bootstrap estimation of variance of
+parameter estimates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+<p>number of bootstrap estimates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>other arguments passed to 'glm()' (eg
+'family="binomial"')</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Note that this function uses 'mclapply' to parallelise the
+bootstrapping.  Please set 'mc.cores' to something sensible, eg
+<code>options(mc.cores=10)</code>
+if you have 10 cores.
+</p>
+
+
+<h3>Value</h3>
+
+<p>data.table giving the estimated effect ("beta") of each
+item in f.rhs on each item in f.lhs, together with block
+bootstrap estimates of confidence interval (beta.025,
+beta.975) and standard error (se.beta) and the number of
+bootstraps on which those estimates are based.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Chris Wallace and Oliver Burren
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## simulate data with 10 repeated observations in a row - ie there
+## should be autocorrelation only within windows &lt;= 10
+library(data.table)
+data &lt;- genomic.autocorr:::.sim.data(beta=0.2) 
+
+## suppose we ignored the autocorrelation and look at the
+## confidence interval for the effect of x on y1
+r1&lt;-summary(glm(y1 ~ x, data=data))$coefficients
+r1
+
+## if we know the block structure, as here, we can see the
+## confidence interval is (inappropriately) much tighter than
+## if we used just independent observations
+r2&lt;-summary(glm(y1 ~ x, data=data[!duplicated(name),]))$coefficients
+r2
+
+## use block bootstrap - x should only have a significant effect
+## on y1 and the confidence interval around its effect should be
+## closer to r2, above
+r &lt;- block.glm(f.lhs=c("y0","y1"), f.rhs="x",data=data,block.size=20,B=200)
+r
+
+## compare the block bootstrap and model based confidence intervals for x on y1
+results &lt;- rbind(c(r1[2,1], r1[2,1]-1.96*r1[2,2], r1[2,1]+1.96*r1[2,2]),
+c(r2[2,1], r2[2,1]-1.96*r2[2,2], r2[2,1]+1.96*r2[2,2]),
+as.numeric(r[4,.(beta,beta.025,beta.975)]))
+dimnames(results) &lt;- list(c("standard, ignore blocked","standard, independent obs","bootstrap"),
+c("beta","LCI","UCI"))
+results
+
+with(as.data.frame(results), {
+plot(1:nrow(results), beta,ylim=c(min(c(-0.01,LCI)),max(UCI)),axes=FALSE,xlab="Method",
+main="Comparison of confidence intervals around coefficient estimates")
+segments(x0=1:nrow(results),y0=LCI,y1=UCI)
+abline(h=c(0,0.2),lty="dotted")
+axis(1,1:nrow(results),rownames(results))
+axis(2)
+text(x=c(3,3),y=c(0,0.2),labels=c("null","true"),adj=c(1.1,0))
+box()
+})
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,184 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ordiselect</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Species selection for ordination plots</h2>
+
+<h3>Description</h3>
+
+<p>This function simplifies the selection of relevant species in ordination diagrams. It works with result objects from the <code>vegan</code> package. The selection can be based upon cover abundances, frequency values and/or species fit to multivariate analysis (see Details).
+The result is a vector of names of the selected species and can be used for the <code>select</code> argument in ordination plots.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ordiselect(
+  matrix,
+  ord,
+  ablim = 1,
+  fitlim = 1,
+  choices = c(1, 2),
+  freq = FALSE,
+  na.rm = FALSE,
+  method = "axes",
+  env,
+  p.max = 0.05
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>matrix</code></td>
+<td>
+<p>Community data, a matrix-like object with samples in rows and species in columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ord</code></td>
+<td>
+<p><code>vegan</code> ordination result object (e.g. from <code>decorana</code>, <code>cca</code> or <code>metaMDS</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ablim</code></td>
+<td>
+<p>Proportion of species with highest abundances to be displayed. Value between 0 and 1. Use negative sign for selection of lowest abundances, i.e. rarest species.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitlim</code></td>
+<td>
+<p>Proportion of species with best fit to be displayed. Value between 0 and 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>choices</code></td>
+<td>
+<p>Axes shown.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>freq</code></td>
+<td>
+<p>Whether to use cover abundances (= default) or frequencies of <code>matrix</code>. If <code>TRUE</code>, frequencies of species are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.rm</code></td>
+<td>
+<p>Set to <code>TRUE</code> if your ordination object contains NA (e.g. due to selection)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>The species fit method: <code>"axes"</code> (= default) or <code>"factors"</code>. See details for methods.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>env</code></td>
+<td>
+<p>Fitted environmental variables (result object of <code>envfit</code>) for <code>method = "factors"</code>. Only factor variables are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.max</code></td>
+<td>
+<p>Significance limit for variables used in <code>method = "factors"</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A vector of variable length containing the names of selected species from matrix.
+</p>
+
+
+<h3>Details</h3>
+
+<p>Two methods for species fit are implemented.
+</p>
+<ul>
+<li>
+<p> In <code>method = "axes"</code> (default) species scores are used for selecting best fitting species. The basic assumption is that species that show high correlations to ordination axes provide a good fit to the assumed gradients, Hence high scores along ordination axes mean high correlation. All species with highest axis scores, defined by the threshold given in argument <code>fitlim</code>, will be filtered from the total ordination result.
+</p>
+</li>
+<li>
+<p> In <code>method = "factors"</code>, Euclidean distances between species and environmental variable centroids are calculated. Only factor variables are used from <code>envfit</code> output. The species with smallest distances, defined by <code>fitlim</code> argument as a threshold, will be filtered from the ordination result.
+The <code>p.max</code> argument allows selection of only significant variables, default is <code>p.max = 0.05</code>.</p>
+</li>
+</ul>
+<p>The species fit methods work well both in eigenvalue-based and in distance-based ordinations and provide good option of objective reduction of visible species in ordination plot for better interpretation issues.
+If axes fit should be applied on distance-based ordination, species scores need to be calculated during the analysis, e.g. by selecting <code>wascores = TRUE</code> in <code>metaMDS</code>. It is mostly recommendable to combine the species fit limit with an abundance limit to avoid overinterpretation of rare species.
+</p>
+<p>For the abundance limit, note that the final proportion of the selected species may be higher than the indicated proportion if there are identical values in the abundances.
+For selection of least abundant (rarest) species you can use a negative sign, e.g. <code>ablim = -0.3</code> for the 30 percent least abundant species.
+</p>
+<p>If both limits are defined only species meeting both conditions are selected.
+If no limit is defined for one of the arguments <code>ablim, fitlim</code>, all species are displayed.
+</p>
+<p>The default for <code>matrix</code> input is a cover-abundance-matrix. This matrix should also be used for ordination.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Friedemann von Lampe (<a href="mailto:fvonlampe@uni-goettingen.de">fvonlampe@uni-goettingen.de</a>) and Jenny Schellenberg
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Calculate DCA
+library(vegan)
+scheden.dca &lt;- decorana(schedenveg)
+
+## Select the 30% most abundant species and call the result
+limited &lt;- ordiselect(schedenveg, scheden.dca, ablim = 0.3)
+limited
+
+# Use the result in plotting
+plot(scheden.dca, display="n")
+points(scheden.dca, display="sites")
+points(scheden.dca, display="species",
+   select = limited, pch = 3, col = "red", cex = 0.7)
+ordipointlabel(scheden.dca, display="species",
+    select = limited, col="red", cex = 0.7, add = TRUE)
+
+
+## Select the 70% of the species with the best fit to the axes (highest species scores)
+## AND belonging to the 30% most frequent species
+limited &lt;- ordiselect(schedenveg, scheden.dca, ablim = 0.3,
+   fitlim = 0.7, freq = TRUE)
+
+## Select the 30% least frequent species and call the result
+limited &lt;- ordiselect(schedenveg, scheden.dca, ablim = -0.3, freq = TRUE)
+limited
+
+## Select the 20% of species with the best fit to community assignment
+## AND belonging to the 50% most abundant
+## in NDMS for axes 1 &amp; 3
+nmds &lt;- metaMDS(schedenveg, k = 3)   # run NMDS
+env13 &lt;- envfit(nmds, schedenenv, choices = c(1, 3))
+limited13 &lt;- ordiselect(schedenveg, nmds, method = "factors",
+                       fitlim = 0.1, ablim = 1,
+                       choices = c(1,3), env = env13)
+
+# Use the result in plotting
+plot(nmds, display="sites", choices = c(1, 3))
+plot(env13, p.max = 0.05)
+points(nmds, display="species", choices = c(1,3),
+    select = limited13, pch = 3, col="red", cex=0.7)
+ordipointlabel(nmds, display="species", choices = c(1,3),
+    select = limited13, col="red", cex=0.7, add = TRUE)
+
+</code></pre>
+
+
+</div>

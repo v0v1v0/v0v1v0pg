@@ -1,0 +1,201 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gfigpd2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fiducial inference for the generalized Pareto model with unknown threshold</h2>
+
+<h3>Description</h3>
+
+<p>Runs the MCMC sampler of the fiducial distribution for the 
+generalized Pareto model with unknown threshold.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gfigpd2(
+  X,
+  beta,
+  threshold.init = NA,
+  gamma.init = NA,
+  sigma.init = NA,
+  sd.gamma = NA,
+  sd.sigma = NA,
+  p1 = 0.9,
+  p2 = 0.5,
+  lambda1 = 2,
+  lambda2 = 10,
+  Jnumb = 50L,
+  iter = 10000L,
+  burnin = 2000L,
+  thin = 6L,
+  nchains = 4L,
+  nthreads = parallel::detectCores(),
+  seeds = NULL,
+  allParameters = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>numeric vector of data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>vector of probabilities corresponding to the quantiles to be 
+estimated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threshold.init</code></td>
+<td>
+<p>a guess of the unknown threshold, must be in the range 
+of <code>X</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma.init</code></td>
+<td>
+<p>starting value for <code>gamma</code> in the MCMC</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma.init</code></td>
+<td>
+<p>starting value for <code>sigma</code> in the MCMC</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sd.gamma</code></td>
+<td>
+<p>standard deviation for the proposed <code>gamma</code> in the MCMC</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sd.sigma</code></td>
+<td>
+<p>standard deviation for the proposed <code>sigma</code> in the MCMC</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p1</code></td>
+<td>
+<p>probability that the MCMC will propose a new <code>(gamma,sigma)</code>; 
+<code>(1-p1)</code> would be the probability that the MCMC chain will propose a 
+new index for a new threshold</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p2</code></td>
+<td>
+<p>probability that the new index proposed will be larger than the 
+current index</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda1</code></td>
+<td>
+<p>the small jump the index variable will make</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda2</code></td>
+<td>
+<p>the large jump the index variable will make; happens 1 of 
+every 10 iterations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Jnumb</code></td>
+<td>
+<p>number of subsamples that are taken from the Jacobian</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>number of iterations per chain (burnin excluded)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>number of the first MCMC iterations discarded</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>thinning number for the MCMC chain. (e.g. if it is 1 no iteration 
+is skipped)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nchains</code></td>
+<td>
+<p>number of MCMC chains to run</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nthreads</code></td>
+<td>
+<p>number of threads to run the chains in parallel</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seeds</code></td>
+<td>
+<p>the seeds used for the MCMC sampler; one seed per chain, or 
+<code>NULL</code> to use random seeds</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allParameters</code></td>
+<td>
+<p>logical, whether to return the MCMC chains of all 
+parameters (pretty useless) or only the ones of the quantiles</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>mcmc</code> if <code>nchains=1</code>, 
+otherwise an object of class <code>mcmc.list</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Damian V. Wandler &amp; Jan Hannig. 
+<em>Generalized fiducial confidence intervals for extremes</em>.
+Extremes (2012) 15:67–87.
+&lt;doi:10.1007/s10687-011-0127-9&gt;
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(31415L)
+X &lt;- rgamma(350L, shape = 10, rate = 1)
+gf &lt;- gfigpd2(X, beta = c(0.98, 0.99), iter = 3000L, nthreads = 2L)
+summary(gf)
+qgamma(c(0.98, 0.99), shape = 10, rate = 1)
+traceplot(gf[,"beta1"])
+traceplot(gf[,"beta2"])
+thresholdEstimate(gf)
+rejectionRate(gf)
+HPDinterval(gf)
+HPDinterval(joinMCMCchains(gf))
+</code></pre>
+
+
+</div>

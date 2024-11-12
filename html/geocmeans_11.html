@@ -1,0 +1,126 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>boot_group_validation.mc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Check that the obtained groups are stable by bootstrap (multicore)</h2>
+
+<h3>Description</h3>
+
+<p>Check that the obtained groups are stable by bootstrap with
+multicore support
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">boot_group_validation.mc(
+  object,
+  nsim = 1000,
+  maxiter = 1000,
+  tol = 0.01,
+  init = "random",
+  verbose = TRUE,
+  seed = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A FCMres object, typically obtained from functions CMeans,
+GCMeans, SFCMeans, SGFCMeans</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>The number of replications to do for the bootstrap evaluation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiter</code></td>
+<td>
+<p>An integer for the maximum number of iterations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>The tolerance criterion used in the evaluateMatrices function for
+convergence assessment</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p>A string indicating how the initial centres must be selected.
+"random" indicates that random observations are used as centres. "kpp" use
+a distance based method resulting in more dispersed centres at the
+beginning. Both of them are heuristic.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>A boolean to specify if the progress bar should be displayed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>An integer to control randomness, default is NULL</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For more details, see the documentation of the function
+boot_group_validation
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of two values: group_consistency: a dataframe indicating
+the consistency across simulations each cluster ; group_centres: a list with
+a dataframe for each cluster. The values in the dataframes are the centres
+of the clusters at each simulation.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+data(LyonIris)
+
+#selecting the columns for the analysis
+AnalysisFields &lt;-c("Lden","NO2","PM25","VegHautPrt","Pct0_14",
+                   "Pct_65","Pct_Img","TxChom1564","Pct_brevet","NivVieMed")
+
+#rescaling the columns
+Data &lt;- sf::st_drop_geometry(LyonIris[AnalysisFields])
+for (Col in names(Data)){
+  Data[[Col]] &lt;- as.numeric(scale(Data[[Col]]))
+}
+
+Cmean &lt;- CMeans(Data,4,1.5,500,standardize = FALSE, seed = 456,
+    tol = 0.00001, verbose = FALSE)
+
+future::plan(future::multisession(workers=2))
+
+validation &lt;- boot_group_validation.mc(Cmean, nsim = 1000, maxiter = 1000,
+    tol = 0.01, init = "random")
+## make sure any open connections are closed afterward
+if (!inherits(future::plan(), "sequential")) future::plan(future::sequential)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,205 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ghap.kinship</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Relationship matrix based on genomic data
+</h2>
+
+<h3>Description</h3>
+
+<p>This function computes marker-based and HapAllele-based relationship matrices.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ghap.kinship(object, weights = NULL,
+             sparsity = NULL,
+             type = 1, batchsize = NULL,
+             only.active.samples = TRUE,
+             only.active.variants = TRUE,
+             ncores = 1, verbose = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+
+<p>A valid GHap object (phase, haplo or plink).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+
+<p>A numeric vector providing variant-specific weights.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sparsity</code></td>
+<td>
+
+<p>A numeric value specifying a relationship cut-off (default = NULL). All relationships below the specified cut-off will be set to zero, inducing sparsity into the relationship matrix.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+
+<p>A numeric value indicating the type of relationship matrix (see details).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>batchsize</code></td>
+<td>
+
+<p>A numeric value controlling the number of variants to be processed at a time (default = nalleles/10).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>only.active.samples</code></td>
+<td>
+
+<p>A logical value specifying whether only active samples should be included in the output (default = TRUE).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>only.active.variants</code></td>
+<td>
+
+<p>A logical value specifying whether only active variants should be included in the output (default = TRUE).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+
+<p>A numeric value specifying the number of cores to be used in parallel computations (default = 1).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>A logical value specfying whether log messages should be printed (default = TRUE).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Let <code class="reqn">\mathbf{M}</code> be the <em>n</em> x <em>m</em> matrix of genotypes, where <em>n</em> is the number of individuals and <em>m</em> is the number of variants (i.e, markers or HapAlleles). Prior to computation, genotypes in matrix <code class="reqn">\mathbf{M}</code> are transformed according to the desired relationship type. After that transformation, the relationship matrix is computed as:
+</p>
+<p style="text-align: center;"><code class="reqn">\mathbf{K} = q^{-1}\mathbf{MDM}'</code>
+</p>
+
+<p>where <code class="reqn">\mathbf{D} = diag(d_i)</code>, <code class="reqn">d_i</code> is the weight of variant <em>i</em> (default <code class="reqn">d_i = 1</code>), and <code class="reqn">q</code> is a scaling factor. The argument type controls the genotype transformation and the scaling factor, and includes the following option:
+<br>
+Type = 1 (General additive 1)<br>
+Genotype transformation: m - mean(m)<br>
+Scaling factor: <code class="reqn">tr(\mathbf{MDM}')^{-1}n</code>
+</p>
+<p>Type = 2 (General additive 2)<br>
+Genotype transformation: (m - mean(m))/sd(m)<br>
+Scaling factor: m
+</p>
+<p>Type = 3 (VanRaden, 2008)<br>
+Genotype transformation: m - 2*p[j]<br>
+Scaling factor: 2*sum(p*(1-p))
+</p>
+<p>Type = 4 (GCTA)<br>
+Genotype transformation: (m - 2*p[j])/sqrt(2*p[j]*(1-p[j]))<br>
+Scaling factor: m
+</p>
+<p>Type = 5 (Dominance 1)<br>
+Genotype transformation:<br>
+0 = -2*p[j]^2<br>
+1 = 2*p[j]*(1-p[j])<br>
+2 = -2*(1-p[j])^2<br>
+Scaling factor: 4*sum(p^2*(1-p)^2).
+</p>
+<p>Type = 6 (Dominance 2)<br>
+Genotype transformation:<br>
+0 = -2*p[j]^2<br>
+1 = 2*p[j]*(1-p[j])<br>
+2 = -2*(1-p[j])^2<br>
+Scaling factor:<br><code class="reqn">tr(\mathbf{MDM}')^{-1}n</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function returns a <em>n</em> x <em>n</em> relationship matrix, where <em>n</em> is the number of individuals.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Yuri Tani Utsunomiya &lt;ytutsunomiya@gmail.com&gt; <br>
+Marco Milanesi &lt;marco.milanesi.mm@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>P. M. VanRaden. Efficient methods to compute genomic predictions. J. Dairy. Sci. 2008. 91:4414-4423.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# #### DO NOT RUN IF NOT NECESSARY ###
+# 
+# # Copy plink data in the current working directory
+# exfiles &lt;- ghap.makefile(dataset = "example",
+#                          format = "plink",
+#                          verbose = TRUE)
+# file.copy(from = exfiles, to = "./")
+# 
+# # Copy metadata in the current working directory
+# exfiles &lt;- ghap.makefile(dataset = "example",
+#                          format = "meta",
+#                          verbose = TRUE)
+# file.copy(from = exfiles, to = "./")
+# 
+# # Load plink data
+# plink &lt;- ghap.loadplink("example")
+# 
+# # Load phenotype data
+# df &lt;- read.table(file = "example.phenotypes", header=T)
+# 
+# ### RUN ###
+# 
+# # Subset pure1 population
+# pure1 &lt;- plink$id[which(plink$pop == "Pure1")]
+# plink &lt;- ghap.subset(object = plink, ids = pure1, variants = plink$marker)
+# 
+# # Compute different types of relationship matrices
+# K1 &lt;- ghap.kinship(plink, type = 1) # General additive 1
+# K2 &lt;- ghap.kinship(plink, type = 2) # General additive 2
+# K3 &lt;- ghap.kinship(plink, type = 3) # VanRaden 2008
+# K4 &lt;- ghap.kinship(plink, type = 4) # GCTA GRM
+# K5 &lt;- ghap.kinship(plink, type = 5) # Dominance 1
+# K6 &lt;- ghap.kinship(plink, type = 6) # Dominance 2
+
+
+</code></pre>
+
+
+</div>

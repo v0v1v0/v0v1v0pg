@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>combined_scaled_MAD_envelope_test</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Combined global scaled maximum absolute difference (MAD) envelope tests</h2>
+
+<h3>Description</h3>
+
+<p>Given a list of <code>curve_set</code> objects, a combined global scaled (directional quantile
+or studentized) MAD envelope test is performed with the test functions saved in the curve set objects.
+Details of this combined test can be found in Mrkvicka et al. (2017).
+The implementation of this test is provided here for historical reasons:
+we recommend now instead the use of <code>global_envelope_test</code> also for combined tests;
+these combined tests are there implemented as described in Myllymäki and Mrkvička (2020).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">combined_scaled_MAD_envelope_test(
+  curve_sets,
+  type = c("qdir", "st"),
+  alpha = 0.05,
+  probs = c(0.025, 0.975),
+  central = "mean",
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>curve_sets</code></td>
+<td>
+<p>A <code>curve_set</code> object or a list of <code>curve_set</code>
+objects containing a data function and simulated functions from which the envelope is
+to be constructed.
+Also <code>envelope</code> objects of <span class="pkg">spatstat</span> are accepted instead of curve_set objects.
+If an envelope object is given, it must contain the summary
+functions from simulated patterns which can be achieved by setting
+<code>savefuns = TRUE</code> when calling the <code>envelope</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Either "qdir" for the direction quantile envelope test or
+"st" for the studentized envelope test.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>The significance level. The 100(1-alpha)% global envelope will be calculated
+under the 'fwer' or 'fdr' control.
+If a vector of values is provided, the global envelopes are calculated for each value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>probs</code></td>
+<td>
+<p>A two-element vector containing the lower and upper
+quantiles for the measure 'q' or 'qdir', in that order and on the interval [0, 1].
+The default values are 0.025 and 0.975, suggested by Myllymäki et al. (2015, 2017).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>central</code></td>
+<td>
+<p>Either "mean" or "median". If the curve sets do not contain the component
+<code>theo</code> for the theoretical central function, then the central function (used for plotting only)
+is calculated either as the mean or median of functions provided in the curve sets.
+For 'qdir', 'st' and 'unscaled' only the mean is allowed as an option, due to their definition.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional parameters to be passed to <code>central_region</code>.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Mrkvička, T., Myllymäki, M. and Hahn, U. (2017) Multiple Monte Carlo testing, with applications in spatial point processes.
+Statistics &amp; Computing 27(5): 1239–1255. DOI: 10.1007/s11222-016-9683-9
+</p>
+<p>Myllymäki, M. and Mrkvička, T. (2020). GET: Global envelopes in R. arXiv:1911.06583 [stat.ME]. https://doi.org/10.48550/arXiv.1911.06583
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(require("spatstat.explore", quietly=TRUE)) {
+  # As an example test CSR of the saplings point pattern from spatstat by means of
+  # L, F, G and J functions.
+  data("saplings")
+  X &lt;- as.ppp(saplings, W=square(75))
+
+  nsim &lt;- 499 # Number of simulations for the tests
+  
+  # Specify distances for different test functions
+  n &lt;- 500 # the number of r-values
+  rmin &lt;- 0; rmax &lt;- 20; rstep &lt;- (rmax-rmin)/n
+  rminJ &lt;- 0; rmaxJ &lt;- 8; rstepJ &lt;- (rmaxJ-rminJ)/n
+  r &lt;- seq(0, rmax, by=rstep)    # r-distances for Lest
+  rJ &lt;- seq(0, rmaxJ, by=rstepJ) # r-distances for Fest, Gest, Jest
+  
+
+  # Perform simulations of CSR and calculate the L-functions
+  env_L &lt;- envelope(X, nsim=nsim,
+   simulate=expression(runifpoint(ex=X)),
+   fun="Lest", correction="translate",
+   transform=expression(.-r), # Take the L(r)-r function instead of L(r)
+   r=r,                         # Specify the distance vector
+   savefuns=TRUE,               # Save the estimated functions
+   savepatterns=TRUE)           # Save the simulated patterns
+  # Take the simulations from the returned object
+  simulations &lt;- attr(env_L, "simpatterns")
+  # Then calculate the other test functions F, G, J for each simulated pattern
+  env_F &lt;- envelope(X, nsim=nsim,
+                    simulate=simulations,
+                    fun="Fest", correction="Kaplan", r=rJ,
+                    savefuns=TRUE)
+  env_G &lt;- envelope(X, nsim=nsim,
+                    simulate=simulations,
+                    fun="Gest", correction="km", r=rJ,
+                   savefuns=TRUE)
+  env_J &lt;- envelope(X, nsim=nsim,
+                    simulate=simulations,
+                    fun="Jest", correction="none", r=rJ,
+                    savefuns=TRUE)
+
+  # Crop the curves to the desired r-interval I
+  curve_set_L &lt;- crop_curves(env_L, r_min=rmin, r_max=rmax)
+  curve_set_F &lt;- crop_curves(env_F, r_min=rminJ, r_max=rmaxJ)
+  curve_set_G &lt;- crop_curves(env_G, r_min=rminJ, r_max=rmaxJ)
+  curve_set_J &lt;- crop_curves(env_J, r_min=rminJ, r_max=rmaxJ)
+
+  # The combined directional quantile envelope test
+  res &lt;- combined_scaled_MAD_envelope_test(
+             curve_sets=list(L=curve_set_L, F=curve_set_F,
+                             G=curve_set_G, J=curve_set_J),
+             type="qdir")
+  plot(res)
+}
+
+</code></pre>
+
+
+</div>

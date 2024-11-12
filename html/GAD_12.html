@@ -1,0 +1,124 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pooling</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Post-hoc pooling</h2>
+
+<h3>Description</h3>
+
+<p>Performs a <em>post-hoc</em> pooling by combining or completely excluding terms from linear models
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pooling(object, term = NULL, method = "pool", anova.tab = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>an object of class "<code>lm</code>", containing the specified design with random and/or fixed factors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>term</code></td>
+<td>
+<p>the term which will be removed from model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>method for removing a term from the model. Could be <code>method = "eliminate"</code> for completely exclude the term from model,
+or <code>method = "pool"</code> for pool the selected term with its appropriated F-ratio. Default to <code>method = "pool"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>anova.tab</code></td>
+<td>
+<p>an object containing the results returned by <code>gad</code> or <code>pooling</code> functions. See examples below.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+<p><em>Post-hoc</em> pooling is a procedure to remove terms from a model. It might be done by several reasons:
+(i) lack of evidence against the null hypothesis of that term; (ii) a negative estimate of that term's component of variation (Fletcher and Underwood, 2002);
+(iii) the hypothesis of interest can not be tested until some terms are excluded from the model (Anderson et al., 2008).
+According to literature the term's p-value should exceed 0.25 before removing it (Underwood, 1997).<br></p>
+<p>There are two different methods to remove a term from the model, determinated by <code>method</code> argument. When <code>method = "eliminate"</code>
+the chosen term is completely excluded from the model and its sum of squares and degrees of freedom are pooled with the residual sum of squares and
+degrees of freedom, as if the selected term had never been part of the model. When <code>method = "pool"</code> the chosen term's sum of squares and
+degrees of freedom are pooled with its denominator's sum of squares and degrees of freedom. The removal of terms using <code>method = "pool"</code> will be
+appropriated for most of situations (Anderson et al., 2008).<br></p>
+<p>Note that removing a term has consequences for the construction of F-ratios (or quasi F-ratios), p-values and the estimation of components for the
+remaining terms, so should be done wisely. When there is more than one term which might be removed from the model (which p-value exceed 0.25), it is
+recommended to begin with the one having the smallest mean square (Anderson et. al, 2008).<br></p>
+<p>Function <code>pooling</code> removes one term at once. After the removal of the term of interest, one should re-assess whether or not more terms should be
+removed. If it is the case, the output of <code>pooling</code> function should be stored in a new object and the function should be run again, using this new
+object in the <code>data</code> argument. This can be done successively. The way of <code>pooling</code> function does the analysis, step-by-step and storing the result
+in a new object at each step, gives the user total control of what happens and makes it easier return to the previous results.
+
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of length 4, containing the table of pooled terms (<code>$pool.table</code>), the mean squares estimates (<code>$mse</code>),
+the F-ratio versus (<code>$f.versus</code>) and the result of the analysis of variance (<code>$anova</code>).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Eliandro Gilbert (<a href="mailto:eliandrogilbert@gmail.com">eliandrogilbert@gmail.com</a>)
+</p>
+
+
+<h3>References</h3>
+
+<p>Anderson, M.J., Gorley, R.N., Clarke, K.R. 2008. <em>PERMANOVA+ for PRIMER</em>: Guide to Software and Statistical Methods. PRIMER-E: Plymouth, UK.
+</p>
+<p>Fletcher, D.J., Underwood, A.J. 2002. How to cope with negative estimates of components of variance in ecological field studies. Journal of Experimental Marine Biology and Ecology 273, 89-95.
+</p>
+<p>Underwood, A.J. 1997. <em>Experiments in Ecology</em>: Their Logical Design and Interpretation Using Analysis of Variance. Cambridge University Press, Cambridge.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>estimates</code>, <code>gad</code>, <code>comp.var</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(GAD)
+data(snails)
+O &lt;- as.random(snails$origin)   # a random factor
+S &lt;- as.random(snails$shore)    # a random factor orthogonal to origin
+B &lt;- as.random(snails$boulder)  # a random factor nested in shore
+C &lt;- as.random(snails$cage)     # a random factor nested in the combination of boulder and origin
+
+model &lt;- lm(growth ~ O + S + O*S + B%in%S + O*(B%in%S) + C%in%(O*(B%in%S)),data = snails)
+estimates(model, quasi.f = FALSE)  # 'no test' for shore
+gad(model, quasi.f = FALSE)        # no results for shore term
+estimates(model, quasi.f = TRUE)   # suitable test for shore
+gad(model, quasi.f = TRUE)         # test result for shore
+
+# An alternative of using linear combinations of mean squares is the pooling function.
+model.tab &lt;- gad(model, quasi.f = FALSE) # stores the result of ANOVA on a new object
+pooling(model, term = "S:B", method = "pool", anova.tab = model.tab)      # pooling terms
+pooling(model, term = "S:B", method = "eliminate", anova.tab = model.tab) # or eliminating terms
+</code></pre>
+
+
+</div>

@@ -1,0 +1,178 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gtm_workspaces_resolve</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Resolve workspace conflicts</h2>
+
+<h3>Description</h3>
+
+<p>Resolves a merge conflict for a workspace entity by updating it to the resolved 
+entity passed in the request. This is one of the more complex functions, however if you
+are using this package for automation you will most probably want to keep the version from
+the current workspace not the base version, which is shown in hte example.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gtm_workspaces_resolve(
+  account_id,
+  container_id,
+  workspace_id,
+  tag = NULL,
+  trigger = NULL,
+  variable = NULL,
+  folder = NULL,
+  changeStatus = c("added", "changeStatusUnspecified", "deleted", "none", "updated")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>account_id</code></td>
+<td>
+<p>Account Id</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>container_id</code></td>
+<td>
+<p>Container Id</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>workspace_id</code></td>
+<td>
+<p>Workspace Id</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tag</code></td>
+<td>
+<p>A Tag Object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trigger</code></td>
+<td>
+<p>A Trigger Object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variable</code></td>
+<td>
+<p>A Variable Object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>folder</code></td>
+<td>
+<p>A Folder Object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>changeStatus</code></td>
+<td>
+<p>Represents how the entity has been changed in the workspace.</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><a href="https://developers.google.com/tag-platform/tag-manager/api/v2/reference/accounts/containers/workspaces/resolve_conflict">https://developers.google.com/tag-platform/tag-manager/api/v2/reference/accounts/containers/workspaces/resolve_conflict</a>
+</p>
+<p>Other workspace functions: 
+<code>gtm_workspaces_create()</code>,
+<code>gtm_workspaces_delete()</code>,
+<code>gtm_workspaces_get()</code>,
+<code>gtm_workspaces_list()</code>,
+<code>gtm_workspaces_preview()</code>,
+<code>gtm_workspaces_status()</code>,
+<code>gtm_workspaces_submit()</code>,
+<code>gtm_workspaces_sync()</code>,
+<code>gtm_workspaces_update()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+
+ # Comlpexities arise converting the list created in R into the correct JSON for GTM, 
+ # specifically for the Monitoring Metadata in Tags, so this is brought out, converted 
+ # separately and then included in the tag before it is resolved.
+
+accountId &lt;- 1234567
+containerId &lt;- 7654321
+workspaceId &lt;- 10
+
+mergeConflicts &lt;- gtm_workspaces_sync(accountId, containerId, workspaceId)
+
+for(i in 1:nrow(mergeConflicts$mergeConflict$entityInWorkspace)){
+    tag &lt;- NULL
+    trigger &lt;- NULL
+    variable &lt;- NULL
+    folder &lt;- NULL
+    obj &lt;- mergeConflicts$mergeConflict$entityInWorkspace[i,]
+    if(!is.na(obj$tag$path)){
+       tag &lt;- obj$tag
+       if(is.null(tag$monitoringMetadata$map)){
+       tag &lt;- tag %&gt;% select(-monitoringMetadata)
+       tag &lt;- as.list(tag) %&gt;% 
+             lapply(function(x){if(is.null(x[[1]])){x&lt;-NA}else{x&lt;-x}}) %&gt;% 
+             lapply(function(x) x[!is.na(x)])
+       } else{
+       metadataMap &lt;- tag$monitoringMetadata$map[[1]]
+       metadata &lt;- list(
+           type = 'map',
+           map = metadataMap
+       )
+       tag &lt;- as.list(tag) %&gt;% 
+              lapply(function(x){if(is.null(x[[1]])){x&lt;-NA}else{x&lt;-x}}) %&gt;% 
+              lapply(function(x) x[!is.na(x)])
+       tag$monitoringMetadata &lt;- metadata
+       }
+       
+    }
+    if(!is.na(obj$trigger$path)){
+       trigger &lt;- obj$trigger
+       trigger &lt;- as.list(trigger) %&gt;% 
+                  lapply(function(x){if(is.null(x[[1]])){x&lt;-NA}else{x&lt;-x}}) %&gt;% 
+                  lapply(function(x) x[!is.na(x)])
+    }
+    if(!is.na(obj$variable$path)){
+       variable &lt;- obj$variable
+       variable &lt;- as.list(variable) %&gt;% 
+                   lapply(function(x){if(is.null(x[[1]])){x&lt;-NA}else{x&lt;-x}}) %&gt;% 
+                   lapply(function(x) x[!is.na(x)])
+    }
+    if(!is.na(obj$folder$path)){
+       folder &lt;- obj$folder
+       folder &lt;- as.list(folder) %&gt;% 
+                 lapply(function(x){if(is.null(x[[1]])){x&lt;-NA}else{x&lt;-x}}) %&gt;% 
+                 lapply(function(x) x[!is.na(x)])
+    }
+    changeStatus &lt;- obj$changeStatus
+    
+    resolve &lt;- gtm_workspaces_resolve(account_id = accountId, 
+                                     container_id = containerId, 
+                                     workspace_id = workspaceId, 
+                                     tag = tag, 
+                                     trigger = trigger,
+                                     variable = variable, 
+                                     folder = folder, 
+                                     changeStatus = changeStatus)
+  }
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,93 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>propensity_score</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Propensity score estimation</h2>
+
+<h3>Description</h3>
+
+<p>Estimates the propensity scores <code class="reqn">Pr[D = 1 | Z]</code> for binary treatment assignment <code class="reqn">D</code> and covariates <code class="reqn">Z</code>. Either done by taking the empirical mean of <code class="reqn">D</code> (which should equal roughly 0.5, since we assume a randomized experiment), or by direct machine learning estimation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">propensity_score(Z, D, estimator = "constant")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Z</code></td>
+<td>
+<p>A numeric design matrix that holds the covariates in its columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>D</code></td>
+<td>
+<p>A binary vector of treatment assignment. Value one denotes assignment to the treatment group and value zero assignment to the control group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimator</code></td>
+<td>
+<p>Character specifying the estimator. Must either be equal to <code>'constant'</code> (estimates the propensity scores by <code>mean(D)</code>), <code>'lasso'</code>, <code>'random_forest'</code>, <code>'tree'</code>, or <code>mlr3</code> syntax. Note that in case of <code>mlr3</code> syntax, do <em>not</em> specify if the learner is a regression learner or classification learner. Example: <code>'mlr3::lrn("ranger", num.trees = 500)'</code> for a random forest learner. Note that this is a string and the absence of the <code>classif.</code> or <code>regr.</code> keywords. See <a href="https://mlr3learners.mlr-org.com">https://mlr3learners.mlr-org.com</a> for a list of <code>mlr3</code> learners.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The specifications <code>"lasso"</code>, <code>"random_forest"</code>, and <code>"tree"</code> in <code>estimator</code> correspond to the following <code>mlr3</code> specifications (we omit the keywords <code>classif.</code> and <code>regr.</code>). <code>"lasso"</code> is a cross-validated Lasso estimator, which corresponds to <code>'mlr3::lrn("cv_glmnet", s = "lambda.min", alpha = 1)'</code>. <code>"random_forest"</code> is a random forest with 500 trees, which corresponds to <code>'mlr3::lrn("ranger", num.trees = 500)'</code>. <code>"tree"</code> is a tree learner, which corresponds to <code>'mlr3::lrn("rpart")'</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>"propensity_score"</code>, consisting of the following components:
+</p>
+
+<dl>
+<dt><code>estimates</code></dt>
+<dd>
+<p>A numeric vector of propensity score estimates.</p>
+</dd>
+<dt><code>mlr3_objects</code></dt>
+<dd>
+<p><code>"mlr3"</code> objects used for estimation. Only non-empty if <code>mlr3</code> was used.</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>Rosenbaum P.R., Rubin D.B. (1983). “The Central Role of the Propensity Score in Observational Studies for Causal Effects.” <em>Biometrika</em>, <b>70</b>(1), 41–55. doi: <a href="https://doi.org/10.1093/biomet/70.1.41">10.1093/biomet/70.1.41</a>.
+</p>
+<p>Lang M., Binder M., Richter J., Schratz P., Pfisterer F., Coors S., Au Q., Casalicchio G., Kotthoff L., Bischl B. (2019). “mlr3: A Modern Object-Oriented Machine Learning Framework in R.” <em>Journal of Open Source Software</em>, <b>4</b>(44), 1903. doi: <a href="https://doi.org/10.21105/joss.01903">10.21105/joss.01903</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## generate data
+set.seed(1)
+n  &lt;- 100                        # number of observations
+p  &lt;- 5                          # number of covariates
+D  &lt;- rbinom(n, 1, 0.5)          # random treatment assignment
+Z  &lt;- matrix(runif(n*p), n, p)   # design matrix
+
+## estimate propensity scores via mean(D)...
+propensity_score(Z, D, estimator = "constant")
+
+## ... and via SVM with cache size 40
+if(require("e1071")){
+  propensity_score(Z, D,
+   estimator = 'mlr3::lrn("svm", cachesize = 40)')
+}
+
+</code></pre>
+
+
+</div>

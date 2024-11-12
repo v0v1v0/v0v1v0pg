@@ -1,0 +1,558 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sdm2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Structural Dynamic Model (alias Structural Growth Model) Version 2</h2>
+
+<h3>Description</h3>
+
+<p>A new version of the sdm function in the package CGE.
+Now the parameter A can be a demand structure tree list.
+Hence we actually no longer need the function <code>sdm_dstl</code>.
+Some rarely used parameters in the function sdm have been deleted.
+This function is the core of this package.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sdm2(
+  A,
+  B,
+  S0Exg = matrix(NA, nrow(B), ncol(B)),
+  names.commodity = paste("comm", 1:nrow(B), sep = ""),
+  names.agent = paste("agt", 1:ncol(B), sep = ""),
+  p0 = matrix(1, nrow = nrow(B), ncol = 1),
+  z0 = matrix(100, nrow = ncol(B), ncol = 1),
+  GRExg = NA,
+  pExg = NULL,
+  numeraire = NULL,
+  tolCond = 1e-05,
+  maxIteration = 200,
+  numberOfPeriods = 300,
+  depreciationCoef = 0.8,
+  priceAdjustmentFunction = NULL,
+  priceAdjustmentVelocity = 0.15,
+  trace = TRUE,
+  ts = FALSE,
+  policy = NULL,
+  exchangeFunction = F_Z
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>A</code></td>
+<td>
+<p>a demand structure tree list (i.e. dstl, see <code>demand_coefficient</code>), a demand coefficient n-by-m matrix (alias demand structure matrix)
+or a function A(state) which returns an n-by-m matrix.
+n is the number of commodity types. m is the number of economic agents.
+The argument state is a list consisting of time (the current time), p (the current price vector),
+last.z (the output and utility vector of the previous period), w (the current wealth vector) and last.A (the demand coefficient matrix of the previous period).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+<p>an n-by-m matrix containing of the output coefficients of producers.
+Each producer produces one or more commodities.
+The output of each producer is equal to its activity level multiplied by the output coefficients.
+Columns corresponding to consumers are usually zeros.
+If the (i,j)-th element of S0Exg is not NA, the value of the (i,j)-th element of B will be useless and ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S0Exg</code></td>
+<td>
+<p>an initial exogenous supply n-by-m matrix.
+If the (i,j)-th element of S0Exg is zero, it means there is no supply,
+and NA means the exogenous part of the supply is zero
+and there may be an endogenous supply part.
+In most cases, this matrix contains NA values but no zeros.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names.commodity</code></td>
+<td>
+<p>names of commodities.
+If the parameter A is a demand structure tree list, the values in names.commodity should be the names of those leaf nodes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names.agent</code></td>
+<td>
+<p>names of agents.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p0</code></td>
+<td>
+<p>an initial price n-vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>z0</code></td>
+<td>
+<p>an m-vector consisting of the initial purchase levels (i.e. exchange levels) which indicate production levels or utility levels.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GRExg</code></td>
+<td>
+<p>an exogenous growth rate of the exogenous supplies in S0Exg.
+If GRExg is NA and some commodities have exogenous supply, then GRExg will be set to 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pExg</code></td>
+<td>
+<p>an n-vector indicating the exogenous prices (if any).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numeraire</code></td>
+<td>
+<p>the name, index or price of the numeraire commodity.
+If it is a character string, then it is assumed to be the name of the numeraire commodity.
+If it is a number without a name, then it is assumed to be the index of the numeraire commodity.
+If it is a number with a name, e.g. c("lab" = 0.5), then the name is assumed to be the name of the numeraire commodity
+and the number is assumed to be the price of the numeraire commodity,
+even though the price of the numeraire commodity usually is 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tolCond</code></td>
+<td>
+<p>the relative tolerance condition.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxIteration</code></td>
+<td>
+<p>the maximum number of (outer) iterations.
+If the main purpose of running this function is to do simulation instead of calculating equilibrium, then maxIteration should be set to 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numberOfPeriods</code></td>
+<td>
+<p>the period number (i.e. the number of inner iterations) in each (outer) iteration, which should not be less than 20.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>depreciationCoef</code></td>
+<td>
+<p>the depreciation coefficient (i.e. 1 minus the depreciation rate) of the unsold products.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>priceAdjustmentFunction</code></td>
+<td>
+<p>the price adjustment function. The arguments are a price n-vector p and a sales rate n-vector q.
+The return value is a price n-vector. The default price adjustment method is p * (1 - priceAdjustmentVelocity * (1 - q)).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>priceAdjustmentVelocity</code></td>
+<td>
+<p>a scalar or an n-vector specifying the price adjustment velocity.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>if TRUE, information is printed during the running of sdm2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ts</code></td>
+<td>
+<p>if TRUE, the time series of the last outer iteration are returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>policy</code></td>
+<td>
+<p>a policy function or a list consisting of policy functions and/or policy function lists. A policy function has the following optional parameters:
+</p>
+
+<ul>
+<li>
+<p> time - the current time.
+</p>
+</li>
+<li>
+<p> A - the same as the parameter A of sdm2.
+When A is a demand structure tree list, it needs not be returned after it is adjusted.
+</p>
+</li>
+<li>
+<p> state - the current state, which is a list.
+state$p is the current price vector with names.
+state$S is the current supply matrix.
+state$last.z is the output and utility vector of the previous period.
+state$B is the current supply coefficient matrix.
+state$last.A is the demand coefficient matrix of the previous period.
+state$names.commodity contains the names of commodities.
+state$names.agent contains the names of agents.
+</p>
+</li>
+<li>
+<p> state.history - the state history, which is a list consisting of the time series of p, S, q, and z.
+</p>
+</li>
+</ul>
+<p>The return value of the policy function other than a list will be ignored.
+If the return value is a list, it should have elements p, S and B which specify the prices, supplies and supply coefficient matrix after adjustment.
+A vector with the name current.policy.data can be put into the state list as well,
+which will be put into the return value of the sdm2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exchangeFunction</code></td>
+<td>
+<p>the exchange function.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In each period of the structural dynamic model, the economy runs as follows. <br>
+Firstly, the new price vector emerges on the basis of the price vector and sales rates of the previous period, which indicates the current market prices. <br>
+Secondly, outputs and depreciated inventories of the previous period constitute the current supplies.<br>
+Thirdly, policy functions (if any) are implemented.<br>
+Fourthly, the current input coefficient matrix is computed and the supplies are exchanged under market prices. The exchange vector and sales rate vector are obtained. Unsold goods constitute the inventories, which will undergo depreciation and become a portion of the supplies of the next period. The exchange vector determines the current outputs and utility levels.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list usually containing the following components:
+</p>
+
+<ul>
+<li>
+<p> tolerance - the relative tolerance of the results.
+</p>
+</li>
+<li>
+<p> p - equilibrium prices.
+</p>
+</li>
+<li>
+<p> z - equilibrium purchase levels (i.e. production levels or utility levels).
+</p>
+</li>
+<li>
+<p> S - the equilibrium supply matrix at the initial period.
+</p>
+</li>
+<li>
+<p> growthRate	- the endogenous equilibrium growth rate in a pure production economy.
+</p>
+</li>
+<li>
+<p> A - the equilibrium demand coefficient matrix.
+</p>
+</li>
+<li>
+<p> B - the supply coefficient matrix.
+</p>
+</li>
+<li>
+<p> S0Exg - the initial exogenous supply n-by-m matrix.
+</p>
+</li>
+<li>
+<p> D - the demand matrix.
+</p>
+</li>
+<li>
+<p> DV - the demand value matrix.
+</p>
+</li>
+<li>
+<p> SV - the supply value matrix.
+</p>
+</li>
+<li>
+<p> ts.p	- the time series of prices in the last outer iteration.
+</p>
+</li>
+<li>
+<p> ts.z - the time series of purchase levels (i.e. production levels or utility levels) in the last outer iteration.
+</p>
+</li>
+<li>
+<p> ts.S - the time series of supply matrix in the last outer iteration.
+</p>
+</li>
+<li>
+<p> ts.q - the time series of sales rates in the last outer iteration.
+</p>
+</li>
+<li>
+<p> policy.data - the policy data.
+</p>
+</li>
+</ul>
+<h3>Note</h3>
+
+<p>In the package CGE, the spot market clearing path (alias instantaneous equilibrium path) is computed by the function iep.
+In this package, the instantaneous equilibrium path can be computed by the function sdm2 with the parameter policy equal to <code>policyMarketClearingPrice</code>.<br></p>
+<p>The order of implementation of various policies is critical.
+When a policy list contains a supply policy, a technology (i.e. dstl) policy, a price policy (e.g. a market-clearing-price policy) and a B policy
+(i.e. a policy adjusting the argument B), both the supply policy and the technology policy should be placed before the price policy,
+and the B policy should be placed after the price policy.
+The reason is that the calculation of the current prices may require the use of supply and technology,
+while the calculation of B may require the use of the current prices.
+</p>
+
+
+<h3>References</h3>
+
+<p>LI Wu (2019, ISBN: 9787521804225) General Equilibrium and Structural Dynamics: Perspectives of New Structural Economics. Beijing: Economic Science Press. (In Chinese)
+</p>
+<p>LI Wu (2010) A Structural Growth Model and its Applications to Sraffa's System. http://www.iioa.org/conferences/18th/papers/files/104_20100729011_AStructuralGrowthModelanditsApplicationstoSraffasSstem.pdf
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+dst.firm &lt;- node_new("output",
+  type = "Leontief", a = c(0.5, 1),
+  "prod", "lab"
+)
+
+dst.consumer &lt;- node_new("utility",
+  type = "Leontief", a = 1, "prod"
+)
+
+dstl &lt;- list(dst.firm, dst.consumer)
+
+B &lt;- matrix(c(
+  1, 0,
+  0, 0
+), 2, 2, TRUE)
+S0Exg &lt;- matrix(c(
+  NA, NA,
+  NA, 100
+), 2, 2, TRUE)
+
+## variable dst and technology progress
+policy.TP &lt;- function(time, state, A) {
+  if (time &gt;= 200) {
+    A[[1]]$a &lt;- c(0.5, 0.8)
+  } else {
+    A[[1]]$a &lt;- c(0.5, 1)
+  }
+  state
+}
+
+ge.TP &lt;- sdm2(
+  A = dstl, B = B, S0Exg = S0Exg,
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm", "consumer"),
+  policy = policy.TP,
+  ts = TRUE,
+  maxIteration = 1,
+  numberOfPeriods = 1000
+)
+matplot(ge.TP$ts.z, type = "l")
+plot(ge.TP$ts.p[, 1] / ge.TP$ts.p[, 2], type = "l")
+
+## variable supply coefficient matrix and technology progress
+policy.TP &lt;- function(time, state) {
+  if (time &gt;= 200) {
+    state$B[1, 1] &lt;- 2
+  } else {
+    state$B[1, 1] &lt;- 1
+  }
+  state
+}
+
+ge.TP &lt;- sdm2(
+  A = dstl, B = B, S0Exg = S0Exg,
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm", "consumer"),
+  policy = policy.TP,
+  ts = TRUE,
+  maxIteration = 1,
+  numberOfPeriods = 1000
+)
+matplot(ge.TP$ts.z, type = "l")
+plot(ge.TP$ts.p[, 1] / ge.TP$ts.p[, 2], type = "l")
+
+## variable dst and disequilibrium
+policy.DE &lt;- function(time, A) {
+  if (time &gt;= 200) {
+    A[[1]]$a[2] &lt;- A[[1]]$a[2] * 0.999
+  } else {
+    A[[1]]$a[2] &lt;- 1
+  }
+}
+
+ge.DE &lt;- sdm2(
+  A = dstl, B = B, S0Exg = S0Exg,
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm", "consumer"),
+  policy = policy.DE,
+  ts = TRUE,
+  maxIteration = 1,
+  numberOfPeriods = 1000
+)
+matplot(ge.DE$ts.z, type = "l")
+plot(ge.DE$ts.p[, 1] / ge.DE$ts.p[, 2], type = "l")
+
+
+## structural equilibria and structural transition
+policy.SE &lt;- function(time, state, A) {
+  A[[1]]$a[2] &lt;- structural_function(state$last.z[1], c(105, 125), 1, 0.5)
+}
+
+ge.low.level &lt;- sdm2(
+  A = dstl, B = B, S0Exg = S0Exg,
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm", "consumer"),
+  policy = policy.SE,
+  ts = TRUE,
+  maxIteration = 1,
+  numberOfPeriods = 1000,
+  z0 = c(100, 0)
+)
+matplot(ge.low.level$ts.z, type = "l")
+
+ge.high.level &lt;- sdm2(
+  A = dstl, B = B, S0Exg = S0Exg,
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm", "consumer"),
+  policy = policy.SE,
+  ts = TRUE,
+  maxIteration = 1,
+  numberOfPeriods = 1000,
+  z0 = c(150, 0)
+)
+matplot(ge.high.level$ts.z, type = "l")
+
+policy.ST &lt;- function(time, state, A) {
+  A[[1]]$a[2] &lt;- structural_function(state$last.z[1], c(105, 125), 1, 0.5)
+  if (time &gt;= 200 &amp;&amp; time &lt;= 210) state$S[2, 2] &lt;- 125 # Introduce foreign labor.
+  state
+}
+
+ge.ST &lt;- sdm2(
+  A = dstl, B = B, S0Exg = S0Exg,
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm", "consumer"),
+  policy = policy.ST,
+  ts = TRUE,
+  maxIteration = 1,
+  numberOfPeriods = 1000,
+  z0 = c(100, 0)
+)
+matplot(ge.ST$ts.z, type = "l")
+
+#### economic cycles and an interest rate policy for the firm
+dst.firm &lt;- node_new("cc", # composite commodity
+  type = "FIN",
+  rate = c(1, 0.25),
+  "cc1", "money"
+)
+node_set(dst.firm, "cc1",
+  type = "Leontief",
+  a = c(0.5, 0.5),
+  "wheat", "labor"
+)
+
+dst.laborer &lt;- Clone(dst.firm)
+dst.money.lender &lt;- Clone(dst.firm)
+
+dstl &lt;- list(dst.firm, dst.laborer, dst.money.lender)
+
+policy.interest.rate &lt;- function(time, state, A, state.history) {
+  upsilon &lt;- NA
+  if (time &gt;= 600) {
+    upsilon &lt;- state.history$z[time - 1, 1] / mean(state.history$z[(time - 50):(time - 1), 1])
+    A[[1]]$rate[2] &lt;- max(0.25 + 0.5 * log(upsilon), 0)
+  } else {
+    A[[1]]$rate[2] &lt;- 0.25
+  }
+
+  state$current.policy.data &lt;- c(time, A[[1]]$rate[2], upsilon)
+  state
+}
+
+B &lt;- matrix(0, 3, 3)
+B[1, 1] &lt;- 1
+
+S0Exg &lt;- matrix(NA, 3, 3)
+S0Exg[2, 2] &lt;- 100
+S0Exg[3, 3] &lt;- 100
+
+de &lt;- sdm2(
+  A = dstl, B = B, S0Exg = S0Exg,
+  names.commodity = c("wheat", "labor", "money"),
+  names.agent = c("firm", "laborer", "money.lender"),
+  p0 = rbind(0.625, 0.375, 0.25),
+  z0 = rbind(95, 0, 0),
+  priceAdjustmentVelocity = 0.3,
+  numberOfPeriods = 1000,
+  maxIteration = 1,
+  trace = FALSE,
+  ts = TRUE
+)
+matplot(de$ts.z, type = "l")
+
+ge.policy &lt;- sdm2(
+  A = dstl, B = B, S0Exg = S0Exg,
+  names.commodity = c("wheat", "labor", "money"),
+  names.agent = c("firm", "laborer", "money.lender"),
+  p0 = rbind(0.625, 0.375, 0.25),
+  z0 = rbind(95, 0, 0),
+  priceAdjustmentVelocity = 0.3,
+  numberOfPeriods = 1000,
+  maxIteration = 1,
+  trace = FALSE,
+  ts = TRUE,
+  policy = policy.interest.rate
+)
+matplot(ge.policy$ts.z, type = "l")
+
+#### Example 9.3 in Li (2019): fixed-ratio price adjustment method
+#### and disequilibrium (business cycles) in a pure production economy
+fixedRatioPriceAdjustmentFunction &lt;- function(p, q) {
+  thresholdForPriceAdjustment &lt;- 0.99
+  priceAdjustmentVelocity &lt;- 0.02
+  result &lt;- ifelse(q &lt;= thresholdForPriceAdjustment,
+    p * (1 - priceAdjustmentVelocity),
+    p
+  )
+  return(prop.table(result))
+}
+
+de.Sraffa &lt;- sdm2(
+  A = matrix(c(
+    56 / 115, 6,
+    12 / 575, 2 / 5
+  ), 2, 2, TRUE),
+  B = diag(2),
+  maxIteration = 1,
+  numberOfPeriods = 100,
+  p0 = rbind(1 / 15, 1),
+  z0 = rbind(575, 20),
+  priceAdjustmentFunction = fixedRatioPriceAdjustmentFunction,
+  ts = TRUE
+)
+matplot(growth_rate(de.Sraffa$ts.z), type = "l")
+
+
+</code></pre>
+
+
+</div>

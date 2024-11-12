@@ -1,0 +1,270 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gist_create_git</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a gist via git instead of the GitHub Gists HTTP API</h2>
+
+<h3>Description</h3>
+
+<p>Create a gist via git instead of the GitHub Gists HTTP API
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gist_create_git(
+  files = NULL,
+  description = "",
+  public = TRUE,
+  browse = TRUE,
+  knit = FALSE,
+  code = NULL,
+  filename = "code.R",
+  knitopts = list(),
+  renderopts = list(),
+  include_source = FALSE,
+  artifacts = FALSE,
+  imgur_inject = FALSE,
+  git_method = "ssh",
+  sleep = 1,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>files</code></td>
+<td>
+<p>Files to upload. this or <code>code</code> param must be passed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>description</code></td>
+<td>
+<p>(character) Brief description of gist (optional)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>public</code></td>
+<td>
+<p>(logical) Whether gist is public (default: TRUE)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>browse</code></td>
+<td>
+<p>(logical) To open newly create gist in default browser
+(default: TRUE)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>knit</code></td>
+<td>
+<p>(logical) Knit code before posting as a gist? If the file
+has a <code>.Rmd</code>  or <code>.Rnw</code> extension, we run the file with
+<code>knit</code>, and if it has a <code>.R</code> extension, then
+we use <code>render</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>code</code></td>
+<td>
+<p>Pass in any set of code. This can be a single R object, or
+many lines of code wrapped in quotes, then curly brackets (see examples
+below). this or <code>files</code> param must be passed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filename</code></td>
+<td>
+<p>Name of the file to create, only used if <code>code</code>
+parameter is used. Default to <code>code.R</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>knitopts, renderopts</code></td>
+<td>
+<p>(list) List of variables passed on to
+<code>knit</code>, or <code>render</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include_source</code></td>
+<td>
+<p>(logical) Only applies if <code>knit=TRUE</code>. Include
+source file in the gist in addition to the knitted output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>artifacts</code></td>
+<td>
+<p>(logical/character) Include artifacts or not.
+If <code>TRUE</code>, includes all artifacts. Or you can pass in a file extension
+to only upload artifacts of certain file exensions. Default: <code>FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>imgur_inject</code></td>
+<td>
+<p>(logical) Inject <code>imgur_upload</code>
+into your <code>.Rmd</code> file to upload files to <a href="https://imgur.com/">https://imgur.com/</a>.
+This will be ignored  if the file is a sweave/latex file because the
+rendered pdf can't be uploaded anyway. Default: FALSE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>git_method</code></td>
+<td>
+<p>(character) One of ssh (default) or https. If a remote
+already exists, we use that remote, and this parameter is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sleep</code></td>
+<td>
+<p>(integer) Seconds to sleep after creating gist, but before
+collecting metadata on the gist. If uploading a lot of stuff, you may want to
+set this to a higher value, otherwise, you may not get accurate metadata for
+your gist. You can of course always refresh afterwards by calling <code>gist</code>
+with your gist id.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further args passed on to <code>verb-POST</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Note that when <code>browse=TRUE</code> there is a slight delay in when
+we open up the gist in your default browser and when the data will display
+in the gist. We could have this function sleep a while and guess when it
+will be ready, but instead we open your gist right after we're done sending
+the data to GitHub. Make sure to refresh the page if you don't see your
+content right away.
+</p>
+<p>Likewise, the object that is returned from this function call may not have
+the updated and correct file information. You can retrieve that easily by
+calling <code>gist()</code> with the gist id.
+</p>
+<p>This function uses git instead of the HTTP API, and thus requires
+the R package <code>git2r</code>. If you don't have <code>git2r</code> installed, and
+try to use this function, it will stop and tell you to install <code>git2r</code>.
+</p>
+<p>This function using git is better suited than <code>gist_create()</code>
+for use cases involving:
+</p>
+
+<ul>
+<li>
+<p> Big files - The GitHub API allows only files of up to 1 MB in size.
+Using git we can get around that limit.
+</p>
+</li>
+<li>
+<p> Binary files - Often artifacts created are binary files like
+<code>.png</code>. The GitHub API doesn't allow transport of binary files, but
+we can do that with git.
+</p>
+</li>
+</ul>
+<p>Another difference between this function and <code>gist_create()</code> is
+that this function can collect all artifacts coming out of a knit process.
+</p>
+<p>If a gist is somehow deleted, or the remote changes, when you try to push
+to the same gist again, everything should be fine. We now use
+<code>tryCatch</code> on the  push attempt, and if it fails, we'll add a new
+remote (which means a new gist), and push again.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gist_create()</code>, <code>gist_create_obj()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# prepare a directory and a file
+unlink("~/gitgist", recursive = TRUE)
+dir.create("~/gitgist")
+file &lt;- system.file("examples", "stuff.md", package = "gistr")
+writeLines(readLines(file), con = "~/gitgist/stuff.md")
+
+# create a gist
+gist_create_git(files = "~/gitgist/stuff.md")
+
+## more than one file can be passed in
+unlink("~/gitgist2", recursive = TRUE)
+dir.create("~/gitgist2")
+file.copy(file, "~/gitgist2/")
+cat("hello world", file = "~/gitgist2/hello_world.md")
+list.files("~/gitgist2")
+gist_create_git(c("~/gitgist2/stuff.md", "~/gitgist2/hello_world.md"))
+
+# Include all files in a directory
+unlink("~/gitgist3", recursive = TRUE)
+dir.create("~/gitgist3")
+cat("foo bar", file="~/gitgist3/foobar.txt")
+cat("hello", file="~/gitgist3/hello.txt")
+list.files("~/gitgist3")
+gist_create_git("~/gitgist3")
+
+# binary files
+png &lt;- system.file("examples", "file.png", package = "gistr")
+unlink("~/gitgist4", recursive = TRUE)
+dir.create("~/gitgist4")
+file.copy(png, "~/gitgist4/")
+list.files("~/gitgist4")
+gist_create_git(files = "~/gitgist4/file.png")
+
+# knit files first, then push up
+# note: by default we don't upload images, but you can do that, 
+# see next example
+rmd &lt;- system.file("examples", "plots.Rmd", package = "gistr")
+unlink("~/gitgist5", recursive = TRUE)
+dir.create("~/gitgist5")
+file.copy(rmd, "~/gitgist5/")
+list.files("~/gitgist5")
+gist_create_git("~/gitgist5/plots.Rmd", knit = TRUE)
+
+# collect all/any artifacts from knitting process
+arts &lt;- system.file("examples", "artifacts_eg1.Rmd", package = "gistr")
+unlink("~/gitgist6", recursive = TRUE)
+dir.create("~/gitgist6")
+file.copy(arts, "~/gitgist6/")
+list.files("~/gitgist6")
+gist_create_git("~/gitgist6/artifacts_eg1.Rmd", knit = TRUE, 
+   artifacts = TRUE)
+
+# from a code block
+gist_create_git(code={'
+x &lt;- letters
+numbers &lt;- runif(8)
+numbers
+
+[1] 0.3229318 0.5933054 0.7778408 0.3898947 0.1309717 0.7501378 0.3206379 0.3379005
+'}, filename="my_cool_code.R")
+
+# Use https instead of ssh
+png &lt;- system.file("examples", "file.png", package = "gistr")
+unlink("~/gitgist7", recursive = TRUE)
+dir.create("~/gitgist7")
+file.copy(png, "~/gitgist7/")
+list.files("~/gitgist7")
+gist_create_git(files = "~/gitgist7/file.png", git_method = "https")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

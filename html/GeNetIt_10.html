@@ -1,0 +1,115 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>graph.statistics</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Statistics for edges (lines)</h2>
+
+<h3>Description</h3>
+
+<p>Extracts raster values for each edge and calculates specified statistics
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">graph.statistics(x, r, stats = c("min", "mean", "max"), buffer = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>sp SpatialLinesDataFrame or sf LINE object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>A terra SpatRast or raster rasterLayer, rasterStack, rasterBrick object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stats</code></td>
+<td>
+<p>Statistics to calculate. If vectorized, can pass a custom 
+statistic function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>buffer</code></td>
+<td>
+<p>Buffer distance, radius in projection units. For statistics 
+based on edge buffer distance</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>data.frame object of statistics
+</p>
+
+
+<h3>Note</h3>
+
+<p>If the buffer argument is specified that, raster values within the specified 
+buffer radius are extracted and included in the derived statistic(s). Else-wise,
+the statistics are derived from raster values that directly intersect each edge.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Jeffrey S. Evans  &lt;jeffrey_evans@tnc.org&gt; and 
+Melanie A. Murphy &lt;melanie.murphy@uwyo.edu&gt;
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+ library(sf)
+ library(terra)  
+
+ data(ralu.site)	
+ xvars &lt;- rast(system.file("extdata/covariates.tif", package="GeNetIt"))
+ 
+  ( dist.graph &lt;- knn.graph(ralu.site, row.names = ralu.site$SiteName, 
+                            max.dist = 1500) )
+ 
+ skew &lt;- function(x, na.rm = TRUE) {  
+           if (na.rm) x &lt;- x[!is.na(x)]
+           sum( (x - mean(x)) ^ 3) / ( length(x) * sd(x) ^ 3 )  
+ 		}
+
+# Moments on continuous raster data
+ system.time( {		
+  stats &lt;- graph.statistics(dist.graph, r = xvars[[-6]],  
+              stats = c("min", "median", "max", "var", "skew")) 
+ } ) 
+
+# Proportional function on nominal raster data		
+p &lt;- function(x) { length(x[x &lt; 52]) / length(x) }	
+	
+  system.time( {		
+   nstats &lt;- graph.statistics(dist.graph, r = xvars[[6]],
+               stats = "p") 
+  } ) 	
+
+# Based on 500m buffer distance around line(s)
+ system.time( {		
+  stats &lt;- graph.statistics(dist.graph, r = xvars[[-6]],  
+              stats = c("min", "median", "max", "var", "skew"),
+			      buffer = 500) 
+ } )
+
+
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,254 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gas_simulate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulate GAS Model</h2>
+
+<h3>Description</h3>
+
+<p>A function for simulation of generalized autoregressive score (GAS) models of Creal et al. (2013) and Harvey (2013).
+Instead of supplying arguments about the model, the function can be applied to the <code>gas</code> object obtained by the <code>gas()</code> function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gas_simulate(gas_object = NULL, t_sim = 1L, x_sim = NULL, distr = NULL,
+  param = NULL, scaling = "unit", regress = "joint", n = NULL,
+  p = 1L, q = 1L, par_static = NULL, par_link = NULL,
+  par_init = NULL, coef_est = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>gas_object</code></td>
+<td>
+<p>An optional GAS estimate, i.e. a list of S3 class <code>gas</code> returned by function <code>gas()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t_sim</code></td>
+<td>
+<p>A number of observations to simulate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x_sim</code></td>
+<td>
+<p>Exogenous variables used for simulations. For a single variable common for all time-varying parameters, a numeric vector. For multiple variables common for all time-varying parameters, a numeric matrix with observations in rows. For individual variables for each time-varying parameter, a list of numeric vectors or matrices in the above form. The number of observation must be equal to <code>t_sim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distr</code></td>
+<td>
+<p>A conditional distribution. See <code>distr()</code> for available distributions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>A parametrization of the conditional distribution. If <code>NULL</code>, default parametrization is used. See <code>distr()</code> for available parametrizations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scaling</code></td>
+<td>
+<p>A scaling function for the score. The supported scaling functions are the unit scaling (<code>scaling = "unit"</code>), the inverse of the Fisher information matrix scaling (<code>scaling = "fisher_inv"</code>), and the inverse square root of the Fisher information matrix scaling (<code>scaling = "fisher_inv_sqrt"</code>). The latter two scalings use the Fisher information for the time-varying parameters only. For the full Fisher information matrix for both time-varying and static parameters, there are the <code>"full_fisher_inv"</code> and <code>"full_fisher_inv_sqrt"</code> scalings. For the individual Fisher information for each parameter, there are the <code>"diag_fisher_inv"</code> and <code>"diag_fisher_inv_sqrt"</code> scalings. Note that when the parametrization is orthogonal (see <code>distr()</code>), there are no differences between these scaling variants.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>regress</code></td>
+<td>
+<p>A specification of the regression and dynamic equation with regard to exogenous variables. The supported specifications are exogenous variables and dynamics within the same equation (<code>regress = "joint"</code>) and separate equations for exogenous variables and dynamics in the fashion of regression models with dynamic errors (<code>regress = "sep"</code>). In a stationary model without exogenous variables, the two specifications are equivalent, although with differently parametrized intercept.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>A dimension of the model. Required only for multivariate models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>A score order. For order common for all parameters, a numeric vector of length 1. For individual order for each parameter, a numeric vector of length equal to the number of parameters. Defaults to <code>1L</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q</code></td>
+<td>
+<p>An autoregressive order. For order common for all parameters, a numeric vector of length 1. For individual order for each parameter, a numeric vector of length equal to the number of parameters. Defaults to <code>1L</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par_static</code></td>
+<td>
+<p>An optional logical vector indicating static parameters. Overrides <code>x</code>, <code>p</code>, and <code>q</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par_link</code></td>
+<td>
+<p>An optional logical vector indicating whether the logarithmic/logistic link should be applied to restricted parameters in order to obtain unrestricted values. Defaults to applying the logarithmic/logistic link for time-varying parameters and keeping the original link for constant parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par_init</code></td>
+<td>
+<p>An optional numeric vector of initial values of time-varying parameters. For <code>NA</code> values or when <code>NULL</code>, set initial values to unconditional values of time-varying parameters. For example, in the case of GAS(1,1) model with <code>regress = "joint"</code>, to <code>omega / (1 - phi1)</code>. Not to be confused with starting values for the optimization <code>coef_start</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef_est</code></td>
+<td>
+<p>A numeric vector of estimated coefficients.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>list</code> of S3 class <code>gas_simulate</code> with components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>data$x_sim</code></td>
+<td>
+<p>The exogenous variables used in simulation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$distr</code></td>
+<td>
+<p>The conditional distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$param</code></td>
+<td>
+<p>The parametrization of the conditional distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$scaling</code></td>
+<td>
+<p>The scaling function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$regress</code></td>
+<td>
+<p>The specification of the regression and dynamic equation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$t_sim</code></td>
+<td>
+<p>The length of the simulated time series.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$n</code></td>
+<td>
+<p>The dimension of the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$m</code></td>
+<td>
+<p>The number of exogenous variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$p</code></td>
+<td>
+<p>The score order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$q</code></td>
+<td>
+<p>The autoregressive order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$par_static</code></td>
+<td>
+<p>The static parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$par_link</code></td>
+<td>
+<p>The parameters with the logarithmic/logistic links.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$par_init</code></td>
+<td>
+<p>The initial values of the time-varying parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model$coef_est</code></td>
+<td>
+<p>The estimated coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simulation$y_sim</code></td>
+<td>
+<p>The simulated time series.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simulation$par_tv_sim</code></td>
+<td>
+<p>The simulated time-varying parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simulation$score_tv_sim</code></td>
+<td>
+<p>The simulated scores.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>Supported generic functions for S3 class <code>gas_simulate</code> include <code>summary()</code> ans <code>plot()</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Creal, D., Koopman, S. J., and Lucas, A. (2013). Generalized Autoregressive Score Models with Applications. <em>Journal of Applied Econometrics</em>, <strong>28</strong>(5), 777–795. doi: <a href="https://doi.org/10.1002/jae.1279">10.1002/jae.1279</a>.
+</p>
+<p>Harvey, A. C. (2013). <em>Dynamic Models for Volatility and Heavy Tails: With Applications to Financial and Economic Time Series</em>. Cambridge University Press. doi: <a href="https://doi.org/10.1017/cbo9781139540933">10.1017/cbo9781139540933</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gas()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Simulate GAS model based on the negative binomial distribution
+sim_negbin &lt;- gas_simulate(t_sim = 50, distr = "negbin", reg = "sep",
+  coef_est = c(2.60, 0.02, 0.95, 0.03))
+sim_negbin
+
+# Plot the simulated time series
+plot(sim_negbin)
+
+</code></pre>
+
+
+</div>

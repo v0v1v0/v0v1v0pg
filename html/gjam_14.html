@@ -1,0 +1,125 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gjamPriorTemplate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prior coefficients for gjam analysis</h2>
+
+<h3>Description</h3>
+
+<p>Constructs coefficient matrices for low and high limits on the uniform prior distribution for <code>beta</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  gjamPriorTemplate(formula, xdata, ydata, lo = NULL, hi = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>object of class <code>formula</code>, starting with <code>~</code>, matches the <code>formula</code> passed to <code>gjam</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xdata</code></td>
+<td>
+<p><code>n x Q</code> observation by predictor <code>data.frame</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ydata</code></td>
+<td>
+<p><code>n x Q</code> observation by response <code>data.frame</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lo</code></td>
+<td>
+<p><code>list</code> of lower limits</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hi</code></td>
+<td>
+<p><code>list</code> of upper limits</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The prior distribution for a coefficient <code>beta[q,s]</code> for predictor <code>q</code> and response <code>s</code>, is <code>dunif(lo[q,s], hi[q,s])</code>.  <code>gjamPriorTemplate</code> generates these matrices.  The default values are (<code>-Inf, Inf</code>), i.e., all values in <code>lo</code> equal to <code>-Inf</code> and <code>hi</code> equal to <code>Inf</code>.  These templates can be modified by changing specific values in <code>lo</code> and/or <code>hi</code>.  
+</p>
+<p>Alternatively, desired lower limits can be passed as the <code>list lo</code>, assigned to names in <code>xdata</code> (same limit for all species in <code>ydata</code>), in <code>ydata</code> (same limit for all predictors in <code>xdata</code>), or both, separating names in <code>xdata</code> and <code>ydata</code> by <code>"_"</code>.  The same convention is used for upper limits in <code>hi</code>. 
+</p>
+<p>These matrices are supplied in as list <code>betaPrior</code>, which is included in <code>modelList</code> passed to <code>gjam</code>.  See examples and <code>browseVignettes('gjam')</code>.
+</p>
+<p>Note that the informative prior slows computation.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>list</code> containing two matrices.  <code>lo</code> is a <code>Q x S matrix</code> of lower coefficient limits.  <code>hi</code> is a <code>Q x S matrix</code> of upper coefficient limits.  Unless specied in <code>lo</code>, all values in <code>lo = -Inf</code>.  Likewise, unless specied in <code>hi</code>, all values in <code>hiBeta = -Inf</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>James S Clark, <a href="mailto:jimclark@duke.edu">jimclark@duke.edu</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2017.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs 87, 34-56.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gjam</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+library(repmis)
+source_data("https://github.com/jimclarkatduke/gjam/blob/master/forestTraits.RData?raw=True")
+
+xdata       &lt;- forestTraits$xdata
+plotByTree  &lt;- gjamReZero(forestTraits$treesDeZero) # re-zero
+traitTypes  &lt;- forestTraits$traitTypes
+specByTrait &lt;- forestTraits$specByTrait
+
+tmp &lt;- gjamSpec2Trait(pbys = plotByTree, sbyt = specByTrait, 
+                      tTypes = traitTypes)
+tTypes &lt;- tmp$traitTypes
+traity &lt;- tmp$plotByCWM
+censor &lt;- tmp$censor
+
+formula &lt;- as.formula(~ temp + deficit)
+lo &lt;- list(temp_gmPerSeed = 0, temp_dioecious = 0 ) # positive effect on seed size, dioecy
+b  &lt;- gjamPriorTemplate(formula, xdata, ydata = traity, lo = lo)
+
+ml &lt;- list(ng=3000, burnin=1000, typeNames = tTypes, censor = censor, betaPrior = b)
+out &lt;- gjam(formula, xdata, ydata = traity, modelList = ml)
+
+S   &lt;- ncol(traity)
+sc  &lt;- rep('black',S)
+sc[colnames(traity) 
+pl  &lt;- list(specColor = sc)           
+gjamPlot(output = out, plotPars = pl)         
+
+## End(Not run)
+</code></pre>
+
+
+</div>

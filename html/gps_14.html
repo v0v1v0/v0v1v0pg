@@ -1,0 +1,199 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>penalty</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Wiggliness penalties for penalized B-splines
+</h2>
+
+<h3>Description</h3>
+
+<p>For penalized B-splines (including standard or general P-splines and O-splines), (1) construct matrix <code class="reqn">\bm{D}</code> in the wiggliness penalty <code class="reqn">\|\bm{D\beta}\|^2</code>; (2) sample B-spline coefficients from their prior distribution <code class="reqn">\textrm{N}(\bm{0},\ (\bm{D'D})^-)</code>; (3) compute the Moore-Penrose generalized inverse matrix <code class="reqn">(\bm{D'D})^-</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">SparseD(xt, d, m = NULL, gps = TRUE)
+
+PriorCoef(n, D)
+
+MPinv(D, only.diag = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>xt</code></td>
+<td>
+<p>full knot sequence for ordinary B-splines (<code>length(xt) &gt;= 2 * d</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>B-spline order (<code class="reqn">d \ge 2</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m</code></td>
+<td>
+<p>penalty order (<code class="reqn">1 \le m \le d - 1</code>). Can be a vector of multiple values for <code>SparseD</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gps</code></td>
+<td>
+<p>if TRUE, return <code class="reqn">\bm{D}_{\textrm{gps}}</code>; if FALSE, return <code class="reqn">\bm{D}_{\textrm{os}}</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>number of samples to draw from the prior distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>D</code></td>
+<td>
+<p>matrix <code class="reqn">\bm{D}_{\textrm{gps}}</code> or <code class="reqn">\bm{D}_{\textrm{os}}</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>only.diag</code></td>
+<td>
+<p>if TURE, only diagonal elements are computed.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+
+<h4>General Difference Penalty for General P-Splines</h4>
+
+<p>A general P-spline is characterized by an order-<code class="reqn">m</code> general difference matrix <code class="reqn">\bm{D}_{\textrm{gps}}</code>, which can be computed by <code>SparseD(..., gps = TRUE)</code>. For interpretation, the differenced coefficients <code class="reqn">\bm{D}_{\textrm{gps}}\bm{\beta}</code> are in fact <code class="reqn">f^{(m)}(x)</code>'s B-spline coefficients, so the penalty is their squared <code class="reqn">L_2</code> norm.
+</p>
+
+
+
+<h4>Derivative Penalty for O-Splines</h4>
+
+<p>An O-spline is characterized by <code class="reqn">\bm{D}_{\textrm{os}}</code> such that <code class="reqn">\|\bm{D}_{\textrm{os}}\bm{\beta}\|^2 = \int_a^b f^{(m)}(x)^2\textrm{d}x</code>. Since <code class="reqn">f^{(m)}(x)</code> has B-spline coefficients <code class="reqn">\bm{D}_{\textrm{gps}}\bm{\beta}</code>, the integral can be shown to be <code class="reqn">\bm{\beta'}\bm{D}_{\textrm{gps}}'\bm{\bar{S}}\bm{D}_{\textrm{gps}}\bm{\beta}</code>, where <code class="reqn">\bm{\bar{S}}</code> is the Gram matrix of those B-splines representing <code class="reqn">f^{(m)}(x)</code>. Following the Cholesky factorization <code class="reqn">\bm{\bar{S}} = \bm{U'U}</code>, the quadratic form becomes <code class="reqn">\|\bm{U}\bm{D}_{\textrm{gps}}\bm{\beta}\|^2</code>, so that <code class="reqn">\bm{D}_{\textrm{os}} = \bm{U}\bm{D}_{\textrm{gps}}</code>. This matrix can be computed by <code>SparseD(..., gps = FALSE)</code>, with <code class="reqn">\bm{\bar{S}}</code> and <code class="reqn">\bm{D}_{\textrm{gps}}</code> also returned in a "sandwich" attribute.
+</p>
+
+
+
+<h4>Penalty Matrix</h4>
+
+<p>We can express the <code class="reqn">L_2</code> penalty <code class="reqn">\|\bm{D\beta}\|^2</code> as quadratic form <code class="reqn">\bm{\beta'S\beta}</code>, where <code class="reqn">\bm{S} = \bm{D'D}</code> is called a penalty matrix. It is trivial to compute <code class="reqn">\bm{S}</code> (using function <code>crossprod</code>) once <code class="reqn">\bm{D}</code> is available, so we don't feel the need to provide a function for this. Note that the link between <code class="reqn">\bm{D}_{\textrm{os}}</code> and <code class="reqn">\bm{D}_{\textrm{gps}}</code> implies a sandwich formula <code class="reqn">\bm{S}_{\textrm{os}} = \bm{D}_{\textrm{gps}}'\bm{\bar{S}}\bm{D}_{\textrm{gps}}</code>, wherease <code class="reqn">\bm{S}_{\textrm{gps}} = \bm{D}_{\textrm{gps}}'\bm{D}_{\textrm{gps}}</code>.
+</p>
+
+
+
+<h4>The Bayesian View</h4>
+
+<p>In the Bayesian view, the penalty <code class="reqn">\bm{\beta'S\beta}</code> is a Gaussian prior for B-spline coefficients <code class="reqn">\bm{\beta}</code>. But it is an improper one because <code class="reqn">\bm{S}</code> has a null space where an unpenalized order-<code class="reqn">m</code> polynomial lies. Let's decompose <code class="reqn">\bm{\beta} = \bm{\xi} + \bm{\theta}</code>, where <code class="reqn">\bm{\xi}</code> (the projection of <code class="reqn">\bm{\beta}</code> on this null space) is the coefficients of this order-<code class="reqn">m</code> polynomial, and <code class="reqn">\bm{\theta}</code> (orthogonal to <code class="reqn">\bm{\xi}</code>) is the component that can be shrunk to zero by the penalty. As a result, <code class="reqn">\bm{\xi} \propto \bm{1}</code> is not proper, but <code class="reqn">\bm{\theta} \sim \textrm{N}(\bm{0},\ \bm{S}^-)</code> is. Function <code>PriorCoef</code> samples this distribution, and the resulting B-spline coefficients can be used to create random spline curves. The algorithm behind <code>PriorCoef</code> bypasses the Moore-Penrose generalized inverse and is very efficient. We don't recommend forming this inverse matrix because it, being completely dense, is expensive to compute and store. But if we need it anyway, it can be computed using function <code>MPinv</code>.
+</p>
+
+
+
+<h3>Value</h3>
+
+<p><code>SparseD</code> returns a list of sparse matrices (of "dgCMatrix" class), giving <code class="reqn">\bm{D}_{\textrm{gps}}</code> or <code class="reqn">\bm{D}_{\textrm{os}}</code> of order <code>m[1]</code>, <code>m[2]</code>, ..., <code>m[length(m)]</code>. In the latter case, <code class="reqn">\bm{\bar{S}}</code> (sparse matrices of "dsCMatrix" or "ddiMatrix" class) and <code class="reqn">\bm{D}_{\textrm{gps}}</code> for computing <code class="reqn">\bm{D}_{\textrm{os}}</code> are also returned in a "sandwich" attribute.
+</p>
+<p><code>PriorCoef</code> returns a list of two components:
+</p>
+
+<ul>
+<li> <p><code>coef</code> gives a vector of B-spline coefficients when <code>n = 1</code>, or a matrix of <code>n</code> columns when <code>n &gt; 1</code>, where each column is an independent sample;
+</p>
+</li>
+<li> <p><code>sigma</code> is a vector, giving the marginal standard deviation for each B-spline coefficient.
+</p>
+</li>
+</ul>
+<p><code>MPinv</code> returns the dense Moore-Penrose generalized inverse matrix <code class="reqn">\bm{(D'D})^-</code> if <code>only.diag = FALSE</code>, and the diagonal entries of this matrix if <code>only.diag = TRUE</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Zheyuan Li <a href="mailto:zheyuan.li@bath.edu">zheyuan.li@bath.edu</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Zheyuan Li and Jiguo Cao (2022). General P-splines for non-uniform splines, <a href="https://doi.org/10.48550/arXiv.2201.06808">doi:10.48550/arXiv.2201.06808</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">require(Matrix)
+require(gps)
+
+## 11 domain knots at equal quantiles of Beta(3, 3) distribution
+xd &lt;- qbeta(seq.int(0, 1, by = 0.1), 3, 3)
+## full knots (with clamped boundary knots) for constructing cubic B-splines
+xt &lt;- c(0, 0, 0, xd, 1, 1, 1)
+
+## compute D matrices of order 1 to 3 for O-splines
+D.os &lt;- SparseD(xt, d = 4, gps = FALSE)
+D1.os &lt;- D.os[[1]]; D2.os &lt;- D.os[[2]]; D3.os &lt;- D.os[[3]]
+
+## get D matrices of order 1 to 3 for general P-splines
+## we can of course compute them with D.gps &lt;- SparseD(xt, d = 4, gps = TRUE)
+## but they are readily stored in the "sandwich" attribute of 'D.os'
+D.gps &lt;- attr(D.os, "sandwich")$D
+D1.gps &lt;- D.gps[[1]]; D2.gps &lt;- D.gps[[2]]; D3.gps &lt;- D.gps[[3]]
+
+## we can compute the penalty matrix S = D'D
+S.gps &lt;- lapply(D.gps, crossprod)
+S1.gps &lt;- S.gps[[1]]; S2.gps &lt;- S.gps[[2]]; S3.gps &lt;- S.gps[[3]]
+S.os &lt;- lapply(D.os, crossprod)
+S1.os &lt;- S.os[[1]]; S2.os &lt;- S.os[[2]]; S3.os &lt;- S.os[[3]]
+
+## if we want to verify the sandwich formula for O-splines
+## extract 'Sbar' matrices stored in the "sandwich" attribute
+## and compute the relative error between S and t(D) %*% Sbar %*% D
+Sbar &lt;- attr(D.os, "sandwich")$Sbar
+Sbar1 &lt;- Sbar[[1]]; Sbar2 &lt;- Sbar[[2]]; Sbar3 &lt;- Sbar[[3]]
+range(S1.os - t(D1.gps) %*% Sbar1 %*% D1.gps) / max(abs(S1.os))
+range(S2.os - t(D2.gps) %*% Sbar2 %*% D2.gps) / max(abs(S2.os))
+range(S3.os - t(D3.gps) %*% Sbar3 %*% D3.gps) / max(abs(S3.os))
+
+## sample B-spline coefficients from their prior distribution
+b.gps &lt;- PriorCoef(n = 5, D2.gps)$coef
+b.os &lt;- PriorCoef(n = 5, D2.os)$coef
+op &lt;- par(mfrow = c(1, 2), mar = c(2, 2, 1.5, 0.5), oma = c(0, 0, 1, 0))
+## prior B-spline coefficients with a general difference penalty
+matplot(b.gps, type = "l", lty = 1, ann = FALSE)
+title("general difference penalty")
+## prior B-spline coefficients with a derivative penalty
+matplot(b.os, type = "l", lty = 1, ann = FALSE)
+title("derivative penalty")
+title("random B-spline coefficients from their prior", outer = TRUE)
+par(op)
+
+## plot the corresponding cubic splines with these B-spline coefficients
+x &lt;- MakeGrid(xd, n = 11)
+B &lt;- splines::splineDesign(xt, x, ord = 4, sparse = TRUE)
+y.gps &lt;- B %*% b.gps
+y.os &lt;- B %*% b.os
+op &lt;- par(mfrow = c(1, 2), mar = c(2, 2, 1.5, 0.5), oma = c(0, 0, 1, 0))
+matplot(x, y.gps, type = "l", lty = 1, ann = FALSE)
+title("general difference penalty")
+matplot(x, y.os, type = "l", lty = 1, ann = FALSE)
+title("derivative penalty")
+title("random cubic splines with prior B-spline coefficients", outer = TRUE)
+par(op)
+</code></pre>
+
+
+</div>

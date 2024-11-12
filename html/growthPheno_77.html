@@ -1,0 +1,549 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>traitSmooth</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Obtain smooths for a trait by fitting spline functions and, having compared 
+several smooths, allows one of them to be chosen and returned in a <code>data.frame</code>.</h2>
+
+<h3>Description</h3>
+
+<p>Takes a <code>response</code> that has been observed for a set of 
+<code>individuals</code> over a number <code>times</code> and carries out one or more of the following steps:
+</p>
+
+<dl>
+<dt>Smooth:</dt>
+<dd>
+<p>Produces <code>response.smoothed</code> using splines for a set of 
+smoothing parameter settings and, optionally, computes growth 
+rates either as differences or derivatives. 
+(see <code>smoothing.args</code> below and <code>args4smoothing</code>) 
+This step is bypassed if a <code>data.frame</code> that is also of 
+class <code>smooths.frame</code> is supplied to <code>data</code>.</p>
+</dd>
+<dt>Profile plots:</dt>
+<dd>
+<p>Produces profile plots of <code>response.smoothed</code> and its 
+growth rates that compare the smooths; also, boxplots of the 
+deviations of the observed from smoothed data can be obtained. 
+(see <code>profile.plot.args</code> below and <code>args4profile_plot</code>) 
+Whether these plots are produced is controlled via <code>which.plots</code> or 
+whether <code>profile.plot.args</code> is set to <code>NULL</code>.</p>
+</dd> 
+<dt>Median deviations plots:</dt>
+<dd>
+<p>Produces plots of the medians of the deviations of 
+the observed <code>response</code>, and its growth rates, from <code>response.smoothed</code>,  
+and its growth rates. These aid in the assessment of the different smooths. 
+(see <code>meddevn.plot.args</code> below and <code>args4meddevn_plot</code>)
+Whether these plots are produced is controlled via <code>which.plots</code> or 
+whether <code>meddevn.plot.args</code> is set to <code>NULL</code>.</p>
+</dd> 
+<dt>Deviations boxplots:</dt>
+<dd>
+<p>Produces boxplots of the absolute or relative deviations 
+of the observed <code>response</code>, and its growth rates, from <code>response.smoothed</code>,  
+and its growth rates. These aid in the assessment of the different smooths. 
+(see <code>devnboxes.plot.args</code> below and <code>args4devnboxes_plot</code>)
+Whether these plots are produced is controlled via <code>which.plots</code> or 
+whether <code>devnboxes.plot.args</code> is set to <code>NULL</code>.</p>
+</dd>
+<dt>Choose a smooth:</dt>
+<dd>
+<p>Extract a single, favoured <code>response.smoothed</code>, 
+and its growth rates, for a chosen set of smoothing parameter settings. 
+(see <code>chosen.smooth.args</code> below and <code>args4chosen_smooth</code>) 
+This step will be omitted if <code>chosen.smooth.args</code> is <code>NULL</code>.</p>
+</dd> 
+<dt>Chosen smooth plot:</dt>
+<dd>
+<p>Produces profile plots of the chosen smooth and its growth rates. 
+(see <code>chosen.plot.args</code> below and <code>args4chosen_plot</code>) 
+Whether these plots are produced is controlled by whether 
+<code>chosen.plot.args</code> is set to <code>NULL</code>.</p>
+</dd>
+</dl>
+<p>Each of the '<code>args4</code>' functions has a set of defaults that will be used if 
+the corresponding argument, ending in '<code>.args</code>', is omitted. The defaults 
+have been optimized for <code>traitSmooth</code>. 
+</p>
+<p>Input to the function can be either a <code>data.frame</code>, that contains data to 
+be smoothed, or a <code>smooths.frame</code>, that contains data that has been smoothed. 
+The function can be run (i) without saving any output, (ii) saving the complete set 
+of smooths in a <code>data.frame</code> that is also of class <code>smooths.frame</code>, 
+(iii) saving a subset of the smooths in a supplied <code>smooths.frame</code>, or 
+(iv) saving a single smooth in a <code>data.frame</code>, which can be merged 
+with a pre-existing <code>data.frame</code> such as the <code>data.frame</code> 
+that contains the unsmoothed data.  
+</p>
+<p>The <code>Tomato</code> vignette illustrates the use of <code>traitSmooth</code> and 
+<code>traitExtractFeatures</code> to carry out the SET procedure for the example 
+presented in Brien et al. (2020). 
+Use <code>vignette("Tomato", package = "growthPheno")</code> to access it.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">traitSmooth(data, response, response.smoothed, individuals, times, 
+            keep.columns = NULL, 
+            get.rates = TRUE, 
+            rates.method="differences", ntimes2span = NULL, 
+            trait.types = c("response", "AGR", "RGR"), 
+            smoothing.args = args4smoothing(), 
+            x.title = NULL, y.titles = NULL, 
+            which.plots = c("profiles", "medians.deviations"), 
+            profile.plot.args = args4profile_plot(), 
+            meddevn.plot.args = args4meddevn_plot(), 
+            devnboxes.plot.args = args4devnboxes_plot(),
+            chosen.smooth.args = args4chosen_smooth(), 
+            chosen.plot.args = args4chosen_plot(), 
+            mergedata = NULL, 
+            ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A <code>data.frame</code> containing the data or a <code>smooths.frame</code> 
+as is produced by <code>probeSmooths</code>. if <code>data</code> is not a 
+<code>smooths.frame</code>, then smoothing will be performed. If <code>data</code> 
+is a <code>smooths.frame</code>, then the plotting and selection of smooths 
+will be performed as specified by <code>smoothing.args</code> , <code>which.plots</code>, 
+<code>chosen.smooth.args</code> and <code>chosen.plot.args</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response</code></td>
+<td>
+<p>A <code>character</code> specifying the response variable to be 
+smoothed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response.smoothed</code></td>
+<td>
+<p>A <code>character</code> specifying the name of the column 
+to contain the values of the smoothed response variable, corresponding 
+to <code>response</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>individuals</code></td>
+<td>
+<p>A <code>character</code> giving the name of the 
+<code>factor</code> that defines the subsets of the <code>data</code> 
+for which each subset corresponds to the <code>response</code> values for 
+an individual (e.g. plant, pot, cart, plot or unit).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>times</code></td>
+<td>
+<p>A <code>character</code> giving the name of the <code>numeric</code>, 
+or <code>factor</code> with numeric levels, that contains the values 
+of the predictor variable to be supplied to <code>smooth.spline</code> 
+and to be plotted on the x-axis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep.columns</code></td>
+<td>
+<p>A <code>character</code> vector giving the names of columns 
+from <code>data</code> that are to be included in the 
+<code>smooths.frame</code> that will be returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>get.rates</code></td>
+<td>
+<p>A <code>logical</code> or a <code>character</code> specifying 
+which of the <code>response</code> and the <code>response.smoothed</code> are to 
+have growth rates (AGR and/or RGR) computed and stored. If set to 
+<code>TRUE</code> or <code>c("raw", "smoothed")</code>, growth rates will be 
+obtained for both. Setting to only one of <code>raw</code> or 
+<code>smoothed</code>, results in the growth rates for either the 
+<code>response</code> or the <code>response.smoothed</code> being computed. 
+If set to <code>none</code> or <code>FALSE</code>, no growth rates ar computed. 
+Which growth.rates are computed can be changed using the arguments 
+<code>traits.types</code> and the method used for computing them for the 
+<code>response.smooth</code> by <code>rates.method</code>. The growth rates for 
+the <code>response</code> can only be computed by <code>differencing</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rates.method</code></td>
+<td>
+<p>A <code>character</code> specifying the method to use in 
+calculating the growth rates for <code>response.smoothed</code>. The two 
+possibilities are <code>"differences"</code> and <code>"derivatives"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ntimes2span</code></td>
+<td>
+<p>A <code>numeric</code> giving the number of values in 
+<code>times</code> to span in calculating growth rates by differencing. 
+For <code>ntimes2span</code> set to <code>NULL</code>, if <code>rates.method</code> 
+is set to <code>differences</code> then <code>ntimes2span</code> is set to 2; 
+if <code>rates.method</code> is set to <code>derivatives</code> then 
+<code>ntimes2span</code> is set to 3. 
+Note that when <code>get.rates</code> is includes <code>raw</code> or is 
+<code>TRUE</code>, the growth rates for the unsmoothed response must be 
+calculated by differencing, even if the growth rates for the 
+smoothed response are computed using <code>derivatives</code>. When 
+differencing, each growth rate is calculated as the difference in 
+the values of one of the <code>responses</code> for pairs of <code>times</code> 
+values that are spanned by <code>ntimes2span</code> <code>times</code> values 
+divided by the difference between this pair of <code>times</code> values. 
+For <code>ntimes2span</code> set to 2, a growth rate is the  
+difference between consecutive pairs of values of one of the 
+<code>responses</code> divided by the difference between consecutive 
+pairs of <code>times</code> values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trait.types</code></td>
+<td>
+<p>A <code>character</code> giving the <code>trait.types</code> that 
+are to be plotted. If growth rates are included in <code>trait.types</code>, 
+then they will be computed for either the <code>response</code> and/or the 
+<code>response.smoothed</code>, depending on the setting of <code>get.rates</code>. 
+Any growth rates included in <code>trait.types</code> for the <code>response</code> 
+that are available in <code>data</code>, but have not been specified for 
+computation in <code>get.rates</code>, will be retained in the returned 
+<code>smooths.frame</code>.
+If <code>all</code>, the <code>response.smoothed</code>, its <code>AGR</code> and 
+<code>RGR</code>, will be plotted. The <code>response</code>, and its <code>AGR</code> 
+and <code>RGR</code>, will be plotted as the plotting options require it.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smoothing.args</code></td>
+<td>
+<p>A <code>list</code> that is most easily generated 
+using <code>args4smoothing</code>, it documenting the 
+options available for smoothing the data. It gives the settings of 
+<code>smoothing.methods</code>, <code>spline.types</code>, <code>df</code>, <code>lambdas</code>, 
+<code>smoothing.segments</code>, <code>npspline.segments</code>, <code>na.x.action</code>, 
+<code>na.y.action</code>, <code>external.smooths</code>, and <code>correctBoundaries</code>, 
+to be used in smoothing the <code>response</code> or in selecting a subset 
+of the smooths in <code>data</code>, depending on whether <code>data</code> is a 
+<code>data.frame</code> or a <code>smooths.frame</code>, respectively. 
+If <code>data</code> is a <code>data.frame</code>, then smoothing will be 
+performed. If <code>data</code> is a <code>smooths.frame</code>, no 
+smoothing will be carried out. If <code>smoothing.args</code> is <code>NULL</code> 
+then a <code>smooths.frame</code> will only be used for plotting. 
+Otherwise, the setting of <code>smoothing.args</code> will specifying the 
+smooths that are to be extracted from the <code>smooths.frame</code>, 
+in which case <code>smoothing.args</code> must specify a subset of the smooths 
+in <code>data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x.title</code></td>
+<td>
+<p>Title for the x-axis, used for all plots. If <code>NULL</code> then set 
+to <code>times</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y.titles</code></td>
+<td>
+<p>A <code>character</code> giving the titles for the y-axis, one 
+for each the response, the AGE and the RGR. They are used for all plots. 
+If <code>NULL</code> then they are set to the <code>response</code> and the  
+<code>response</code> with <code>.AGR</code> and <code>.RGR</code> appended.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>which.plots</code></td>
+<td>
+<p>A <code>logical</code> indicating which plots of the smooths 
+specified by <code>smoothing.args</code> are to be produced. 
+The options are either <code>none</code> or some combination of <code>profiles</code>, 
+<code>absolute.boxplots</code>, <code>relative.boxplots</code> and 
+<code>medians.deviations</code>. The various <code>profiles</code> plots that can be 
+poduced are described in the introduction to this function. 
+The plot of a chosen smooth is dealt with separately by the argument 
+<code>chosen.plot.args</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>profile.plot.args</code></td>
+<td>
+<p>A named <code>list</code> that is most easily 
+generated using <code>args4profile_plot</code>, it documenting the 
+options available for varying the profile plots. <em>Note 
+that if <code>args4profile_plot</code> is being called from 
+<code>traitSmooth</code> to change some arguments from the default 
+settings, then it is safest to set all of the following arguments 
+in the call: <code>plots.by</code>, <code>facet.x</code> <code>facet.y</code> and 
+<code>include.raw</code>.</em> If this argument is set to <code>NULL</code>, these 
+plots will not be produced.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>meddevn.plot.args</code></td>
+<td>
+<p>A named <code>list</code> that is most easily 
+generated using <code>args4meddevn_plot</code>, it documenting the 
+options available for varying median deviations plots. <em>Note 
+that if <code>args4meddevn_plot</code> is being called from 
+<code>traitSmooth</code> to change some arguments from the default 
+settings, then it is safest to set all of the following arguments 
+in the call: <code>plots.by</code>, <code>plots.group</code>, <code>facet.x</code> 
+and <code>facet.y</code>.</em> If this argument is set to <code>NULL</code>, these 
+plots will not be produced.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>devnboxes.plot.args</code></td>
+<td>
+<p>A named <code>list</code> that is most easily 
+generated using <code>args4devnboxes_plot</code>, it documenting the 
+options available for varying the boxplots. <em>Note 
+that if <code>args4devnboxes_plot</code> is being called from 
+<code>traitSmooth</code> to change some arguments from the default 
+settings, then it is safest to set all of the following arguments in 
+the call: <code>plots.by</code>, <code>facet.x</code> and <code>facet.y</code>.</em> If this 
+argument is set to <code>NULL</code>, these plots will not be produced.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chosen.smooth.args</code></td>
+<td>
+<p>A named <code>list</code> with just one element or 
+<code>NULL</code> for each component. It is most easily generated using 
+<code>args4chosen_smooth</code> with <code>combinations</code> set to 
+<code>single</code>. The call to <code>args4smoothing</code> should give 
+the settings of <code>smoothing.methods</code>, <code>spline.types</code>, 
+<code>df</code> and <code>lambdas</code> for a single smooth that is to be 
+extracted and that is amongst the smooths that have been produced 
+for the settings specified in <code>smoothing.methods</code>. If both 
+<code>df</code> and <code>lambda</code> in <code>chosen.smooth.args</code> are 
+<code>NULL</code>, then, depending on the settings for <code>spline.type</code> 
+and <code>smoothng.method</code>, the value of either <code>df</code> or 
+<code>lambdas</code> that is the median value or the observed value 
+immediatly below the median value will be added to 
+<code>chosen.smooth.args</code>. Otherwise, one of <code>df</code> and 
+<code>lambda</code> should be <code>NULL</code> and the other should be a 
+single <code>numeric</code> value. If a value in 
+<code>chosen.smooth.args</code> is not amongst those investigated, a 
+value that was investigated will be substituted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chosen.plot.args</code></td>
+<td>
+<p>A named <code>list</code> that is most easily 
+generated using <code>args4chosen_plot</code>, it documenting the 
+options available for varying profile plots. Because this plot 
+includes only a single smooth, the <code>chosen.smooth.args</code>, the 
+smoothing-parameter <code>factor</code>s are unnecessary and an 
+error will be given if any are included. <em>Note that if 
+<code>args4chosen_plot</code> is to be called to change from the 
+default settings given in the default <code>traitSmooth</code> call, 
+then it is safest to set all of the following arguments in the call: 
+<code>plots.by</code>, <code>facet.x</code>, <code>facet.y</code> and 
+<code>include.raw</code>.</em> If set to <code>NULL</code>, then no chosen-smooth plot 
+will be produced.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mergedata</code></td>
+<td>
+<p>A <code>data.frame</code> that is to have the values for the 
+<code>trait.types</code> for the smooth specified by <code>chosen.smooth.args</code> 
+<code>merge</code>d with it. It must contain columns with the names given 
+in <code>individuals</code> and <code>times</code>, and for which there is only one 
+row for each combination of unique values in these columns. In general, 
+it will be that the number of rows in <code>mergedata</code> is equal to the 
+number of unique combinations of the values in the columns of the 
+<code>chosen.smooth.args</code> whose names are given by <code>individuals</code> and 
+<code>times</code>, but this is not mandatory. If only one smooth has been 
+produced, then it will be merged with <code>data</code> provided <code>mergedata</code> is 
+<code>NULL</code> and <code>data</code> is not  a <code>smooths.frame</code>. Othewrwise, 
+a single smooth will be be merged with <code>mergedata</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>allows arguments to be passed to <code>plotProfiles</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function is a wrapper function for <code>probeSmooths</code>, 
+<code>plotSmoothsComparison</code>, <code>plotSmoothsComparison</code> 
+and <code>plotDeviationsBoxes</code>. It uses the helper functions 
+<code>args4smoothing</code>, <code>args4profile_plot</code> and 
+<code>args4meddevn_plot</code> to se arguments that control the smoothing 
+and plotting.
+</p>
+<p>It takes a <code>response</code> that has been observed for a set of 
+<code>individuals</code> over a number <code>times</code> and produces 
+<code>response.smoothed</code>, using <code>probeSmooths</code>, for a default 
+set of smoothing parameter settings (see <code>args4smoothing</code> 
+for the defaults). The settings can be varied from the defaults by 
+specifying alternate values for the smoothing parameters, the parameters 
+being the type of spline (<code>spline.types</code>), the degrees of freedom 
+(<code>df</code>) or smoothing penalty (<code>lambdas</code>) and <code>smoothing.methods</code>. 
+There are also several other smoothing arguments that can be manipulated to 
+affect the smooth (for details see <code>args4smoothing</code>). 
+The secondary traits of the absolute growth rate (<code>AGR</code>) and relative 
+growth rate (<code>RGR</code>) are calculated from the two primary traits, the 
+<code>response</code> and <code>response.smoothed</code>.
+</p>
+<p>Generally, profile plots for the traits (a response, an AGR or an RGR) 
+specified in <code>traits.types</code> are produced if <code>which.plots</code> is 
+<code>profiles</code>; if <code>which.plots</code> specifies one or more deviations 
+plots, then those deviations plots will also be produced, these being 
+based on the unsmoothed data from which the smoothed data has been 
+subtracted. The layout of the plots is controlled via combinations of 
+one or more of the smoothing-parameter <code>factor</code>s <code>Type</code>, 
+<code>TunePar</code>, <code>TuneVal</code>, <code>Tuning</code> (the combination 
+of <code>TunePar</code> and <code>TuneVal</code>) and <code>Method</code>, as well as 
+other <code>factor</code>s associated with the <code>data</code>. 
+The <code>factor</code>s that are to be used for the profile plots and 
+deviations boxplots are supplied via the argument <code>profile.plot.args</code> 
+using the helper function <code>args4profile_plot</code> to set 
+<code>plots.by</code>, <code>facet.x</code>, and <code>facet.y</code>; for the plots of 
+the medians of the deviations, the <code>factor</code>s are supplied via 
+the argument <code>meddevn.plot.args</code> using the helper function 
+<code>args4meddevn_plot</code> to set <code>plots.by</code>, <code>facet.x</code>, 
+<code>facet.y</code> and <code>plots.group</code>. Here, the basic principle is that 
+the number of levels combinations of the smoothing-parameter 
+<code>factor</code>s included in the set of <code>plots</code> and 
+<code>facets</code> arguments to one of these helper functions must be the same 
+as those covered by the combinations of the values supplied to 
+<code>spline.types</code>, <code>df</code>, <code>lambdas</code> and <code>smoothing.methods</code> 
+and incorporated into the <code>smooths.frame</code>, such as is 
+returned by <code>probeSmooths</code>. This ensures that smooths 
+from different parameter sets are not pooled together in a single plot. 
+It is also possible to include <code>factor</code>s that are not 
+smoothing-parameter <code>factor</code>s in the <code>plots</code> amd 
+<code>facets</code> arguments. 
+</p>
+<p>The following profiles plots can be produced using 
+<code>args4profile_plot</code>: (i) separate plots of the 
+smoothed traits for each combination of the smoothing parameters 
+(include <code>Type</code>, <code>Tuning</code> and <code>Method</code> in <code>plots.by</code>); 
+(ii) as for (i), with the corresponding plot for the unsmoothed trait 
+preceeding the plots for the smoothed trait (also set <code>include.raw</code> to 
+<code>alone</code>); (iii) profiles plots that compare a smoothed trait for all 
+combinations of the values of the smoothing parameters, arranging the plots 
+side-by-side or one above the other (include <code>Type</code>, <code>Tuning</code> and 
+<code>Method</code> in <code>facet.x</code> and/or <code>facet.y</code> - to include the 
+unsmoothed trait set <code>include.raw</code> to one of <code>facet.x</code> or 
+<code>facet.y</code>; (iv) as for (iii), except that separate plots are 
+produced for each combination of the levels of the <code>factor</code>s 
+in <code>plot.by</code> and each plot compares the smoothed traits for the 
+smoothing-parameter <code>factor</code>s included in <code>facet.x</code> 
+and/or <code>facet.y</code> (set both <code>plots.by</code> and one or more of 
+<code>facet.x</code> and <code>facet.y</code>). 
+</p>
+<p>Deviation plots that can be produced are the absolute and relative deviations 
+boxplots and plots of medians deviations (see <code>which.plots</code>). 
+</p>
+<p>By default, the single smooth for an arbitrarily chosen combination of the 
+smoothing parameters is returned by the function. The smooth for a single 
+combination other than default combination can be nominated for return 
+using the <code>chosen.smooth.args</code> argument. This combination must involve 
+only the supplied values of the smoothing parameters. The values for 
+<code>response</code>, the <code>response.smoothed</code> and their <code>AGR</code>s 
+and <code>RGR</code>s are are added to <code>data</code>, after any pre-existing  
+columns of these have been removed from <code>data</code>. Profile plots of 
+the three smoothed traits are produced using <code>plotProfiles</code>. 
+However, if <code>chosen.smooth.args</code> is <code>NULL</code>, all of the smooths will be 
+returned in a <code>smooths.frame</code>, and plots for the single 
+combination of the smoothing parameters will not be produced. 
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>smooths.frame</code> or a <code>data.frame</code> that contains 
+the unsmoothed and smoothed data in long format. That is, all the values for 
+either an unsmoothed or a smoothed trait are in a single column. 
+</p>
+<p>A <code>smooths.frame</code> will be returned when (i) <code>chosen.smooth.args</code> 
+is <code>NULL</code> and there is more than one smooth specified by the smoothing 
+parameter arguments, or (ii) <code>chosen.smooth.args</code> is not <code>NULL</code> but 
+<code>mergedata</code> is <code>NULL</code>. It will contain the smooths for a trait for the 
+different combinatons of the smoothing parameters, the values for the different 
+smooths being placed in rows one below the other. The columns that are included 
+in the <code>smooths.frame</code> are <code>Type</code>, <code>TunePar</code>, 
+<code>TuneVal</code>, <code>Tuning</code> and <code>Method</code>, as well as those specified by 
+<code>individuals</code>, <code>times</code>, <code>response</code>, and <code>response.smoothed</code>, 
+and any included in the <code>keep.columns</code>, <code>plots</code> and <code>facet</code> 
+arguments when the smooths were produced. The <code>AGR</code> or <code>RGR</code> for the 
+<code>response</code> and <code>response.smoothed</code>, if obtained, will also be 
+included. A <code>smooths.frame</code> has the attributes described in 
+<code>smooths.frame</code>. 
+</p>
+<p>A <code>data.frame</code> will be returned when (i) <code>chosen.smooth.args</code> 
+and <code>mergedata</code> are not <code>NULL</code> or (ii) <code>chosen.smooth.args</code> is 
+<code>NULL</code>, <code>data</code> is not a <code>smooths.frame</code> and there is only one 
+smooth specified by the smoothing parameter arguments. In either case, if 
+<code>mergedata</code> is not <code>NULL</code>, the chosen smooth or the single smooth 
+will be merged with the <code>data.frame</code> specified by <code>mergedata</code>. 
+When there is a single smooth and both <code>mergedata</code> and 
+<code>chosen.smooth.args</code> are <code>NULL</code>, the <code>data.frame</code> will 
+include the columns <code>individuals</code>, <code>times</code>, <code>response</code>, and 
+<code>response.smoothed</code>, and any included in the <code>keep.columns</code>, 
+<code>plots</code> and <code>facet</code> arguments, as well as any growth rates calculated 
+as a result of <code>get.rates</code> and <code>trait.type</code>.
+</p>
+<p>The <code>smooths.frame</code>/<code>data.frame</code> is returned invisibly.</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Chris Brien</p>
+
+
+<h3>References</h3>
+
+<p>Brien, C., Jewell, N., Garnett, T., Watts-Williams, S. J., &amp; Berger, B. (2020). Smoothing and extraction of traits in the growth analysis of noninvasive phenotypic data. <em>Plant Methods</em>, <b>16</b>, 36. <a href="https://doi.org/10.1186/s13007-020-00577-6">doi:10.1186/s13007-020-00577-6</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>args4smoothing</code>, <code>args4meddevn_plot</code>, <code>args4profile_plot</code>, 
+<code>args4chosen_smooth</code>, <br><code>args4chosen_plot</code>, <code>probeSmooths</code> 
+<code>plotSmoothsComparison</code> and <br><code>plotSmoothsMedianDevns</code>, <code>ggplot</code>.</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(exampleData)
+longi.dat &lt;- longi.dat[1:140,] #reduce to a smaller data set
+vline &lt;- list(ggplot2::geom_vline(xintercept=29, linetype="longdash", linewidth=1))
+yfacets &lt;- c("Smarthouse", "Treatment.1")
+smth.dat &lt;- traitSmooth(data = longi.dat, 
+                        response = "PSA", response.smoothed = "sPSA",
+                        individuals = "Snapshot.ID.Tag",times = "DAP", 
+                        keep.columns = yfacets, 
+                        smoothing.args = 
+                          args4smoothing(df = c(5,7), 
+                                         lambda = list(PS = c(0.316,10))),
+                        profile.plot.args = 
+                          args4profile_plot(facet.y = yfacets, 
+                                            ggplotFuncs = vline),
+                        chosen.plot.args = 
+                          args4chosen_plot(facet.y = yfacets,  
+                                           ggplotFuncs = vline))
+</code></pre>
+
+
+</div>

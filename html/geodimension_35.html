@@ -1,0 +1,115 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get_unrelated_instances</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get unrelated instances</h2>
+
+<h3>Description</h3>
+
+<p>Given two previously related levels of a dimension, it obtains the instances
+of the lower level that have not been related to the upper level.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get_unrelated_instances(gd, lower_level_name, upper_level_name)
+
+## S3 method for class 'geodimension'
+get_unrelated_instances(gd, lower_level_name = NULL, upper_level_name = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>gd</code></td>
+<td>
+<p>A <code>geodimension</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower_level_name</code></td>
+<td>
+<p>A string, name of the lower level.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper_level_name</code></td>
+<td>
+<p>A string, name of the upper lever.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>tibble</code>, unrelated lower level instances.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>geodimension</code>, <code>geolevel</code>
+</p>
+<p>Other relationship between geolevels: 
+<code>complete_relation_by_geography()</code>,
+<code>relate_levels()</code>,
+<code>select_levels()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+layer_us_place &lt;- gd_us |&gt;
+  get_level_layer("place")
+
+layer_us_county &lt;-
+  dplyr::inner_join(
+    get_level_data_geo(gd_us, "county"),
+    get_level_layer(gd_us, "county"),
+    by = c("geoid", "statefp", "name", "type")
+  ) |&gt;
+  sf::st_as_sf()
+
+place &lt;-
+  geolevel(name = "place",
+           layer = layer_us_place,
+           attributes = c("statefp", "county_geoid", "name", "type"),
+           key = "geoid")
+
+county &lt;-
+  geolevel(
+    name = "county",
+    layer = layer_us_county,
+    attributes = c("statefp", "name", "type"),
+    key = "geoid"
+  ) |&gt;
+  add_geometry(coordinates_to_geometry(layer_us_county,
+                                       lon_lat = c("intptlon", "intptlat")))
+
+gd &lt;-
+  geodimension(name = "gd_us",
+               level = place) |&gt;
+  add_level(level = county)
+
+gd &lt;- gd |&gt;
+  relate_levels(
+    lower_level_name = "place",
+    upper_level_name = "county",
+    by_geography = TRUE
+  )
+
+ui &lt;- gd |&gt;
+  get_unrelated_instances(
+    lower_level_name = "place",
+    upper_level_name = "county"
+  )
+
+</code></pre>
+
+
+</div>

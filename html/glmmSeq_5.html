@@ -1,0 +1,118 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>glmmRefit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Refit mixed effects model</h2>
+
+<h3>Description</h3>
+
+<p>Based on a 'GlmmSeq' or 'lmmSeq' class result object, this function attempts
+to refit an identical model for a specific gene based on the data and fitting
+parameters stored in the results object and refitting using either
+<code>lme4::glmer()</code> for <code>GlmmSeq</code> objects or <code>lmer()</code> for <code>lmmSeq</code> objects. The
+fitted model can then be passed on to other packages such as <code>emmeans</code> to
+look at estimated marginal means for the model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">glmmRefit(object, gene, ...)
+
+## S3 method for class 'lmmSeq'
+glmmRefit(object, gene, formula = object@formula, ...)
+
+## S3 method for class 'GlmmSeq'
+glmmRefit(
+  object,
+  gene,
+  formula = object@formula,
+  control = object@info$control,
+  family = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A fitted results object of class <code>GlmmSeq</code> or <code>lmmSeq</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gene</code></td>
+<td>
+<p>A character value specifying a single gene to extract a fitted
+model for</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Optional arguments passed to either <code>lme4::glmer()</code> or
+<code>lme4::lmer()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Optional formula to use when refitting model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>Optional control parameters, see <code>lme4::lmerControl()</code> or
+<code>lme4::glmerControl()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>Optional GLM family when refitting GLMM using <code>lme4::glmer()</code>
+or <code>glmmTMB()</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Fitted model of class <code>lmerMod</code> in the case of LMM, or <code>glmerMod</code> or
+<code>glmmTMB</code> for a GLMM dependent on the original method.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(PEAC_minimal_load)
+disp &lt;- apply(tpm, 1, function(x) {
+  (var(x, na.rm = TRUE)-mean(x, na.rm = TRUE))/(mean(x, na.rm = TRUE)**2)
+})
+glmmtest &lt;- glmmSeq(~ Timepoint * EULAR_6m + (1 | PATID),
+                     countdata = tpm[1:2, ],
+                     metadata = metadata,
+                     dispersion = disp,
+                     verbose = FALSE)
+
+# show summary for single gene
+summary(glmmtest, "MS4A1")
+
+# refit a single model using lme4::glmer()
+fit &lt;- glmmRefit(glmmtest, "MS4A1")
+
+# refit model with reduced formula
+fit2 &lt;- glmmRefit(glmmtest, "MS4A1",
+                  formula = count ~ Timepoint + EULAR_6m + (1 | PATID))
+
+# LRT
+anova(fit, fit2)
+
+</code></pre>
+
+
+</div>

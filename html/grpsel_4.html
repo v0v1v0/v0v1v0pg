@@ -1,0 +1,352 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>grpsel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Group subset selection</h2>
+
+<h3>Description</h3>
+
+<p>Fits the regularisation surface for a regression model with a group subset selection
+penalty. The group subset penalty can be combined with either a group lasso or ridge penalty
+for shrinkage. The group subset parameter is <code>lambda</code> and the group lasso/ridge parameter is
+<code>gamma</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">grpsel(
+  x,
+  y,
+  group = seq_len(ncol(x)),
+  penalty = c("grSubset", "grSubset+grLasso", "grSubset+Ridge"),
+  loss = c("square", "logistic"),
+  local.search = FALSE,
+  orthogonalise = FALSE,
+  nlambda = 100,
+  lambda.step = 0.99,
+  lambda = NULL,
+  lambda.factor = NULL,
+  ngamma = 10,
+  gamma.max = 100,
+  gamma.min = 1e-04,
+  gamma = NULL,
+  gamma.factor = NULL,
+  pmax = ncol(x),
+  gmax = length(unique(group)),
+  eps = 1e-04,
+  max.cd.iter = 10000,
+  max.ls.iter = 100,
+  active.set = TRUE,
+  active.set.count = 3,
+  sort = TRUE,
+  screen = 500,
+  warn = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a predictor matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>a response vector</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>a vector of length <code>ncol(x)</code> with the jth element identifying the group that
+the jth predictor belongs to; alternatively, a list of vectors with the kth vector identifying
+the predictors that belong to the kth group (useful for overlapping groups)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalty</code></td>
+<td>
+<p>the type of penalty to apply; one of 'grSubset', 'grSubset+grLasso', or
+'grSubset+Ridge'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loss</code></td>
+<td>
+<p>the type of loss function to use; 'square' for linear regression or 'logistic' for
+logistic regression</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>local.search</code></td>
+<td>
+<p>a logical indicating whether to perform local search after coordinate
+descent; typically leads to higher quality solutions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>orthogonalise</code></td>
+<td>
+<p>a logical indicating whether to orthogonalise within groups</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nlambda</code></td>
+<td>
+<p>the number of group subset selection parameters to evaluate when  <code>lambda</code> is
+computed automatically; may evaluate fewer parameters if <code>pmax</code> or <code>gmax</code> is reached
+first</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.step</code></td>
+<td>
+<p>the step size taken when computing <code>lambda</code> from the data; should be a
+value strictly between 0 and 1; larger values typically lead to a finer grid of subset sizes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>an optional list of decreasing sequences of group subset selection parameters; the
+list should contain a vector for each value of <code>gamma</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.factor</code></td>
+<td>
+<p>a vector of penalty factors applied to the group subset selection penalty;
+equal to the group sizes by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ngamma</code></td>
+<td>
+<p>the number of group lasso or ridge parameters to evaluate when <code>gamma</code> is
+computed automatically</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma.max</code></td>
+<td>
+<p>the maximum value for <code>gamma</code> when <code>penalty='grSubset+Ridge'</code>; when
+<code>penalty='grSubset+grLasso'</code> <code>gamma.max</code> is computed automatically from the data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma.min</code></td>
+<td>
+<p>the minimum value for <code>gamma</code> when <code>penalty='grSubset+Ridge'</code> and the
+minimum value for <code>gamma</code> as a fraction of <code>gamma.max</code> when
+<code>penalty='grSubset+grLasso'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>an optional decreasing sequence of group lasso or ridge parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma.factor</code></td>
+<td>
+<p>a vector of penalty factors applied to the shrinkage penalty; by default,
+equal to the square root of the group sizes when <code>penalty='grSubset+grLasso'</code> or a vector of
+ones when <code>penalty='grSubset+Ridge'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pmax</code></td>
+<td>
+<p>the maximum number of predictors ever allowed to be active; ignored if <code>lambda</code>
+is supplied</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gmax</code></td>
+<td>
+<p>the maximum number of groups ever allowed to be active; ignored if <code>lambda</code> is
+supplied</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>the convergence tolerance; convergence is declared when the relative maximum
+difference in consecutive coefficients is less than <code>eps</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.cd.iter</code></td>
+<td>
+<p>the maximum number of coordinate descent iterations allowed per value of
+<code>lambda</code> and <code>gamma</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.ls.iter</code></td>
+<td>
+<p>the maximum number of local search iterations allowed per value of
+<code>lambda</code> and <code>gamma</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>active.set</code></td>
+<td>
+<p>a logical indicating whether to use active set updates; typically lowers the
+run time</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>active.set.count</code></td>
+<td>
+<p>the number of consecutive coordinate descent iterations in which a
+subset should appear before running active set updates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sort</code></td>
+<td>
+<p>a logical indicating whether to sort the coordinates before running coordinate
+descent; required for gradient screening; typically leads to higher quality solutions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>screen</code></td>
+<td>
+<p>the number of groups to keep after gradient screening; smaller values typically
+lower the run time</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warn</code></td>
+<td>
+<p>a logical indicating whether to print a warning if the algorithms fail to converge</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For linear regression (<code>loss='square'</code>) the response and predictors are centred
+about zero and scaled to unit l2-norm. For logistic regression (<code>loss='logistic'</code>) only the
+predictors are centred and scaled and an intercept is fit during the course of the algorithm.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>grpsel</code>; a list with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>a list of matrices whose columns contain fitted coefficients for a given value of
+<code>lambda</code>; an individual matrix in the list for each value of <code>gamma</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>a vector containing the values of <code>gamma</code> used in the fit</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>a list of vectors containing the values of <code>lambda</code> used in the fit; an
+individual vector in the list for each value of <code>gamma</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>np</code></td>
+<td>
+<p>a list of vectors containing the number of active predictors per value of
+<code>lambda</code>; an individual vector in the list for each value of <code>gamma</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ng</code></td>
+<td>
+<p>a list of vectors containing the the number of active groups per value of
+<code>lambda</code>; an individual vector in the list for each value of <code>gamma</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter.cd</code></td>
+<td>
+<p>a list of vectors containing the number of coordinate descent iterations per value
+of <code>lambda</code>; an individual vector in the list for each value of <code>gamma</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter.ls</code></td>
+<td>
+<p>a list of vectors containing the number of local search iterations per value
+of <code>lambda</code>; an individual vector in the list for each value of <code>gamma</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loss</code></td>
+<td>
+<p>a list of vectors containing the evaluated loss function per value of <code>lambda</code>
+evaluated; an individual vector in the list for each value of <code>gamma</code></p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Ryan Thompson &lt;ryan.thompson@monash.edu&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Thompson, R. and Vahid, F. (2021). 'Group selection and shrinkage with application to
+sparse semiparametric modeling'. arXiv: <a href="https://arxiv.org/abs/2105.12081">2105.12081</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Grouped data
+set.seed(123)
+n &lt;- 100
+p &lt;- 10
+g &lt;- 5
+group &lt;- rep(1:g, each = p / g)
+beta &lt;- numeric(p)
+beta[which(group %in% 1:2)] &lt;- 1
+x &lt;- matrix(rnorm(n * p), n, p)
+y &lt;- rnorm(n, x %*% beta)
+newx &lt;- matrix(rnorm(p), ncol = p)
+
+# Group subset selection
+fit &lt;- grpsel(x, y, group)
+plot(fit)
+coef(fit, lambda = 0.05)
+predict(fit, newx, lambda = 0.05)
+
+# Group subset selection with group lasso shrinkage
+fit &lt;- grpsel(x, y, group, penalty = 'grSubset+grLasso')
+plot(fit, gamma = 0.05)
+coef(fit, lambda = 0.05, gamma = 0.1)
+predict(fit, newx, lambda = 0.05, gamma = 0.1)
+
+# Group subset selection with ridge shrinkage
+fit &lt;- grpsel(x, y, group, penalty = 'grSubset+Ridge')
+plot(fit, gamma = 0.05)
+coef(fit, lambda = 0.05, gamma = 0.1)
+predict(fit, newx, lambda = 0.05, gamma = 0.1)
+</code></pre>
+
+
+</div>

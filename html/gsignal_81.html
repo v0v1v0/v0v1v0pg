@@ -1,0 +1,181 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ellip</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Elliptic filter design</h2>
+
+<h3>Description</h3>
+
+<p>Compute the transfer function coefficients of an elliptic filter.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ellip(n, ...)
+
+## S3 method for class 'FilterSpecs'
+ellip(n, Rp = n$Rp, Rs = n$Rs, w = n$Wc, type = n$type, plane = n$plane, ...)
+
+## Default S3 method:
+ellip(
+  n,
+  Rp,
+  Rs,
+  w,
+  type = c("low", "high", "stop", "pass"),
+  plane = c("z", "s"),
+  output = c("Arma", "Zpg", "Sos"),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>filter order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments passed to ellip, overriding those given by
+<code>n</code> of class <code>FilterSpecs</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Rp</code></td>
+<td>
+<p>dB of passband ripple.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Rs</code></td>
+<td>
+<p>dB of stopband ripple.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>critical frequencies of the filter. <code>w</code> must be a scalar for
+low-pass and high-pass filters, and <code>w</code> must be a two-element vector
+<code>c(low, high)</code> specifying the lower and upper bands in radians/second.
+For digital filters, w must be between 0 and 1 where 1 is the Nyquist
+frequency.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>filter type, one of <code>"low"</code>, <code>"high"</code>, <code>"stop"</code>,
+or <code>"pass"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plane</code></td>
+<td>
+<p>"z" for a digital filter or "s" for an analog filter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output</code></td>
+<td>
+<p>Type of output, one of:
+</p>
+
+<dl>
+<dt>"Arma"</dt>
+<dd>
+<p>Autoregressive-Moving average (aka numerator/denominator, aka
+b/a)</p>
+</dd>
+<dt>"Zpg"</dt>
+<dd>
+<p>Zero-pole-gain format</p>
+</dd>
+<dt>"Sos"</dt>
+<dd>
+<p>Second-order sections</p>
+</dd>
+</dl>
+<p>Default is <code>"Arma"</code> for compatibility with the 'signal' package and the
+'Matlab' and 'Octave' equivalents, but <code>"Sos"</code> should be preferred for
+general-purpose filtering because of numeric stability.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>An elliptic filter is a filter with equalized ripple (equiripple) behavior in
+both the passband and the stopband. The amount of ripple in each band is
+independently adjustable, and no other filter of equal order can have a
+faster transition in gain between the passband and the stopband, for the
+given values of ripple.
+</p>
+<p>As the ripple in the stopband approaches zero, the filter becomes a type I
+Chebyshev filter. As the ripple in the passband approaches zero, the filter
+becomes a type II Chebyshev filter and finally, as both ripple values
+approach zero, the filter becomes a Butterworth filter.
+</p>
+<p>Because <code>ellip</code> is generic, it can be extended to accept other inputs,
+using <code>ellipord</code> to generate filter criteria for example.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Depending on the value of the <code>output</code> parameter, a list of
+class <code>Arma</code>, <code>Zpg</code>, or <code>Sos</code>
+containing the filter coefficients
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Paulo Neis, <a href="mailto:p_neis@yahoo.com.br">p_neis@yahoo.com.br</a>,<br>
+adapted by Doug Stewart, <a href="mailto:dastew@sympatico.ca">dastew@sympatico.ca</a>.<br>
+Conversion to R Tom Short,<br>
+adapted by Geert van Boxtel, <a href="mailto:G.J.M.vanBoxtel@gmail.com">G.J.M.vanBoxtel@gmail.com</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p><a href="https://en.wikipedia.org/wiki/Elliptic_filter">https://en.wikipedia.org/wiki/Elliptic_filter</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>Arma</code>, <code>filter</code>, <code>butter</code>,
+<code>cheby1</code>, <code>ellipord</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## compare the frequency responses of 5th-order Butterworth
+## and elliptic filters.
+bf &lt;- butter(5, 0.1)
+ef &lt;- ellip(5, 3, 40, 0.1)
+bfr &lt;- freqz(bf)
+efr &lt;- freqz(ef)
+plot(bfr$w, 20 * log10(abs(bfr$h)), type = "l", ylim = c(-80, 0),
+     xlab = "Frequency (Rad)", ylab = c("dB"), lwd = 2,
+     main = paste("Elliptic versus Butterworth filter",
+     "low-pass -3 dB cutoff at 0.1 rad", sep = "\n"))
+lines(efr$w, 20 * log10(abs(efr$h)), col = "red", lwd = 2)
+legend ("topright", legend = c("Butterworh", "Elliptic"),
+        lty = 1, lwd = 2, col = 1:2)
+
+</code></pre>
+
+
+</div>

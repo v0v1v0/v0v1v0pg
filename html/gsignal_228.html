@@ -1,0 +1,151 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rceps</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Real cepstrum</h2>
+
+<h3>Description</h3>
+
+<p>Return the real cepstrum and minimum-phase reconstruction of a signal
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rceps(x, minphase = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>input data, specified as a real vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minphase</code></td>
+<td>
+<p>logical (default: <code>FALSE</code>) indication whether to compute
+minimum-phase reconstructed signal</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Cepstral analysis is a nonlinear signal processing technique that is applied
+most commonly in speech and image processing, or as a tool to
+investigate periodic structures within frequency spectra, for instance
+resulting from echos/reflections in the signal or to the occurrence of
+harmonic frequencies (partials, overtones).
+</p>
+<p>The cepstrum is used in many variants. Most important are the power cepstrum,
+the complex cepstrum, and real cepstrum. The function <code>rceps</code> implements
+the real cepstrum by computing the inverse of the log-transformed FFT while
+discarding phase, i.e.,
+</p>
+<p style="text-align: center;"><code class="reqn">rceps(x) &lt;- ifft(log(Mag(fft(x))))</code>
+</p>
+
+<p>The real cepstrum is related to the power spectrum by the relation <code class="reqn">pceps
+= 4 * rceps^2</code>.
+</p>
+<p>The function <code>rceps()</code> can also return a minimum-phase reconstruction of
+the original signal. The concept of minimum phase originates from filtering
+theory, and denotes a filter transfer function with all of its poles and
+zeroes in the Z-transform domain lie inside the unit circle on the complex
+plane. Such a transfer function represents a stable filter.
+</p>
+<p>A minimum-phase signal is a signal that has its energy concentrated
+near the front of the signal (near time 0). Such signals have many
+applications, e.g. in seismology and speech analysis.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If <code>minphase</code> equals <code>FALSE</code>, the real cepstrum is returned
+as a vector. If <code>minphase</code> equals <code>TRUE</code>, a list is returned
+containing two vectors; <code>y</code> containing the real cepstrum, and
+<code>ym</code> containing the minimum-phase reconstructed signal
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Paul Kienzle, <a href="mailto:pkienzle@users.sf.net">pkienzle@users.sf.net</a>,<br>
+Mike Miller.<br>
+Conversion to R by Geert van Boxtel, <a href="mailto:G.J.M.vanBoxtel@gmail.com">G.J.M.vanBoxtel@gmail.com</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p><a href="https://en.wikipedia.org/wiki/Minimum_phase">https://en.wikipedia.org/wiki/Minimum_phase</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cceps</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Simulate a speech signal with a 70 Hz glottal wave
+f0 &lt;- 70; fs = 10000           # 100 Hz fundamental, 10 kHz sampling rate
+a &lt;- Re(poly(0.985 * exp(1i * pi * c(0.1, -0.1, 0.3, -0.3))))
+s &lt;- 0.05 * runif(1024)
+s[floor(seq(1, length(s), fs / f0))] &lt;- 1
+x &lt;- filter(1, a, s)
+
+## compute real cepstrum and min-phase of x
+cep &lt;- rceps(x, TRUE)
+hx &lt;- freqz(x, fs = fs)
+hxm &lt;- freqz (cep$ym, fs = fs)
+len &lt;- 1000 * trunc(min(length(x), length(cep$ym)) / 1000)
+time &lt;- 0:(len-1) * 1000 / fs
+
+op &lt;- par(mfcol = c(2, 2))
+plot(time, x[1:len], type = "l", ylim = c(-10, 10),
+  xlab = "Time (ms)", ylab = "Amplitude",
+  main = "Original and reconstructed signals")
+lines(time, cep$ym[1:len], col = "red")
+legend("topright", legend = c("original", "reconstructed"),
+  lty = 1, col = c(1, 2))
+
+plot(time, cep$y[1:len], type = "l",
+  xlab = "Quefrency (ms)", ylab = "Amplitude",
+  main = "Real cepstrum")
+
+plot (hx$w, log(abs(hx$h)), type = "l",
+  xlab = "Frequency (Hz)", ylab = "Magnitude",
+  main = "Magnitudes are identical")
+lines(hxm$w, log(abs(hxm$h)), col = "red")
+legend("topright", legend = c("original", "reconstructed"),
+  lty = 1, col = c(1, 2))
+
+phx &lt;- unwrap(Arg(hx$h))
+phym &lt;- unwrap(Arg(hxm$h))
+range &lt;- c(round(min(phx, phym)), round(max(phx, phym)))
+plot (hx$w, phx, type = "l", ylim = range,
+  xlab = "Frequency (Hz)", ylab = "Phase",
+  main = "Unwrapped phase")
+lines(hxm$w, phym, col = "red")
+legend("bottomright", legend = c("original", "reconstructed"),
+  lty = 1, col = c(1, 2))
+par(op)
+
+## confirm the magnitude spectrum is identical in the signal
+## and the reconstruction and that there are peaks in the
+## cepstrum at 14 ms intervals corresponding to an F0 of 70 Hz.
+
+</code></pre>
+
+
+</div>

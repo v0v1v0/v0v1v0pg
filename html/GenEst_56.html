@@ -1,0 +1,419 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cpm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit cp carcass persistence models</h2>
+
+<h3>Description</h3>
+
+<p>Carcass persistence is modeled as survival function where the 
+one or both parameter(s) can depend on any number of covariates. Format 
+and usage parallel that of common <code>R</code> functions such as <code>lm</code>, 
+<code>glm</code>, and <code>gam</code>. However, the input data (<code>data</code>) are 
+structured differently to accommodate the survival model approach (see 
+"Details"), and model formulas may be entered for both <code>l</code> 
+("location") and <code>s</code> ("scale").
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cpm(
+  formula_l,
+  formula_s = NULL,
+  data,
+  left,
+  right,
+  dist = "weibull",
+  allCombos = FALSE,
+  sizeCol = NULL,
+  CL = 0.9,
+  quiet = FALSE
+)
+
+cpm0(
+  formula_l,
+  formula_s = NULL,
+  data = NULL,
+  left = NULL,
+  right = NULL,
+  dist = "weibull",
+  CL = 0.9,
+  quiet = FALSE
+)
+
+cpmSet(
+  formula_l,
+  formula_s = NULL,
+  data,
+  left,
+  right,
+  dist = c("exponential", "weibull", "lognormal", "loglogistic"),
+  CL = 0.9,
+  quiet = FALSE
+)
+
+cpmSize(
+  formula_l,
+  formula_s = NULL,
+  data,
+  left,
+  right,
+  dist = c("exponential", "weibull", "lognormal", "loglogistic"),
+  sizeCol = NULL,
+  allCombos = FALSE,
+  CL = 0.9,
+  quiet = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula_l</code></td>
+<td>
+<p>Formula for location; an object of class 
+"<code>formula</code>" (or one that can be coerced to that class):
+a symbolic description of the model to be fitted. Details of model 
+specification are given under "Details".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula_s</code></td>
+<td>
+<p>Formula for scale; an object of class 
+"<code>formula</code>" (or one that can be coerced to that class):
+a symbolic description of the model to be fitted. Details of model 
+specification are given under "Details".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame with results from carcass persistence trials and any
+covariates included in <code>formula_l</code> or formula_s (required).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>left</code></td>
+<td>
+<p>Name of columns in <code>data</code> where the time of last present
+observation is stored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>right</code></td>
+<td>
+<p>Name of columns in <code>data</code> where the time of first absent
+observation is stored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist</code></td>
+<td>
+<p>Distribution name ("exponential", "weibull", "loglogistic", or 
+"lognormal")</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allCombos</code></td>
+<td>
+<p>logical. If <code>allCombos = FALSE</code>, then the single model
+expressed by <code>formula_l</code> and <code>formula_s</code> is fit using a call to
+<code>cpm0</code>. If <code>allCombos = TRUE</code>, a full set of <code>cpm</code>
+submodels derived from combinations of the given covariates for <code>p</code>
+and <code>k</code> is fit. For example, submodels of <code>formula_l = p ~ A * B</code>
+would be <code>p ~ A * B</code>, <code>p ~ A + B</code>, <code>p ~ A</code>, <code>p ~ B</code>,
+and <code>p ~ 1</code>. Models for each pairing of a <code>p</code> submodel with a
+<code>k</code> submodel are fit via <code>cpmSet</code>, which fits each model
+combination using successive calls to <code>cpm0</code>, which fits a
+single model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sizeCol</code></td>
+<td>
+<p>character string. The name of the column in <code>data</code> that
+gives the size class of the carcasses in the field trials. If
+<code>sizeCol = NULL</code>, then models are not segregated by size. If a
+<code>sizeCol</code> is provided, then separate models are fit for the <code>data</code>
+subsetted by <code>sizeCol</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CL</code></td>
+<td>
+<p>confidence level</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>Logical indicator of whether or not to print messsages</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The probability of a carcass persisting to a particular time is 
+dictated by the specific distribution chosen and its underlying location
+(l) and  scale (s) parameters (for all models except the exponential,  
+which only has a location parameter). Both <code>l</code> and <code>s</code> may 
+depend on covariates such as ground cover, season, species, etc., and a 
+separate model format (<code>formula_l</code> and <code>formula_s</code>) may be 
+entered for each. The models are entered as they would be in the familiar 
+<code>lm</code> or <code>glm</code> functions in R. For example, <code>l</code> might vary
+with <code>A</code>, <code>B</code>, and <code>C</code>, while <code>k</code> varies only with
+<code>A</code>. A user might then enter <code>p ~ A + B + C</code> for <code>formula_l</code>
+and <code>k ~ A</code> for <code>formula_s</code>. Other R conventions for defining
+formulas may also be used, with <code>A:B</code> for the interaction between
+covariates A and B and <code>A * B</code> as short-hand for <code>A + B + A:B</code>.
+</p>
+<p>Carcass persistence <code>data</code> must be entered in a data frame with data 
+in each row giving the fate of a single carcass in the trials. There
+must be a column for each of the last time the carcass was observed 
+present and the first time the carcass was observed absent (or NA if the
+carcass was always present). Additional columns with values for
+categorical covariates (e.g., visibility = E, M, or D) may also be 
+included.
+</p>
+
+
+<h3>Value</h3>
+
+<p>an object of an object of class <code>cpm</code>, <code>cpmSet</code>,
+<code>cpmSize</code>, or <code>cpmSetSize</code>.
+</p>
+
+<dl>
+<dt><code>cpm0()</code></dt>
+<dd>
+<p>returns a <code>cpm</code> object, which is a description
+of a single, fitted pk model. Due to the large number and complexity of
+components of a<code>cpm</code> model, only a subset of them is printed
+automatically; the rest can be viewed/accessed via the <code>$</code> operator
+if desired. These are described in detail in the '<code>cpm</code> Components'
+section.</p>
+</dd>
+<dt><code>cpmSet()</code></dt>
+<dd>
+<p>returns a list of <code>cpm</code> objects, one for each
+of the submodels, as described with parameter <code>allCombos = TRUE</code>.</p>
+</dd>
+<dt><code>cpmSize()</code></dt>
+<dd>
+<p>returns a list of <code>cpmSet</code> objects (one for
+each 'size') if <code>allCombos = T</code>, or a list of <code>cpm</code> objects (one
+for each 'size') if <code>allCombos = T</code></p>
+</dd>
+<dt><code>cpm</code></dt>
+<dd>
+<p>returns a <code>cpm</code>, <code>cpmSet</code>, <code>cpmSize</code>, or
+<code>cpmSetSize</code> object:
+</p>
+
+<ul>
+<li> <p><code>cpm</code> object if <code>allCombos = FALSE, sizeCol = NULL</code>
+</p>
+</li>
+<li> <p><code>cpmSet</code> object if <code>allCombos = TRUE, sizeCol = NULL</code>
+</p>
+</li>
+<li> <p><code>cpmSize</code> object if <code>allCombos = FALSE, sizeCol != NULL</code>
+</p>
+</li>
+<li> <p><code>cpmSetSize</code> object if <code>allCombos = TRUE, sizeCol != NULL</code>
+</p>
+</li>
+</ul>
+</dd>
+</dl>
+<h3>
+<code>cpm</code> Components</h3>
+
+<p>The following components of a <code>cpm</code> object are displayed automatically:
+</p>
+
+<dl>
+<dt><code>call</code></dt>
+<dd>
+<p>the function call to fit the model</p>
+</dd>
+<dt><code>formula_l</code></dt>
+<dd>
+<p>the model formula for the <code>p</code> parameter</p>
+</dd>
+<dt><code>formula_s</code></dt>
+<dd>
+<p>the model formula for the <code>k</code> parameter</p>
+</dd>
+<dt><code>distribution</code></dt>
+<dd>
+<p>distribution used</p>
+</dd>
+<dt><code>predictors</code></dt>
+<dd>
+<p>list of covariates of <code>l</code> and/or <code>s</code></p>
+</dd>
+<dt><code>AICc</code></dt>
+<dd>
+<p>the AIC value as corrected for small sample size</p>
+</dd>
+<dt><code>convergence</code></dt>
+<dd>
+<p>convergence status of the numerical optimization
+to find the maximum likelihood estimates of <code>p</code> and <code>k</code>. A
+value of <code>0</code> indicates that the model was fit successfully. For
+help in deciphering other values, see <code>optim</code>.</p>
+</dd>
+<dt><code>cell_ls</code></dt>
+<dd>
+<p>summary statistics for estimated cellwise
+<code>l</code> and <code>s</code>, including the medians and upper &amp; lower bounds
+on CIs for each parameter, indexed by cell (or combination of
+covariate levels).</p>
+</dd>
+<dt><code>cell_ab</code></dt>
+<dd>
+<p>summary statistics for estimated cellwise
+<code>pda</code> and <code>pdb</code>, including the medians and upper &amp; lower 
+bounds on CIs for each parameter, indexed by cell (or combination of
+covariate levels).</p>
+</dd>
+<dt><code>cell_desc</code></dt>
+<dd>
+<p>Descriptive statistics for estimated
+cellwise median persistence time and rI for search intervals of 1, 3, 7
+14, and 28 days, where rI is the probability of that carcass that arrives
+at a uniform random time in within a search interval of I days persists
+until the first search after arrival. </p>
+</dd>
+</dl>
+<p>The following components are not printed automatically but can be accessed
+via the <code>$</code> operator:
+</p>
+
+<dl>
+<dt><code>data</code></dt>
+<dd>
+<p>the data used to fit the model</p>
+</dd>
+<dt><code>betahat_l</code></dt>
+<dd>
+<p>parameter estimates for the terms in the 
+regression model for for <code>l</code></p>
+</dd>
+<dt><code>betahat_s</code></dt>
+<dd>
+<p>parameter estimates for the terms in the 
+regression model for for <code>s</code>. If dist = "exponential", <code>s</code> 
+is set at 1 and not calculated.</p>
+</dd>
+<dt><code>varbeta</code></dt>
+<dd>
+<p>the variance-covariance matrix of the estimators
+for <code>c(betahat_l, betahat_s</code>.</p>
+</dd>
+<dt><code>cellMM_l</code></dt>
+<dd>
+<p>a cellwise model (design) matrix for covariate 
+structure of <code>l_formula</code></p>
+</dd>
+<dt><code>cellMM_s</code></dt>
+<dd>
+<p>a cellwise model(design) matrix for covariate 
+structure of <code>s_formula</code></p>
+</dd>
+<dt><code>levels_l</code></dt>
+<dd>
+<p>all levels of each covariate of <code>l</code></p>
+</dd>
+<dt><code>levels_s</code></dt>
+<dd>
+<p>all levels of each covariate of <code>s</code></p>
+</dd>
+<dt><code>nbeta_l</code></dt>
+<dd>
+<p>number of parameters fit for <code>l</code></p>
+</dd>
+<dt><code>nbeta_s</code></dt>
+<dd>
+<p>number of parameters fit for <code>s</code></p>
+</dd>
+<dt><code>cells</code></dt>
+<dd>
+<p>cell structure of the cp-model, i.e., combinations of
+all levels for each covariate of <code>p</code> and <code>k</code>. For example, if
+<code>covar1</code> has levels <code>"a"</code>, <code>"b"</code>, and <code>"c"</code>, and
+<code>covar2</code> has levels <code>"X"</code> and <code>"Y"</code>, then the cells 
+would consist of <code>a.X</code>, <code>a.Y</code>, <code>b.X</code>, <code>b.Y</code>, 
+<code>c.X</code>, and <code>c.Y</code>.</p>
+</dd>
+<dt><code>ncell</code></dt>
+<dd>
+<p>total number of cells</p>
+</dd>
+<dt><code>predictors_l</code></dt>
+<dd>
+<p>list of covariates of <code>l</code></p>
+</dd>
+<dt><code>predictors_s</code></dt>
+<dd>
+<p>list of covariates of <code>s</code></p>
+</dd>
+<dt><code>observations</code></dt>
+<dd>
+<p>observations used to fit the model</p>
+</dd>
+<dt><code>carcCells</code></dt>
+<dd>
+<p>the cell to which each carcass belongs</p>
+</dd>
+<dt><code>AIC</code></dt>
+<dd>
+<p>the 
+<a href="https://en.wikipedia.org/wiki/Akaike_information_criterion">AIC</a>
+value for the fitted model</p>
+</dd>
+<dt><code>CL</code></dt>
+<dd>
+<p>the input <code>CL</code></p>
+</dd>
+</dl>
+<h3>Advanced</h3>
+
+<p><code>cpmSize</code> may also be used to fit a single model for each size class if
+<code>allCombos = FALSE</code>. To do so, <code>formula_l</code>, <code>formula_s</code>, and
+<code>dist</code> be named lists with names matching the sizes listed in
+<code>unique(data[, sizeCol])</code>. The return value is then a list of
+<code>cpm</code> objects, one for each size.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> head(data(wind_RP))
+ mod1 &lt;- cpm(formula_l = l ~ Season, formula_s = s ~ 1, data = wind_RP$CP,
+   left = "LastPresent", right = "FirstAbsent")
+ class(mod1)
+ mod2 &lt;- cpm(formula_l = l ~ Season, formula_s = s ~ 1, data = wind_RP$CP,
+   left = "LastPresent", right = "FirstAbsent", allCombos = TRUE)
+ class(mod2)
+ names(mod2)
+ class(mod2[[1]])
+ mod3 &lt;- cpm(formula_l = l ~ Season, formula_s = s ~ 1, data = wind_RP$CP,
+   left = "LastPresent", right = "FirstAbsent",
+   allCombos = TRUE, sizeCol = "Size")
+ class(mod3)
+ names(mod3)
+ class(mod3[[1]])
+ class(mod3[[1]][[1]])
+
+</code></pre>
+
+
+</div>

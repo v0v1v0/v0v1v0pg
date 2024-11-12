@@ -1,0 +1,119 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gamBiCopCDF</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Conditional distribution function of a Generalized Additive model for the
+copula parameter or Kendall's tau</h2>
+
+<h3>Description</h3>
+
+<p>This function returns the distribution function of a bivariate conditional
+copula, where either the copula parameter or the Kendall's tau is modeled
+as a function of the covariates.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gamBiCopCDF(object, newdata = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p><code>gamBiCop-class</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>(Same as in <code>predict.gam</code> from the
+<code>mgcv</code> package) A matrix or data frame
+containing the values of the model covariates at which predictions are
+required. If this is not provided then the distribution corresponding to the
+original data are returned. If <code>newdata</code> is provided then it should contain all
+the variables needed for prediction: a warning is generated if not.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The conditional density.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gamBiCop</code> and <code>gamBiCopPredict</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">require(copula)
+set.seed(0)
+
+## Simulation parameters (sample size, correlation between covariates,
+## Gaussian copula family)
+n &lt;- 2e2
+rho &lt;- 0.5
+fam &lt;- 1
+
+## A calibration surface depending on three variables
+eta0 &lt;- 1
+calib.surf &lt;- list(
+  calib.quad &lt;- function(t, Ti = 0, Tf = 1, b = 8) {
+    Tm &lt;- (Tf - Ti) / 2
+    a &lt;- -(b / 3) * (Tf^2 - 3 * Tf * Tm + 3 * Tm^2)
+    return(a + b * (t - Tm)^2)
+  },
+  calib.sin &lt;- function(t, Ti = 0, Tf = 1, b = 1, f = 1) {
+    a &lt;- b * (1 - 2 * Tf * pi / (f * Tf * pi +
+      cos(2 * f * pi * (Tf - Ti))
+      - cos(2 * f * pi * Ti)))
+    return((a + b) / 2 + (b - a) * sin(2 * f * pi * (t - Ti)) / 2)
+  },
+  calib.exp &lt;- function(t, Ti = 0, Tf = 1, b = 2, s = Tf / 8) {
+    Tm &lt;- (Tf - Ti) / 2
+    a &lt;- (b * s * sqrt(2 * pi) / Tf) * (pnorm(0, Tm, s) - pnorm(Tf, Tm, s))
+    return(a + b * exp(-(t - Tm)^2 / (2 * s^2)))
+  }
+)
+
+## 3-dimensional matrix X of covariates
+covariates.distr &lt;- mvdc(normalCopula(rho, dim = 3),
+  c("unif"), list(list(min = 0, max = 1)),
+  marginsIdentical = TRUE
+)
+X &lt;- rMvdc(n, covariates.distr)
+colnames(X) &lt;- paste("x", 1:3, sep = "")
+
+## U in [0,1]x[0,1] with copula parameter depending on X
+U &lt;- condBiCopSim(fam, function(x1, x2, x3) {
+  eta0 + sum(mapply(function(f, x)
+    f(x), calib.surf, c(x1, x2, x3)))
+}, X[, 1:3], par2 = 6, return.par = TRUE)
+
+## Merge U and X
+data &lt;- data.frame(U$data, X)
+names(data) &lt;- c(paste("u", 1:2, sep = ""), paste("x", 1:3, sep = ""))
+
+## Model fit with penalized cubic splines (via min GCV)
+basis &lt;- c(3, 10, 10)
+formula &lt;- ~ s(x1, k = basis[1], bs = "cr") +
+  s(x2, k = basis[2], bs = "cr") +
+  s(x3, k = basis[3], bs = "cr")
+system.time(fit &lt;- gamBiCopFit(data, formula, fam))
+
+## Evaluate the conditional density
+gamBiCopCDF(fit$res)
+</code></pre>
+
+
+</div>

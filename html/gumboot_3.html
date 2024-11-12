@@ -1,0 +1,218 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>CAMELS_bootjack</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Jackknife after bootstrap for all CAMELS sites</h2>
+
+<h3>Description</h3>
+
+<p>Hydrologic model simulations can be produced using input-response data
+from the 671 catchments in the CAMELS dataset (Catchment Attributes and MEteorology
+for Large-sample Studies). Newman et al. (2015) and Addor et al. (2017)
+provide details on the hydrometeorological and physiographical characteristics of
+the CAMELS catchments. The CAMELS catchments are those with minimal human disturbance
+(i.e., minimal land use changes or disturbances, minimal water withdrawals), and are
+hence almost exclusively smaller, headwater-type catchments (median basin size of 336 km^2^).
+The CAMELS data used for the large-domain model simulations are publicly available at the
+National Center for Atmospheric Research at <a href="https://ral.ucar.edu/solutions/products/camels">https://ral.ucar.edu/solutions/products/camels</a>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">CAMELS_bootjack(
+  CAMELS_sites = NULL,
+  NetCDF_file = NULL,
+  sim_var = "kge",
+  GOF_stat = c("NSE", "KGE"),
+  nSample = 1000,
+  waterYearMonth = 10,
+  startYear = NULL,
+  endYear = NULL,
+  minDays = 100,
+  minYears = 10,
+  seed = NULL,
+  bootYearFile = NULL,
+  quiet = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>CAMELS_sites</code></td>
+<td>
+<p>Required. Data frame of CAMELS sites. Must contain a field called <span class="option">hcdn_site</span>. The data frame
+<code>hcdn_conus_sites</code> will work. You can subset this data frame if you want to use fewer sites.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>NetCDF_file</code></td>
+<td>
+<p>Required. NetCDF file containing CAMELS modelled and gauged flows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim_var</code></td>
+<td>
+<p>Required. Name of variable containing simulated flows in <code>NetCDF</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GOF_stat</code></td>
+<td>
+<p>Required. Name(s) of simulation goodness of fit statistic(s) to be calculated. Currently both <code>NSE</code> and <code>KGE</code> are supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nSample</code></td>
+<td>
+<p>Required. Number of samples for bootstrapping.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>waterYearMonth</code></td>
+<td>
+<p>Required. Month of beginning of water year. Default is <code>10</code>
+(October). If the calendar year is required, set <code>waterYearMonth = 13</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startYear</code></td>
+<td>
+<p>Optional. First year of data to be used. If <code>NULL</code> then not used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>endYear</code></td>
+<td>
+<p>Optional. Last year of data to be used. If <code>NULL</code> then not used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minDays</code></td>
+<td>
+<p>Required. Minimum number of days per year with valid (i.e. greater than 0) flows. Default is 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minYears</code></td>
+<td>
+<p>Required. Minimum number years to be used. Default is 10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Optional. If <code>NULL</code> (the default) then no seed is specified
+for the random number generator used for the bootstrapping. If a value is specified
+then the bootstrapping will always use the same set of pseudo-random numbers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootYearFile</code></td>
+<td>
+<p>Optional. If <code>NULL</code> (the default) the years used for
+the bootstrapping are neither output nor input. If a file is specified, and it
+it does not already exist, then the bootstrap years will be written to a .csv
+file as a table with the dimensions of years x nSample. If a file is specified,
+and it _does_ exist, then the years will be read in, and used for the bootstrapping.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>Optional. If <code>FALSE</code> (the default) a progress bar is displayed. If <code>TRUE</code>,
+it is not.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a data frame containing the following variables:
+</p>
+
+<dl>
+<dt><code>CAMELS_site</code></dt>
+<dd>
+<p>CAMELS site number</p>
+</dd>
+<dt><code>lat</code></dt>
+<dd>
+<p>CAMELS site latitude</p>
+</dd>
+<dt><code>lon</code></dt>
+<dd>
+<p>CAMELS site longitude</p>
+</dd>
+<dt><code>GOF_stat</code></dt>
+<dd>
+<p>Goodness of fit statistics (i.e. NSE or KGE)</p>
+</dd>
+<dt><code>seJack</code></dt>
+<dd>
+<p>standard error of jacknife</p>
+</dd>
+<dt><code>seBoot</code></dt>
+<dd>
+<p>standard error of bootstrap</p>
+</dd>
+<dt><code>p05, p50, p95</code></dt>
+<dd>
+<p>the 5th, 50th and 95th percentiles of the estimates</p>
+</dd>
+<dt><code>score</code></dt>
+<dd>
+<p>the jackknife score</p>
+</dd>
+<dt><code>biasJack</code></dt>
+<dd>
+<p>the bias of the jackknife</p>
+</dd>
+<dt><code>biasBoot</code></dt>
+<dd>
+<p>the bias of the bootstrap</p>
+</dd>
+<dt><code>seJab</code></dt>
+<dd>
+<p>the standard error of the jackknife after bootstrap</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Martyn Clark and Kevin Shook
+</p>
+
+
+<h3>References</h3>
+
+<p>N. Addor, A. Newman, M. Mizukami, and M. P. Clark, 2017. Catchment attributes
+for large-sample studies. Boulder, CO: UCAR/NCAR. doi: <a href="https://doi.org/10.5065/D6G73C3Q">10.5065/D6G73C3Q</a>
+</p>
+<p>Addor, N., Newman, A. J., Mizukami, N. and Clark, M. P.: The CAMELS data set:
+catchment attributes and meteorology for large-sample studies, Hydrol. Earth Syst. Sci., 21,
+5293–5313, doi: <a href="https://doi.org/10.5194/hess-21-5293-2017">10.5194/hess-21-5293-2017</a>, 2017.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>read_CAMELS</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+camels &lt;- CAMELS_bootjack(CAMELS_sites = sites, NetCDF_file = "CAMELS_flow.nc")
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

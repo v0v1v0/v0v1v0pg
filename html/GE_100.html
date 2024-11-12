@@ -1,0 +1,189 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemOpenEconomy_4_4</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A 4-by-4 Open Economy with Bond</h2>
+
+<h3>Description</h3>
+
+<p>Some examples of a 4-by-4 open economy with bond.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemOpenEconomy_4_4(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### an open economy with foreign bond (bond.ROW)
+dst.firm &lt;- node_new(
+  "output",
+  type = "SCES", alpha = 1, beta = c(0.5, 0.5), es = 1,
+  "prod.CHN", "lab.CHN"
+)
+
+dst.consumer &lt;- node_new(
+  "util",
+  type = "FIN", beta = c(0.8, 0.2),
+  "cc1", "bond.ROW"
+)
+node_set(dst.consumer, "cc1",
+         type = "SCES", alpha = 1, beta = c(0.5, 0.5), es = 1,
+         "prod.CHN", "prod.ROW"
+)
+
+dst.FT &lt;- node_new(
+  "prod.ROW",
+  type = "SCES", alpha = 1, beta = c(2/3, 1/3), es = 1,
+  "prod.CHN", "lab.CHN"
+)
+
+dst.ROW &lt;- node_new(
+  "util",
+  type = "SCES", alpha = 1, beta = c(2/3, 1/3), es = 1,
+  "prod.CHN", "lab.CHN"
+)
+
+ge.open &lt;- sdm2(
+  A = list(dst.firm, dst.consumer, dst.FT, dst.ROW),
+  B = matrix(c(
+    1, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 0
+  ), 4, 4, TRUE),
+  S0Exg = matrix(c(
+    NA, NA, NA, NA,
+    NA, 300, NA, NA,
+    NA, NA, NA, NA,
+    NA, NA, NA, 60
+  ), 4, 4, TRUE),
+  names.commodity = c("prod.CHN", "lab.CHN", "prod.ROW", "bond.ROW"),
+  names.agent = c("firm", "consumer", "FT", "ROW"),
+  numeraire = "lab.CHN"
+)
+
+ge.open$p
+addmargins(ge.open$D, 2)
+addmargins(ge.open$S, 2)
+
+## a corresponding two-country model
+dst.firm.CHN &lt;- node_new(
+  "output",
+  type = "SCES", alpha = 1, beta = c(0.5, 0.5), es = 1,
+  "prod.CHN", "lab.CHN"
+)
+
+dst.consumer.CHN &lt;- node_new(
+  "util",
+  type = "FIN", beta = c(0.8, 0.2),
+  "cc1", "bond.ROW"
+)
+node_set(dst.consumer.CHN, "cc1",
+         type = "SCES", alpha = 1, beta = c(0.5, 0.5), es = 1,
+         "prod.CHN", "prod.ROW"
+)
+
+dst.firm.ROW &lt;- node_new(
+  "prod.ROW",
+  type = "SCES", alpha = 1, beta = c(0.25, 0.25, 0.5), es = 1,
+  "prod.CHN", "prod.ROW", "lab.ROW"
+)
+
+dst.consumer.ROW &lt;- node_new(
+  "util",
+  type = "SCES", alpha = 1, beta = c(0.25, 0.25, 0.25, 0.25), es = 1,
+  "prod.CHN", "prod.ROW", "lab.CHN", "lab.ROW"
+)
+
+ge.TC &lt;- sdm2(
+  A = list(dst.firm.CHN, dst.consumer.CHN, dst.firm.ROW, dst.consumer.ROW),
+  B = matrix(c(
+    1, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0
+  ), 5, 4, TRUE),
+  S0Exg = matrix(c(
+    NA, NA, NA, NA,
+    NA, 300, NA, NA,
+    NA, NA, NA, NA,
+    NA, NA, NA, 180,
+    NA, NA, NA, 60
+  ), 5, 4, TRUE),
+  names.commodity = c("prod.CHN", "lab.CHN", "prod.ROW", "lab.ROW", "bond.ROW"),
+  names.agent = c("firm.CHN", "consumer.CHN", "firm.ROW", "consumer.ROW"),
+  numeraire = "lab.CHN"
+)
+
+ge.TC$p
+addmargins(ge.TC$D, 2)
+addmargins(ge.TC$S, 2)
+
+#### an open economy with domestic bond (bond.CHN)
+dst.firm &lt;- node_new(
+  "output",
+  type = "CD", alpha = 5, beta = c(0.5, 0.5),
+  "prod.CHN", "lab.CHN"
+)
+
+dst.consumer &lt;- node_new(
+  "util",
+  type = "CD", alpha = 1, beta = c(0.5, 0.5),
+  "prod.CHN", "prod.ROW"
+)
+
+dst.FT &lt;- node_new(
+  "prod.ROW",
+  type = "Leontief", a = 2,
+  "prod.CHN"
+)
+
+dst.ROW &lt;- node_new(
+  "prod.ROW",
+  type = "Leontief", a = 1,
+  "bond.CHN"
+)
+
+ge &lt;- sdm2(
+  A = list(dst.firm, dst.consumer, dst.FT, dst.ROW),
+  B = matrix(c(
+    1, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 1, 1,
+    0, 0, 0, 0
+  ), 4, 4, TRUE),
+  S0Exg = matrix(c(
+    NA, NA, NA, NA,
+    NA, 1, NA, NA,
+    NA, NA, NA, NA,
+    NA, 0.2, NA, NA
+  ), 4, 4, TRUE),
+  names.commodity = c("prod.CHN", "lab.CHN", "prod.ROW", "bond.CHN"),
+  names.agent = c("firm", "consumer", "FT", "ROW"),
+  numeraire = "lab.CHN"
+)
+
+ge$p
+addmargins(ge$D, 2)
+addmargins(ge$S, 2)
+
+</code></pre>
+
+
+</div>

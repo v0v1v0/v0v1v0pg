@@ -1,0 +1,250 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ghap.ancsmooth</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Smoothing of haplotype ancestry predictions
+</h2>
+
+<h3>Description</h3>
+
+<p>Given ancestry predictions obtained with the <code>ghap.anctest</code> or <code>ghap.ancsvm</code> functions, overlapping classifications are smoothed to refine the boundaries of recombination breakpoints.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R"> ghap.ancsmooth(object, admix,
+                ncores = 1, verbose = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+
+<p>A GHap.phase object.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>admix</code></td>
+<td>
+
+<p>A data frame containing ancestry classifications, such as supplied by the <code>ghap.anctest</code> or <code>ghap.ancsvm</code> functions.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+
+<p>A numeric value specifying the number of cores to be used in parallel computing (default = 1).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>A logical value specfying whether log messages should be printed (default = TRUE).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function takes results from ancestry classifications provided by the <code>ghap.anctest</code> or <code>ghap.ancsvm</code> functions and converts them into runs of ancestry. Since the classifiers assume exactly one ancestry per HapBlock, segments encompassing breakpoints are miss-classified as pertaining to a single origin, as opposed to a recombinant mixture of hybrid ancestry. When <code>ghap.anctest</code>/<code>ghap.ancsvm</code> are ran with overlapping HapBlocks, the smoothing function interrogates the ancestry of each overlapped segment by majority voting of all blocks containing it. After the ancestry of all segments have been resolved, contiguous sites sharing the same classification are converted into runs or segments of ancestry (i.e., ancestry tracks), which comprise the final output ('haplotypes' dataframe). These segments are then used to predict ancestry contributions ('proportions1' and 'proportions2' dataframes).
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function returns three dataframes: 'proportions1', 'proportions2' and 'haplotypes'. The 'proportions1' dataframe contains the following columns:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>POP</code></td>
+<td>
+
+<p>Original population label.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ID</code></td>
+<td>
+
+<p>Individual name.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>A number of columns giving the predicted ancestry proportions.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>UNK</code></td>
+<td>
+
+<p>The proportion of the genome without ancestry assignment.
+</p>
+</td>
+</tr>
+</table>
+<p>The 'proportions2' dataframe is similar to 'proportions1', expect that ancestry contributions are re-calibrated using only genome segments with ancestry assignments (therefore does not include the 'UNK' column). The 'haplotypes' dataframe contains the following columns:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>POP</code></td>
+<td>
+
+<p>Original population label.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ID</code></td>
+<td>
+
+<p>Individual name.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>HAP</code></td>
+<td>
+
+<p>Haplotype number.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CHR</code></td>
+<td>
+
+<p>Chromosome name.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BP1</code></td>
+<td>
+
+<p>Segment start position.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BP2</code></td>
+<td>
+
+<p>Segment end position.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SIZE</code></td>
+<td>
+
+<p>Segment size.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ANCESTRY</code></td>
+<td>
+
+<p>Predicted ancestry of the segment.
+</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Yuri Tani Utsunomiya &lt;ytutsunomiya@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Y.T. Utsunomiya et al. Unsupervised detection of ancestry tracks with the GHap R package. Methods in Ecology and Evolution. 2020. 11:1448–54.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>ghap.anctrain</code>, <code>ghap.ancsvm</code>, <code>ghap.ancplot</code>, <code>ghap.ancmark</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# #### DO NOT RUN IF NOT NECESSARY ###
+# 
+# # Copy phase data in the current working directory
+# exfiles &lt;- ghap.makefile(dataset = "example",
+#                          format = "phase",
+#                          verbose = TRUE)
+# file.copy(from = exfiles, to = "./")
+# 
+# # Load phase data
+# 
+# phase &lt;- ghap.loadphase("example")
+# 
+# ### RUN ###
+# 
+# # Calculate marker density
+# mrkdist &lt;- diff(phase$bp)
+# mrkdist &lt;- mrkdist[which(mrkdist &gt; 0)]
+# density &lt;- mean(mrkdist)
+# 
+# # Generate blocks for admixture events up to g = 10 generations in the past
+# # Assuming mean block size in Morgans of 1/(2*g)
+# # Approximating 1 Morgan ~ 100 Mbp
+# g &lt;- 10
+# window &lt;- (100e+6)/(2*g)
+# window &lt;- ceiling(window/density)
+# step &lt;- ceiling(window/4)
+# blocks &lt;- ghap.blockgen(phase, windowsize = window,
+#                         slide = step, unit = "marker")
+# 
+# # BestK analysis
+# bestK &lt;- ghap.anctrain(object = phase, K = 5, tune = TRUE)
+# plot(bestK$ssq, type = "b", xlab = "K",
+#      ylab = "Within-cluster sum of squares")
+# 
+# # Unsupervised analysis with best K
+# prototypes &lt;- ghap.anctrain(object = phase, K = 2)
+# hapadmix &lt;- ghap.anctest(object = phase,
+#                          blocks = blocks,
+#                          prototypes = prototypes,
+#                          test = unique(phase$id))
+# anctracks &lt;- ghap.ancsmooth(object = phase, admix = hapadmix)
+# ghap.ancplot(ancsmooth = anctracks)
+# 
+# # Supervised analysis
+# train &lt;- unique(phase$id[which(phase$pop != "Cross")])
+# prototypes &lt;- ghap.anctrain(object = phase, train = train,
+#                             method = "supervised")
+# hapadmix &lt;- ghap.anctest(object = phase,
+#                          blocks = blocks,
+#                          prototypes = prototypes,
+#                          test = unique(phase$id))
+# anctracks &lt;- ghap.ancsmooth(object = phase, admix = hapadmix)
+# ghap.ancplot(ancsmooth = anctracks)
+
+</code></pre>
+
+
+</div>

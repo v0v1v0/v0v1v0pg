@@ -1,0 +1,330 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>glmmkin</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fit generalized linear mixed model with known relationship matrices
+</h2>
+
+<h3>Description</h3>
+
+<p>Fit a generalized linear mixed model with a random intercept, or a random intercept and an optional random slope of time effect for longitudinal data. The covariance matrix of the random intercept is proportional to a known relationship matrix (e.g. kinship matrix in genetic association studies). Alternatively, it can be a variance components model with multiple random effects, and each component has a known relationship matrix.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">glmmkin(fixed, data = parent.frame(), kins = NULL, id, random.slope = NULL, 
+	groups = NULL, family = binomial(link = "logit"), method = "REML", 
+	method.optim = "AI", maxiter = 500, tol = 1e-5, taumin = 1e-5, 
+	taumax = 1e5, tauregion = 10, verbose = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fixed</code></td>
+<td>
+
+<p>an object of class <code>formula</code> (or one that can be coerced to that class): a symbolic description of the fixed effects model to be fitted.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>a data frame or list (or object coercible by <code>as.data.frame</code> to a data frame) containing the variables in the model.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kins</code></td>
+<td>
+
+<p>a known positive semi-definite relationship matrix (e.g. kinship matrix in genetic association studies) or a list of known positive semi-definite relationship matrices. The rownames and colnames of these matrices must at least include all samples as specified in the <code>id</code> column of the data frame <code>data</code>. If not provided, glmmkin will switch to the generalized linear model with no random effects (default = NULL).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+
+<p>a column in the data frame <code>data</code>, indicating the id of samples. When there are duplicates in <code>id</code>, the data is assumed to be longitudinal with repeated measures.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>random.slope</code></td>
+<td>
+
+<p>an optional column indicating the random slope for time effect used in a mixed effects model for cross-sectional data with related individuals, and longitudinal data. It must be included in the names of <code>data</code>. There must be duplicates in <code>id</code> and <code>method.optim</code> must be "AI" (default = NULL).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groups</code></td>
+<td>
+
+<p>an optional categorical variable indicating the groups used in a heteroscedastic linear mixed model (allowing residual variances in different groups to be different). This variable must be included in the names of <code>data</code>, and <code>family</code> must be "gaussian" and <code>method.optim</code> must be "AI" (default = NULL).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+
+<p>a description of the error distribution and link function to be used in the model. This can be a character string naming a family function, a family function or the result of a call to a family function. (See <code>family</code> for details of family functions.)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+
+<p>method of fitting the generalized linear mixed model. Either "REML" or "ML" (default = "REML").
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method.optim</code></td>
+<td>
+
+<p>optimization method of fitting the generalized linear mixed model. Either "AI", "Brent" or "Nelder-Mead" (default = "AI").
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiter</code></td>
+<td>
+
+<p>a positive integer specifying the maximum number of iterations when fitting the generalized linear mixed model (default = 500).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+
+<p>a positive number specifying tolerance, the difference threshold for parameter estimates below which iterations should be stopped (default = 1e-5).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>taumin</code></td>
+<td>
+
+<p>the lower bound of search space for the variance component parameter <code class="reqn">\tau</code> (default = 1e-5), used when <code>method.optim = "Brent"</code>. See Details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>taumax</code></td>
+<td>
+
+<p>the upper bound of search space for the variance component parameter <code class="reqn">\tau</code> (default = 1e5), used when <code>method.optim = "Brent"</code>. See Details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tauregion</code></td>
+<td>
+
+<p>the number of search intervals for the REML or ML estimate of the variance component parameter <code class="reqn">\tau</code> (default = 10), used when <code>method.optim = "Brent"</code>. See Details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>a logical switch for printing detailed information (parameter estimates in each iteration) for testing and debugging purpose (default = FALSE).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>additional arguments that could be passed to <code>glm</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Generalized linear mixed models (GLMM) are fitted using the penalized quasi-likelihood (PQL) method proposed by Breslow and Clayton (1993). Generally, fitting a GLMM is computationally expensive, and by default we use the Average Information REML algorithm (Gilmour, Thompson and Cullis, 1995; Yang et al., 2011) to fit the model. If only one relationship matrix is specified (<code>kins</code> is a matrix), iterations may be accelerated using the algorithm proposed by Zhou and Stephens (2012) for linear mixed models. An eigendecomposition is performed in each outer iteration and the estimate of the variance component parameter <code class="reqn">\tau</code> is obtained by maximizing the profiled log restricted likelihood (or likelihood) in a search space from <code>taumin</code> to <code>taumax</code>, equally divided into <code>tauregion</code> intervals on the log scale, using Brent's method (1973). If <code>kins</code> is a list of matrices and <code>method = "Nelder-Mead"</code>, iterations are performed as a multi-dimensional maximization problem solved by Nelder and Mead's method (1965). It can be very slow, and we do not recommend using this method unless the likelihood function is badly behaved. Both Brent's method and Nelder and Mead's method are derivative-free. When the Average Information REML algorithm fails to converge, a warning message is given and the algorithm is default to derivative-free approaches: Brent's method if only one relationship matrix is specified, Nelder and Mead's method if more than one relationship matrix is specified.
+</p>
+<p>For longitudinal data (with duplicated <code>id</code>), two types of models can be applied: random intercept only models, and random intercept and random slope models. The random intercept only model is appropriate for analyzing repeated measures with no time trends, and observations for the same individual are assumed to be exchangeable. The random intercept and random slope model is appropriate for analyzing longitudinal data with individual-specific time trends (therefore, a random slope for time effect). Typically, the time effect should be included in the model as a fixed effect covariate as well. Covariances of the random intercept and the random slope are estimated.
+</p>
+<p>For multiple phenotype analysis, <code>formula</code> recognized by <code>lm</code>, such as <code>cbind(y1, y2, y3) ~ x1 + x2</code>, can be used in <code>fixed</code> as fixed effects. For each matrix in <code>kins</code>, variance components corresponding to each phenotype, as well as their covariance components, will be estimated. Currently, <code>family</code> must be "gaussian" and <code>method.optim</code> must be "AI".
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>a vector or a list of variance component parameter estimates. See below.
+</p>
+<p>For cross-sectional data, if <code>kins</code> is not provided (unrelated individuals), <code>theta</code> is the dispersion parameter estimate from the generalized linear model; if <code>kins</code> is a matrix and <code>groups</code> is not provided, <code>theta</code> is a length 2 vector, with <code>theta[1]</code> being the dispersion parameter estimate and <code>theta[2]</code> being the variance component parameter estimate for <code>kins</code>; if <code>kins</code> is a list and <code>groups</code> is not provided, <code>theta</code> is a length <code>1 + length(kins)</code> vector, with <code>theta[1]</code> being the dispersion parameter estimate and <code>theta[2:(1 + length(kins))]</code> being the variance component parameter estimates, corresponding to the order of matrices in the list <code>kins</code>; if <code>kins</code> is a matrix and <code>groups</code> is provided (a heteroscedastic linear mixed model with <code>n.groups</code> residual variance groups), <code>theta</code> is a length <code>1 + n.groups</code> vector, with <code>theta[1:n.groups]</code> being the residual variance estimates for each group and <code>theta[1 + n.groups]</code> being the variance component parameter estimate for <code>kins</code>; if <code>kins</code> is a list and <code>groups</code> is provided (a heteroscedastic linear mixed model with <code>n.groups</code> residual variance groups), <code>theta</code> is a length <code>length(kins) + n.groups</code> vector, with <code>theta[1:n.groups]</code> being the residual variance estimates for each group and <code>theta[(1 + n.groups):(length(kins) + n.groups)]</code> being the variance component parameter estimates, corresponding to the order of matrices in the list <code>kins</code>. 
+</p>
+<p>For longitudinal data (with duplicated <code>id</code>) in a random intercept only model, if <code>kins</code> is not provided (unrelated individuals) and <code>groups</code> is not provided, <code>theta</code> is a length 2 vector, with <code>theta[1]</code> being the dispersion parameter estimate and <code>theta[2]</code> being the variance component parameter estimate for the random individual effects; if <code>kins</code> is a matrix and <code>groups</code> is not provided, <code>theta</code> is a length 3 vector, with <code>theta[1]</code> being the dispersion parameter estimate, <code>theta[2]</code> being the variance component parameter estimate for the random individual effects attributable to relatedness from <code>kins</code>, and <code>theta[3]</code> being the variance component parameter estimate for the random individual effects not attributable to relatedness from <code>kins</code>; if <code>kins</code> is a list and <code>groups</code> is not provided, <code>theta</code> is a length <code>2 + length(kins)</code> vector, with <code>theta[1]</code> being the dispersion parameter estimate, <code>theta[2:(1 + length(kins))]</code> being the variance component parameter estimates for the random individual effects attributable to relatedness from <code>kins</code>, corresponding to the order of matrices in the list <code>kins</code>, and <code>theta[2 + length(kins)]</code> being the variance component parameter estimate for the random individual effects not attributable to relatedness from <code>kins</code>; if <code>kins</code> is not provided (unrelated individuals) and <code>groups</code> is provided (a heteroscedastic linear mixed model with <code>n.groups</code> residual variance groups), <code>theta</code> is a length <code>1 + n.groups</code> vector, with <code>theta[1:n.groups]</code> being the residual variance estimates for each group and <code>theta[1 + n.groups]</code> being the variance component parameter estimate for the random individual effects; if <code>kins</code> is a matrix and <code>groups</code> is provided (a heteroscedastic linear mixed model with <code>n.groups</code> residual variance groups), <code>theta</code> is a length <code>2 + n.groups</code> vector, with <code>theta[1:n.groups]</code> being the residual variance estimates for each group, <code>theta[1 + n.groups]</code> being the variance component parameter estimate for the random individual effects attributable to relatedness from <code>kins</code>, and <code>theta[2 + n.groups]</code> being the variance component parameter estimate for the random individual effects not attributable to relatedness from <code>kins</code>; if <code>kins</code> is a list and <code>groups</code> is provided (a heteroscedastic linear mixed model with <code>n.groups</code> residual variance groups), <code>theta</code> is a length <code>1 + length(kins) + n.groups</code> vector, with <code>theta[1:n.groups]</code> being the residual variance estimates for each group, <code>theta[(1 + n.groups):(length(kins) + n.groups)]</code> being the variance component parameter estimates for the random individual effects attributable to relatedness from <code>kins</code>, corresponding to the order of matrices in the list <code>kins</code>, and <code>theta[1 + length(kins) + n.groups]</code> being the variance component parameter estimate for the random individual effects not attributable to relatedness from <code>kins</code>.
+</p>
+<p>For longitudinal data (with duplicated <code>id</code>) in a random intercept and random slope (for time effect) model, if <code>kins</code> is not provided (unrelated individuals) and <code>groups</code> is not provided, <code>theta</code> is a length 4 vector, with <code>theta[1]</code> being the dispersion parameter estimate, <code>theta[2]</code> being the variance component parameter estimate for the random individual effects of the intercept, <code>theta[3]</code> being the covariance estimate for the random individual effects of the intercept and the random individual effects of the time slope, and <code>theta[4]</code> being the variance component parameter estimate for the random individual effects of the time slope; if <code>kins</code> is a matrix and <code>groups</code> is not provided, <code>theta</code> is a length 7 vector, with <code>theta[1]</code> being the dispersion parameter estimate, <code>theta[2]</code> being the variance component parameter estimate for the random individual effects of the intercept attributable to relatedness from <code>kins</code>, <code>theta[3]</code> being the variance component parameter estimate for the random individual effects of the intercept not attributable to relatedness from <code>kins</code>, <code>theta[4]</code> being the covariance estimate for the random individual effects of the intercept and the random individual effects of the time slope attributable to relatedness from <code>kins</code>, <code>theta[5]</code> being the covariance estimate for the random individual effects of the intercept and the random individual effects of the time slope not attributable to relatedness from <code>kins</code>, <code>theta[6]</code> being the variance component parameter estimate for the random individual effects of the time slope attributable to relatedness from <code>kins</code>, and <code>theta[7]</code> being the variance component parameter estimate for the random individual effects of the time slope not attributable to relatedness from <code>kins</code>; if <code>kins</code> is a list and <code>groups</code> is not provided, <code>theta</code> is a length <code>4 + 3 * length(kins)</code> vector, with <code>theta[1]</code> being the dispersion parameter estimate, <code>theta[2:(1 + length(kins))]</code> being the variance component parameter estimates for the random individual effects of the intercept attributable to relatedness from <code>kins</code>, corresponding to the order of matrices in the list <code>kins</code>, <code>theta[2 + length(kins)]</code> being the variance component parameter estimate for the random individual effects of the intercept not attributable to relatedness from <code>kins</code>, <code>theta[(3 + length(kins)):(2 + 2 * length(kins))]</code> being the covariance estimates for the random individual effects of the intercept and the random individual effects of the time slope attributable to relatedness from <code>kins</code>, corresponding to the order of matrices in the list <code>kins</code>, <code>theta[3 + 2 * length(kins)]</code> being the covariance estimate for the random individual effects of the intercept and the random individual effects of the time slope not attributable to relatedness from <code>kins</code>, <code>theta[(4 + 2 * length(kins)):(3 + 3 * length(kins))]</code> being the variance component parameter estimates for the random individual effects of the time slope attributable to relatedness from <code>kins</code>, corresponding to the order of matrices in the list <code>kins</code>, <code>theta[4 + 3 * length(kins)]</code> being the variance component parameter estimate for the random individual effects of the time slope not attributable to relatedness from <code>kins</code>; if <code>kins</code> is not provided (unrelated individuals) and <code>groups</code> is provided (a heteroscedastic linear mixed model with <code>n.groups</code> residual variance groups), <code>theta</code> is a length <code>3 + n.groups</code> vector, with <code>theta[1:n.groups]</code> being the residual variance estimates for each group, <code>theta[1 + n.groups]</code> being the variance component parameter estimate for the random individual effects of the intercept, <code>theta[2 + n.groups]</code> being the covariance estimate for the random individual effect of the intercept and the random individual effects of the time slope, and <code>theta[3 + n.groups]</code> being the variance component parameter estimate for the random individual effects of the time slope; if <code>kins</code> is a matrix and <code>groups</code> is provided (a heteroscedastic linear mixed model with <code>n.groups</code> residual variance groups), <code>theta</code> is a length <code>6 + n.groups</code> vector, with <code>theta[1:n.groups]</code> being the residual variance estimates for each group, <code>theta[1 + n.groups]</code> being the variance component parameter estimate for the random individual effects of the intercept attributable to relatedness from <code>kins</code>, <code>theta[2 + n.groups]</code> being the variance component parameter estimate for the random individual effects of the intercept not attributable to relatedness from <code>kins</code>, <code>theta[3 + n.groups]</code> being the covariance estimate for the random individual effects of the intercept and the random individual effects of the time slope attributable to relatedness from <code>kins</code>, <code>theta[4 + n.groups]</code> being the covariance estimate for the random individual effects of the intercept and the random individual effects of the time slope not attributable to relatedness from <code>kins</code>, <code>theta[5 + n.groups]</code> being the variance component parameter estimate for the random individual effects of the time slope attributable to relatedness from <code>kins</code>, and <code>theta[6 + n.groups]</code> being the variance component parameter estimate for the random individual effects of the time slope not attributable to relatedness from <code>kins</code>; if <code>kins</code> is a list and <code>groups</code> is provided (a heteroscedastic linear mixed model with <code>n.groups</code> residual variance groups), <code>theta</code> is a length <code>3 + 3 * length(kins) + n.groups</code> vector, with <code>theta[1:n.groups]</code> being the residual variance estimates for each group, <code>theta[(1 + n.groups):(length(kins) + n.groups)]</code> being the variance component parameter estimates for the random individual effects of the intercept attributable to relatedness from <code>kins</code>, corresponding to the order of matrices in the list <code>kins</code>, <code>theta[1 + length(kins) + n.groups]</code> being the variance component parameter estimate for the random individual effects of the intercept not attributable to relatedness from <code>kins</code>, <code>theta[(2 + length(kins) + n.groups):(1 + 2 * length(kins) + n.groups)]</code> being the covariance estimates for the random individual effects of the intercept and the random individual effects of the time slope attributable to relatedness from <code>kins</code>, corresponding to the order of matrices in the list <code>kins</code>, <code>theta[2 + 2 * length(kins) + n.groups]</code> being the covariance estimate for the random individual effects of the intercept and the random individual effects of the time slope not attributable to relatedness from <code>kins</code>, <code>theta[(3 + 2 * length(kins) + n.groups):(2 + 3 * length(kins) + n.groups)]</code> being the variance component parameter estimates for the random individual effects of the time slope attributable to relatedness from <code>kins</code>, corresponding to the order of matrices in the list <code>kins</code>, and <code>theta[3 + 3 * length(kins) + n.groups]</code> being the variance component parameter estimate for the random individual effects of the time slope not attributable to relatedness from <code>kins</code>.
+</p>
+<p>For multiple phenotype analysis, <code>theta</code> is a list of variance-covariance matrices. If <code>kins</code> is not provided (unrelated individuals), <code>theta</code> is an <code>n.pheno</code> by <code>n.pheno</code> variance-covariance matrix for the residuals of the multiple phenotypes from the linear model; if <code>kins</code> is a matrix and <code>groups</code> is not provided, <code>theta</code> is a length 2 list, with <code>theta[[1]]</code> being the variance-covariance matrix for the residuals and <code>theta[[2]]</code> being the variance-covariance matrix for <code>kins</code>; if <code>kins</code> is a list and <code>groups</code> is not provided, <code>theta</code> is a length <code>1 + length(kins)</code> list, with <code>theta[[1]]</code> being the variance-covariance matrix for the residuals and <code>theta[[2]]</code> to <code>theta[[1 + length(kins)]]</code> being the variance-covariance matrices, corresponding to the order of matrices in the list <code>kins</code>; if <code>kins</code> is a matrix and <code>groups</code> is provided (a heteroscedastic linear mixed model with <code>n.groups</code> residual variance groups), <code>theta</code> is a length <code>1 + n.groups</code> list, with <code>theta[[1]]</code> to <code>theta[[n.groups]]</code> being the variance-covariance matrices for the residuals in each group and <code>theta[[1 + n.groups]]</code> being the variance-covariance matrix for <code>kins</code>; if <code>kins</code> is a list and <code>groups</code> is provided (a heteroscedastic linear mixed model with <code>n.groups</code> residual variance groups), <code>theta</code> is a length <code>length(kins) + n.groups</code> list, with <code>theta[[1]]</code> to <code>theta[[n.groups]]</code> being the variance-covariance matrices for the residuals in each group and <code>theta[[1 + n.groups]]</code> to <code>theta[[length(kins) + n.groups]]</code> being the variance-covariance matrices, corresponding to the order of matrices in the list <code>kins</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.pheno</code></td>
+<td>
+<p>an integer indicating the number of phenotypes in multiple phenotype analysis (for single phenotype analysis, <code>n.pheno = 1</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.groups</code></td>
+<td>
+<p>an integer indicating the number of distinct residual variance groups in heteroscedastic linear mixed models (for other models, <code>n.groups = 1</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p>a vector or a matrix for the fixed effects parameter estimates (including the intercept).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linear.predictors</code></td>
+<td>
+<p>a vector or a matrix for the linear predictors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>a vector or a matrix for the fitted mean values on the original scale.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>a vector or a matrix for the final working vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>model matrix for the fixed effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>P</code></td>
+<td>
+<p>the projection matrix with dimensions equal to the sample size multiplied by <code>n.pheno</code>. Used in <code>glmm.score</code> and <code>SMMAT</code> for dense matrices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p>a vector or a matrix for the residuals on the original scale. NOT rescaled by the dispersion parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scaled.residuals</code></td>
+<td>
+<p>a vector or a matrix for the scaled residuals, calculated as the original residuals divided by the dispersion parameter (in heteroscedastic linear mixed models, corresponding residual variance estimates by each group).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov</code></td>
+<td>
+<p>covariance matrix for the fixed effects (including the intercept).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sigma_i</code></td>
+<td>
+<p>the inverse of the estimated covariance matrix for samples, with dimensions equal to the sample size multiplied by <code>n.pheno</code>. Used in <code>glmm.score</code> and <code>SMMAT</code> for sparse matrices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sigma_iX</code></td>
+<td>
+<p>Sigma_i multiplied by X. Used in <code>glmm.score</code> and <code>SMMAT</code> for sparse matrices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>converged</code></td>
+<td>
+<p>a logical indicator for convergence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the matched call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id_include</code></td>
+<td>
+<p>a vector indicating the <code>id</code> of rows in <code>data</code> with nonmissing outcome and covariates, thus are included in the model fit.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Han Chen, Matthew P. Conomos
+</p>
+
+
+<h3>References</h3>
+
+<p>Brent, R.P. (1973) "Chapter 4: An Algorithm with Guaranteed Convergence for Finding a Zero of a Function", Algorithms for Minimization without Derivatives, Englewood Cliffs, NJ: Prentice-Hall, ISBN 0-13-022335-2.
+</p>
+<p>Breslow, N.E. and Clayton, D.G. (1993) Approximate Inference in Generalized Linear Mixed Models. Journal of the American Statistical Association 88, 9-25.
+</p>
+<p>Chen, H., Wang, C., Conomos, M.P., Stilp, A.M., Li, Z., Sofer, T., Szpiro, A.A., Chen, W., Brehm, J.M., Celedón, J.C., Redline, S., Papanicolaou, G.J., Thornton, T.A., Laurie, C.C., Rice, K. and Lin, X. (2016) Control for population structure and relatedness for binary traits in genetic association studies via logistic mixed models. The American Journal of Human Genetics 98, 653-666.
+</p>
+<p>Gilmour, A.R., Thompson, R. and Cullis, B.R. (1995) Average Information REML: An Efficient Algorithm for Variance Parameter Estimation in Linear Mixed Models. Biometrics 51, 1440-1450.
+</p>
+<p>Nelder, J.A. and Mead, R. (1965) A simplex algorithm for function minimization. Computer Journal 7, 308-313.
+</p>
+<p>Yang, J., Lee, S.H., Goddard, M.E. and Visscher, P.M. (2011) GCTA: A Tool for Genome-wide Complex Trait Analysis. The American Journal of Human Genetics 88, 76-82.
+</p>
+<p>Zhou, X. and Stephens, M. (2012) Genome-wide efficient mixed-model analysis for association studies. Nature Genetics 44, 821-824.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(example)
+attach(example)
+model0 &lt;- glmmkin(disease ~ age + sex, data = pheno, kins = GRM, id = "id",
+       family = binomial(link = "logit"))
+model0$theta
+model0$coefficients
+model0$cov
+
+model1 &lt;- glmmkin(y.repeated ~ sex, data = pheno2, kins = GRM, id = "id", 
+       family = gaussian(link = "identity"))
+model1$theta
+model1$coefficients
+model1$cov
+model2 &lt;- glmmkin(y.trend ~ sex + time, data = pheno2, kins = GRM, id = "id", 
+       random.slope = "time", family = gaussian(link = "identity"))
+model2$theta
+model2$coefficients
+model2$cov
+
+</code></pre>
+
+
+</div>

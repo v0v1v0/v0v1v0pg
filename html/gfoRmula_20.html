@@ -1,0 +1,780 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gformula</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimation of Survival Outcome, Continuous End-of-Follow-Up Outcome, or Binary End-of-Follow-Up Outcome Under the Parametric G-Formula</h2>
+
+<h3>Description</h3>
+
+<p>Based on an observed data set, this function estimates the risk over time (for survival outcomes),
+outcome mean at end-of-follow-up (for continuous end-of-follow-up outcomes), or outcome probability at
+end-of-follow-up (for binary end-of-follow-up outcomes) under multiple user-specified interventions using
+the parametric g-formula. See McGrath et al. (2020) for further details concerning the application and
+implementation of the parametric g-formula.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gformula(
+  obs_data,
+  id,
+  time_points = NULL,
+  time_name,
+  covnames,
+  covtypes,
+  covparams,
+  covfits_custom = NA,
+  covpredict_custom = NA,
+  histvars = NULL,
+  histories = NA,
+  basecovs = NA,
+  outcome_name,
+  outcome_type,
+  ymodel,
+  ymodel_fit_custom = NULL,
+  ymodel_predict_custom = NULL,
+  compevent_name = NULL,
+  compevent_model = NA,
+  compevent_cens = FALSE,
+  censor_name = NULL,
+  censor_model = NA,
+  intvars = NULL,
+  interventions = NULL,
+  int_times = NULL,
+  int_descript = NULL,
+  ref_int = 0,
+  intcomp = NA,
+  visitprocess = NA,
+  restrictions = NA,
+  yrestrictions = NA,
+  compevent_restrictions = NA,
+  baselags = FALSE,
+  nsimul = NA,
+  sim_data_b = FALSE,
+  seed,
+  nsamples = 0,
+  parallel = FALSE,
+  ncores = NA,
+  ci_method = "percentile",
+  threads,
+  model_fits = FALSE,
+  boot_diag = FALSE,
+  show_progress = TRUE,
+  ipw_cutoff_quantile = NULL,
+  ipw_cutoff_value = NULL,
+  int_visit_type = NULL,
+  sim_trunc = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>obs_data</code></td>
+<td>
+<p>Data table containing the observed data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>Character string specifying the name of the ID variable in <code>obs_data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_points</code></td>
+<td>
+<p>Number of time points to simulate. By default, this argument is set equal to the maximum
+number of records that <code>obs_data</code> contains for any individual plus 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_name</code></td>
+<td>
+<p>Character string specifying the name of the time variable in <code>obs_data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covnames</code></td>
+<td>
+<p>Vector of character strings specifying the names of the time-varying covariates in <code>obs_data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covtypes</code></td>
+<td>
+<p>Vector of character strings specifying the "type" of each time-varying covariate included in <code>covnames</code>. The possible "types" are: <code>"binary"</code>, <code>"normal"</code>, <code>"categorical"</code>, <code>"bounded normal"</code>, <code>"zero-inflated normal"</code>, <code>"truncated normal"</code>, <code>"absorbing"</code>, <code>"categorical time"</code>, and <code>"custom"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covparams</code></td>
+<td>
+<p>List of vectors, where each vector contains information for
+one parameter used in the modeling of the time-varying covariates (e.g.,
+model statement, family, link function, etc.). Each vector
+must be the same length as <code>covnames</code> and in the same order.
+If a parameter is not required for a certain covariate, it
+should be set to <code>NA</code> at that index.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covfits_custom</code></td>
+<td>
+<p>Vector containing custom fit functions for time-varying covariates that
+do not fall within the pre-defined covariate types. It should be in
+the same order <code>covnames</code>. If a custom fit function is not
+required for a particular covariate (e.g., if the first
+covariate is of type <code>"binary"</code> but the second is of type <code>"custom"</code>), then that
+index should be set to <code>NA</code>. The default is <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covpredict_custom</code></td>
+<td>
+<p>Vector containing custom prediction functions for time-varying
+covariates that do not fall within the pre-defined covariate types.
+It should be in the same order as <code>covnames</code>. If a custom
+prediction function is not required for a particular
+covariate, then that index should be set to <code>NA</code>. The default is <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>histvars</code></td>
+<td>
+<p>List of vectors. The kth vector specifies the names of the variables for which the kth history function
+in <code>histories</code> is to be applied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>histories</code></td>
+<td>
+<p>Vector of history functions to apply to the variables specified in <code>histvars</code>. The default is <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>basecovs</code></td>
+<td>
+<p>Vector of character strings specifying the names of baseline covariates in <code>obs_data</code>. These covariates are not simulated using a model but rather carry their value over all time points from the first time point of <code>obs_data</code>. These covariates should not be included in <code>covnames</code>. The default is <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome_name</code></td>
+<td>
+<p>Character string specifying the name of the outcome variable in <code>obs_data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome_type</code></td>
+<td>
+<p>Character string specifying the "type" of outcome. The possible "types" are: <code>"survival"</code>, <code>"continuous_eof"</code>, and <code>"binary_eof"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ymodel</code></td>
+<td>
+<p>Model statement for the outcome variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ymodel_fit_custom</code></td>
+<td>
+<p>Function specifying a custom outcome model. See the vignette "Using Custom Outcome Models in gfoRmula" for details. The default is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ymodel_predict_custom</code></td>
+<td>
+<p>Function obtaining predictions from the custom outcome model specified in <code>ymodel_fit_custom</code>. See the vignette "Using Custom Outcome Models in gfoRmula" for details. The default is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compevent_name</code></td>
+<td>
+<p>Character string specifying the name of the competing event variable in <code>obs_data</code>. Only applicable for survival outcomes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compevent_model</code></td>
+<td>
+<p>Model statement for the competing event variable. The default is <code>NA</code>. Only applicable for survival outcomes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compevent_cens</code></td>
+<td>
+<p>Logical scalar indicating whether to treat competing events as censoring events.
+This argument is only applicable for survival outcomes and when a competing even model is supplied (i.e., <code>compevent_name</code> and <code>compevent_model</code> are specified).
+If this argument is set to <code>TRUE</code>, the competing event model will only be used to construct inverse probability weights to estimate the natural course means / risk from the observed data.
+If this argument is set to <code>FALSE</code>, the competing event model will be used in the parametric g-formula estimates of the risk and will not be used to construct inverse probability weights.
+See "Details". The default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>censor_name</code></td>
+<td>
+<p>Character string specifying the name of the censoring variable in <code>obs_data</code>. Only applicable when using inverse probability weights to estimate the natural course means / risk from the observed data. See "Details".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>censor_model</code></td>
+<td>
+<p>Model statement for the censoring variable. Only applicable when using inverse probability weights to estimate the natural course means / risk from the observed data. See "Details".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intvars</code></td>
+<td>
+<p>(Deprecated. See the <code>...</code> argument) List, whose elements are vectors of character strings. The kth vector in <code>intvars</code> specifies the name(s) of the variable(s) to be intervened
+on in each round of the simulation under the kth intervention in <code>interventions</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interventions</code></td>
+<td>
+<p>(Deprecated. See the <code>...</code> argument) List, whose elements are lists of vectors. Each list in <code>interventions</code> specifies a unique intervention on the relevant variable(s) in <code>intvars</code>. Each vector contains a function
+implementing a particular intervention on a single variable, optionally
+followed by one or more "intervention values" (i.e.,
+integers used to specify the treatment regime).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>int_times</code></td>
+<td>
+<p>(Deprecated. See the <code>...</code> argument) List, whose elements are lists of vectors. The kth list in <code>int_times</code> corresponds to the kth intervention in <code>interventions</code>. Each vector specifies the time points in which the relevant intervention is applied on the corresponding variable in <code>intvars</code>.
+When an intervention is not applied, the simulated natural course value is used. By default, this argument is set so that all interventions are applied in all time points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>int_descript</code></td>
+<td>
+<p>Vector of character strings, each describing an intervention. It must
+be in same order as the specified interventions (see the <code>...</code> argument).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ref_int</code></td>
+<td>
+<p>Integer denoting the intervention to be used as the
+reference for calculating the risk ratio and risk difference. 0 denotes the
+natural course, while subsequent integers denote user-specified
+interventions in the order that they are
+named (see the <code>...</code> argument). The default is 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intcomp</code></td>
+<td>
+<p>List of two numbers indicating a pair of interventions to be compared by a hazard ratio.
+The default is <code>NA</code>, resulting in no hazard ratio calculation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>visitprocess</code></td>
+<td>
+<p>List of vectors. Each vector contains as its first entry
+the covariate name of a visit process; its second entry
+the name of a covariate whose modeling depends on the
+visit process; and its third entry the maximum number
+of consecutive visits that can be missed before an
+individual is censored. The default is <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>restrictions</code></td>
+<td>
+<p>List of vectors. Each vector contains as its first entry a covariate for which
+<em>a priori</em> knowledge of its distribution is available; its second entry a condition
+under which no knowledge of its distribution is available and that must be <code>TRUE</code>
+for the distribution of that covariate given that condition to be estimated via a parametric
+model or other fitting procedure; its third entry a function for estimating the distribution
+of that covariate given the condition in the second entry is false such that <em>a priori</em> knowledge
+of the covariate distribution is available; and its fourth entry a value used by the function in the
+third entry. The default is <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yrestrictions</code></td>
+<td>
+<p>List of vectors. Each vector contains as its first entry
+a condition and its second entry an integer. When the
+condition is <code>TRUE</code>, the outcome variable is simulated
+according to the fitted model; when the condition is <code>FALSE</code>,
+the outcome variable takes on the value in the second entry.
+The default is <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compevent_restrictions</code></td>
+<td>
+<p>List of vectors. Each vector contains as its first entry
+a condition and its second entry an integer. When the
+condition is <code>TRUE</code>, the competing event variable is simulated
+according to the fitted model; when the condition is <code>FALSE</code>,
+the competing event variable takes on the value in the
+second entry. The default is <code>NA</code>. Only applicable for survival outcomes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>baselags</code></td>
+<td>
+<p>Logical scalar for specifying the convention used for lagi and lag_cumavgi terms in the model statements when pre-baseline times are not
+included in <code>obs_data</code> and when the current time index, <code class="reqn">t</code>, is such that <code class="reqn">t &lt; i</code>. If this argument is set to <code>FALSE</code>, the value
+of all lagi and lag_cumavgi terms in this context are set to 0 (for non-categorical covariates) or the reference
+level (for categorical covariates). If this argument is set to <code>TRUE</code>, the value of lagi and lag_cumavgi terms
+are set to their values at time 0. The default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsimul</code></td>
+<td>
+<p>Number of subjects for whom to simulate data. By default, this argument is set
+equal to the number of subjects in <code>obs_data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim_data_b</code></td>
+<td>
+<p>Logical scalar indicating whether to return the simulated data set. If bootstrap samples are used (i.e., <code>nsamples</code> is set to a value greater than 0), this argument must be set to <code>FALSE</code>. The default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Starting seed for simulations and bootstrapping.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsamples</code></td>
+<td>
+<p>Integer specifying the number of bootstrap samples to generate.
+The default is 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>Logical scalar indicating whether to parallelize simulations of
+different interventions to multiple cores.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Integer specifying the number of CPU cores to use in parallel
+simulation. This argument is required when parallel is set to <code>TRUE</code>.
+In many applications, users may wish to set this argument equal to <code>parallel::detectCores() - 1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci_method</code></td>
+<td>
+<p>Character string specifying the method for calculating the bootstrap 95% confidence intervals, if applicable. The options are <code>"percentile"</code> and <code>"normal"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threads</code></td>
+<td>
+<p>Integer specifying the number of threads to be used in <code>data.table</code>. See <code>setDTthreads</code> for further details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model_fits</code></td>
+<td>
+<p>Logical scalar indicating whether to return the fitted models. Note that if this argument is set to <code>TRUE</code>, the output of this function may use a lot of memory. The default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boot_diag</code></td>
+<td>
+<p>Logical scalar indicating whether to return the parametric g-formula estimates as well as the coefficients, standard errors, and variance-covariance matrices of the parameters of the fitted models in the bootstrap samples. The default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show_progress</code></td>
+<td>
+<p>Logical scalar indicating whether to print a progress bar for the number of bootstrap samples completed in the R console. This argument is only applicable when <code>parallel</code> is set to <code>FALSE</code> and bootstrap samples are used (i.e., <code>nsamples</code> is set to a value greater than 0). The default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ipw_cutoff_quantile</code></td>
+<td>
+<p>Percentile by which to truncate inverse probability weights. The default is <code>NULL</code> (i.e., no truncation). See "Details".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ipw_cutoff_value</code></td>
+<td>
+<p>Cutoff value by which to truncate inverse probability weights. The default is <code>NULL</code> (i.e., no truncation). See "Details".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>int_visit_type</code></td>
+<td>
+<p>Vector of logicals. The kth element is a logical specifying whether to carry forward the intervened value (rather than the natural value) of the treatment variables(s) when performing a carry forward restriction type for the kth intervention in <code>interventions</code>.
+When the kth element is set to <code>FALSE</code>, the natural value of the treatment variable(s) in the kth intervention in <code>interventions</code> will be carried forward.
+By default, this argument is set so that the intervened value of the treatment variable(s) is carried forward for all interventions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim_trunc</code></td>
+<td>
+<p>Logical scalar indicating whether to truncate simulated covariates to their range in the observed data set. This argument is only applicable for covariates of type <code>"normal"</code>, <code>"bounded normal"</code>, <code>"truncated normal"</code>, and <code>"zero-inflated normal"</code>. The default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments, including (a) those that specify the interventions and (b) those that are passed to the functions in <code>covpredict_custom</code>. To specify interventions, users can supply arguments with the following naming requirements
+</p>
+
+<ul>
+<li>
+<p>Each intervention argument begins with a prefix of <code>intervention</code>.
+</p>
+</li>
+<li>
+<p>After the prefix, the intervention number is specified and followed by a period.
+</p>
+</li>
+<li>
+<p>After the period, the treatment variable name is specified.
+</p>
+</li>
+</ul>
+<p>Each intervention argument takes as input a list with the following elements:
+</p>
+
+<ul>
+<li>
+<p>The first element specifies the intervention function.
+</p>
+</li>
+<li>
+<p>The subsequent elements specify any intervention values.
+</p>
+</li>
+<li>
+<p>(Optional) The named element <code>int_times</code> specifies the time points to apply the intervention. By default, all interventions are applied at all time points.
+</p>
+</li>
+</ul>
+<p>For example, an "always treat" intervention on <code>A</code> is given by <br><code>intervention1.A = list(static, rep(1, time_points))</code> <br>
+See the vignette "A Simplified Approach for Specifying Interventions in gfoRmula" and "Examples" section for more examples.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>To assess model misspecification in the parametric g-formula, users can obtain inverse probability (IP) weighted estimates of the natural course risk and/or means of the time-varying covariates from the observed data.
+See Chiu et al. (2023) for details.
+In addition to the general requirements described in McGrath et al. (2020), the requirements for the input data set and the call to the gformula function for such analyses are described below.
+</p>
+<p>Users need to include a column in <code>obs_data</code> with a time-varying censoring variable.
+Users need to indicate the name of the censoring variable and a model statement for the censoring variable with parameters <code>censor_name</code> and <code>censor_model</code>, respectively.
+When competing events are present, users need to include a column in <code>obs_data</code> with a time-varying indicator of the competing event variable and need to indicate the name of the competing event variable and the corresponding model statement with parameters <code>compevent_name</code> and <code>compevent_model</code>, respectively.
+Users need to indicate whether to treat competing events as censoring events with the <code>compevent_cens</code> parameter.
+Finally, users can specify how to truncate IP weights with the <code>ipw_cutoff_quantile</code> or <code>ipw_cutoff_value</code> parameters.
+</p>
+<p>In addition to the package output described in McGrath et al. (2020), the output will display estimates of the "cumulative percent intervened on" and the "average percent intervened on". When using a custom intervention function, users need to specify whether each individual at that time point is eligible to contribute person-time to the percent intervened on calculations. Specifically, this must be specified in the <code>eligible_pt</code> column of <code>newdf</code>. By default, <code>eligible_pt</code> is set to <code>TRUE</code> for each individual at each time point in custom interventions.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class "gformula_survival" (for survival outcomes), "gformula_continuous_eof" (for continuous end-of-follow-up outcomes), or "gformula_binary_eof" (for binary end-of-follow-up outcomes). The object is a list with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>result</code></td>
+<td>
+<p>Results table. For survival outcomes, this contains the estimated risk, risk difference, and risk ratio for all interventions (inculding the natural course) at each time point. For continuous end-of-follow-up outcomes, this contains estimated mean outcome, mean difference, and mean ratio for all interventions (inculding natural course) at the last time point. For binary end-of-follow-up outcomes, this contains the estimated outcome probability, probability difference, and probability ratio for all interventions (inculding natural course) at the last time point. For all outcome types, this also contains the "cumulative percent intervened on" and the "average percent intervened on". If bootstrapping was used, the results table includes the bootstrap risk / mean / probability difference, ratio, standard error, and 95% confidence interval.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coeffs</code></td>
+<td>
+<p>A list of the coefficients of the fitted models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stderrs</code></td>
+<td>
+<p>A list of the standard errors of the coefficients of the fitted models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcovs</code></td>
+<td>
+<p>A list of the variance-covariance matrices of the parameters of the fitted models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rmses</code></td>
+<td>
+<p>A list of root mean square error (RMSE) values of the fitted models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hazardratio_val</code></td>
+<td>
+<p>Hazard ratio between two interventions (if applicable).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fits</code></td>
+<td>
+<p>A list of the fitted models for the time-varying covariates, outcome, and competing event (if applicable). If <code>model_fits</code> is set to <code>FALSE</code>, a value of <code>NULL</code> is given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim_data</code></td>
+<td>
+<p>A list of data tables of the simulated data. Each element in the list corresponds to one of the interventions. If the argument <code>sim_data_b</code> is set to <code>FALSE</code>, a value of <code>NA</code> is given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>IP_weights</code></td>
+<td>
+<p>A numeric vector specifying the inverse probability weights. See "Details".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootests</code></td>
+<td>
+<p>A data.table containing the bootstrap replicates of the parametric g-formula estimates. If <code>boot_diag</code> is set to <code>FALSE</code>, a value of <code>NULL</code> is given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootcoeffs</code></td>
+<td>
+<p>A list, where the kth element is a list containing the coefficients of the fitted models corresponding to the kth bootstrap sample. If <code>boot_diag</code> is set to <code>FALSE</code>, a value of <code>NULL</code> is given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootstderrs</code></td>
+<td>
+<p>A list, where the kth element is a list containing the standard errors of the coefficients of the fitted models corresponding to the kth bootstrap sample. If <code>boot_diag</code> is set to <code>FALSE</code>, a value of <code>NULL</code> is given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootvcovs</code></td>
+<td>
+<p>A list, where the kth element is a list containing the variance-covariance matrices of the parameters of the fitted models corresponding to the kth bootstrap sample. If <code>boot_diag</code> is set to <code>FALSE</code>, a value of <code>NULL</code> is given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Some additional elements.</p>
+</td>
+</tr>
+</table>
+<p>The results for the g-formula simulation are printed with the <code>print.gformula_survival</code>, <code>print.gformula_continuous_eof</code>, and <code>print.gformula_binary_eof</code> functions. To generate graphs comparing the mean estimated covariate values and risks over time and mean observed covariate values and risks over time, use the <code>plot.gformula_survival</code>, <code>plot.gformula_continuous_eof</code>, and <code>plot.gformula_binary_eof</code> functions.
+</p>
+
+
+<h3>References</h3>
+
+<p>Chiu YH, Wen L, McGrath S, Logan R, Dahabreh IJ, Hernán MA. Evaluating model specification when using the parametric g-formula in the presence of censoring. American Journal of Epidemiology. 2023;192:1887–1895.
+</p>
+<p>McGrath S, Lin V, Zhang Z, Petito LC, Logan RW, Hernán MA, and JG Young. gfoRmula: An R package for estimating the effects of sustained treatment strategies via the parametric g-formula. Patterns. 2020;1:100008.
+</p>
+<p>Robins JM. A new approach to causal inference in mortality studies with a sustained exposure period: application to the healthy worker survivor effect. Mathematical Modelling. 1986;7:1393–1512. [Errata (1987) in Computers and Mathematics with Applications 14, 917.-921. Addendum (1987) in Computers and Mathematics with Applications 14, 923-.945. Errata (1987) to addendum in Computers and Mathematics with Applications 18, 477.].
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Estimating the effect of static treatment strategies on risk of a
+## failure event
+
+id &lt;- 'id'
+time_points &lt;- 7
+time_name &lt;- 't0'
+covnames &lt;- c('L1', 'L2', 'A')
+outcome_name &lt;- 'Y'
+outcome_type &lt;- 'survival'
+covtypes &lt;- c('binary', 'bounded normal', 'binary')
+histories &lt;- c(lagged, lagavg)
+histvars &lt;- list(c('A', 'L1', 'L2'), c('L1', 'L2'))
+covparams &lt;- list(covmodels = c(L1 ~ lag1_A + lag_cumavg1_L1 + lag_cumavg1_L2 +
+                                  L3 + t0,
+                                L2 ~ lag1_A + L1 + lag_cumavg1_L1 +
+                                  lag_cumavg1_L2 + L3 + t0,
+                                A ~ lag1_A + L1 + L2 + lag_cumavg1_L1 +
+                                  lag_cumavg1_L2 + L3 + t0))
+ymodel &lt;- Y ~ A + L1 + L2 + L3 + lag1_A + lag1_L1 + lag1_L2 + t0
+intervention1.A &lt;- list(static, rep(0, time_points))
+intervention2.A &lt;- list(static, rep(1, time_points))
+int_descript &lt;- c('Never treat', 'Always treat')
+nsimul &lt;- 10000
+
+gform_basic &lt;- gformula(obs_data = basicdata_nocomp, id = id,
+                        time_points = time_points,
+                        time_name = time_name, covnames = covnames,
+                        outcome_name = outcome_name,
+                        outcome_type = outcome_type, covtypes = covtypes,
+                        covparams = covparams, ymodel = ymodel,
+                        intervention1.A = intervention1.A,
+                        intervention2.A = intervention2.A,
+                        int_descript = int_descript,
+                        histories = histories, histvars = histvars,
+                        basecovs = c('L3'), nsimul = nsimul,
+                        seed = 1234)
+gform_basic
+
+
+
+## Estimating the effect of treatment strategies on risk of a failure event
+## when competing events exist
+
+id &lt;- 'id'
+time_points &lt;- 7
+time_name &lt;- 't0'
+covnames &lt;- c('L1', 'L2', 'A')
+outcome_name &lt;- 'Y'
+compevent_name &lt;- 'D'
+outcome_type &lt;- 'survival'
+covtypes &lt;- c('binary', 'bounded normal', 'binary')
+histories &lt;- c(lagged, lagavg)
+histvars &lt;- list(c('A', 'L1', 'L2'), c('L1', 'L2'))
+covparams &lt;- list(covlink = c('logit', 'identity', 'logit'),
+                  covmodels = c(L1 ~ lag1_A + lag_cumavg1_L1 + lag_cumavg1_L2 +
+                                  L3 + as.factor(t0),
+                                L2 ~ lag1_A + L1 + lag_cumavg1_L1 +
+                                  lag_cumavg1_L2 + L3 + as.factor(t0),
+                                A ~ lag1_A + L1 + L2 + lag_cumavg1_L1 +
+                                  lag_cumavg1_L2 + L3 + as.factor(t0)))
+ymodel &lt;- Y ~ A + L1 + L2 + lag1_A + lag1_L1 + lag1_L2 + L3 + as.factor(t0)
+compevent_model &lt;- D ~ A + L1 + L2 + lag1_A + lag1_L1 + lag1_L2 + L3 + as.factor(t0)
+intervention1.A &lt;- list(static, rep(0, time_points))
+intervention2.A &lt;- list(static, rep(1, time_points))
+int_descript &lt;- c('Never treat', 'Always treat')
+nsimul &lt;- 10000
+
+gform_basic &lt;- gformula(obs_data = basicdata, id = id,
+                        time_points = time_points,
+                        time_name = time_name, covnames = covnames,
+                        outcome_name = outcome_name,
+                        outcome_type = outcome_type,
+                        compevent_name = compevent_name,
+                        covtypes = covtypes,
+                        covparams = covparams, ymodel = ymodel,
+                        compevent_model = compevent_model,
+                        intervention1.A = intervention1.A,
+                        intervention2.A = intervention2.A,
+                        int_descript = int_descript,
+                        histories = histories, histvars = histvars,
+                        basecovs = c('L3'), nsimul = nsimul,
+                        seed = 1234)
+gform_basic
+
+
+
+## Estimating the effect of treatment strategies on the mean of a continuous
+## end of follow-up outcome
+
+library('Hmisc')
+id &lt;- 'id'
+time_name &lt;- 't0'
+covnames &lt;- c('L1', 'L2', 'A')
+outcome_name &lt;- 'Y'
+outcome_type &lt;- 'continuous_eof'
+covtypes &lt;- c('categorical', 'normal', 'binary')
+histories &lt;- c(lagged)
+histvars &lt;- list(c('A', 'L1', 'L2'))
+covparams &lt;- list(covmodels = c(L1 ~ lag1_A + lag1_L1 + L3 + t0 +
+                                  rcspline.eval(lag1_L2, knots = c(-1, 0, 1)),
+                                L2 ~ lag1_A + L1 + lag1_L1 + lag1_L2 + L3 + t0,
+                                A ~ lag1_A + L1 + L2 + lag1_L1 + lag1_L2 + L3 + t0))
+ymodel &lt;- Y ~ A + L1 + L2 + lag1_A + lag1_L1 + lag1_L2 + L3
+intervention1.A &lt;- list(static, rep(0, 7))
+intervention2.A &lt;- list(static, rep(1, 7))
+int_descript &lt;- c('Never treat', 'Always treat')
+nsimul &lt;- 10000
+
+gform_cont_eof &lt;- gformula(obs_data = continuous_eofdata,
+                           id = id, time_name = time_name,
+                           covnames = covnames, outcome_name = outcome_name,
+                           outcome_type = outcome_type, covtypes = covtypes,
+                           covparams = covparams, ymodel = ymodel,
+                           intervention1.A = intervention1.A,
+                           intervention2.A = intervention2.A,
+                           int_descript = int_descript,
+                           histories = histories, histvars = histvars,
+                           basecovs = c("L3"), nsimul = nsimul, seed = 1234)
+gform_cont_eof
+
+
+
+## Estimating the effect of threshold interventions on the mean of a binary
+## end of follow-up outcome
+
+outcome_type &lt;- 'binary_eof'
+id &lt;- 'id_num'
+time_name &lt;- 'time'
+covnames &lt;- c('cov1', 'cov2', 'treat')
+outcome_name &lt;- 'outcome'
+histories &lt;- c(lagged, cumavg)
+histvars &lt;- list(c('treat', 'cov1', 'cov2'), c('cov1', 'cov2'))
+covtypes &lt;- c('binary', 'zero-inflated normal', 'normal')
+covparams &lt;- list(covmodels = c(cov1 ~ lag1_treat + lag1_cov1 + lag1_cov2 +
+                                  cov3 + time,
+                                cov2 ~ lag1_treat + cov1 + lag1_cov1 +
+                                  lag1_cov2 + cov3 + time,
+                                treat ~ lag1_treat + cumavg_cov1 +
+                                  cumavg_cov2 + cov3 + time))
+ymodel &lt;- outcome ~  treat + cov1 + cov2 + lag1_cov1 + lag1_cov2 + cov3
+intervention1.treat &lt;- list(static, rep(0, 7))
+intervention2.treat &lt;- list(threshold, 1, Inf)
+int_descript &lt;- c('Never treat', 'Threshold - lower bound 1')
+nsimul &lt;- 10000
+ncores &lt;- 2
+
+gform_bin_eof &lt;- gformula(obs_data = binary_eofdata,
+                          outcome_type = outcome_type, id = id,
+                          time_name = time_name, covnames = covnames,
+                          outcome_name = outcome_name, covtypes = covtypes,
+                          covparams = covparams, ymodel = ymodel,
+                          intervention1.treat = intervention1.treat,
+                          intervention2.treat = intervention2.treat,
+                          int_descript = int_descript, histories = histories,
+                          histvars = histvars, basecovs = c("cov3"),
+                          seed = 1234, parallel = TRUE, nsamples = 5,
+                          nsimul = nsimul, ncores = ncores)
+gform_bin_eof
+
+
+## Using IP weighting to estimate natural course risk
+## Only the natural course intervention is included for simplicity
+
+covnames &lt;- c('L', 'A')
+histories &lt;- c(lagged)
+histvars &lt;- list(c('A', 'L'))
+ymodel &lt;- Y ~ L + A
+covtypes &lt;- c('binary', 'normal')
+covparams &lt;- list(covmodels = c(L ~ lag1_L + lag1_A,
+                                A ~ lag1_L + L + lag1_A))
+censor_name &lt;- 'C'
+censor_model &lt;- C ~ L
+res_censor &lt;- gformula(obs_data = censor_data, id = 'id',
+                       time_name = 't0', covnames = covnames,
+                       outcome_name = 'Y', outcome_type = 'survival',
+                       censor_name = censor_name, censor_model = censor_model,
+                       covtypes = covtypes,
+                       covparams = covparams, ymodel = ymodel,
+                       histories = histories, histvars = histvars,
+                       seed = 1234)
+plot(res_censor)
+
+
+</code></pre>
+
+
+</div>

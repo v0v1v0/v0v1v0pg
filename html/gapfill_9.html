@@ -1,0 +1,161 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Extend</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Implement an Alternative Gap-fill Algorithm</h2>
+
+<h3>Description</h3>
+
+<p>By default, the <code>Gapfill</code> function uses the <code>Subset</code>
+and <code>Predict</code> functions to predict missing values.
+To implement alternative gap-fill procedures, these functions can be replaced
+by user defined ones and passed to the <code>Gapfill</code> function via the arguments
+<code>fnSubset</code> and <code>fnPredict</code>.<br> 
+The example section below gives two such extensions:
+</p>
+<dl>
+<dt>Example 1: </dt>
+<dd>
+<p>Illustration of the concept.
+The prediction is the mean of the subset around a missing value.</p>
+</dd>
+<dt>Example 2: </dt>
+<dd>
+<p>An algorithm using the <code>Score</code> and the <code>lm</code> functions.</p>
+</dd>
+</dl>
+<h3>Details</h3>
+
+<p>To work properly the user-defined <code>Subset</code> function needs to have the arguments:
+</p>
+<dl>
+<dt>
+<code>data</code>: </dt>
+<dd>
+<p>The input data array.</p>
+</dd>
+<dt>
+<code>mp</code>: </dt>
+<dd>
+<p>Numeric vector of length 4 specifying the index of the
+currently treated missing value.</p>
+</dd>
+<dt>
+<code>i</code>: </dt>
+<dd>
+<p>Integer vector of length 1. Number of non-successfully tried subsets.</p>
+</dd>
+</dl>
+<p>The function user-defined <code>Predict</code> function, needs to have the arguments:
+</p>
+
+<dl>
+<dt>
+<code>a</code>: </dt>
+<dd>
+<p>Return value of the <code>Subset</code> function.</p>
+</dd>
+<dt>
+<code>i</code>: </dt>
+<dd>
+<p>Integer vector of length 1. Number of non-successfully tried subsets.</p>
+</dd>
+</dl>
+<p>Both functions may take additional arguments.
+The default values of these arguments can be changed via
+the <code>...</code> arguments of <code>Gapfill</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Florian Gerber, <a href="mailto:flora.fauna.gerber@gmail.com">flora.fauna.gerber@gmail.com</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>F. Gerber, R. de Jong, M. E. Schaepman, G. Schaepman-Strub, and R. Furrer (2018)
+in IEEE Transactions on Geoscience and Remote Sensing, pp. 1-13, doi: <a href="https://doi.org/10.1109/TGRS.2017.2785240">10.1109/TGRS.2017.2785240</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>Gapfill</code>, <code>Subset-Predict</code>, <code>Score</code>, <code>lm</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## Example 1: mean ----------------------------------
+## define a predict function
+PredictMean &lt;- function (a, i) mean(a, na.rm = TRUE)
+
+out1 &lt;- Gapfill(data = ndvi, fnPredict = PredictMean)
+Image(out1$fill)
+
+## start with a smaller subset
+args(Subset)
+out2 &lt;- Gapfill(data = ndvi, fnPredict = PredictMean,
+                initialSize = c(0, 0, 1, 6))
+Image(out2$fill)
+
+## require at least "nNotNA" non-NA values
+## return predicted value and number of iterations i
+PredictMean2 &lt;- function (a, i, nNotNA) {
+    if (sum(!is.na(a)) &lt; nNotNA)
+        return (c(NA, NA))
+    c(mean(a, na.rm = TRUE), i)
+}
+out3 &lt;- Gapfill(data = ndvi, fnPredict = PredictMean2, nPredict = 2,
+                initialSize = c(0, 0, 1, 6), nNotNA = 0)
+stopifnot(identical(c(out2$fill), c(out3$fill[,,,,1])))
+Image(out3$fill[,,,,2])  # number of used iterations i
+
+out4 &lt;- Gapfill(data = ndvi, fnPredict = PredictMean2, nPredict = 2,
+                initialSize = c(0, 0, 1, 6), nNotNA = 50)
+Image(out4$fill[,,,,1])  # fill values
+Image(out4$fill[,,,,2])  # number of used iterations i
+
+
+## Example 2: Score() and lm() ----------------------
+PredictLm &lt;- function (a, i, nNotNA = 50, minScores = 2){
+    if (sum(!is.na(a)) &lt; nNotNA)
+        return (NA)
+    am &lt;- Array2Matrix(a)
+    sx &lt;- Score(t(am))
+    lsx &lt;- length(sx)
+    if (lsx &lt; minScores)
+        return (NA)
+    sy &lt;- Score(am)
+    lsy &lt;- unique(length(sy))
+    if (lsy &lt; minScores)
+        return (NA)
+    df &lt;- data.frame(z = c(am),
+                     sx = rep(sx, ncol(am)),
+                     sy = rep(sy, each = nrow(am)))
+    newdata &lt;- df[IndexTwoOne(attr(am, "mp"), dim(am)),]
+    m &lt;- lm(z ~ sx * sy, data = df)
+    predict(m, newdata = newdata)
+}
+
+## test PredictLm() by running it
+## manually for one missing value
+mp &lt;- IndexOneFour(which(is.na(ndvi))[1], dim(ndvi))
+a &lt;- Subset(data = ndvi, mp = mp, i = 0)
+PredictLm(a = a, i = 0)
+
+## run PredictLm() on ndvi data
+out5 &lt;- Gapfill(data = ndvi, fnPredict = PredictLm,
+                nNotNA = 50)
+Image(out5$fill)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

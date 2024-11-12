@@ -1,0 +1,181 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>galah_call</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Start building a query</h2>
+
+<h3>Description</h3>
+
+<p>To download data from the selected atlas, one must construct a query. This
+query tells the atlas API what data to download and return, as well as how it
+should be filtered. Using <code>galah_call()</code> allows you to build a piped query to
+download data, in the same way that you would wrangle data with <code>dplyr</code> and
+the <code>tidyverse</code>.
+</p>
+<p>Since version 2.0, <code>galah_call()</code> is a wrapper to a group of underlying
+<code>request_</code> functions. Each of these functions can begin a piped query and end
+with <code>collapse()</code>, <code>compute()</code> or <code>collect()</code>.
+</p>
+<p>The underlying <code>request_</code> #' functions are useful because they allow <code>galah</code>
+to separate different types of requests to perform better. For example,
+<code>filter.data_request</code> translates filters in R to <code>solr</code>, whereas
+<code>filter.metadata_request</code> searches using a search term.
+</p>
+<p>For more details see the object-oriented programming vignette:
+<code>vignette("object_oriented_programming", package = "galah")</code>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">galah_call(method = c("data", "metadata", "files"), type, ...)
+
+request_data(
+  type = c("occurrences", "occurrences-count", "occurrences-doi", "species",
+    "species-count"),
+  ...
+)
+
+request_metadata(type)
+
+request_files(type = "media")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>string: what <code>request</code> function should be called. Should be one
+of <code>"data"</code> (default), <code>"metadata"</code> or <code>"files"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>string: what form of data should be returned? Acceptable values
+are specified by the corresponding <code>request</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Zero or more arguments to alter a query. See 'details'.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Each atlas has several types of data that can be chosen. Currently supported
+are <code>"occurrences"</code> (the default), <code>"species"</code> and <code>"media"</code> (the latter
+currently only for ALA). It is also possible to use
+<code>type = "occurrences-count"</code> and <code>type = "species-count"</code>; but in practice
+this is synonymous with <code>galah_call() |&gt; count()</code>, and is
+therefore only practically useful for debugging (via <code>collapse()</code> and
+<code>compute()</code>).
+</p>
+<p>Other named arguments are supported via <code>...</code>. In practice, functions
+with a <code>galah_</code> prefix and S3 methods ported from <code>dplyr</code> assign
+information to the correct slots internally. Overwriting these with
+user-defined alternatives is possible, but not advised. Accepted
+arguments are:
+</p>
+
+<ul>
+<li> <p><code>filter</code> (accepts <code>galah_filter()</code> or <code>filter()</code>)
+</p>
+</li>
+<li> <p><code>select</code> (accepts <code>galah_select()</code> or <code>select</code>)
+</p>
+</li>
+<li> <p><code>group_by</code> (accepts <code>galah_group_by()</code> or <code>group_by()</code>)
+</p>
+</li>
+<li> <p><code>identify</code> (accepts <code>galah_identify()</code> or <code>identify()</code>)
+</p>
+</li>
+<li> <p><code>geolocate</code> (accepts <code>galah_geolocate()</code>, <code>galah_polygon()</code> <code>galah_bbox()</code> or
+<code>st_crop()</code>)
+</p>
+</li>
+<li> <p><code>limit</code> (accepts <code>slice_head()</code>)
+</p>
+</li>
+<li> <p><code>doi</code> (accepts a sting listing a valid DOI, specific to <code>collect()</code> when <code>type = "doi"</code>)
+</p>
+</li>
+</ul>
+<p>Unrecognised names are ignored by <code>collect()</code> and related functions.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Each sub-function returns a different object class: <code>request_data()</code>
+returns <code>data_request</code>. <code>request_metadata</code> returns <code>metadata_request</code>,
+<code>request_files()</code> returns <code>files_request</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>collapse.data_request()</code>, <code>compute.data_request()</code>, <code>collect.data_request()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run:  
+# Begin your query with `galah_call()`, then pipe using `%&gt;%` or `|&gt;`
+
+# Get number of records of *Aves* from 2001 to 2004 by year
+galah_call() |&gt;
+  galah_identify("Aves") |&gt;
+  galah_filter(year &gt; 2000 &amp; year &lt; 2005) |&gt;
+  galah_group_by(year) |&gt;
+  atlas_counts()
+  
+# Get information for all species in *Cacatuidae* family
+galah_call() |&gt;
+  galah_identify("Cacatuidae") |&gt;
+  atlas_species()
+  
+# Download records of genus *Eolophus* from 2001 to 2004
+galah_config(email = "your-email@email.com")
+
+galah_call() |&gt;
+  galah_identify("Eolophus") |&gt;
+  galah_filter(year &gt; 2000 &amp; year &lt; 2005) |&gt;
+  atlas_occurrences()
+
+
+# ----------
+# Since galah 2.0.0, a pipe can start with a `request_` function.
+# This allows users to use `collapse()`, `compute()` and `collect()`.
+
+# Get number of records of *Aves* from 2001 to 2004 by year
+request_data(type = "occurrences-count") |&gt;
+  galah_identify("Aves") |&gt;
+  galah_filter(year &gt; 2000 &amp; year &lt; 2005) |&gt;
+  galah_group_by(year) |&gt;
+  collect()
+
+# Get information for all species in *Cacatuidae* family
+request_data(type = "species") |&gt;
+  galah_identify("Cacatuidae") |&gt;
+  collect()
+  
+# Get metadata information about supported atlases in galah
+request_metadata(type = "atlases") |&gt;
+  collect()
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

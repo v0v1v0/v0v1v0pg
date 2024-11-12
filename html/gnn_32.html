@@ -1,0 +1,174 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>trafos_margins</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Data Transformations for Training or Sampling</h2>
+
+<h3>Description</h3>
+
+<p>Transformations applied to each marginal component sample to map given data
+to a different range.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">range_trafo(x, lower, upper, inverse = FALSE)
+logis_trafo(x, mean = 0, sd = 1, slope = 1, intercept = 0, inverse = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p><code class="reqn">(n, d)</code>-matrix of data (typically before training or after sampling).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>value or <code class="reqn">d</code>-vector typically
+containing the smallest value of each column of <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>value or <code class="reqn">d</code>-vector typically
+containing the largest value of each column of <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean</code></td>
+<td>
+<p>value or <code class="reqn">d</code>-vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sd</code></td>
+<td>
+<p>value or <code class="reqn">d</code>-vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>slope</code></td>
+<td>
+<p>value or <code class="reqn">d</code>-vector of slopes
+of the linear transformations applied after applying
+<code>plogis()</code> (before applying <code>qlogis()</code> if
+<code>inverse = TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>value or <code class="reqn">d</code>-vector of intercepts
+of the linear transformations applied after applying
+<code>plogis()</code> (before applying <code>qlogis()</code> if
+<code>inverse = TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inverse</code></td>
+<td>
+<p><code>logical</code> indicating whether the inverses
+of the respective transformations are to be computed (typically
+used after generating data from a neural network trained on
+data transformed with the respective transformation and
+<code>inverse = FALSE</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object as <code>x</code> containing the componentwise transformed data.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Marius Hofert</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(gnn) # for being standalone
+
+## Generate data
+n &lt;- 100
+set.seed(271)
+x &lt;- cbind(rnorm(n), (1-runif(n))^(-1/2)-1) # normal and Pareto(2) margins
+plot(x)
+
+## Range transformation
+ran &lt;- apply(x, 2, range) # column j = range of the jth column of x
+x.ran &lt;- range_trafo(x, lower = ran[1,], upper = ran[2,]) # marginally transform to [0,1]
+plot(x.ran) # =&gt; now range [0,1] but points a bit clustered around small y-values
+x. &lt;- range_trafo(x.ran, lower = ran[1,], upper = ran[2,], inverse = TRUE) # transform back
+stopifnot(all.equal(x., x)) # check
+
+## Logistic transformation
+x.logis &lt;- logis_trafo(x) # marginally transform to [0,1] via plogis()
+plot(x.logis) # =&gt; y-range is [1/2, 1] which can be harder to train
+x. &lt;- logis_trafo(x.logis, inverse = TRUE) # transform back
+stopifnot(all.equal(x., x)) # check
+
+## Logistic transformation with scaling to all of [0,1] in the second coordinate
+x.logis.scale &lt;- logis_trafo(x, slope = 2, intercept = -1)
+plot(x.logis.scale) # =&gt; now y-range is scaled to [0,1]
+x. &lt;- logis_trafo(x.logis.scale, slope = 2, intercept = -1, inverse = TRUE) # transform back
+stopifnot(all.equal(x., x)) # check
+
+## Logistic transformation with sample mean and standard deviation and then
+## transforming the range to [0,1] with a range transformation (note that
+## slope = 2, intercept = -1 would not help here as the y-range is not [1/2, 1])
+mu &lt;- colMeans(x)
+sig &lt;- apply(x, 2, sd)
+x.logis.fit &lt;- logis_trafo(x, mean = mu, sd = sig) # marginally plogis(, location, scale)
+plot(x.logis.fit) # =&gt; y-range is not [1/2, 1] =&gt; use range transformation
+ran &lt;- apply(x.logis.fit, 2, range)
+x.logis.fit.ran &lt;- range_trafo(x.logis.fit, lower = ran[1,], upper = ran[2,])
+plot(x.logis.fit.ran) # =&gt; now y-range is [1/2, 1]
+x. &lt;- logis_trafo(range_trafo(x.logis.fit.ran, lower = ran[1,], upper = ran[2,],
+                              inverse = TRUE),
+                  mean = mu, sd = sig, inverse = TRUE) # transform back
+stopifnot(all.equal(x., x)) # check
+
+## Note that for heavy-tailed data, plogis() can fail to stay inside (0,1)
+## even with adapting to sample mean and standard deviation. We now present
+## a case where we see that using a fitted logistic distribution function
+## is *just* good enough to numerically keep the data inside (0,1).
+set.seed(271)
+x &lt;- cbind(rnorm(n), (1-runif(n))^(-2)-1) # normal and Pareto(1/2) margins
+plot(x) # =&gt; heavy-tailed in y-coordinate
+## Transforming with standard logistic distribution function
+x.logis &lt;- logis_trafo(x)
+stopifnot(any(x.logis[,2] == 1))
+## =&gt; There is value numerically indistinguishable from 1 to which applying
+##    the inverse transform will lead to Inf
+stopifnot(any(is.infinite(logis_trafo(x.logis, inverse = TRUE))))
+## Now adapt the logistic distribution to share the mean and standard deviation
+## with the data
+mu &lt;- colMeans(x)
+sig &lt;- apply(x, 2, sd)
+x.logis.scale &lt;- logis_trafo(x, mean = mu, sd = sig)
+stopifnot(all(x.logis.scale[,2] != 1)) # =&gt; no values equal to 1 anymore
+
+## Alternatively, log() the data first, thus working with a log-logistic
+## distribution as transformation
+lx &lt;- cbind(x[,1], log(x[,2])) # 2nd coordinate only
+lmu &lt;- c(mu[1], mean(lx[,2]))
+lsig &lt;- c(sig[1], sd(lx[,2]))
+x.llogis &lt;- logis_trafo(lx, mean = lmu, sd = lsig)
+x. &lt;- logis_trafo(x.llogis, mean = lmu, sd = lsig, inverse = TRUE)
+x.. &lt;- cbind(x.[,1], exp(x.[,2])) # undo log()
+stopifnot(all.equal(x.., x))
+</code></pre>
+
+
+</div>

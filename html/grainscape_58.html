@@ -1,0 +1,178 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plot,corridor,ANY-method</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Plot quick visualizations of <code>grainscape</code> objects</h2>
+
+<h3>Description</h3>
+
+<p>Plot quick visualizations of <code>mpg</code>, <code>grain</code>, and <code>corridor</code>
+objects.
+</p>
+<p>This function is intended to get a quick look at the state of a <code>grainscape</code>
+object by rendering what are likely to be the most universally useful
+visualizations of the spatial data within these objects.
+</p>
+<p>Much more control is available using <code>ggGS()</code> with <code>ggplot()</code>
+enabling the layering of different different analytical products, and the
+visualization of node and link attributes.
+</p>
+<p>For high-resolution visualization and the greatest level of control use
+<code>export()</code> to export spatial objects for cartographic representation
+in a geographic information system (GIS).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S4 method for signature 'corridor,ANY'
+plot(x, y, quick = NULL, print = TRUE, theme = TRUE, ...)
+
+## S4 method for signature 'grain,ANY'
+plot(x, y, quick = NULL, print = TRUE, theme = TRUE, ...)
+
+## S4 method for signature 'mpg,ANY'
+plot(x, y, quick = NULL, print = TRUE, theme = TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A <code>grainscape</code> object (<code>corridor</code>, <code>grain</code>, or <code>mpg</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quick</code></td>
+<td>
+<p>If <code>NULL</code> (the default) it will plot the most useful quick
+visualization for the supplied object type. See below for a
+description of the available quick plots, and the defaults.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print</code></td>
+<td>
+<p>Render the <code>ggplot</code> on the default graphics device.
+Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theme</code></td>
+<td>
+<p>Apply grainscape theme and scale aesthetics. Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments (not used).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<div class="sourceCode"><pre>   Invisibly, a `ggplot2` object to which additional `ggplot`
+           geoms and adjustments can be applied. Has the side effect of
+           rendering the plot, unless `print = FALSE`.
+</pre></div>
+
+
+<h3>Types of visualization available with the <code>quick</code> parameter</h3>
+
+<p><code>"mpgPerimPlot"</code> gives a a vector rendering of the minimum planar
+graph with vector links connecting the perimeters of the patches. This
+doesn't accurately represent the sinuosity of paths of the links between patches
+but offers a good approximation that renders better at large extents.
+Default for <code>mpg</code> objects. Not available for other objects.
+</p>
+<p><code>"mpgPlot"</code> gives a raster-only rendering of the minimum planar graph
+where <code>patchId</code> are positive integers, and <code>linkId</code> are negative
+integers showing the shortest paths between patches  Only available for
+<code>mpg</code> objects.
+</p>
+<p><code>"network"</code> gives a vector rendering of the minimum planar graph or
+the grains of connectivity network with nodes and links plotted at the
+patch or polygon centroid locations. Available for <code>mpg</code> and <code>grain</code>
+objects. Default for <code>grain</code> objects.
+</p>
+<p><code>"grainPlot"</code> gives a raster and vector rendering of the grains of
+connectivity network with nodes and links plotted at polygon centroid locations,
+superimposed over the boundaries of the Voronoi polygons.
+Can be time consuming on large rasters due to the Voronoi boundary extraction.
+Only available for <code>grain</code> objects.
+</p>
+<p><code>"corridorPlot"</code> renders the output of a <code>corridor()</code> analysis.
+It is the only option available with <code>corridor</code> objects and the default.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Alex Chubaty and Paul Galpern
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>ggGS()</code>,
+<code>export()</code>,
+corridor,
+grain,
+mpg
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Load raster landscape
+tiny &lt;- raster::raster(system.file("extdata/tiny.asc", package = "grainscape"))
+
+## Create a resistance surface from a raster using an is-becomes reclassification
+tinyCost &lt;- raster::reclassify(tiny, rcl = cbind(c(1, 2, 3, 4), c(1, 5, 10, 12)))
+## Produce a patch-based MPG where patches are resistance features=1
+tinyPatchMPG &lt;- MPG(cost = tinyCost, patch = tinyCost == 1)
+## Extract a representative subset of 5 grains of connectivity
+tinyPatchGOC &lt;- GOC(tinyPatchMPG, nThresh = 5)
+if (interactive()) {
+  library(ggplot2)
+
+  ## MPG and showing simplified links among the perimeters of patches
+  plot(tinyPatchMPG)
+
+  ## MPG showing links among the nodes of connected patches
+  plot(tinyPatchMPG, quick = "network")
+
+  ## MPG showing the shortest paths between patches actually used to
+  ## to calculate link weight values
+  plot(tinyPatchMPG, quick = "mpgPlot")
+
+  ## A grain of connectivity network plot with Voronoi boundaries
+  plot(grain(tinyPatchGOC, 3), quick = "grainPlot")
+
+  ## Capture plot output for further processing with ggplot
+  g &lt;- plot(tinyPatchMPG, print = FALSE, theme = FALSE)
+  g &lt;- g + theme_minimal() + ggtitle("Minimum planar graph") +
+    theme(plot.title = element_text(size = 20, hjust = 0.5)) +
+    theme(legend.position = "none") +
+    xlab("Easting") + ylab("Northing")
+  g
+
+  ## To change aesthetics it is best to build the plot from scratch
+  ## using grainscape::ggGS(). See examples therein.
+}
+</code></pre>
+
+
+</div>

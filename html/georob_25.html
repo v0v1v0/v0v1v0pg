@@ -1,0 +1,649 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>control.georob</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Control Parameters for georob</h2>
+
+<h3>Description</h3>
+
+<p>This page documents parameters used to control <code>georob</code>.  It
+describes the arguments of the functions <code>control.georob</code>,
+<code>param.transf</code>, <code>fwd.transf</code>, <code>dfwd.transf</code>,
+<code>bwd.transf</code>, <code>control.rq</code>, <code>control.nleqslv</code>,
+<code>control.nlminb</code> and <code>control.optim</code>, which all serve to
+control the behaviour of <code>georob</code>.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">control.georob(ml.method = c("REML", "ML"), reparam = TRUE,
+    maximizer = c("nlminb", "optim"), initial.param = TRUE,
+    initial.fixef = c("lmrob", "rq", "lm"), bhat = NULL,
+    min.rweight = 0.25,
+    param.tf = param.transf(), fwd.tf = fwd.transf(),
+    deriv.fwd.tf = dfwd.transf(), bwd.tf = bwd.transf(),
+    psi.func = c("logistic", "t.dist", "huber"),
+    irwls.maxiter = 50,
+    irwls.ftol = 1.e-5, force.gradient = FALSE,
+    min.condnum = 1.e-12, zero.dist = sqrt(.Machine[["double.eps"]]),
+    error.family.estimation = c("gaussian", "long.tailed"),
+    error.family.cov.effects = c("gaussian", "long.tailed"),
+    error.family.cov.residuals = c("gaussian", "long.tailed"),
+    cov.bhat = TRUE, full.cov.bhat = FALSE, cov.betahat = TRUE,
+    cov.delta.bhat = TRUE, full.cov.delta.bhat = TRUE,
+    cov.delta.bhat.betahat = TRUE,
+    cov.ehat = TRUE, full.cov.ehat = FALSE,
+    cov.ehat.p.bhat = FALSE, full.cov.ehat.p.bhat = FALSE,
+    hessian = TRUE,
+    rq = control.rq(), lmrob = lmrob.control(),
+    nleqslv = control.nleqslv(),
+    optim = control.optim(), nlminb = control.nlminb(),
+    pcmp = control.pcmp(), ...)
+
+param.transf(variance = "log", snugget = "log", nugget = "log", scale = "log",
+    alpha = c(
+      RMaskey = "log", RMdewijsian = "logit2", RMfbm = "logit2", RMgencauchy = "logit2",
+      RMgenfbm = "logit2", RMlgd = "identity", RMqexp = "logit1", RMstable = "logit2"
+    ),
+    beta = c(RMdagum = "logit1", RMgencauchy = "log", RMlgd = "log"),
+    delta = "logit1", gamma = c(RMcauchy = "log", RMdagum = "logit1"),
+    kappa = "logit3", lambda = "log", mu = "log", nu = "log",
+    f1 = "log", f2  ="log", omega = "identity", phi = "identity", zeta = "identity")
+
+fwd.transf(...)
+
+dfwd.transf(...)
+
+bwd.transf(...)
+
+control.rq(tau = 0.5, rq.method = c("br", "fnb", "pfn"),
+    rq.alpha = 0.1, ci = FALSE, iid = TRUE,
+    interp = TRUE, tcrit = TRUE, rq.beta = 0.99995, eps = 1e-06,
+    Mm.factor = 0.8, max.bad.fixup = 3, ...)
+
+control.nleqslv(method = c("Broyden", "Newton"),
+    global = c("dbldog", "pwldog", "qline", "gline", "none"),
+    xscalm = c("fixed", "auto"), control = list(ftol = 1e-04), ...)
+
+control.optim(method = c("BFGS", "Nelder-Mead", "CG",
+        "L-BFGS-B", "SANN", "Brent"), lower = -Inf, upper = Inf,
+    control = list(reltol = 1e-05), ...)
+
+control.nlminb(control = list(rel.tol = 1.e-5), lower = -Inf,
+    upper = Inf, ...)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ml.method</code></td>
+<td>
+<p>a character keyword defining whether Gaussian maximum
+likelihood (<code>ML</code>) or restricted maximum likelihood (<code>REML</code>
+default) estimates will be computed (ignored if <code>tuning.psi &lt;=
+  tuning.psi.nr</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reparam</code></td>
+<td>
+<p>a logical scalar.  If <code>TRUE</code> (default) the
+re-parametrized variance parameters <code class="reqn">\sigma_B^2</code>, <code class="reqn">\eta</code> and
+<code class="reqn">\xi</code> are estimated by Gaussian (RE)ML, otherwise the original
+parameters <code class="reqn">\tau^2</code>, <code class="reqn">\sigma_{\mathrm{n}}^2</code> and
+<code class="reqn">\sigma^2</code> (cf.  subsection <em>Estimating variance parameters by
+Gaussian (RE)ML</em>, section <em>Details</em> of <code>georob</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maximizer</code></td>
+<td>
+<p>a character keyword defining whether the Gaussian
+(restricted) log-likelihood is maximized by <code>nlminb</code>
+(default) or <code>optim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial.param</code></td>
+<td>
+<p>a logical scalar, controlling whether initial values
+of variogram parameters are computed for solving the robustified
+estimating equations of the variogram and anisotropy parameters.  If
+<code>initial.param = TRUE</code> (default) robust initial values of parameters
+are computed by discarding outlying observations based on the
+“robustness weights” of the initial fit of the regression model by
+<code>lmrob</code> and fitting the spatial linear model by
+Gaussian REML to the pruned data set.  For <code>initial.param = FALSE</code>
+no initial parameter values are computed and the estimating equations are
+solved with the initial values passed by <code>param</code> and <code>aniso</code> to
+<code>georob</code> (see <em>Details</em> of <code>georob</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial.fixef</code></td>
+<td>
+<p>a character keyword defining whether the function
+<code>lmrob</code> or <code>rq</code> is used to
+compute robust initial estimates of the regression parameters
+<code class="reqn">\boldsymbol{\beta}</code> (default <code>"lmrob"</code>).
+If the fixed effects model matrix has not full columns rank, then
+<code>lm</code> is used to compute initial values of the
+regression coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bhat</code></td>
+<td>
+<p>a numeric vector with initial values for the spatial random
+effects <code class="reqn">\widehat{\boldsymbol{B}}</code>, with
+<code class="reqn">\widehat{\boldsymbol{B}}=\boldsymbol{0}</code> if <code>bhat</code> is
+equal to <code>NULL</code> (default).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min.rweight</code></td>
+<td>
+<p>a positive numeric with the “robustness
+weight” of the initial <code>lmrob</code> fit that
+observations must exceed to be used for computing robust initial
+estimates of variogram parameters by setting <code>initial.param = TRUE</code>
+(see <code>georob</code>; default <code>0.25</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param.tf</code></td>
+<td>
+<p>a function such as <code>param.transf</code>, which returns a
+named list of character strings that define the transformations to be
+applied to the variogram parameters for model fitting, see
+<em>Details</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fwd.tf</code></td>
+<td>
+<p>a function such as <code>fwd.transf</code>, which returns a named
+list of invertible functions to be used to transform variogram
+parameters, see <em>Details</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deriv.fwd.tf</code></td>
+<td>
+<p>a function such as <code>dfwd.transf</code>, which
+returns a named list of functions corresponding to the first derivatives
+of <code>fwd.tf</code>, see <em>Details</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bwd.tf</code></td>
+<td>
+<p>a function such as <code>bwd.transf</code>, which returns the
+named list of inverse functions corresponding to <code>fwd.tf</code>, see
+<em>Details</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>psi.func</code></td>
+<td>
+<p>a character keyword defining what <code class="reqn">\psi_c</code>-function
+should be used for robust model fitting.  Possible values are
+<code>"logistic"</code> (a scaled and shifted logistic CDF, default),
+<code>"t.dist"</code> (re-descending <code class="reqn">\psi_c</code>-function associated with
+Student <code class="reqn">t</code>-distribution with <code class="reqn">c</code> degrees of freedom) and
+<code>"huber"</code> (Huber's <code class="reqn">\psi_c</code>-function).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>irwls.maxiter</code></td>
+<td>
+<p>a positive integer equal to the maximum number of
+IRWLS iterations to solve the estimating equations of
+<code class="reqn">\boldsymbol{B}</code> and <code class="reqn">\boldsymbol{\beta}</code> (default
+<code>50</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>irwls.ftol</code></td>
+<td>
+<p>a positive numeric with the convergence criterion for
+IRWLS. Convergence is assumed if the objective function change of a IRWLS
+iteration does not exceed <code>ftol</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>force.gradient</code></td>
+<td>
+<p>a logical scalar controlling whether the estimating
+equations or the gradient of the Gaussian restricted log-likelihood are
+evaluated even if all variogram parameters are fixed (default
+<code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min.condnum</code></td>
+<td>
+<p>a positive numeric with the minimum acceptable
+ratio of smallest to largest singular value of the model matrix
+<code class="reqn">\boldsymbol{X}</code> (default <code>1.e-12</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zero.dist</code></td>
+<td>
+<p>a positive numeric equal to the maximum distance,
+separating two sampling locations that are still considered as being
+coincident.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>error.family.estimation</code></td>
+<td>
+<p>a character keyword, defining the
+probability distribution for <code class="reqn">\varepsilon</code> (default:
+<code>"gaussian"</code>) that is used to approximate the covariance of
+<code class="reqn">\widehat{\boldsymbol{B}}</code> when solving the
+estimating equations, see <em>Details</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>error.family.cov.effects</code></td>
+<td>
+<p>a character keyword, defining the
+probability distribution for <code class="reqn">\varepsilon</code> (default:
+<code>"gaussian"</code>) that is used to approximate the covariances of
+<code class="reqn">\widehat{\boldsymbol{\beta}}</code>,
+<code class="reqn">\widehat{\boldsymbol{B}}</code> and
+<code class="reqn">\boldsymbol{B}-\widehat{\boldsymbol{B}}</code>,
+see <em>Details</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>error.family.cov.residuals</code></td>
+<td>
+<p>a character keyword, defining the
+probability distribution for <code class="reqn">\varepsilon</code> (default:<br><code>"long.tailed"</code>) that is used to approximate the covariances of
+<code class="reqn">\widehat{\boldsymbol{\varepsilon}}=\boldsymbol{Y}
+  - \boldsymbol{X}
+  \widehat{\boldsymbol{\beta}} -
+  \widehat{\boldsymbol{B}}</code> and <code class="reqn">\widehat{\boldsymbol{\varepsilon}} +
+  \widehat{\boldsymbol{B}} =\boldsymbol{Y}
+  - \boldsymbol{X}
+  \widehat{\boldsymbol{\beta}}</code>, see <em>Details</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov.bhat</code></td>
+<td>
+<p>a logical scalar controlling whether the covariances of
+<code class="reqn">\widehat{\boldsymbol{B}}</code> are returned by <code>georob</code>
+(default <code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>full.cov.bhat</code></td>
+<td>
+<p>a logical scalar controlling whether the full
+covariance matrix (<code>TRUE</code>) or only the variance vector of
+<code class="reqn">\widehat{\boldsymbol{B}}</code> is returned (default <code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov.betahat</code></td>
+<td>
+<p>a logical scalar controlling whether the covariance
+matrix of <code class="reqn">\widehat{\boldsymbol{\beta}}</code> is returned
+(default <code>TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov.delta.bhat</code></td>
+<td>
+<p>a logical scalar controlling whether the covariances of
+<code class="reqn">\boldsymbol{B}-
+  \widehat{\boldsymbol{B}}</code> are returned (default <code>TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>full.cov.delta.bhat</code></td>
+<td>
+<p>a logical scalar controlling whether the full covariance
+matrix (<code>TRUE</code>) or only the variance vector of
+<code class="reqn">\boldsymbol{B}-
+  \widehat{\boldsymbol{B}}</code> is returned (default <code>TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov.delta.bhat.betahat</code></td>
+<td>
+<p>a logical scalar controlling whether the covariance
+matrix of <code class="reqn">\boldsymbol{B}-
+  \widehat{\boldsymbol{B}}</code> and
+<code class="reqn">\widehat{\boldsymbol{\beta}}</code> is returned
+(default <code>TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov.ehat</code></td>
+<td>
+<p>a logical scalar controlling whether the covariances of
+<code class="reqn">\widehat{\boldsymbol{\varepsilon}}=\boldsymbol{Y}
+  - \boldsymbol{X}
+  \widehat{\boldsymbol{\beta}} -
+  \widehat{\boldsymbol{B}}</code> are returned (default <code>TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>full.cov.ehat</code></td>
+<td>
+<p>a logical scalar controlling whether the full covariance
+matrix (<code>TRUE</code>) or only the variance vector of
+<code class="reqn">\widehat{\boldsymbol{\varepsilon}}=\boldsymbol{Y}
+  - \boldsymbol{X}
+  \widehat{\boldsymbol{\beta}} -
+  \widehat{\boldsymbol{B}}</code> is returned (default <code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov.ehat.p.bhat</code></td>
+<td>
+<p>a logical scalar controlling whether the covariances of
+<code class="reqn">\widehat{\boldsymbol{\varepsilon}} +
+  \widehat{\boldsymbol{B}} =\boldsymbol{Y}
+  - \boldsymbol{X}
+  \widehat{\boldsymbol{\beta}}</code> are returned (default <code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>full.cov.ehat.p.bhat</code></td>
+<td>
+<p>a logical scalar controlling whether the full
+covariance matrix (<code>TRUE</code>) or only the variance vector
+of <code class="reqn">\widehat{\boldsymbol{\varepsilon}}
+  + \widehat{\boldsymbol{B}}
+  =\boldsymbol{Y} - \boldsymbol{X}
+  \widehat{\boldsymbol{\beta}}</code> is returned (default <code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian</code></td>
+<td>
+<p>a logical scalar controlling whether for Gaussian
+(RE)ML the Hessian should be computed at the MLEs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rq</code></td>
+<td>
+<p>a list of arguments passed to <code>rq</code> or a function such as
+<code>control.rq</code> that generates such a list (see
+<code>rq</code> for allowed arguments).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lmrob</code></td>
+<td>
+<p>a list of arguments passed to the <code>control</code> argument of
+<code>lmrob</code> or a function such as
+<code>lmrob.control</code> that generates such a list (see
+<code>lmrob.control</code> for allowed arguments).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nleqslv</code></td>
+<td>
+<p>a list of arguments passed to
+<code>nleqslv</code> or a function such as
+<code>control.nleqslv</code> that generates such a list (see
+<code>nleqslv</code> for allowed arguments).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nlminb</code></td>
+<td>
+<p>a list of arguments passed to <code>nlminb</code>
+or a function such as <code>control.nlminb</code> that generates such a list
+(see <code>nlminb</code> for allowed arguments).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optim</code></td>
+<td>
+<p>a list of arguments passed to <code>optim</code> or a function
+such as <code>control.optim</code> that generates such a list (see
+<code>optim</code> for allowed arguments).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pcmp</code></td>
+<td>
+<p>a list of arguments, passed  e.g. to <code>pmm</code> or a
+function such as <code>control.pcmp</code> that generates such a list
+(see <code>control.pcmp</code> for allowed arguments).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>for <code>fwd.transf</code>, <code>dfwd.transf</code> and
+<code>bwd.transf</code> a named vector of functions, extending the definition
+of transformations for variogram parameters (see <em>Details</em>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variance, snugget, nugget, scale, alpha, beta, delta, gamma,
+kappa, lambda, mu, nu</code></td>
+<td>
+<p>character strings with names of transformation
+functions of the variogram parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>f1, f2, omega, phi, zeta</code></td>
+<td>
+<p>character strings with names of
+transformation functions of the anisotropy variogram parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau, rq.method, rq.alpha, ci, iid, interp, tcrit</code></td>
+<td>
+<p>arguments passed
+as <code>...</code> to <code>rq</code>.  Note that only <code>"br"</code>,
+<code>"fnb"</code> and <code>"pfn"</code> methods of <code>rq()</code> are currently
+supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rq.beta, eps, Mm.factor, max.bad.fixup</code></td>
+<td>
+<p>arguments passed as
+<code>...</code> to <code>rq</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method, global, xscalm, control, lower, upper, reltol,
+rel.tol</code></td>
+<td>
+<p>arguments passed to related arguments of
+<code>nleqslv</code>, <code>nlminb</code> and
+<code>optim</code>, respectively.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+
+<h4>Parameter transformations</h4>
+
+<p>The arguments <code>param.tf</code>, <code>fwd.tf</code>, <code>deriv.fwd.tf</code>,
+<code>bwd.tf</code> define the transformations of the variogram parameters for
+RE(ML) estimation.  Implemented are currently <code>"log"</code>,
+<code>"logit1"</code>, <code>"logit2"</code>, <code>"logit3"</code> (various variants of
+logit-transformation, see code of function <code>fwd.transf</code>) and <code>"identity"</code> (= no)
+transformations.  These are the possible values that the many arguments
+of the function <code>param.transf</code> accept (as quoted character strings)
+and these are the names of the list components returned by
+<code>fwd.transf</code>, <code>dfwd.transf</code> and <code>bwd.transf</code>.  Additional
+transformations can be implemented by:
+</p>
+
+<ol>
+<li>
+<p> Extending the function definitions by arguments like
+</p>
+<p><code>fwd.tf = fwd.transf(my.fun = function(x) your transformation)</code>,<br><code>deriv.fwd.tf = dfwd.transf(my.fun = function(x) your derivative)</code>,<br><code>bwd.tf = bwd.transf(my.fun = function(x) your back-transformation)</code>,
+</p>
+</li>
+<li>
+<p> Assigning to a given argument of <code>param.transf</code> the name of
+the new function, e.g.<br><code>variance = "my.fun"</code>.  </p>
+</li>
+</ol>
+<p>Note that the values given for the arguments of <code>param.transf</code>
+must match the names of the functions returned by <code>fwd.transf</code>,
+<code>dfwd.transf</code> and <code>bwd.transf</code>.
+</p>
+
+
+
+<h4>Approximation of covariances of fixed and random effects and
+residuals</h4>
+
+<p>The robustified estimating equations of robust REML depend on the
+covariances of <code class="reqn">\widehat{\boldsymbol{B}}</code>.
+These covariances (and the covariances of
+<code class="reqn">\boldsymbol{B}-\widehat{\boldsymbol{B}}</code>,
+<code class="reqn">\widehat{\boldsymbol{\beta}}</code>,
+<code class="reqn">\widehat{\boldsymbol{\varepsilon}}</code>,
+<code class="reqn">\widehat{\boldsymbol{\varepsilon}} +
+    \widehat{\boldsymbol{B}}</code>) are
+approximated by expressions that in turn depend on the variances of
+<code class="reqn">\varepsilon</code>,
+<code class="reqn">\psi(\varepsilon/\tau)</code> and the expectation
+of <code class="reqn">\psi'(\varepsilon/\tau) (= \partial / \partial \varepsilon \,
+    \psi(\varepsilon/\tau))</code>.  The arguments
+<code>error.family.estimation</code>, <code>error.family.cov.effects</code> and<br><code>error.family.cov.residuals</code> control what parametric distribution
+for <code class="reqn">\varepsilon</code> is used to compute the variance of
+<code class="reqn">\varepsilon</code>,
+<code class="reqn">\psi(\varepsilon/\tau)</code> and the expectation
+of <code class="reqn">\psi'(\varepsilon/\tau)</code> when
+</p>
+
+<ul>
+<li>
+<p> solving the estimating equations (<code>error.family.estimation</code>),
+</p>
+</li>
+<li>
+<p> computing the covariances of
+<code class="reqn">\widehat{\boldsymbol{\beta}}</code>,
+<code class="reqn">\widehat{\boldsymbol{B}}</code> and
+<code class="reqn">\boldsymbol{B}-\widehat{\boldsymbol{B}}</code>
+(<code>error.family.cov.effects</code>) and
+</p>
+</li>
+<li>
+<p> computing the covariances of
+<code class="reqn">\widehat{\boldsymbol{\varepsilon}}=\boldsymbol{Y}
+      - \boldsymbol{X}
+      \widehat{\boldsymbol{\beta}} -
+      \widehat{\boldsymbol{B}}</code> and <code class="reqn">\widehat{\boldsymbol{\varepsilon}} +
+      \widehat{\boldsymbol{B}}
+      =\boldsymbol{Y} - \boldsymbol{X}
+      \widehat{\boldsymbol{\beta}}</code><br> (<code>error.family.cov.residuals</code>).
+</p>
+</li>
+</ul>
+<p>Possible options are: <code>"gaussian"</code> or <code>"long.tailed"</code>.  In
+the latter case the probability density function of
+<code class="reqn">\varepsilon</code> is assumed to be proportional to
+<code class="reqn">1/\tau \, \exp(-\rho_c(\varepsilon/\tau))</code>, where
+<code class="reqn">\psi_c(x)=\rho_c^\prime(x)</code>.
+</p>
+
+
+
+<h3>Value</h3>
+
+<p><code>control.georob</code>, <code>control.rq</code>, <code>control.nleqslv</code>,
+<code>control.optim</code> and <code>control.nlminb</code> all create lists with
+control parameters passed to <code>georob</code>,
+<code>rq</code>, <code>nleqslv</code>,
+<code>optim</code> or <code>nlminb</code>, see arguments
+above and the help pages of the respective functions for information
+about the components of these lists.  Note that the list returned by
+<code>control.georob</code> contains some components (<code>irwls.initial</code>,
+<code>tuning.psi.nr</code>, <code>cov.bhat.betahat</code>,
+<code>aux.cov.pred.target</code>) that cannot be changed by the user.
+</p>
+<p><code>param.transf</code> generates a list with character strings that
+define what transformations are used for estimating the variogram
+parameters, and <code>fwd.transf</code>, <code>bwd.transf</code> and
+<code>dfwd.transf</code> return lists of functions with forward and backward
+transformations and the first derivatives of the forward
+transformations, see section <em>Parameter transformations</em> above.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Andreas Papritz <a href="mailto:papritz@retired.ethz.ch">papritz@retired.ethz.ch</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>georobPackage</code> for a description of the model and a brief summary of the algorithms;
+</p>
+<p><code>georob</code> for (robust) fitting of spatial linear models;
+</p>
+<p><code>georobObject</code> for a description of the class <code>georob</code>;
+</p>
+<p><code>profilelogLik</code> for computing profiles of Gaussian likelihoods;
+</p>
+<p><code>plot.georob</code> for display of RE(ML) variogram estimates;
+
+</p>
+<p><code>georobModelBuilding</code> for stepwise building models of class <code>georob</code>;
+</p>
+<p><code>cv.georob</code> for assessing the goodness of a fit by <code>georob</code>;
+</p>
+<p><code>georobMethods</code> for further methods for the class <code>georob</code>;
+</p>
+<p><code>predict.georob</code> for computing robust Kriging predictions;
+
+</p>
+<p><code>lgnpp</code> for unbiased back-transformation of Kriging prediction
+of log-transformed data;
+</p>
+<p><code>georobSimulation</code> for simulating realizations of a Gaussian process
+from model fitted by <code>georob</code>; and finally
+</p>
+<p><code>sample.variogram</code> and <code>fit.variogram.model</code>
+for robust estimation and modelling of sample variograms.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(meuse)
+
+r.logzn.rob &lt;- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
+    variogram.model = "RMexp",
+    param = c(variance = 0.15, nugget = 0.05, scale = 200),
+    tuning.psi = 1, control = control.georob(cov.bhat = TRUE,
+    cov.ehat.p.bhat = TRUE, initial.fixef = "rq"), verbose = 2)
+
+qqnorm(rstandard(r.logzn.rob, level = 0)); abline(0, 1)
+qqnorm(ranef(r.logzn.rob, standard = TRUE)); abline(0, 1)
+</code></pre>
+
+
+</div>

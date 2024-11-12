@@ -1,0 +1,150 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gp.reg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Generalized Poisson regression
+</h2>
+
+<h3>Description</h3>
+
+<p>Generalized Poisson regression.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gp.reg(y, x, tol = 1e-7)
+gp.reg2(y, x, tol = 1e-7)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+
+<p>The response variable, a vector with non negative integer values.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+
+<p>A data.frame or a matrix with the independent variables.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+
+<p>The tolerance value to terminate the optimization.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The loglikelihood of the generalised Poisson distribution when covariates are present is the following (Consul &amp; Famoye, 1992):
+</p>
+<p style="text-align: center;"><code class="reqn">
+\ell(\beta, \phi)=\sum_{i=1}^n\log(\mu_i) + \sum_{i=1}^n(y_i-1)\log{[\mu_i+(\phi-1)y_i]}-
+\log{\phi}\sum_{i=1}^ny_i-\frac{1}{\phi}\sum_{i=1}^n[\mu_i+(\phi-1)y_i]-\sum_{i=1}^n\log{(y_i)},
+</code>
+</p>
+
+<p>where <code class="reqn">\mu_i=e^{\sum_{j=0}^kX_{ij}\beta_j}</code>, <code class="reqn">n</code> denotes the sample size, <code class="reqn">k</code> is the number of <code class="reqn">\beta</code> coefficients, and <code class="reqn">\phi &gt; 0</code>.
+</p>
+<p>Breslow (1984) suggested the (moment) estimation of a dispersion parameter by equating the chi-square statistic to its degrees of freedom. For the generalised Poisson regression model, this leads to
+<code class="reqn">\sum_{i=1}^n\frac{(y_i-\mu_i)^2}{\mu_i\phi^2}=n-k</code> and we solve this for <code class="reqn">\phi</code>.
+</p>
+<p>According to Consul and Famoye (1992) we begin by fitting a Poisson regression model and obtain initial values for <code class="reqn">\beta_s</code> and <code class="reqn">\phi</code>. If <code class="reqn">\hat{\phi} \approx 1</code>, it implies that the Poisson regression
+model is appropriate and no further estimation needs to be done. However, if <code class="reqn">\hat{\phi} \neq 1</code>, this is used to obtain new values of the estimated <code class="reqn">\beta_s</code> by maximizing the log-likelihood. This process is iterated until we obtain a stable solution.
+</p>
+<p>The function as seen below returns the log-likelihood of the initial Poisson regression as well. This is useful if one wants to test, via the log-likelihood ratio test as 1 degree of freedom, if the generalized Poisson regression is to be preferred over the Poisson regression.
+</p>
+<p>gp.reg() estimates the <code class="reqn">beta</code> coefficients using Newton-Raphson, whereas gp.reg2() uses the <code>optim</code> function. For some reason these two do not always agree. One might yield higher log-likelihood than the other and this is why I offer both ways.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list including:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>pois.loglik</code></td>
+<td>
+
+<p>The initial Poisson regression log-likelihood.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gp.loglik</code></td>
+<td>
+
+<p>The generalized Poisson regression log-likelihood.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>be</code></td>
+<td>
+<p>The estimated <code class="reqn">beta</code> coefficients.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>phi</code></td>
+<td>
+
+<p>The estimated <code class="reqn">\phi</code> parameter.
+</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Michail Tsagris.
+</p>
+<p>R implementation and documentation: Michail Tsagris <a href="mailto:mtsagris@uoc.gr">mtsagris@uoc.gr</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Consul P.C. &amp; Famoye F. (1992). Generalized poisson regression model. Communications in Statistics - Theory and Methods, 21(1): 89–109.
+</p>
+<p>Breslow N. E. (1984). Extra-Poisson variation in log-linear models. Journal of the Royal Statistical Society: Series C (Applied Statistics), 33(1): 38–44.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code> gp.mle
+</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">n &lt;- 500
+x &lt;- matrix (rnorm(n * 2), nrow = n, ncol = 2)
+be &lt;- c(1, 1)
+mi &lt;- x[, 1] * be[1] + x[, 2] * be[2] + 1
+mi &lt;- exp(mi)
+y &lt;- numeric(n)
+for (i in 1:n)  y[i] &lt;- rgp(2, mi[i], 0.5, method = "Inversion")[1]
+gp.reg(y, x)
+gp.reg2(y, x)
+</code></pre>
+
+
+</div>

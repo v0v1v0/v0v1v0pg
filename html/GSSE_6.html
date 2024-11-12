@@ -1,0 +1,151 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Permutation_Test</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Permutation Test
+</h2>
+
+<h3>Description</h3>
+
+<p>Permutation test for the Sieve-NPMLE switch method with null hypothesis <code class="reqn">H_0</code>: F_carr = F_non and alternative hypothesis <code class="reqn">H_1</code>: F_carr is not equal to F_non.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">Permutation_Test (Grid, F_carr, F_non, OY, ODelta, Op0G, nperm)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Grid</code></td>
+<td>
+<p>time points at which the distribution function values are estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>F_carr</code></td>
+<td>
+<p>a vector of distribution function values at given grid points of the carrier group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>F_non</code></td>
+<td>
+<p>a vector of distribution function values at given grid points of the non-carrier group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>OY</code></td>
+<td>
+<p>observed event times.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ODelta</code></td>
+<td>
+<p>observed indicators of right censoring. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Op0G</code></td>
+<td>
+<p>observed probability values of carrier and non-carrier groups.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nperm</code></td>
+<td>
+<p>replication number used in permutation.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Technical details can be found in Wang et al. (2015).
+</p>
+
+
+<h3>Value</h3>
+
+<p>This function returns a list of prediction values for classes,
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Test_Stat</code></td>
+<td>
+<p>value of the Kolmogorov-Smirnov statistic with observed data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Pvalues</code></td>
+<td>
+<p>p-value of the permutation test.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Permutation.value</code></td>
+<td>
+<p>values of Kolmogorov-Smirnov statistics under all permutations.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Wang, Y., Liang, B., Tong, X., Marder, K., Bressman, S., Orr-Urtreger, A., Giladi, N. &amp; Zeng, D. (2015). Efficient estimation of nonparametric genetic risk function with censored data. <em>Biometrika</em>, <b>102</b>(3), 515-532.
+</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>test_stat()</code> and <code>Sieve_NPMLE_Switch()</code>. </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data("Simulated_data");
+
+OY = Simulated_data[,2];
+ind = order(OY);
+ODelta = Simulated_data[,3];
+Op0G = Simulated_data[,4];
+
+Y = OY[ind];
+Delta = ODelta[ind];
+p0G = Op0G[ind];
+
+Grid = seq(0.2, 3.65, 0.05);
+fix_t1 = c(0.288, 0.693, 1.390);
+fix_t2 = c(0.779, 1.860, 3.650);
+px = seq(0.1, 3, 0.1);
+
+SieveNPMLE_result = Sieve_NPMLE_Switch( Y=Y, Delta=Delta, p0G=p0G,
+                                        px=px, Grid=Grid, Knot=7,
+                                        degree=3 );
+
+Lambda_1.hat = cumsum( SieveNPMLE_result$lamb1.hat );
+Lambda_2.hat = cumsum( SieveNPMLE_result$lamb2.hat );
+
+F_carr_func = function(x){ 1 - exp( max( Lambda_1.hat[Y &lt;= x] ) ) }
+F_non_func  = function(x){ 1 - exp( max( Lambda_2.hat[Y &lt;= x] ) ) }
+
+F_carr = apply( matrix(px, ncol=1), 1, F_carr_func );
+F_non = apply( matrix(px, ncol=1), 1, F_non_func );
+
+# Permutation test #
+
+Permutation_Test( Grid=Grid, F_carr=F_carr, F_non=F_non,
+                  OY=OY, ODelta=ODelta, Op0G=Op0G,
+                  nperm=10 );
+
+</code></pre>
+
+
+</div>

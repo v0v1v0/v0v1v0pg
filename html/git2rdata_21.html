@@ -1,0 +1,127 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>recent_commit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Retrieve the Most Recent File Change</h2>
+
+<h3>Description</h3>
+
+<p>Retrieve the most recent commit that added or updated a file or git2rdata
+object. This does not imply that file still exists at the current HEAD as it
+ignores the deletion of files.
+</p>
+<p>Use this information to document the current version of file or git2rdata
+object in an analysis. Since it refers to the most recent change of this
+file, it remains unchanged by committing changes to other files. You can
+also use it to track if data got updated, requiring an analysis to
+be rerun. See <code>vignette("workflow", package = "git2rdata")</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">recent_commit(file, root, data = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>the name of the git2rdata object. Git2rdata objects cannot
+have dots in their name. The name may include a relative path. <code>file</code> is a
+path relative to the <code>root</code>.
+Note that <code>file</code> must point to a location within <code>root</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>root</code></td>
+<td>
+<p>The root of a project. Can be a file path or a <code>git-repository</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>does <code>file</code> refers to a data object (<code>TRUE</code>) or to a file
+(<code>FALSE</code>)?
+Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a <code>data.frame</code> with <code>commit</code>, <code>author</code> and <code>when</code> for the most recent
+commit that adds op updates the file.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other version_control: 
+<code>commit()</code>,
+<code>pull()</code>,
+<code>push()</code>,
+<code>repository()</code>,
+<code>status()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># initialise a git repo using git2r
+repo_path &lt;- tempfile("git2rdata-repo")
+dir.create(repo_path)
+repo &lt;- git2r::init(repo_path)
+git2r::config(repo, user.name = "Alice", user.email = "alice@example.org")
+
+# write and commit a first dataframe
+# store the output of write_vc() minimize screen output
+junk &lt;- write_vc(iris[1:6, ], "iris", repo, sorting = "Sepal.Length",
+                 stage = TRUE)
+commit(repo, "important analysis", session = TRUE)
+list.files(repo_path)
+Sys.sleep(1.1) # required because git doesn't handle subsecond timings
+
+# write and commit a second dataframe
+junk &lt;- write_vc(iris[7:12, ], "iris2", repo, sorting = "Sepal.Length",
+                 stage = TRUE)
+commit(repo, "important analysis", session = TRUE)
+list.files(repo_path)
+Sys.sleep(1.1) # required because git doesn't handle subsecond timings
+
+# write and commit a new version of the first dataframe
+junk &lt;- write_vc(iris[7:12, ], "iris", repo, stage = TRUE)
+list.files(repo_path)
+commit(repo, "important analysis", session = TRUE)
+
+
+
+# find out in which commit a file was last changed
+
+# "iris.tsv" was last updated in the third commit
+recent_commit("iris.tsv", repo)
+# "iris.yml" was last updated in the first commit
+recent_commit("iris.yml", repo)
+# "iris2.yml" was last updated in the second commit
+recent_commit("iris2.yml", repo)
+# the git2rdata object "iris" was last updated in the third commit
+recent_commit("iris", repo, data = TRUE)
+
+# remove a dataframe and commit it to see what happens with deleted files
+file.remove(file.path(repo_path, "iris.tsv"))
+prune_meta(repo, ".")
+commit(repo, message = "remove iris", all = TRUE, session = TRUE)
+list.files(repo_path)
+
+# still points to the third commit as this is the latest commit in which the
+# data was present
+recent_commit("iris", repo, data = TRUE)
+</code></pre>
+
+
+</div>

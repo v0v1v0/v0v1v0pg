@@ -1,0 +1,114 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>geoCorrection</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Geographic Correction</h2>
+
+<h3>Description</h3>
+
+<p>Correct 'TransitionLayer' objects taking into account
+local distances
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">geoCorrection(x, type, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>object of class <code>Transition*</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>type of correction: "c", "r", or missing
+(only required for lonlat, see Details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments passed to methods. <code>multpl</code> with
+correction factor (<code>TRUE</code>) or corrected values (<code>FALSE</code>, the default).
+<code>scl</code> scale the correction values (default is <code>FALSE</code>)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Geographic correction is necessary for all objects of the
+class Transition that are either:
+(1) based on a grid in a geographic (lonlat) projection
+and covering a large area;
+(2) made with directions &gt; 4.
+</p>
+<p>The function will correct for map distortion, as well as for diagonal
+connections between grid cells (which cover a longer distance than vertical
+or horizontal connections).
+</p>
+<p>When working with lonlat grids, users should also anticipate whether they
+will use methods based on either least-cost or random walks, and set the
+type argument accordingly. In the case of least-cost distances, the
+correction is only done in East-West direction. In the case of random walks
+there should be an additional correction which reduces the conductance in
+North-South direction (<code>type="r"</code>).
+</p>
+<p>The correction is done by dividing conductance values by the inter-cell
+distance. Distances are calculated as great-circle distances for lonlat
+grids (see function <code>[raster]{isLonLat}</code>) and Euclidean distances for all other grids.
+</p>
+<p>In the case of randomised shortest paths, the need for correction is
+somewhat in between these two correction methods. We have not developed
+an analytical solution for this problem yet. With very low values for theta,
+you may choose the correction for random walks, and for high values the one for
+least-cost paths. Users who want to work with intermediate values of theta are
+encouraged to experiment with different solutions.
+</p>
+<p>The values are scaled to get values near 1 if the argument <code>scl</code> is set to
+TRUE. This is desirable for subsequent calculations involving random walk
+calculations. Values are divided by the W-E inter-cell distance (at the
+centre of the grid).
+</p>
+
+
+<h3>Value</h3>
+
+<p>a 'Transition*' object
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Jacob van Etten
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library("raster")
+r &lt;- raster(ncol=36,nrow=18)
+r &lt;- setValues(r,rep(1,times=ncell(r)))
+tr &lt;- transition(r, mean, directions=8)
+
+# directly
+tr1 &lt;- geoCorrection(tr, type="c", multpl=FALSE)
+tr1
+
+# the same, but with a separate correction matrix
+trCorr &lt;- geoCorrection(tr, type="c", multpl=TRUE)
+tr2 &lt;- tr * trCorr
+tr2
+</code></pre>
+
+
+</div>

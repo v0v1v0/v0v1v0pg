@@ -1,0 +1,173 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gstream</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Sequential Change-Point Detection based on k-Nearest Neighbors</h2>
+
+<h3>Description</h3>
+
+<p>This function finds change-points in the sequence when the underlying distribution changes. It reports four graph-based test statistics and the analytical approximations for thresholds used in their corresponding stopping rules.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gstream(distM, L, N0, k, statistics = c("all", "o", "w", "g", "m"),
+n0 = 0.3*L, n1 = 0.7*L, ARL = 10000, alpha = 0.05, skew.corr = TRUE, asymp = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>distM</code></td>
+<td>
+<p>A distance matrix constructed based on some distance measure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+<p>The number of observations the k-NN graph will be constructed from.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N0</code></td>
+<td>
+<p>The number of historical observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>A fixed integer used to construct k-NN graph.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>statistics</code></td>
+<td>
+<p>The scan statistic to be computed. A character indicating the type of of scan statistic desired. The default is <code>"all"</code>.
+</p>
+<p><code>"all"</code>: specifies to compute <b>a</b>ll of the scan statistics: original, weighted, generalized, and max-type;
+</p>
+<p><code>"o", "ori"</code> or <code>"original"</code>: specifies the <b>o</b>riginal edge-count scan statistic;
+</p>
+<p><code>"w"</code> or <code>"weighted"</code>: specifies the <b>w</b>eighted edge-count scan statistic;
+</p>
+<p><code>"g"</code> or <code>"generalized"</code>: specifies the <b>g</b>eneralized edge-count scan statistic; and
+</p>
+<p><code>"m"</code> or <code>"max"</code>: specifies the <b>m</b>ax-type edge-count scan statistic.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n0</code></td>
+<td>
+<p>The starting index to be considered as a candidate for the change-point. We recommend you set this to be 0.2*L</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n1</code></td>
+<td>
+<p>The ending index to be considered as a candidate for the change-point. For example, n1 = L-n0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ARL</code></td>
+<td>
+<p>The average run length: the expectation of the stopping rule when there is no change-point.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>The probability of an early stop.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>skew.corr</code></td>
+<td>
+<p>Default is TRUE. If skew.corr is TRUE, the average run length approximation would incorporate skewness correction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>asymp</code></td>
+<td>
+<p>Default is FALSE. If asymp is TRUE, the average run length approximation will be based on the asymptotic analytical formulas.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a list with items <code>scanZ</code>, <code>b</code> and <code>tauhat</code> for each type of statistic specified. See below for more details.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>scanZ</code></td>
+<td>
+<p>A vector of the test statistic (maximum of the scan statistics) for each time n = N0+1,..N.
+</p>
+<p><code>ori</code>: A vector of the original scan statistics (standardized counts) if statistic specified is "all" or "o".
+</p>
+<p><code>weighted</code>: A vector of the weighted scan statistics (standardized counts) if statistic specified is "all" or "w".
+</p>
+<p><code>generalized</code>: A vector of the generalized scan statistics (standardized counts) if statistic specified is "all" or "g".
+</p>
+<p><code>max.type</code>: A vector of the max-type scan statistics (standardized counts) if statistic specified is "all" or "m".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b</code></td>
+<td>
+<p>Thresholds used in the stopping rules for each test statistic. These thresholds are based on analytical approximations of the average run length.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tauhat</code></td>
+<td>
+<p>Estimate of the locations of change-points based on the thresholds.</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>gStream</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># This example contains two distance matrices (distM1 and distM2).
+# Information on how distM1 and distM2 are generated can be found in gStream.
+
+# data(Example)
+
+# Example:
+ # distM1 is a distance matrix constructed from a dataset with n=40 observation.
+  # The first 20 observations are treated as historical observations.
+  # It has been determined that there are no change-points among the
+  # first 20 observations (see package gSeg for offline change-point detection).
+  # There is change in mean when tau = 20 (This means a change happens 20 observations
+  # after we start the tests. We start the test at N0+1 = 21.)
+
+  # Uncomment the following to run
+  # N0 = 20
+  # L = 20 # the k-nn graph is constructed on only the L most recent observations.
+  # k = 1
+
+  # r1= gstream(distM1, L, N0, k, statistics="all", n0=0.3*L, n1=0.7*L,
+  # ARL=200,alpha=0.05, skew.corr=TRUE, asymp=FALSE)
+  # output results based on all four statistics; the scan statistics can be found in r1$scanZ
+  # r1$tauhat # reports the locations where a change-point is detected
+  # r1$b # reports the analytical approximations of the thresholds used in the stopping rules
+
+  # Set ARL = 10,000
+  # r1= gstream(distM1, L, N0, k, statistics="all", n0=0.3*L, n1=L-0.3*L,
+  # ARL=10000,alpha=0.05, skew.corr=TRUE, asymp=FALSE) # uncomment to run this function
+</code></pre>
+
+
+</div>

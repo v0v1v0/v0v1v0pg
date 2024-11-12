@@ -1,0 +1,210 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gsAnalysis</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Gene set analysis.
+</h2>
+
+<h3>Description</h3>
+
+<p>Defines the configuration of an analysis that can be performed using <code>geneSetAnalysis</code>, and returns it as a wrapper object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gsAnalysis(name,
+	gls = NULL,
+	glsParameterNames = NULL,
+	transformation = NULL,
+	transformationParameterNames = NULL,
+	gss = NULL,
+	gssParameterNames = NULL,
+	globalStat = NULL,
+	globalStatParameterNames = NULL,
+	significance = NULL,
+	significanceParameterNames = NULL,
+	testAlternative = c("greater", "less"))
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>name</code></td>
+<td>
+
+<p>A character string describing the analysis.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gls</code></td>
+<td>
+
+<p>The name of the function that calculates the gene-level statistic for a given dataset. If set to <code>NULL</code>, it is assumed that the input data already comprises gene-level statistic values, and the input is directly supplied to <code>transformation</code>. The first (fixed) parameter of a gls function is the dataset.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>glsParameterNames</code></td>
+<td>
+
+<p>A character vector of names of the parameters used by the gene-level statistic defined in <code>gls</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transformation</code></td>
+<td>
+
+<p>The name of the function that transforms the gene-level statistics values. If set to <code>NULL</code>, the values supplied by <code>gls</code> are directly handed over to <code>gss</code>. The only fixed parameter for transformation is the gene-level statistic (supplied as first parameter).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transformationParameterNames</code></td>
+<td>
+
+<p>A character vector of names of the parameters used by the transformation defined in <code>transformation</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gss</code></td>
+<td>
+
+<p>The name of the function that calculates the gene set statistics from untransformed or transformed gene-level statistic values. If set to <code>NULL</code>, the values supplied by <code>transformation</code> are directly handed over to <code>significance</code>. Fixed parameters are the transformed values (first parameter) and <code>geneSetIndices</code> containing the (row-) indices of the current gene set genes in the dataset.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gssParameterNames</code></td>
+<td>
+
+<p>A character vector vector of names of the parameters used by the gene set statistic defined in <code>gss</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>globalStat</code></td>
+<td>
+
+<p>If the gene set analysis consists of a global test and cannot be divided into the calculation of a gene-level statistic, a transformation and the calculation of the gene set statistics, this parameter defines the name of the function that performs this global analysis. In this case, the parameters <code>gls</code>, <code>transformation</code> and <code>gss</code> are ignored. Fixed parameters are <code>dat</code> containing the whole dataset and <code>geneSet</code> containing the current gene set. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>globalStatParameterNames</code></td>
+<td>
+
+<p>A character vector names of the parameters used by the global analysis defined in <code>globalStat</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>significance</code></td>
+<td>
+
+<p>The name of a method that performs a significance assessment for the gene set statistic values. If set to <code>NULL</code>, <code>geneSetAnalysis</code> does not return p-values, but returns the statistics supplied by <code>gss</code> or <code>globalStat</code>. Fixed parameters are <code>dat</code> containing the whole dataset, <code>geneSet</code> containing the current gene set, <code>analysis</code> with the supplied <code>gsAnalysis</code> and <code>glsValues</code> with (depending on whether a transformation is supplied or not) transformed gene-level statistics for each gene in the dataset.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>significanceParameterNames</code></td>
+<td>
+
+<p>A character vector of names of the parameters used by the significance assessment method defined in <code>significance</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>testAlternative</code></td>
+<td>
+
+<p>Specifies the alternative hypothesis of the significance test for the gene set enrichment, which may be dependent on the chosen gene set statistic. Must be one of <code>"greater"</code> or <code>"less"</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function provides a way of flexibly defining the steps of the gene set analysis pipeline. This pipeline consists of a subset of the following steps, each of which may have specific parameters:
+</p>
+
+<ul>
+<li>
+<p> Gene-level analysis: A gene-level statistic scores the relationship between the measurements for a specific gene and the class labels. Typical measures include correlation coefficients, the t statistic or the fold change between the groups (see <code>gls</code> for gene-level statistics included in the package). 
+</p>
+</li>
+<li>
+<p> Transformation of gene-level statistics: Optionally, the gene-level statistic values can be postprocessed, e.g. by taking the absolute value or the square for correlation values or by binarizing or ranking values. See <code>transformation</code> for transformations included in the package.
+</p>
+</li>
+<li>
+<p> Gene set analysis: Based on the (possibly transformed) gene-level statistics, the gene set(s) of interest is/are scored. Examples are the median, the mean or the enrichment score of the gene-level statistic values in the gene set(s). See <code>gss</code> for gene set statistics included in the package.
+</p>
+</li>
+<li>
+<p> Significance assessment: To assess the significance of the gene set statistic value(s) with respect to a null distribution, computer-intensive tests are performed. These tests repeatedly sample random label vectors or gene sets and calculate their gene set statistic values. These values can then be compared to the true gene set statistics. See <code>significance</code> for significance assessment methods included in the package.
+</p>
+</li>
+<li>
+<p> Global analysis: As an alternative to the above pipeline steps, it is possible to define a single, global method that directly calculates an enrichment p-value for a supplied data set and gene set. See <code>global</code> for the global analysis tests included in the package.
+</p>
+</li>
+</ul>
+<p>Several state-of-the-art analyses have predefined configuration objects in which the above steps are defined accordingly (see <code>predefinedAnalyses</code>).
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>gsAnalysis</code> with components corresponding to the above parameters.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>predefinedAnalyses</code>, <code>geneSetAnalysis</code>, <code>evaluateGeneSetUncertainty</code>, <code>gls</code>, <code>transformation</code>, <code>gss</code>, <code>global</code>, <code>significance</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">	data(exampleData)
+# defines an analysis that corresponds to gsAna1()
+gsa &lt;- gsAnalysis(
+	name = "averageCorrelation",
+	gls = "gls.cor",
+	glsParameterNames = c("labs","method"),
+	transformation = "transformation.abs",
+	transformationParameterNames = NULL,
+	gss = "gss.mean",
+	gssParameterNames = NULL,
+	globalStat = NULL,
+	globalStatParameterNames = NULL,
+	significance = "significance.sampling",
+	significanceParameterNames = c("numSamples"),
+	testAlternative = "greater")
+print(gsa)
+
+
+  # apply the previously defined analysis
+  res &lt;- geneSetAnalysis(
+  	# global parameters
+  	dat = countdata,
+  	geneSets = pathways[1], 
+  	analysis = gsa, 
+  	# parameters for the specific analysis gsAna1
+  	labs = labels,
+  	numSamples = 10)
+</code></pre>
+
+
+</div>

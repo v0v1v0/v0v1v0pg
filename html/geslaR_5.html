@@ -1,0 +1,116 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>write_gesla</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Write a GESLA dataset</h2>
+
+<h3>Description</h3>
+
+<p>Write a CSV or Parquet file. Given an object <code>x</code>, this
+function will write a file in the appropriate format to store this
+object in the hard drive, facilitating it's reading in any other
+session.
+</p>
+<p>The only accepted classes of <code>x</code> are <code>ArrowObject</code> or <code>data.frame</code>.
+If <code>x</code> is an <code>ArrowObject</code>, then the resulting file will have the
+<code>.parquet</code> extension, in the <a href="https://parquet.apache.org">Apache Parquet</a> file format. If <code>x</code> is a
+<code>data.frame</code>, the file will have a standard <code>.csv</code> extension.
+</p>
+<p>This function is usefull to save objects created by the
+<code>query_gesla()</code> function, for example. However, it may be used in
+any case where saving a (possible subset) of the GESLA dataset may
+be needed.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">write_gesla(x, file_name = "gesla-data", ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of class <code>ArrowObject</code> or <code>data.frame</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file_name</code></td>
+<td>
+<p>The name of the file to be created. Must be
+provided without extension, as this will be determined by the class
+of <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments from <code>arrow::write_csv_arrow()</code>, and
+<code>arrow::write_parquet()</code>, from the
+<a href="https://arrow.apache.org/docs/r/">arrow</a> package.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>We highly recommend to always use the <code>ArrowObject</code> class,
+as it will be much more efficient for dealing with it in R. Also,
+the resulting file (with <code>.parquet</code> extension) from objects of this
+type will be much smaller than CSV files created from <code>data.frame</code>
+objects.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A file with extension <code>.csv</code>, if <code>x</code> is a <code>data.frame</code>, or a
+file with extension <code>.parquet</code>, if <code>x</code> is an <code>ArrowObject</code>
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Fernando Mayer <a href="mailto:fernando.mayer@mu.ie">fernando.mayer@mu.ie</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">##------------------------------------------------------------------
+## Import an internal example Parquet file
+## Reading file
+tmp &lt;- tempdir()
+file.copy(system.file(
+    "extdata", "ireland.parquet", package = "geslaR"), tmp)
+da &lt;- read_gesla(paste0(tmp, "/ireland.parquet"))
+## Generates a subset by filtering
+db &lt;- da |&gt;
+    filter(day == 1) |&gt;
+    collect()
+## Save filtered data as file
+write_gesla(db, file_name = paste0(tmp, "/gesla-data"))
+
+##------------------------------------------------------------------
+## Querying some data
+## Make the query
+if(interactive()) {
+    da &lt;- query_gesla(country = "IRL", year = 2019,
+        site_name = "Dublin_Port")
+    ## Save the resulting query to file
+    write_gesla(da, file_name = paste0(tmp, "/gesla-data"))
+}
+
+## Remove files from temporary directory
+unlink(paste0(tmp, "/gesla-data.csv"))
+unlink(paste0(tmp, "/gesla-data.parquet"))
+unlink(paste0(tmp, "/ireland.parquet"))
+</code></pre>
+
+
+</div>

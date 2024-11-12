@@ -1,0 +1,173 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>geom_node_plot</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Draw plots at nodes</h2>
+
+<h3>Description</h3>
+
+<p>Additional component for a <code>ggparty()</code> that allows to create in each node a
+ggplot with its data. #'
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">geom_node_plot(plot_call = "ggplot", gglist = NULL, width = 1,
+  height = 1, size = 1, ids = "terminal", scales = "fixed",
+  nudge_x = 0, nudge_y = 0, shared_axis_labels = FALSE,
+  shared_legend = TRUE, predict = NULL, predict_gpar = NULL,
+  legend_separator = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>plot_call</code></td>
+<td>
+<p>Any function that generates a <code>ggplot2</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gglist</code></td>
+<td>
+<p>List of additional <code>gg</code> components. Columns of <code>data</code> of nodes can be
+mapped. Additionally <code>fitted_values</code> and <code>residuals</code> can be mapped if present in
+<code>party</code> of <code>ggparty()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>width</code></td>
+<td>
+<p>Expansion factor for viewport's width.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>height</code></td>
+<td>
+<p>Expansion factor for viewport's height.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>size</code></td>
+<td>
+<p>Expansion factor for viewport's size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ids</code></td>
+<td>
+<p>Id's to plot. Numeric, "terminal", "inner" or "all". Defaults
+to "terminal".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scales</code></td>
+<td>
+<p>See <code>facet_wrap()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nudge_x, nudge_y</code></td>
+<td>
+<p>Nudges node plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shared_axis_labels</code></td>
+<td>
+<p>If TRUE only one pair of axes labels is plotted in
+the terminal space. Only recommended if <code>ids</code>  "terminal" or "all".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shared_legend</code></td>
+<td>
+<p>If <code>TRUE</code> one shared legend is plotted at the bottom of
+the tree.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predict</code></td>
+<td>
+<p>Character string specifying variable for which predictions should be plotted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predict_gpar</code></td>
+<td>
+<p>Named list containing arguments to be passed to the
+<code>geom_line()</code> call of predicted values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>legend_separator</code></td>
+<td>
+<p>If <code>TRUE</code> line between legend and tree is drawn.</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>ggparty()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(ggparty)
+
+airq &lt;- subset(airquality, !is.na(Ozone))
+airct &lt;- ctree(Ozone ~ ., data = airq)
+
+ggparty(airct, horizontal = TRUE, terminal_space = 0.6) +
+  geom_edge() +
+  geom_edge_label() +
+  geom_node_splitvar() +
+  geom_node_plot(gglist = list(
+    geom_density(aes(x = Ozone))),
+    shared_axis_labels = TRUE)
+
+#############################################################
+
+## Plot with ggparty
+
+
+## Demand for economics journals data
+data("Journals", package = "AER")
+Journals &lt;- transform(Journals,
+                      age = 2000 - foundingyear,
+                      chars = charpp * pages)
+
+## linear regression tree (OLS)
+j_tree &lt;- lmtree(log(subs) ~ log(price/citations) | price + citations +
+                   age + chars + society, data = Journals, minsize = 10, verbose = TRUE)
+
+pred_df &lt;- get_predictions(j_tree, ids = "terminal", newdata =  function(x) {
+  data.frame(
+    citations = 1,
+    price = exp(seq(from = min(x$`log(price/citations)`),
+                    to = max(x$`log(price/citations)`),
+                    length.out = 100)))
+})
+
+ggparty(j_tree, terminal_space = 0.8) +
+  geom_edge() +
+  geom_edge_label() +
+  geom_node_splitvar() +
+  geom_node_plot(gglist =
+                   list(aes(x = `log(price/citations)`, y = `log(subs)`),
+                        geom_point(),
+                        geom_line(data = pred_df,
+                                  aes(x = log(price/citations),
+                                      y = prediction),
+                                  col = "red")))
+</code></pre>
+
+
+</div>

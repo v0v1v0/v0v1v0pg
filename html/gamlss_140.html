@@ -1,0 +1,132 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>prodist.gamlss</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Extracting Fitted or Predicted Probability Distributions from gamlss Models</h2>
+
+<h3>Description</h3>
+
+<p>Methods for <span class="pkg">gamlss</span> model objects for extracting fitted (in-sample) or
+predicted (out-of-sample) probability distributions as <span class="pkg">distributions3</span>
+objects.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'gamlss'
+prodist(object, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A model object of class <code>gamlss</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed on to <code>predictAll</code>, e.g., <code>newdata</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>To facilitate making probabilistic forecasts based on <code>gamlss</code>
+model objects, the <code>prodist</code> method extracts fitted
+or predicted probability <code>distribution</code> objects. Internally, the
+<code>predictAll</code> method is used first to obtain the distribution
+parameters (<code>mu</code>, <code>sigma</code>, <code>tau</code>, <code>nu</code>, or a subset thereof).
+Subsequently, the corresponding <code>distribution</code> object is set up using the
+<code>GAMLSS</code> class from the <span class="pkg">gamlss.dist</span> package,
+enabling the workflow provided by the <span class="pkg">distributions3</span> package (see Zeileis
+et al. 2022).
+</p>
+<p>Note that these probability distributions only reflect the random variation in
+the dependent variable based on the model employed (and its associated
+distributional assumption for the dependent variable). This does not capture the
+uncertainty in the parameter estimates.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>GAMLSS</code> inheriting from <code>distribution</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Zeileis A, Lang MN, Hayes A (2022).
+“distributions3: From Basic Probability to Probabilistic Regression.”
+Presented at <em>useR! 2022 - The R User Conference</em>.
+Slides, video, vignette, code at <a href="https://www.zeileis.org/news/user2022/">https://www.zeileis.org/news/user2022/</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GAMLSS</code>, <code>predictAll</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## packages, code, and data
+library("gamlss")
+library("distributions3")
+data("cars", package = "datasets")
+
+## fit heteroscedastic normal GAMLSS model
+## stopping distance (ft) explained by speed (mph)
+m &lt;- gamlss(dist ~ pb(speed), ~ pb(speed), data = cars, family = "NO")
+
+## obtain predicted distributions for three levels of speed
+d &lt;- prodist(m, newdata = data.frame(speed = c(10, 20, 30)))
+print(d)
+
+## obtain quantiles (works the same for any distribution object 'd' !)
+quantile(d, 0.5)
+quantile(d, c(0.05, 0.5, 0.95), elementwise = FALSE)
+quantile(d, c(0.05, 0.5, 0.95), elementwise = TRUE)
+
+## visualization
+plot(dist ~ speed, data = cars)
+nd &lt;- data.frame(speed = 0:240/4)
+nd$dist &lt;- prodist(m, newdata = nd)
+nd$fit &lt;- quantile(nd$dist, c(0.05, 0.5, 0.95))
+matplot(nd$speed, nd$fit, type = "l", lty = 1, col = "slategray", add = TRUE)
+
+## moments
+mean(d)
+variance(d)
+
+## simulate random numbers
+random(d, 5)
+
+## density and distribution
+pdf(d, 50 * -2:2)
+cdf(d, 50 * -2:2)
+
+## Poisson example
+data("FIFA2018", package = "distributions3")
+m2 &lt;- gamlss(goals ~ pb(difference), data = FIFA2018, family = "PO")
+d2 &lt;- prodist(m2, newdata = data.frame(difference = 0))
+print(d2)
+quantile(d2, c(0.05, 0.5, 0.95))
+
+## note that log_pdf() can replicate logLik() value
+sum(log_pdf(prodist(m2), FIFA2018$goals))
+logLik(m2)
+</code></pre>
+
+
+</div>

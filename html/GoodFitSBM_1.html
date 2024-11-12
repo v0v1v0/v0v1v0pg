@@ -1,0 +1,108 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get_mle_BetaSBM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Maximum Likelihood Estimation of edge probabilities between blocks of a graph, under beta-SBM</h2>
+
+<h3>Description</h3>
+
+<p><code>get_mle_BetaSBM</code> obtains MLE for the probability of edges between blocks in a graph, used in calculating the goodness-of-fit test statistic for the beta-SBM (Karwa et al. (2023))
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get_mle_BetaSBM(G, C)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+<p>an igraph object which is an undirected graph with no self loop</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>C</code></td>
+<td>
+<p>a positive integer vector of size n for block assignments of each node; from 1 to K (no of blocks)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A matrix of maximum likelihood estimates
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>mleMatr</code></td>
+<td>
+<p>a matrix containing the estimated edge probabilities between blocks in a graph</p>
+</td>
+</tr></table>
+<h3>References</h3>
+
+<p>Karwa et al. (2023). "Monte Carlo goodness-of-fit tests for degree corrected and related stochastic blockmodels",
+<em>Journal of the Royal Statistical Society Series B: Statistical Methodology</em>,
+<a href="https://doi.org/10.1093/jrsssb/qkad084">doi:10.1093/jrsssb/qkad084</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>goftest_BetaSBM()</code> performs the goodness-of-fit test for the beta-SBM, where the MLE of the edge probabilities are required
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">RNGkind(sample.kind = "Rounding")
+set.seed(1729)
+
+# We model a network with 3 even classes
+n1 &lt;- 2
+n2 &lt;- 2
+n3 &lt;- 2
+
+# Generating block assignments for each of the nodes
+n &lt;- n1 + n2 + n3
+class &lt;- rep(c(1, 2, 3), c(n1, n2, n3))
+
+# Generating the adjacency matrix of the network
+# Generate the matrix of connection probabilities
+cmat &lt;- matrix(
+  c(
+    0.80, 0.50, 0.50,
+    0.50, 0.80, 0.50,
+    0.50, 0.50, 0.80
+  ),
+  ncol = 3,
+  byrow = TRUE
+)
+pmat &lt;- cmat / n
+
+# Creating the n x n adjacency matrix
+adj &lt;- matrix(0, n, n)
+for (i in 2:n) {
+  for (j in 1:(i - 1)) {
+    p &lt;- pmat[class[i], class[j]] # We find the probability of connection with the weights
+    adj[i, j] &lt;- rbinom(1, 1, p) # We include the edge with probability p
+  }
+}
+
+adjsymm &lt;- adj + t(adj)
+
+# graph from the adjacency matrix
+G &lt;- igraph::graph_from_adjacency_matrix(adjsymm, mode = "undirected", weighted = NULL)
+
+# mle of the edge probabilities
+get_mle_BetaSBM(G, class)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,491 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>nested.glmnetr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Using (nested) cross validation, describe and compare some machine learning model performances</h2>
+
+<h3>Description</h3>
+
+<p>Performs a nested cross validation or bootstrap validation 
+for cross validation informed relaxed lasso, Gradient Boosting Machine (GBM), 
+Random Forest (RF), (artificial) Neural Network (ANN) with two hidden layers, 
+Recursive Partitioning (RPART) and step wise regression.  That is
+hyper parameters for all these models are informed by cross validation (CV) (or in the 
+case of RF by out-of-bag calculations), and a second  layer of resampling  
+is used to evaluate the performance of these CV informed model fits.  For
+step wise regression CV is used to inform either a p-value for entry or degrees of 
+freedom (df) for the final model choice.  For input 
+we require predictors (features) to be in numeric matrix format with no missing 
+values.  This is similar to how the glmnet package expects predictors.  For 
+survival data we allow input of start time as an option, and require stop time, 
+and an event indicator, 1 for event and 0 for censoring, as separate terms. This
+may seem unorthodox as it might seem simpler to accept a Surv() object as input.  However,
+multiple packages we use for model fitting models require data
+in various formats and this choice was the most straight forward for constructing the 
+data formats required.  As an example, 
+the XGBoost routines require a data format specific to the XGBoost 
+package, not a matrix, not a data frame.  Note, for XGBoost and survival models, 
+only a "stop time" variable, taking a positive value to indicate 
+being associated with an event, and the negative of the time when 
+associated with a censoring, is passed to the input data object for 
+analysis.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">nested.glmnetr(
+  xs,
+  start = NULL,
+  y_,
+  event = NULL,
+  family = "gaussian",
+  resample = NULL,
+  folds_n = 10,
+  stratified = NULL,
+  dolasso = 1,
+  doxgb = 0,
+  dorf = 0,
+  doorf = 0,
+  doann = 0,
+  dorpart = 0,
+  dostep = 0,
+  doaic = 0,
+  ensemble = 0,
+  method = "loglik",
+  lambda = NULL,
+  gamma = NULL,
+  relax = TRUE,
+  steps_n = 0,
+  seed = NULL,
+  foldid = NULL,
+  limit = 1,
+  fine = 0,
+  ties = "efron",
+  keepdata = 0,
+  keepxbetas = 1,
+  bootstrap = 0,
+  unique = 0,
+  id = NULL,
+  track = 0,
+  do_ncv = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>xs</code></td>
+<td>
+<p>predictor input - an n by p matrix, where n (rows) is sample 
+size, and p (columns) the number of predictors.  Must be in (numeric) matrix form for 
+complete data, no NA's, no Inf's, etc., and not a data frame.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>optional start times in case of a Cox model.  A numeric (vector) 
+of length same as number of patients (n).  Optionally start may be specified 
+as a column matrix in which case the colname value is used when outputting 
+summaries. Only the lasso, stepwise, and AIC models allow for (start,stop) 
+time data as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y_</code></td>
+<td>
+<p>dependent variable as a numeric vector: time, or stop time for Cox 
+model, 0 or 1 for binomial (logistic), numeric for gaussian. Must be a 
+vector of length same as number of sample size. Optionally y_ may be specified as 
+a column matrix in which case the colname value is used when outputting summaries.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>event</code></td>
+<td>
+<p>event indicator, 1 for event, 0 for census, Cox model only.
+Must be a numeric vector of length same as sample size.  Optionally event may be specified as 
+a column matrix in which case the colname value is used when outputing summaries.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>model family, "cox", "binomial" or "gaussian" (default)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resample</code></td>
+<td>
+<p>1 by default to do the Nested Cross Validation or bootstrap
+resampling calculations to assess model performance (see bootstrap option), or 0
+to only fit the various models without doing resampling. In this case the 
+nested.glmnetr() function will only derive the models based upon the full 
+data set.  This may be useful when exploring various models without having to 
+do the timely resampling to assess model performance, for example, when
+wanting to examine extreme gradient boosting 
+models (GBM) or Artificial Neural Network (ANN) models which can take a long 
+time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>folds_n</code></td>
+<td>
+<p>the number of folds for the outer loop of the nested cross 
+validation, and if not overridden by the individual model specifications, also 
+the number of folds for the inner loop of the nested cross validation, i.e. 
+the number of folds used in model derivation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stratified</code></td>
+<td>
+<p>1 to generate fold IDs stratified on outcome or event 
+indicators for the binomial or Cox model, 0 to generate foldid's without 
+regard to outcome.  Default is 1 for nested CV (i.e. bootstrap=0), and 0 
+for bootstrap&gt;=1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dolasso</code></td>
+<td>
+<p>fit and do cross validation for lasso model, 0 or 1</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>doxgb</code></td>
+<td>
+<p>fit and evaluate a cross validation informed XGBoost (GBM) 
+model.  1 for yes, 0 for no (default).  By default the number of folds used when 
+training the GBM model will be the same as the number of folds used in the outer
+loop of the nested cross validation, and the maximum number of rounds when 
+training the GBM model is set to 1000.  To control these values one 
+may specify a list for the doxgb argument.  The list can have 
+elements  $nfold, $nrounds,
+and $early_stopping_rounds, each numerical values of length 1, $folds, a list as 
+used by xgb.cv() do identify folds for cross validation, and $eta, $gamma, $max_depth, 
+$min_child_seight, $colsample_bytree, $lambda, $alpha and $subsample, each a numeric 
+of length 2 giving the lower and upper values for the respective tuning 
+parameter.  Here we deviate from nomenclature used elsewhere in the package to
+be able to use terms those used in the 'xgboost' (and mlrMBO) package, in particular as used
+in xgb.train(), e.g. nfold instead of folds_n and folds instead of foldid.  If 
+not provided defaults will be used.  Defaults
+can be seen from the output object$doxgb element, again a list. In case not NULL, 
+the seed and folds option values override the $seed and $folds values.  
+</p>
+<p>If to shorten run time the user sets nfold to a value 
+other than folds_n we recommend that nfold = folds_n/2 or folds_n/3.  Then the 
+folds will be formed by collapsing the folds_n folds allowing a better comparisons of 
+model performances between the different machine learning models. Typically 
+one would want to keep the full data model but the GBM models can cause the 
+output object to require large amounts of storage space so optionally one can 
+choose to not keep the final model when the goal is basically only to assess 
+model performance for the GBM.  In that case the tuning parameters for the final
+tuned model ae retained facilitating recalculation of the final model, this will
+also require the original training data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dorf</code></td>
+<td>
+<p>fit and evaluate a random forest (RF) 
+model.  1 for yes, 0 for no (default).  Also, if dorf is specified by a list, 
+then RF models will be fit.  The randomForestSRC package is used.  This list can have 
+three elements.  One is the vector mtryc, and contains values for mtry.  The program 
+searches over the different values to find a better fir for the final model.  If 
+not specified mtryc is set to 
+round( sqrt(dim(xs)[2]) * c(0.67 , 1, 1.5, 2.25, 3.375) ).  The second list element 
+the vector ntreec.  The first item (ntreec[1]) specifies the number of trees to 
+fit in evaluating the models specified by the different mtry values.  The second 
+item (ntreec[2]) specifies the number of trees to fit in the final model.  The
+default is ntreec = c(25,250).  The third element in the list is the numeric variable keep, with  
+the value 1 (default) to store the model fit on all data in the output object, or the value 0 
+to not store the full data model fit.  Typically 
+one would want to keep the full data model but the RF models can cause the 
+output object to require large amounts of storage space so optionally one can 
+choose to not keep the final model when the goal is basically only to assess 
+model performance for the RF.   Random forests use the out-of-bag (OOB) data elements
+for assessing model fit and hyperparameter tuning and so cross validation is 
+not used for tuning.  Still, because of the number of trees in the forest random forest 
+can take long to run.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>doorf</code></td>
+<td>
+<p>fit and evaluate an Oblique random forest (RF)
+model.  1 for yes, 0 for no (default).  While the nomenclature used by orrsf() 
+is slightly different than that used by rfsrc() nomenclature for this object 
+follows that of dorf.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>doann</code></td>
+<td>
+<p>fit and evaluate a cross validation informed Artificial Neural Network 
+(ANN) model with two hidden levels.  1 for yes, 0 for no (default). By default 
+the number of folds used when training the ANN model will be the same as the 
+number of folds used in the outer loop of the nested cross validation.  To override 
+this, for example to shrtn run time, one may specify a list for the doann argument 
+where the element $folds_ann_n gives the number of folds used when training the 
+ANN.  To shorten run we recommend folds_ann_n = folds_n/2 or folds_n/3, and at 
+least 3.  Then the folds will be formed by collapsing the folds_n folds using 
+in fitting other models allowing a better comparisons of model performances 
+between the different machine learning models.  The list can also have 
+elements $epochs, $epochs2, $myler, $myler2, $eppr, $eppr2, $lenv1, $lenz2, 
+$actv, $drpot, $wd, wd2, l1, l12, $lscale, $scale, $minloss and $gotoend.  These 
+arguments are then passed to the ann_tab_cv_best() function, with the 
+meanings described in the help for that function, with some exception.  When 
+there are two similar values like $epoch and $epoch2 the first applies to the 
+ANN models trained without transfer learning and the second to the models 
+trained with transfer learning from the lasso model.  Elements of this list 
+unspecified will take default values.  The user may also specify the element 
+$bestof (a positive integer) to fit bestof models with different random 
+starting weights and biases while taking the best performing of the different 
+fits based upon CV as the final model.  The default value for bestof is 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dorpart</code></td>
+<td>
+<p>fit and do a nested cross validation for an RPART model.  As rpart() does its
+own approximation for cross validation there is no new functions for cross validation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dostep</code></td>
+<td>
+<p>fit and do cross validation for stepwise regression fit, 0 or 1, 
+as discussed in James, Witten, Hastie and Tibshirani, 2nd edition.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>doaic</code></td>
+<td>
+<p>fit and do cross validation for AIC fit, 0 or 1.
+This is provided primarily as a reference.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ensemble</code></td>
+<td>
+<p>This is a vector 8 characters long and specifies a set of ensemble 
+like model to be fit based upon the predicteds form a relaxed lasso model fit, by 
+either inlcuding the predicteds as an additional term (feature) in the machine 
+learning model, or including the predicteds similar to an offset.  For XGBoost, 
+the offset is specified in the model with the "base_margin" in the XGBoost 
+call.  For the Artificial Neural Network models fit using the ann_tab_cv_best() function, 
+one can initialize model weights (parameters) to account for the predicteds in 
+prediction and either let these weights by modified each epoch or update and maintain 
+these weights during the fitting process.  For ensemble[1] = 1 a model is fit
+ignoring these predicteds, ensemble[2]=1 a model is fit including the predicteds 
+as an additional feature.  For ensemble[3]=1 a model is fit using the predicteds
+as an offset when running the xgboost model, or a model is fit including the 
+predicteds with initial weights corresponding to an offset, but then weights are 
+allowed to be tuned over the epochs.  For i &gt;= 4 ensemble[i] only applies to 
+the neural network models.  For ensemble[4]=1 a model is fit like for 
+ensemble[3]=1 but the weights are reassigned to correspond to an offset after 
+each epoch.  For i in (5,6,7,8) ensemble[i] is similar to ensemble[i-4] except
+the original predictor (feature) set is replaced by the set of non-zero terms 
+in the relaxed lasso model fit. If ensemble is specified as 0 or NULL, then ensemble 
+is assigned c(1,0,0,0, 0,0,0,0).  If ensemble is specified as 1, then ensemble 
+is assigned c(1,0,0,0, 0,1,0,1).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>method for choosing model in stepwise procedure, "loglik" or "concordance".
+Other procedures use the "loglik".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>lambda vector for the lasso fit</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>gamma vector for the relaxed lasso fit, default is c(0,0.25,0.5,0.75,1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>relax</code></td>
+<td>
+<p>fit the relaxed lasso model when fitting a lasso model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>steps_n</code></td>
+<td>
+<p>number of steps done in stepwise regression fitting</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>optional, either NULL, or a numerical/integer vector of length 2, for R and torch 
+random generators, or a list with two two vectors, each of length folds_n+1, for 
+generation of random folds of the outer cross validation loop, and the remaining 
+folds_n terms for the random generation of the folds or the bootstrap samples for the 
+model fits of the inner loops.  This can be used to replicate model fits.  Whether 
+specified or NULL, the seed is stored 
+in the output object for future reference.  The stored seed is a list with two
+vectors seedr for the seeds used in generating the random fold splits, and seedt
+for generating the random initial weights and biases in the torch neural network 
+models.  The first element in each of these vectors is for the all data fits and
+remaining elements for the folds of the inner cross validation.  The integers assigned to 
+seed should be positive and not more than 2147483647.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>foldid</code></td>
+<td>
+<p>a vector of integers to associate each record to a fold.  Should 
+be integers from 1 and folds_n.  These will only be used in the outer folds.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>limit</code></td>
+<td>
+<p>limit the small values for lambda after the initial fit.  This 
+will have minimal impact on the cross validation.  Default is 2 for moderate 
+limitation, 1 for less limitation, 0 for none.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fine</code></td>
+<td>
+<p>use a finer step in determining lambda.  Of little value unless one 
+repeats the cross validation many times to more finely tune the hyper paramters.  
+See the 'glmnet' package documentation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ties</code></td>
+<td>
+<p>method for handling ties in Cox model for relaxed model component.  Default 
+is "efron", optionally "breslow".  For penalized fits "breslow" is 
+always used as derived form to 'glmnet' package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keepdata</code></td>
+<td>
+<p>0 (default) to delete the input data (xs, start, y_, event) 
+from the output objects from the random forest fit and the glm() fit for the 
+stepwise AIC model, 1 to keep.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keepxbetas</code></td>
+<td>
+<p>1 (default) to retain in the output object a copy of the 
+functional outcome variable, i.e. y_ for "gaussian" and "binomial" data, and 
+the Surv(y_,event) or Surv(start,y_,event) for "cox" data.  This allows 
+calibration studies of the models, going beyond the linear calibration 
+information calculated by the function.  The xbetas are calculated both for
+the model derived using all data as well as for the hold out sets (1/k of the 
+data each) for the models derived within the cross validation ((k-1)/k of the 
+data for each fit).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootstrap</code></td>
+<td>
+<p>0 (default) to use nested cross validation, a positive integer
+to perform as many iterations of the bootstrap for model evaluation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unique</code></td>
+<td>
+<p>0 to use the bootstrap sample as is as training data, 1 to 
+include the unique sample elements only once.  A fractional value between 0.5 
+and 0.9 will sample without replacement a fraction of this value for training 
+and use the remaining as test data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>optional vector identifying dependent observations. Can be used, 
+for example, when some study subjects have more than one row in the data. No 
+values should be NA. Default is NULL where all rows can be regarded as 
+independent.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>track</code></td>
+<td>
+<p>1 (default) to track progress by printing to console elapsed and 
+split times, 0 to not track</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>do_ncv</code></td>
+<td>
+<p>Deprecated, and replaced by resample</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments that can be passed to glmnet()</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>- Model fit performance for LASSO, GBM, Random Forest, Oblique 
+Random Forest, RPART, artificial neural network (ANN) or STEPWISE models are 
+estimated using k-cross validation or bootstrap.  Full data model fits for 
+these models are also calculated independently (prior to) the performance 
+evaluation, often using a second layer of resampling validation.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Walter Kremers (kremers.walter@mayo.edu)
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>glmnetr.simdata</code> , <code>summary.nested.glmnetr</code> , <code>nested.compare</code> , 
+<code>plot.nested.glmnetr</code> , <code>predict.nested.glmnetr</code> ,
+<code>predict_ann_tab</code>, <code>cv.glmnetr</code> , 
+<code>xgb.tuned</code> , <code>rf_tune</code> , <code>orf_tune</code> , <code>ann_tab_cv</code> , <code>cv.stepreg</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+sim.data=glmnetr.simdata(nrows=1000, ncols=100, beta=NULL)
+xs=sim.data$xs 
+y_=sim.data$y_ 
+# for this example we use a small number for folds_n to shorten run time 
+nested.glmnetr.fit = nested.glmnetr( xs, NULL, y_, NULL, family="gaussian", folds_n=3)
+plot(nested.glmnetr.fit, type="devrat", ylim=c(0.7,1)) 
+plot(nested.glmnetr.fit, type="lincal", ylim=c(0.9,1.1)) 
+plot(nested.glmnetr.fit, type="lasso") 
+plot(nested.glmnetr.fit, type="coef") 
+summary(nested.glmnetr.fit) 
+nested.compare(nested.glmnetr.fit) 
+summary(nested.glmnetr.fit, cvfit=TRUE) 
+
+
+</code></pre>
+
+
+</div>

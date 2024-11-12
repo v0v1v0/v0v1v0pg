@@ -1,0 +1,251 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemIntertemporal_3_3</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some Examples of Intertemporal Models with One Consumer and Two Types of Firms</h2>
+
+<h3>Description</h3>
+
+<p>Some examples of intertemporal models with one consumer and two types of firms.
+There are three types of commodities (i.e. corn, iron and labor).
+The consumer may consume corn and iron in each period, and may have a nested intertemporal utility function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemIntertemporal_3_3(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>References</h3>
+
+<p>Zen Xiangjin (1995, ISBN: 7030046560). Basics of Economic Cybernetics. Beijing: Science Press. (In Chinese)
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### an example with a nested intertemporal utility function
+np &lt;- 5 # the number of economic periods
+
+n &lt;- 3 * np - 1 # the number of commodity kinds
+m &lt;- 2 * (np - 1) + 1 # the number of agent kinds
+
+names.commodity &lt;- c(
+  paste0("corn", 1:np),
+  paste0("iron", 1:np),
+  paste0("lab", 1:(np - 1))
+)
+names.agent &lt;- c(
+  paste0("firm.corn", 1:(np - 1)),
+  paste0("firm.iron", 1:(np - 1)),
+  "consumer"
+)
+
+## the exogenous supply matrix.
+S0Exg &lt;- matrix(NA, n, m, dimnames = list(names.commodity, names.agent))
+S0Exg[paste0("lab", 1:(np - 1)), "consumer"] &lt;- 100
+S0Exg["corn1", "consumer"] &lt;- 25
+S0Exg["iron1", "consumer"] &lt;- 100
+
+# the output coefficient matrix.
+B &lt;- matrix(0, n, m, dimnames = list(names.commodity, names.agent))
+for (k in 1:(np - 1)) {
+  B[paste0("corn", k + 1), paste0("firm.corn", k)] &lt;-
+    B[paste0("iron", k + 1), paste0("firm.iron", k)] &lt;- 1
+}
+
+dstl.firm.corn &lt;- dstl.firm.iron &lt;- list()
+for (k in 1:(np - 1)) {
+  dstl.firm.corn[[k]] &lt;- node_new(
+    "prod",
+    type = "CD", alpha = 1, beta = c(0.5, 0.5),
+    paste0("iron", k), paste0("lab", k)
+  )
+
+  dstl.firm.iron[[k]] &lt;- node_new(
+    "prod",
+    type = "CD", alpha = 2, beta = c(0.5, 0.5),
+    paste0("iron", k), paste0("lab", k)
+  )
+}
+
+dst.consumer &lt;- node_new(
+  "util",
+  type = "CD", alpha = 1,
+  beta = prop.table(rep(1, np)),
+  paste0("cc", 1:np)
+)
+for (k in 1:np) {
+  node_set(
+    dst.consumer,
+    paste0("cc", k),
+    type = "CD", alpha = 1, beta = c(0.5, 0.5),
+    paste0("corn", k), paste0("iron", k)
+  )
+}
+
+ge &lt;- sdm2(
+  A = c(dstl.firm.corn, dstl.firm.iron, dst.consumer),
+  B = B,
+  S0Exg = S0Exg,
+  names.commodity = names.commodity,
+  names.agent = names.agent,
+  numeraire = "lab1",
+  ts = TRUE
+)
+
+ge$p
+ge$z
+ge$D
+ge$S
+ge$DV
+ge$SV
+
+#### an example with a non-nested intertemporal utility function
+np &lt;- 3 # the number of economic periods
+
+## There are np types of corn, np-1 types of iron and np-1 types of labor.
+## There are np-1 corn firms, np-2 iron firms and one consumer.
+n &lt;- 3 * np - 2
+m &lt;- 2 * np - 2
+
+names.commodity &lt;- c(
+  paste0("corn", 1:np),
+  paste0("iron", 1:(np - 1)),
+  paste0("lab", 1:(np - 1))
+)
+names.agent &lt;- c(
+  paste0("firm.corn", 1:(np - 1)),
+  paste0("firm.iron", 1:(np - 2)),
+  "consumer"
+)
+
+## the exogenous supply matrix.
+S0Exg &lt;- matrix(NA, n, m, dimnames = list(names.commodity, names.agent))
+S0Exg[paste0("lab", 1:(np - 1)), "consumer"] &lt;- 100
+S0Exg["corn1", "consumer"] &lt;- 25
+S0Exg["iron1", "consumer"] &lt;- 100
+
+# the output coefficient matrix.
+B &lt;- matrix(0, n, m, dimnames = list(names.commodity, names.agent))
+for (k in 1:(np - 1)) {
+  B[paste0("corn", k + 1), paste0("firm.corn", k)] &lt;- 1
+}
+for (k in 1:(np - 2)) {
+  B[paste0("iron", k + 1), paste0("firm.iron", k)] &lt;- 1
+}
+
+dstl.firm.corn &lt;- dstl.firm.iron &lt;- list()
+for (k in 1:(np - 1)) {
+  dstl.firm.corn[[k]] &lt;- node_new(
+    "prod",
+    type = "CD", alpha = 1, beta = c(0.5, 0.5),
+    paste0("iron", k), paste0("lab", k)
+  )
+}
+
+for (k in seq_along(np:(2 * np - 3))) {
+  dstl.firm.iron[[k]] &lt;- node_new(
+    "prod",
+    type = "CD", alpha = 2, beta = c(0.5, 0.5),
+    paste0("iron", k), paste0("lab", k)
+  )
+}
+
+dst.consumer &lt;- node_new(
+  "util",
+  type = "CD", alpha = 1, beta = prop.table(rep(1, np)),
+  paste0("corn", 1:np)
+)
+
+ge &lt;- sdm2(
+  A = c(dstl.firm.corn, dstl.firm.iron, dst.consumer),
+  B = B,
+  S0Exg = S0Exg,
+  names.commodity = names.commodity,
+  names.agent = names.agent,
+  numeraire = "lab1",
+  ts = TRUE
+)
+
+ge$p
+ge$z
+ge$D
+ge$S
+ge$DV
+ge$SV
+
+#### an example of Zeng (1995, page 227)
+ic1 &lt;- 1 / 10 # input coefficient
+ic2 &lt;- 1 / 7
+dc1 &lt;- 2 / 3 # depreciation coefficient
+dc2 &lt;- 9 / 10
+
+ge &lt;- sdm2(
+  A = {
+    # corn, iron1, iron2, iron3, iron4
+    a1.1 &lt;- c(0, ic1, 0, 0, 0)
+    a1.2 &lt;- c(0, ic2, 0, 0, 0)
+    a2.1 &lt;- c(0, 0, ic1, 0, 0)
+    a2.2 &lt;- c(0, 0, ic2, 0, 0)
+    a3.1 &lt;- c(0, 0, 0, ic1, 0)
+    a3.2 &lt;- c(0, 0, 0, ic2, 0)
+    a4.1 &lt;- c(0, 0, 0, 0, ic1)
+    a4.2 &lt;- c(0, 0, 0, 0, ic2)
+
+    a.consumer &lt;- c(1, 0, 0, 0, 0)
+
+    cbind(a1.1, a1.2, a2.1, a2.2, a3.1, a3.2, a4.1, a4.2, a.consumer)
+  },
+  B = {
+    b1.1 &lt;- c(1, 0, ic1 * dc1, 0, 0)
+    b1.2 &lt;- c(1, 0, ic2 * dc2, 0, 0)
+    b2.1 &lt;- c(1, 0, 0, ic1 * dc1, 0)
+    b2.2 &lt;- c(1, 0, 0, ic2 * dc2, 0)
+    b3.1 &lt;- c(1, 0, 0, 0, ic1 * dc1)
+    b3.2 &lt;- c(1, 0, 0, 0, ic2 * dc2)
+    b4.1 &lt;- c(1, 0, 0, 0, 0)
+    b4.2 &lt;- c(1, 0, 0, 0, 0)
+    b.consumer &lt;- c(0, 0, 0, 0, 0)
+
+    cbind(b1.1, b1.2, b2.1, b2.2, b3.1, b3.2, b4.1, b4.2, b.consumer)
+  },
+  S0Exg = {
+    tmp &lt;- matrix(NA, 5, 9)
+    tmp[2, 9] &lt;- 100
+    tmp
+  },
+  names.commodity = c("corn", paste0("iron", 1:4)),
+  names.agent = c(paste0("firm", 1:8), "consumer"),
+  numeraire = "corn",
+  policy = makePolicyMeanValue(30),
+  priceAdjustmentVelocity = 0.05,
+  maxIteration = 1,
+  numberOfPeriods = 1000,
+  ts = TRUE
+)
+
+matplot(ge$ts.z, type = "l")
+
+ge$p
+ge$z
+ge$D
+ge$S
+
+</code></pre>
+
+
+</div>

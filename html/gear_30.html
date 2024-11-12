@@ -1,0 +1,194 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.geolm_cmodStd</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict method for geostatistical models</h2>
+
+<h3>Description</h3>
+
+<p><code>predict</code> calculates the predicted values at
+specified locations.  The method can additionally provide
+the mean square prediction error (mspe) and perform
+conditional simulation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'geolm_cmodStd'
+predict(
+  object,
+  newdata,
+  nsim = 0,
+  return_type = "SpatialPointsDataFrame",
+  dmethod = "chol",
+  compute_mspe = TRUE,
+  sp = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object produced by the <code>geolm</code>
+function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>An optional data frame in which to look
+for the coordinates at which to predict. If omitted,
+the observed data locations are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>A non-negative integer indicating the number
+of realizations to sample at the specified coordinates
+using conditional simulation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_type</code></td>
+<td>
+<p>A character string indicating the type
+of object that should be returned. The default is
+<code>"SpatialPointsDataFrame"</code> for easy
+plotting of results (see Examples). Other options
+include <code>"data.frame"</code>,
+<code>"geardf"</code>, and <code>"sf"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dmethod</code></td>
+<td>
+<p>The method used to decompose the
+covariance matrix for conditional simulation.  Valid
+options are <code>"chol"</code>, <code>"eigen"</code>, and
+<code>"svd"</code>.  The default is <code>"chol"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compute_mspe</code></td>
+<td>
+<p>A logical value indicating whether
+the mean square prediction error should be calculated.
+Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sp</code></td>
+<td>
+<p>This argument will be deprecated in the future.
+Please use the <code>return_type</code> argument. A logical
+value indicating whether to object returned should be
+of class <code>SpatialPointsDataFrame</code> for
+easier plotting with the <code>sp</code> package.  Default is
+<code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Currently unimplemented.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>newdata</code> data frame must include the relevant
+covariates for the prediction locations, where the
+covariates are specified on the right side of the
+<code>~</code> in <code>object$formula</code>.  <code>newdata</code> must
+also include the coordinates of the prediction locations,
+with these columns having the names provided in
+<code>object$coordnames</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>data.frame</code>,
+<code>SpatialPointsDataFrame</code>,
+<code>geardf</code>, or <code>sf</code>
+object with the kriging predictions
+<code>pred</code>, kriging variance/mean-square prediction
+error (<code>mspe</code>), the root mean-square prediction
+error <code>mspe</code> (<code>rmspe</code>), and the conditional
+simulations <code>sim.1</code>, <code>sim.2</code>, etc.
+<code>sim.1</code>, <code>sim.2</code>, etc.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Joshua French
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># generate response
+y = rnorm(10)
+# generate coordinates
+x1 = runif(10); x2 = runif(10)
+
+# data frame for observed data
+data = data.frame(y, x1, x2)
+# newdata must have columns with prediction coordinates
+newdata = data.frame(x1 = runif(5), x2 = runif(5))
+
+# specify a standard covariance model
+mod = cmod_std(model = "exponential", psill = 1, r = 1)
+
+# geolm for universal kriging
+gearmod_uk = geolm(y ~ x1 + x2, data = data, mod = mod,
+                   coordnames = c("x1", "x2"))
+# prediction for universal kriging, with conditional simulation
+pred_uk = predict(gearmod_uk, newdata, nsim = 2)
+
+# demonstrate plotting abilities if return_type == "geardf"
+ pred_geardf = predict(gearmod_uk, newdata,
+               return_type = "geardf")
+ plot(pred_geardf, "pred")
+ plot(pred_geardf, interp = TRUE)
+
+# demonstrate plotting abilities if sp package installed
+if (requireNamespace("sp", quietly = TRUE)) {
+ pred_spdf = predict(gearmod_uk, newdata,
+             return_type = "SpatialPointsDataFrame")
+ sp::spplot(pred_spdf, "pred")
+ sp::spplot(pred_spdf)
+}
+# demonstrate plotting abilities if sf package installed
+if (requireNamespace("sf", quietly = TRUE)) {
+ pred_sfdf = predict(gearmod_uk, newdata,
+             return_type = "sf")
+ plot(pred_sfdf["pred"])
+ plot(pred_sfdf)
+}
+
+# geolm for ordinary kriging
+gearmod_ok = geolm(y ~ 1, data = data, mod = mod,
+                   coordnames = c("x1", "x2"))
+# prediction for ordinary kriging
+pred_ok = predict(gearmod_ok, newdata)
+
+# geolm for simple kriging
+gearmod_sk = geolm(y ~ 1, data = data, mod = mod,
+                 coordnames = c("x1", "x2"), mu = 1)
+# prediction for simple kriging
+pred_sk = predict(gearmod_sk, newdata)
+</code></pre>
+
+
+</div>

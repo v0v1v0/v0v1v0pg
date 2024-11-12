@@ -1,0 +1,145 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemTwoCountryPureExchange_Bond</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some Examples of Two-Country Pure Exchange Economy with Bond</h2>
+
+<h3>Description</h3>
+
+<p>Some general equilibrium examples of two-country pure exchange economy with bond.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemTwoCountryPureExchange_Bond(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>A general equilibrium.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+es.DFProd &lt;- 0.8 # substitution elasticity between domestic and foreign products
+technology.level.CHN &lt;- 1
+# the amount of outbound investment corresponding to each unit of consumption
+outbound.investment.rate &lt;- 0.1
+
+dst.consumption &lt;- node_new("consumption",
+  type = "SCES", alpha = 1, beta = c(0.5, 0.5), es = es.DFProd,
+  "prod.CHN", "prod.USA"
+)
+node_set(dst.consumption, "prod.CHN",
+  type = "Leontief", a = 1 / technology.level.CHN,
+  "lab.CHN"
+)
+node_set(dst.consumption, "prod.USA",
+  type = "Leontief", a = 1,
+  "lab.USA"
+)
+dst.CHN &lt;- node_new("CHN",
+  type = "FIN", rate = c(1, outbound.investment.rate),
+  dst.consumption, "bond.USA"
+)
+node_plot(dst.CHN)
+
+dst.USA &lt;- Clone(dst.consumption)
+
+dstl &lt;- list(dst.CHN, dst.USA)
+
+ge &lt;- sdm2(dstl,
+  names.commodity = c("lab.CHN", "lab.USA", "bond.USA"),
+  names.agent = c("CHN", "USA"),
+  B = matrix(0, 3, 2, TRUE),
+  S0Exg = matrix(c(
+    100, 0,
+    0, 100,
+    0, 100
+  ), 3, 2, TRUE),
+  numeraire = "lab.CHN"
+)
+ge$p[2]
+
+#### Add currencies to the example above.
+es.DFProd &lt;- 0.8
+technology.level.CHN &lt;- 1
+outbound.investment.rate &lt;- 0.1
+interest.rate &lt;- 1e-4
+
+prod_money.CHN &lt;- node_new("prod_money.CHN",
+  type = "FIN", rate = c(1, interest.rate),
+  "prod.CHN", "money.CHN"
+)
+node_set(prod_money.CHN, "prod.CHN",
+  type = "Leontief", a = 1 / technology.level.CHN,
+  "lab.CHN"
+)
+
+prod_money.USA &lt;- node_new("prod_money.USA",
+  type = "FIN", rate = c(1, interest.rate),
+  "prod.USA", "money.USA"
+)
+node_set(prod_money.USA, "prod.USA",
+  type = "Leontief", a = 1,
+  "lab.USA"
+)
+
+dst.CHN &lt;- node_new("CHN",
+  type = "FIN",
+  rate = c(
+    1, outbound.investment.rate,
+    outbound.investment.rate * interest.rate
+  ),
+  "consumption", "bond.USA", "money.USA"
+)
+node_set(dst.CHN, "consumption",
+  type = "SCES", alpha = 1, beta = c(0.5, 0.5), es = es.DFProd,
+  prod_money.CHN, prod_money.USA
+)
+
+node_plot(dst.CHN)
+
+dst.USA &lt;- Clone(node_set(dst.CHN, "consumption"))
+node_plot(dst.USA)
+
+dstl &lt;- list(dst.CHN, dst.USA)
+
+ge &lt;- sdm2(dstl,
+  names.commodity = c(
+    "lab.CHN", "money.CHN",
+    "lab.USA", "money.USA",
+    "bond.USA"
+  ),
+  names.agent = c("CHN", "USA"),
+  B = matrix(0, 5, 2, TRUE),
+  S0Exg = matrix(c(
+    100, 0,
+    100, 0,
+    0, 100,
+    0, 100,
+    0, 100
+  ), 5, 2, TRUE),
+  numeraire = c("money.CHN" = interest.rate)
+)
+
+ge$p["money.USA"] / ge$p["money.CHN"] # the exchange rate
+
+</code></pre>
+
+
+</div>

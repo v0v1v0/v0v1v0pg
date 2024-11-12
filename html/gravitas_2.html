@@ -1,0 +1,152 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>create_gran</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Build dynamic temporal granularities</h2>
+
+<h3>Description</h3>
+
+<p>Create time granularities that accommodate for periodicities in data, both single and multiple order up.
+Periodic ones might include time granularities like minute of the day, hour
+of the week  and aperiodic calendar categorizations may include day of the month or
+week of the quarter. For non-temporal data, supports
+only periodic deconstructions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">create_gran(
+  .data,
+  gran1 = NULL,
+  hierarchy_tbl = NULL,
+  label = TRUE,
+  abbr = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>.data</code></td>
+<td>
+<p>A tsibble object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gran1</code></td>
+<td>
+<p>the granularity to be created. For temporal data, any
+combination of "second", "minute", "qhour", "hhour", "hour", "day", "week", "fortnight
+,"month", "quarter", "semester" or "year" can be chosen in the form of finer
+to coarser unit. For example, for the granularity hour of the week, value is
+"hour_week".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hierarchy_tbl</code></td>
+<td>
+<p>A hierarchy table specifying the hierarchy of units
+and their relationships.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>label</code></td>
+<td>
+<p>Logical. TRUE will display the month as an ordered factor of
+character string such as "January", "February". FALSE will display the month
+as an ordered factor such as 1 to 12, where 1 stands for January and 12 for
+December.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>abbr</code></td>
+<td>
+<p>logical. FALSE will display abbreviated labels.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed on to individual methods.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A tsibble with an additional column of granularity.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(dplyr)
+library(ggplot2)
+library(lvplot)
+# Search for granularities
+smart_meter10 %&gt;%
+  search_gran(highest_unit = "week")
+
+# Screen harmonies from the search list
+## Not run: 
+smart_meter10 %&gt;%
+  harmony(
+    ugran = "day",
+    filter_in = "wknd_wday"
+  )
+
+## End(Not run)
+# visualize probability distribution of
+# the harmony pair (wknd_wday, hour_day)
+smart_meter10 %&gt;%
+dplyr::filter(customer_id == "10017936") %&gt;%
+  prob_plot(
+    gran1 = "wknd_wday",
+    gran2 = "hour_day",
+    response = "general_supply_kwh",
+    plot_type = "quantile",
+    quantile_prob = c(0.1, 0.25, 0.5, 0.75, 0.9)
+  ) +
+  scale_y_sqrt()
+
+#' # Compute granularities for non-temporal data
+
+library(tsibble)
+cricket_tsibble &lt;- cricket %&gt;%
+mutate(data_index = row_number()) %&gt;%
+as_tsibble(index = data_index)
+
+hierarchy_model &lt;- tibble::tibble(
+  units = c("index", "over", "inning", "match"),
+  convert_fct = c(1, 20, 2, 1)
+)
+cricket_tsibble %&gt;%
+  create_gran(
+    "over_inning",
+    hierarchy_model
+  )
+
+  cricket_tsibble %&gt;%
+  filter(batting_team %in% c("Mumbai Indians",
+                             "Chennai Super Kings"))%&gt;%
+  prob_plot("inning", "over",
+  hierarchy_model,
+  response = "runs_per_over",
+  plot_type = "lv")
+
+# Validate if given column in the data set
+# equals computed granularity
+validate_gran(cricket_tsibble,
+  gran = "over_inning",
+  hierarchy_tbl = hierarchy_model,
+  validate_col = "over"
+)
+</code></pre>
+
+
+</div>

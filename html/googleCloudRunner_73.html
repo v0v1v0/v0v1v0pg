@@ -1,0 +1,149 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cr_deploy_run_website</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Deploy HTML built from a repo each commit</h2>
+
+<h3>Description</h3>
+
+<p>This lets you set up triggers that will update an R generated website each commit.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cr_deploy_run_website(
+  repo,
+  image = paste0("website-", format(Sys.Date(), "%Y%m%d")),
+  rmd_folder = NULL,
+  html_folder = NULL,
+  image_tag = "$SHORT_SHA",
+  timeout = 600L,
+  edit_r = NULL,
+  r_image = "gcr.io/gcer-public/packagetools:latest",
+  allowUnauthenticated = TRUE,
+  region = cr_region_get(),
+  projectId = cr_project_get()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>repo</code></td>
+<td>
+<p>A git repository defined in cr_buildtrigger_repo</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>image</code></td>
+<td>
+<p>The name of the image you want to build</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rmd_folder</code></td>
+<td>
+<p>A folder of Rmd files within GitHub source that will be built into HTML for serving via render</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>html_folder</code></td>
+<td>
+<p>A folder of html to deploy within GitHub source.  Will be ignored if rmd_folder is not NULL</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>image_tag</code></td>
+<td>
+<p>What to tag the build docker image</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timeout</code></td>
+<td>
+<p>Timeout for the build</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>edit_r</code></td>
+<td>
+<p>If you want to change the R code to render the HTML, supply R code via a file or string of R as per cr_buildstep_r</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r_image</code></td>
+<td>
+<p>The image that will run the R code from <code>edit_r</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allowUnauthenticated</code></td>
+<td>
+<p>TRUE if can be reached from public HTTP address. If FALSE will configure a service-email called <code>(name)-cloudrun-invoker@(project-id).iam.gserviceaccount.com</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>region</code></td>
+<td>
+<p>The region for cloud run</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>projectId</code></td>
+<td>
+<p>The GCP projectId which will be deployed within</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This lets you render the Rmd (or other R functions that produce HTML) in a folder for your repo, which will then be hosted on a Cloud Run enabled with nginx.  Each time you push to git with modified Rmd code, it will build the new HTML and push an update to the website.
+</p>
+<p>This default R code is rendered in the rmd_folder:
+</p>
+<p><code>lapply(list.files('.', pattern = '.Rmd', full.names = TRUE),
+      rmarkdown::render, output_format = 'html_document')</code>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>cr_deploy_html that lets you deploy just HTML files and cr_deploy_pkgdown for running pkgdown websites.
+</p>
+<p>Other Deployment functions: 
+<code>cr_deploy_docker_trigger()</code>,
+<code>cr_deploy_docker()</code>,
+<code>cr_deploy_packagetests()</code>,
+<code>cr_deploy_pkgdown()</code>,
+<code>cr_deploy_run()</code>,
+<code>cr_deploy_r()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+cr_project_set("my-project")
+cr_region_set("europe-west1")
+your_repo &lt;- cr_buildtrigger_repo("MarkEdmondson1234/googleCloudRunner")
+cr_deploy_run_website(your_repo, rmd_folder = "vignettes")
+
+# change the Rmd rendering to pkgdown
+r &lt;- "devtools::install();pkgdown::build_site()"
+
+cr_deploy_run_website(your_repo,
+  image = paste0(your_repo, "-pkgdown"),
+  rmd_folder = ".",
+  edit_r = r
+)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

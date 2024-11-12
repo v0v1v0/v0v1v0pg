@@ -1,0 +1,515 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>flm_test</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Goodness-of-fit test for functional linear models</h2>
+
+<h3>Description</h3>
+
+<p>Goodness-of-fit test of a functional linear model with
+functional response <code class="reqn">Y \in L^2([c, d])</code> and functional predictor
+<code class="reqn">X \in L^2([a, b])</code>, where <code class="reqn">L^2([a, b])</code> is the Hilbert space of
+square-integrable functions in <code class="reqn">[a, b]</code>.
+</p>
+<p>The goodness-of-fit test checks the <em>linearity</em> of the regression model
+<code class="reqn">m:L^2([a, b])\rightarrow L^2([c, d])</code> that relates <code class="reqn">Y</code> and <code class="reqn">X</code>
+by
+</p>
+<p style="text-align: center;"><code class="reqn">Y(t) = m(X) + \varepsilon(t),</code>
+</p>
+
+<p>where <code class="reqn">\varepsilon</code> is a random variable in
+<code class="reqn">L^2([c, d])</code> and <code class="reqn">t \in [c, d]</code>. The check is formalized as the
+test of the composite hypothesis
+</p>
+<p style="text-align: center;"><code class="reqn">H_0: m \in \{m_\beta : \beta \in L^2([a, b]) \otimes L^2([c, d])\},</code>
+</p>
+
+<p>where
+</p>
+<p style="text-align: center;"><code class="reqn">m_\beta(X(s))(t) = \int_a^b \beta(s, t) X(s)\,\mathrm{d}s</code>
+</p>
+
+<p>is the linear, Hilbert–Schmidt, integral operator parametrized by
+the bivariate kernel <code class="reqn">\beta</code>. Its estimation is done by the
+truncated expansion of <code class="reqn">\beta</code> in the tensor product of the
+data-driven bases of <em>Functional Principal Components</em> (FPC) of
+<code class="reqn">X</code> and <code class="reqn">Y</code>. The FPC basis for <code class="reqn">X</code> is truncated in <code class="reqn">p</code>
+components, while the FPC basis for <code class="reqn">Y</code> is truncated in <code class="reqn">q</code>
+components.
+</p>
+<p>The particular cases in which either <code class="reqn">X</code> or <code class="reqn">Y</code> are
+<em>constant</em> functions give either a scalar predictor or response.
+The simple linear model arises if both <code class="reqn">X</code> and <code class="reqn">Y</code> are scalar,
+for which <code class="reqn">\beta</code> is a constant.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">flm_test(X, Y, beta0 = NULL, B = 500, est_method = "fpcr", p = NULL,
+  q = NULL, thre_p = 0.99, thre_q = 0.99, lambda = NULL,
+  boot_scores = TRUE, verbose = TRUE, plot_dens = TRUE,
+  plot_proc = TRUE, plot_max_procs = 100, plot_max_p = 2,
+  plot_max_q = 2, save_fit_flm = TRUE, save_boot_stats = TRUE,
+  int_rule = "trapezoid", refit_lambda = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X, Y</code></td>
+<td>
+<p>samples of functional/scalar predictors and functional/scalar
+response. Either <code>fdata</code> objects (for functional
+variables) or vectors of length <code>n</code> (for scalar variables).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta0</code></td>
+<td>
+<p>if provided (defaults to <code>NULL</code>), the <em>simple</em> null
+hypothesis <code class="reqn">H_0: m = m_{\beta_0}</code> is tested. <code>beta0</code> must be a
+matrix of size<br><code>c(length(X$argvals), length(Y$argvals))</code>. If <code>X</code>
+or <code>Y</code> are scalar, <code>beta0</code> can be also an
+<code>fdata</code> object, with the same <code>argvals</code> as
+<code>X</code> or <code>Y</code>. Can also be a constant (understood as a shorthand for
+a matrix with <em>all</em> its entries equal to the constant).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+<p>number of bootstrap replicates. Defaults to <code>500</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>est_method</code></td>
+<td>
+<p>either <code>"fpcr"</code> (Functional Principal Components
+Regression; FPCR), <code>"fpcr_l2"</code> (FPCR with ridge penalty),
+<code>"fpcr_l1"</code> (FPCR with lasso penalty) or <code>"fpcr_l1s"</code>
+(FPCR with lasso-selected FPC). If <code>X</code> is scalar, <code>flm_est</code>
+only considers <code>"fpcr"</code> as estimation method. See details below.
+Defaults to <code>"fpcr_l1s"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p, q</code></td>
+<td>
+<p>either index vectors indicating the specific FPC to be
+considered for the truncated bases expansions of <code>X</code> and <code>Y</code>,
+respectively. If a single number for <code>p</code> is provided, then
+<code>p &lt;- 1:max(p)</code> internally (analogously for <code>q</code>) and the first
+<code>max(p)</code> FPC are considered. If <code>NULL</code> (default), then a
+data-driven selection of <code>p</code> and <code>q</code> is done. See details below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thre_p, thre_q</code></td>
+<td>
+<p>thresholds for the <em>proportion</em> of variance
+that is explained, <em>at least</em>, by the first <code class="reqn">p</code> and <code class="reqn">q</code> FPC
+of <code>X</code> and <code>Y</code>, respectively. These thresholds are employed
+for an (initial) automatic selection of <code class="reqn">p</code> and <code class="reqn">q</code>.
+Default to <code>0.99</code>. <code>thre_p</code> (<code>thre_q</code>) is ignored if
+<code>p</code> (<code>q</code>) is provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>regularization parameter <code class="reqn">\lambda</code> for the estimation
+methods <code>"fpcr_l2"</code>, <code>"fpcr_l1"</code>, and <code>"fpcr_l1s"</code>. If
+<code>NULL</code> (default), it is chosen with <code>cv_glmnet</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boot_scores</code></td>
+<td>
+<p>flag to indicate if the bootstrap shall be applied to the
+scores of the residuals, rather than to the functional residuals. This
+improves the computational expediency notably. Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>flag to show information about the testing progress. Defaults
+to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot_dens</code></td>
+<td>
+<p>flag to indicate if a kernel density estimation of the
+bootstrap statistics shall be plotted. Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot_proc</code></td>
+<td>
+<p>whether to display a graphical tool to identify the
+degree of departure from the null hypothesis. If <code>TRUE</code> (default),
+the residual marked empirical process, projected in several FPC directions
+of <code>X</code> and <code>Y</code>, is shown, together with bootstrap analogues.
+The FPC directions are ones selected at the estimation stage.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot_max_procs</code></td>
+<td>
+<p>maximum number of bootstrapped processes to plot in
+the graphical tool. Set as the minimum of <code>plot_max_procs</code> and <code>B</code>.
+Defaults to <code>100</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot_max_p, plot_max_q</code></td>
+<td>
+<p>maximum number of FPC directions to be
+considered in the graphical tool. They limit the resulting plot to be at
+most of size <code>c(plot_max_p, plot_max_q)</code>. Default to <code>2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_fit_flm, save_boot_stats</code></td>
+<td>
+<p>flag to return <code>fit_flm</code> and
+<code>boot_*</code>. If <code>FALSE</code>, these memory-expensive objects
+are set to <code>NA</code>. Default to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>int_rule</code></td>
+<td>
+<p>quadrature rule for approximating the definite
+unidimensional integral: trapezoidal rule (<code>int_rule = "trapezoid"</code>)
+and extended Simpson rule (<code>int_rule = "Simpson"</code>) are available.
+Defaults to <code>"trapezoid"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>refit_lambda</code></td>
+<td>
+<p>flag to reselect <code class="reqn">lambda</code> in each bootstrap
+replicate, incorporating its variability in the bootstrap calibration.
+Much more time consumig. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further parameters to be passed to <code>cv_glmnet</code>
+(and then to <code>cv.glmnet</code>) such as <code>cv_1se</code>,
+<code>cv_nlambda</code> or <code>cv_parallel</code>, among others.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function implements the bootstrap-based goodness-of-fit test for
+the functional linear model with functional/scalar response and
+functional/scalar predictor, as described in Algorithm 1 in
+García-Portugués et al. (2021). The specifics are detailed there.
+</p>
+<p>By default <code>cv_1se = TRUE</code> for <code>cv_glmnet</code> is
+considered, unless it is changed via <code>...</code>. This is the recommended
+choice for conducting the goodness-of-fit test based on regularized
+estimators, as the oversmoothed estimate of the regression model under the
+null hypothesis notably facilitates the calibration of the test (see
+García-Portugués et al., 2021).
+</p>
+<p>The graphical tool obtained with <code>plot_proc = TRUE</code> is based on
+an extension of the tool described in García-Portugués et al. (2014).
+</p>
+<p>Repeated observations on <code>X</code> are internally removed, as otherwise they
+would cause <code>NaN</code>s in <code>Adot</code>. Missing values on <code>X</code> and
+<code>Y</code> are also automatically removed.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of the <code>htest</code> class with the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>statistic</code></td>
+<td>
+<p>test statistic.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.value</code></td>
+<td>
+<p><code class="reqn">p</code>-value of the test.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boot_statistics</code></td>
+<td>
+<p>the bootstrapped test statistics, a vector
+of length <code>B</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>information on the type of test performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameter</code></td>
+<td>
+<p>a vector with the dimensions <code class="reqn">p</code> and <code class="reqn">q</code>
+considered in the test statistic. These are the lengths of the outputs
+<code>p</code> and <code>q</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>the index of the FPC considered for <code>X</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q</code></td>
+<td>
+<p>the index of the FPC considered for <code>Y</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit_flm</code></td>
+<td>
+<p>the output resulted from calling <code>flm_est</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boot_lambda</code></td>
+<td>
+<p>bootstrapped <code class="reqn">lambda</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boot_p</code></td>
+<td>
+<p>a list with the bootstrapped indexes of the FPC considered
+for <code>X</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data.name</code></td>
+<td>
+<p>name of the value of <code>data</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Eduardo García-Portugués.
+</p>
+
+
+<h3>References</h3>
+
+<p>García-Portugués, E., Álvarez-Liébana, J., Álvarez-Pérez, G. and
+Gonzalez-Manteiga, W. (2021). A goodness-of-fit test for the functional
+linear model with functional response. <em>Scandinavian Journal of
+Statistics</em>, 48(2):502–528. <a href="https://doi.org/10.1111/sjos.12486">doi:10.1111/sjos.12486</a>
+</p>
+<p>García-Portugués, E., González-Manteiga, W. and Febrero-Bande, M. (2014). A
+goodness-of-fit test for the functional linear model with scalar response.
+<em>Journal of Computational and Graphical Statistics</em>, 23(3):761–778.
+<a href="https://doi.org/10.1080/10618600.2013.812519">doi:10.1080/10618600.2013.812519</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Quick example for functional response and predictor
+
+# Generate data under H0
+n &lt;- 100
+set.seed(987654321)
+X_fdata &lt;- r_ou(n = n, t = seq(0, 1, l = 101), sigma = 2)
+epsilon &lt;- r_ou(n = n, t = seq(0, 1, l = 101), sigma = 0.5)
+Y_fdata &lt;- epsilon
+
+# Test the FLMFR
+flm_test(X = X_fdata, Y = Y_fdata)
+
+# Simple hypothesis
+flm_test(X = X_fdata, Y = Y_fdata, beta0 = 0)
+
+# Generate data under H1
+n &lt;- 100
+set.seed(987654321)
+sample_frm_fr &lt;- r_frm_fr(n = n, scenario = 3, s = seq(0, 1, l = 101),
+                          t = seq(0, 1, l = 101), nonlinear = "quadratic")
+X_fdata &lt;- sample_frm_fr[["X_fdata"]]
+Y_fdata &lt;- sample_frm_fr[["Y_fdata"]]
+
+# Test the FLMFR
+flm_test(X = X_fdata, Y = Y_fdata)
+
+## Functional response and predictor
+
+# Generate data under H0
+n &lt;- 50
+B &lt;- 100
+set.seed(987654321)
+t &lt;- seq(0, 1, l = 201)
+X_fdata &lt;- r_ou(n = n, t = t, sigma = 2)
+epsilon &lt;- r_ou(n = n, t = t, sigma = 0.5)
+Y_fdata &lt;- epsilon
+
+# With boot_scores = TRUE
+flm_test(X = X_fdata, Y = Y_fdata, est_method = "fpcr", B = B)
+flm_test(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l2", B = B)
+flm_test(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l1s", B = B)
+
+# With boot_scores = FALSE
+flm_test(X = X_fdata, Y = Y_fdata, est_method = "fpcr",
+         boot_scores = FALSE, B = B)
+flm_test(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l2",
+         boot_scores = FALSE, B = B)
+flm_test(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l1",
+         boot_scores = FALSE, B = B)
+flm_test(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l1s",
+         boot_scores = FALSE, B = B)
+
+# Simple hypothesis
+flm_test(X = X_fdata, Y = Y_fdata, beta0 = 2, est_method = "fpcr", B = B)
+flm_test(X = X_fdata, Y = Y_fdata, beta0 = 0, est_method = "fpcr", B = B)
+flm_test(X = X_fdata, Y = Y_fdata, beta0 = 0, est_method = "fpcr_l1s", B = B)
+
+# Generate data under H1
+n &lt;- 50
+B &lt;- 100
+set.seed(987654321)
+sample_frm_fr &lt;- r_frm_fr(n = n, scenario = 3, s = t, t = t,
+                          nonlinear = "quadratic")
+X_fdata &lt;- sample_frm_fr$X_fdata
+Y_fdata &lt;- sample_frm_fr$Y_fdata
+
+# With boot_scores = TRUE
+flm_test(X = X_fdata, Y = Y_fdata, est_method = "fpcr", B = B)
+flm_test(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l2", B = B)
+flm_test(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l1s", B = B)
+
+# With boot_scores = FALSE
+flm_test(X = X_fdata, Y = Y_fdata, est_method = "fpcr",
+         boot_scores = FALSE, B = B)
+flm_test(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l2",
+         boot_scores = FALSE, B = B)
+flm_test(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l1",
+         boot_scores = FALSE, B = B)
+flm_test(X = X_fdata, Y = Y_fdata, est_method = "fpcr_l1s",
+         boot_scores = FALSE, B = B)
+
+## Scalar response and functional predictor
+
+# Generate data under H0
+n &lt;- 50
+B &lt;- 100
+set.seed(987654321)
+t &lt;- seq(0, 1, l = 201)
+X_fdata &lt;- r_ou(n = n, t = t, sigma = 2)
+beta &lt;- r_ou(n = 1, t = t, sigma = 0.5, x0 = 2)
+epsilon &lt;- rnorm(n = n)
+Y &lt;- drop(inprod_fdata(X_fdata1 = X_fdata, X_fdata2 = beta) + epsilon)
+
+# With boot_scores = TRUE
+flm_test(X = X_fdata, Y = Y, est_method = "fpcr", B = B)
+flm_test(X = X_fdata, Y = Y, est_method = "fpcr_l2", B = B)
+flm_test(X = X_fdata, Y = Y, est_method = "fpcr_l1s", B = B)
+
+# With boot_scores = FALSE
+flm_test(X = X_fdata, Y = Y, est_method = "fpcr",
+         boot_scores = FALSE, B = B)
+flm_test(X = X_fdata, Y = Y, est_method = "fpcr_l2",
+         boot_scores = FALSE, B = B)
+flm_test(X = X_fdata, Y = Y, est_method = "fpcr_l1",
+         boot_scores = FALSE, B = B)
+flm_test(X = X_fdata, Y = Y, est_method = "fpcr_l1s",
+         boot_scores = FALSE, B = B)
+
+# Simple hypothesis
+flm_test(X = X_fdata, Y = Y, beta0 = beta, est_method = "fpcr", B = B)
+flm_test(X = X_fdata, Y = Y, beta0 = 0, est_method = "fpcr", B = B)
+flm_test(X = X_fdata, Y = Y, beta0 = 0, est_method = "fpcr_l1s", B = B)
+
+# Generate data under H1
+n &lt;- 50
+B &lt;- 100
+set.seed(987654321)
+X_fdata &lt;- r_ou(n = n, t = t, sigma = 2)
+beta &lt;- r_ou(n = 1, t = t, sigma = 0.5)
+epsilon &lt;- rnorm(n = n)
+Y &lt;- drop(exp(inprod_fdata(X_fdata1 = X_fdata^2, X_fdata2 = beta)) + epsilon)
+
+# With boot_scores = TRUE
+flm_test(X = X_fdata, Y = Y, est_method = "fpcr", B = B)
+flm_test(X = X_fdata, Y = Y, est_method = "fpcr_l2", B = B)
+flm_test(X = X_fdata, Y = Y, est_method = "fpcr_l1s", B = B)
+
+# With boot_scores = FALSE
+flm_test(X = X_fdata, Y = Y, est_method = "fpcr",
+         boot_scores = FALSE, B = B)
+flm_test(X = X_fdata, Y = Y, est_method = "fpcr_l2",
+         boot_scores = FALSE, B = B)
+flm_test(X = X_fdata, Y = Y, est_method = "fpcr_l1",
+         boot_scores = FALSE, B = B)
+flm_test(X = X_fdata, Y = Y, est_method = "fpcr_l1s",
+         boot_scores = FALSE, B = B)
+
+## Functional response and scalar predictor
+
+# Generate data under H0
+n &lt;- 50
+B &lt;- 100
+set.seed(987654321)
+X &lt;- rnorm(n)
+t &lt;- seq(0, 1, l = 201)
+beta &lt;- r_ou(n = 1, t = t, sigma = 0.5, x0 = 3)
+beta$data &lt;- matrix(beta$data, nrow = n, ncol = ncol(beta$data),
+                    byrow = TRUE)
+epsilon &lt;- r_ou(n = n, t = t, sigma = 0.5)
+Y_fdata &lt;- X * beta + epsilon
+
+# With boot_scores = TRUE
+flm_test(X = X, Y = Y_fdata, est_method = "fpcr", B = B)
+
+# With boot_scores = FALSE
+flm_test(X = X, Y = Y_fdata, est_method = "fpcr", boot_scores = FALSE, B = B)
+
+# Simple hypothesis
+flm_test(X = X, Y = Y_fdata, beta0 = beta[1], est_method = "fpcr", B = B)
+flm_test(X = X, Y = Y_fdata, beta0 = 0, est_method = "fpcr", B = B)
+
+# Generate data under H1
+n &lt;- 50
+B &lt;- 100
+set.seed(987654321)
+X &lt;- rexp(n)
+beta &lt;- r_ou(n = 1, t = t, sigma = 0.5, x0 = 3)
+beta$data &lt;- matrix(beta$data, nrow = n, ncol = ncol(beta$data),
+                    byrow = TRUE)
+epsilon &lt;- r_ou(n = n, t = t, sigma = 0.5)
+Y_fdata &lt;- log(X * beta) + epsilon
+
+# With boot_scores = TRUE
+flm_test(X = X, Y = Y_fdata, est_method = "fpcr", B = B)
+
+# With boot_scores = FALSE
+flm_test(X = X, Y = Y_fdata, est_method = "fpcr", boot_scores = FALSE, B = B)
+
+</code></pre>
+
+
+</div>

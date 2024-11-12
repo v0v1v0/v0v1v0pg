@@ -1,0 +1,232 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>lmCombine</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Combine regressions based on information criteria</h2>
+
+<h3>Description</h3>
+
+<p>Function combines parameters of linear regressions of the first variable
+on all the other provided data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">lmCombine(data, ic = c("AICc", "AIC", "BIC", "BICc"), bruteforce = FALSE,
+  silent = TRUE, formula = NULL, subset = NULL,
+  distribution = c("dnorm", "dlaplace", "ds", "dgnorm", "dlogis", "dt",
+  "dalaplace", "dlnorm", "dllaplace", "dls", "dlgnorm", "dbcnorm", "dinvgauss",
+  "dgamma", "dexp", "dfnorm", "drectnorm", "dpois", "dnbinom", "dbeta",
+  "dlogitnorm", "plogis", "pnorm"), parallel = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame containing dependent variable in the first column and
+the others in the rest.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ic</code></td>
+<td>
+<p>Information criterion to use.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bruteforce</code></td>
+<td>
+<p>If <code>TRUE</code>, then all the possible models are generated
+and combined. Otherwise the best model is found and then models around that
+one are produced and then combined.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>silent</code></td>
+<td>
+<p>If <code>FALSE</code>, then nothing is silent, everything is printed
+out. <code>TRUE</code> means that nothing is produced.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>If provided, then the selection will be done from the listed
+variables in the formula after all the necessary transformations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>an optional vector specifying a subset of observations to be
+used in the fitting process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distribution</code></td>
+<td>
+<p>Distribution to pass to <code>alm()</code>. See alm
+for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>If <code>TRUE</code>, then the model fitting is done in parallel.
+WARNING! Packages <code>foreach</code> and either <code>doMC</code> (Linux and Mac only)
+or <code>doParallel</code> are needed in order to run the function in parallel.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other parameters passed to <code>alm()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The algorithm uses alm() to fit different models and then combines the models
+based on the selected IC. The parameters are combined so that if they are not
+present in some of models, it is assumed that they are equal to zero. Thus,
+there is a shrinkage effect in the combination.
+</p>
+<p>Some details and examples of application are also given in the vignette
+"Greybox": <code>vignette("greybox","greybox")</code>
+</p>
+
+
+<h3>Value</h3>
+
+<p>Function returns <code>model</code> - the final model of the class
+"greyboxC". The list of variables:
+</p>
+
+<ul>
+<li>
+<p> coefficients - combined parameters of the model,
+</p>
+</li>
+<li>
+<p> vcov - combined covariance matrix of the model,
+</p>
+</li>
+<li>
+<p> fitted - the fitted values,
+</p>
+</li>
+<li>
+<p> residuals - residual of the model,
+</p>
+</li>
+<li>
+<p> distribution - distribution used in the estimation,
+</p>
+</li>
+<li>
+<p> logLik - combined log-likelihood of the model,
+</p>
+</li>
+<li>
+<p> IC - the values of the combined information criterion,
+</p>
+</li>
+<li>
+<p> ICType - the type of information criterion used,
+</p>
+</li>
+<li>
+<p> df.residual - number of degrees of freedom of the residuals of
+the combined model,
+</p>
+</li>
+<li>
+<p> df - number of degrees of freedom of the combined model,
+</p>
+</li>
+<li>
+<p> importance - importance of the parameters,
+</p>
+</li>
+<li>
+<p> combination - the table, indicating which variables were used in every
+model construction and what were the weights for each model,
+</p>
+</li>
+<li>
+<p> timeElapsed - the time elapsed for the estimation of the model.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Ivan Svetunkov, <a href="mailto:ivan@svetunkov.ru">ivan@svetunkov.ru</a>
+</p>
+
+
+<h3>References</h3>
+
+
+<ul>
+<li>
+<p> Burnham Kenneth P. and Anderson David R. (2002). Model Selection
+and Multimodel Inference. A Practical Information-Theoretic Approach.
+Springer-Verlag New York. DOI: [10.1007/b97636](http://dx.doi.org/10.1007/b97636).
+</p>
+</li>
+<li>
+<p> McQuarrie, A. D. (1999). A small-sample correction for the Schwarz SIC model
+selection criterion. Statistics &amp; Probability Letters, 44(1), 79–86.
+[10.1016/S0167-7152(98)00294-6](https://doi.org/10.1016/S0167-7152(98)00294-6).
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>step, xregExpander,
+stepwise</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+### Simple example
+xreg &lt;- cbind(rnorm(100,10,3),rnorm(100,50,5))
+xreg &lt;- cbind(100+0.5*xreg[,1]-0.75*xreg[,2]+rnorm(100,0,3),xreg,rnorm(100,300,10))
+colnames(xreg) &lt;- c("y","x1","x2","Noise")
+inSample &lt;- xreg[1:80,]
+outSample &lt;- xreg[-c(1:80),]
+# Combine all the possible models
+ourModel &lt;- lmCombine(inSample,bruteforce=TRUE)
+predict(ourModel,outSample)
+plot(predict(ourModel,outSample))
+
+### Fat regression example
+xreg &lt;- matrix(rnorm(5000,10,3),50,100)
+xreg &lt;- cbind(100+0.5*xreg[,1]-0.75*xreg[,2]+rnorm(50,0,3),xreg,rnorm(50,300,10))
+colnames(xreg) &lt;- c("y",paste0("x",c(1:100)),"Noise")
+inSample &lt;- xreg[1:40,]
+outSample &lt;- xreg[-c(1:40),]
+# Combine only the models close to the optimal
+ourModel &lt;- lmCombine(inSample, ic="BICc",bruteforce=FALSE)
+summary(ourModel)
+plot(predict(ourModel, outSample))
+
+# Combine in parallel - should increase speed in case of big data
+## Not run: ourModel &lt;- lmCombine(inSample, ic="BICc", bruteforce=TRUE, parallel=TRUE)
+summary(ourModel)
+plot(predict(ourModel, outSample))
+## End(Not run)
+
+</code></pre>
+
+
+</div>

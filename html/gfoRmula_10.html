@@ -1,0 +1,163 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>lagged</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>History functions</h2>
+
+<h3>Description</h3>
+
+<p>These functions create new columns in an input data table for covariate histories. Users must specify which covariates are to be used in the history functions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">lagged(
+  pool,
+  histvars,
+  histvals,
+  time_name,
+  t,
+  id_name,
+  baselags,
+  below_zero_indicator
+)
+
+cumavg(pool, histvars, time_name, t, id_name, below_zero_indicator)
+
+lagavg(
+  pool,
+  histvars,
+  histvals,
+  time_name,
+  t,
+  id_name,
+  baselags,
+  below_zero_indicator
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>pool</code></td>
+<td>
+<p>Data table containing all information prior to time <code class="reqn">t</code> (<code class="reqn">t</code> noninclusive).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>histvars</code></td>
+<td>
+<p>Vector of character strings specifying the names of the variables for which history functions are to be applied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>histvals</code></td>
+<td>
+<p>For <code>lagged</code>, this argument is a vector specifying the lags used in the model statements (e.g., if <code>lag1_varname</code> and <code>lag2_varname</code> were included in the model statements, this vector would be <code>c(1,2)</code>). For <code>lagavg</code>, this argument is a numeric vector specifying the lag averages used in the model statements.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_name</code></td>
+<td>
+<p>Character string specifying the name of the time variable in <code>pool</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t</code></td>
+<td>
+<p>Integer specifying the current time index.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id_name</code></td>
+<td>
+<p>Character string specifying the name of the ID variable in <code>pool</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>baselags</code></td>
+<td>
+<p>Logical scalar for specifying the convention used for lagi and lag_cumavgi terms in the model statements when pre-baseline times are not
+included in <code>obs_data</code> and when the current time index, <code class="reqn">t</code>, is such that <code class="reqn">t &lt; i</code>. If this argument is set to <code>FALSE</code>, the value
+of all lagi and lag_cumavgi terms in this context are set to 0 (for non-categorical covariates) or the reference
+level (for categorical covariates). If this argument is set to <code>TRUE</code>, the value of lagi and lag_cumavgi terms
+are set to their values at time 0. The default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>below_zero_indicator</code></td>
+<td>
+<p>Logical scalar indicating whether the observed data set contains rows for time <code class="reqn">t &lt; 0</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>lagged</code> creates new columns for lagged versions of existing
+variables in the dataset. The user must specify which variables are to be lagged.
+</p>
+<p><code>cumavg</code> creates new columns for the cumulative average up until
+time <code class="reqn">t</code> of existing variables in the dataset.
+</p>
+<p><code>lagavg</code> creates new columns for the "lagged cumulative average"
+(cumulative average up until time t, then lagged by one time unit) up until time <code class="reqn">t</code> of existing
+variables in the dataset.
+</p>
+
+
+<h3>Value</h3>
+
+<p>No value is returned. The data table <code>pool</code> is modified in place.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Estimating the effect of static treatment strategies on risk of a
+## failure event
+
+id &lt;- 'id'
+time_points &lt;- 7
+time_name &lt;- 't0'
+covnames &lt;- c('L1', 'L2', 'A')
+outcome_name &lt;- 'Y'
+outcome_type &lt;- 'survival'
+covtypes &lt;- c('binary', 'bounded normal', 'binary')
+histories &lt;- c(lagged, lagavg)
+histvars &lt;- list(c('A', 'L1', 'L2'), c('L1', 'L2'))
+covparams &lt;- list(covmodels = c(L1 ~ lag1_A + lag_cumavg1_L1 + lag_cumavg1_L2 +
+                                  L3 + t0,
+                                L2 ~ lag1_A + L1 + lag_cumavg1_L1 +
+                                  lag_cumavg1_L2 + L3 + t0,
+                                A ~ lag1_A + L1 + L2 + lag_cumavg1_L1 +
+                                  lag_cumavg1_L2 + L3 + t0))
+ymodel &lt;- Y ~ A + L1 + L2 + L3 + lag1_A + lag1_L1 + lag1_L2 + t0
+intervention1.A &lt;- list(static, rep(0, time_points))
+intervention2.A &lt;- list(static, rep(1, time_points))
+int_descript &lt;- c('Never treat', 'Always treat')
+nsimul &lt;- 10000
+
+gform_basic &lt;- gformula(obs_data = basicdata_nocomp, id = id,
+                        time_points = time_points,
+                        time_name = time_name, covnames = covnames,
+                        outcome_name = outcome_name,
+                        outcome_type = outcome_type, covtypes = covtypes,
+                        covparams = covparams, ymodel = ymodel,
+                        intervention1.A = intervention1.A,
+                        intervention2.A = intervention2.A,
+                        int_descript = int_descript,
+                        histories = histories, histvars = histvars,
+                        basecovs = c('L3'), nsimul = nsimul,
+                        seed = 1234)
+gform_basic
+
+
+</code></pre>
+
+
+</div>

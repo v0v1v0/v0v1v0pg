@@ -1,0 +1,560 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gmm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generalized method of moment estimation</h2>
+
+<h3>Description</h3>
+
+<p>Function to estimate a vector of parameters based on moment conditions using the GMM method of Hansen(82). 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gmm(g,x,t0=NULL,gradv=NULL, type=c("twoStep","cue","iterative"), 
+    wmatrix = c("optimal","ident"), vcov=c("HAC","MDS","iid","TrueFixed"), 
+    kernel=c("Quadratic Spectral","Truncated", "Bartlett", "Parzen", "Tukey-Hanning"),
+    crit=10e-7,bw = bwAndrews, prewhite = 1, ar.method = "ols", approx="AR(1)",
+    tol = 1e-7, itermax=100,optfct=c("optim","optimize","nlminb", "constrOptim"),
+    model=TRUE, X=FALSE, Y=FALSE, TypeGmm = "baseGmm", centeredVcov = TRUE, 
+    weightsMatrix = NULL, traceIter = FALSE, data, eqConst = NULL, 
+    eqConstFullVcov = FALSE, mustar = NULL, onlyCoefficients=FALSE, ...)
+evalGmm(g, x, t0, tetw=NULL, gradv=NULL, wmatrix = c("optimal","ident"),
+    vcov=c("HAC","iid","TrueFixed"), kernel=c("Quadratic Spectral","Truncated", 
+    "Bartlett", "Parzen", "Tukey-Hanning"),crit=10e-7,bw = bwAndrews,
+    prewhite = FALSE, ar.method = "ols", approx="AR(1)",tol = 1e-7,
+    model=TRUE, X=FALSE, Y=FALSE,  centeredVcov = TRUE, weightsMatrix = NULL,
+    data, mustar = NULL)
+gmmWithConst(obj, which, value)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>g</code></td>
+<td>
+<p>A function of the form <code class="reqn">g(\theta,x)</code> and which returns a <code class="reqn">n \times q</code> matrix with typical element <code class="reqn">g_i(\theta,x_t)</code> for <code class="reqn">i=1,...q</code> and <code class="reqn">t=1,...,n</code>. This matrix is then used to build the q sample moment conditions. It can also be a formula if the model is linear (see details below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>The matrix or vector of data from which the function <code class="reqn">g(\theta,x)</code> is computed. If "g" is a formula, it is an <code class="reqn">n \times Nh</code> matrix of instruments or a formula (see details below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t0</code></td>
+<td>
+<p>A <code class="reqn">k \times 1</code> vector of starting values. It is required
+only when "g" is a function because only then a numerical algorithm is
+used to minimize the objective function. If the dimension of
+<code class="reqn">\theta</code> is one, see the argument "optfct".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tetw</code></td>
+<td>
+<p>A <code class="reqn">k \times 1</code> vector to compute the weighting matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gradv</code></td>
+<td>
+<p>A function of the form <code class="reqn">G(\theta,x)</code> which returns a <code class="reqn">q\times k</code> matrix of derivatives of <code class="reqn">\bar{g}(\theta)</code> with respect to <code class="reqn">\theta</code>. By default, the numerical algorithm <code>numericDeriv</code> is used. It is of course strongly suggested to provide this function when it is possible. This gradient is used to compute the asymptotic covariance matrix of <code class="reqn">\hat{\theta}</code> and to obtain the analytical gradient of the objective function if the method is set to "CG" or "BFGS" in <code>optim</code> and if "type" is not set to "cue". If "g" is a formula, the gradiant is not required (see the details below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>The GMM method: "twostep" is the two step GMM proposed by Hansen(1982) and the "cue" and "iterative" are respectively the continuous updated and the iterative GMM proposed by Hansen, Eaton et Yaron (1996)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wmatrix</code></td>
+<td>
+<p>Which weighting matrix should be used in the objective function. By default, it is the inverse of the covariance matrix of <code class="reqn">g(\theta,x)</code>. The other choice is the identity matrix which is usually used to obtain a first step estimate of <code class="reqn">\theta</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov</code></td>
+<td>
+<p>Assumption on the properties of the random vector x. By default, x is a weakly dependant process. The "iid" option will avoid using the HAC matrix which will accelerate the estimation if one is ready to make that assumption. The option "TrueFixed" is used only when the matrix of weights is provided and it is the optimal one.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kernel</code></td>
+<td>
+<p>type of kernel used to compute the covariance matrix of the vector of sample moment conditions (see <code>kernHAC</code> for more details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>crit</code></td>
+<td>
+<p>The stopping rule for the iterative GMM. It can be reduce to increase the precision.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bw</code></td>
+<td>
+<p>The method to compute the bandwidth parameter in the HAC
+weighting matrix. The default is <code>link{bwAndrews}</code> (as proposed in Andrews
+(1991)), which minimizes the MSE of the weighting matrix. Alternatives
+are <code>link{bwWilhelm}</code> (as proposed in Wilhelm
+(2015)), which minimizes the mean-square error (MSE) of the resulting
+GMM estimator, and <code>link{bwNeweyWest}</code> (as proposed in Newey-West(1994)).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prewhite</code></td>
+<td>
+<p>logical or integer. Should the estimating functions be prewhitened? If <code>TRUE</code> or greater than 0 a VAR model of order <code>as.integer(prewhite)</code> is fitted via <code>ar</code> with method <code>"ols"</code> and <code>demean = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ar.method</code></td>
+<td>
+<p>character. The <code>method</code> argument passed to <code>ar</code> for prewhitening.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>approx</code></td>
+<td>
+<p>A character specifying the approximation method if the bandwidth has to be chosen by <code>bwAndrews</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>Weights that exceed <code>tol</code> are used for computing the covariance matrix, all other weights are treated as 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>itermax</code></td>
+<td>
+<p>The maximum number of iterations for the iterative GMM. It is unlikely that the algorithm does not converge but we keep it as a safety.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optfct</code></td>
+<td>
+<p>Only when the dimension of <code class="reqn">\theta</code> is 1, you can choose between the algorithm <code>optim</code> or <code>optimize</code>. In that case, the former is unreliable. If <code>optimize</code> is chosen, "t0" must be <code class="reqn">1\times 2</code> which represents the interval in which the algorithm seeks the solution. It is also possible to choose the <code>nlminb</code> algorithm. In that case, boundaries for the coefficients can be set by the options <code>upper=</code> and <code>lower=</code>. The <code>constrOptim</code> is only available for nonlinear models for now. The standard errors may have to be corrected if the estimtes reach the boundary set by ui and ci.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model, X, Y</code></td>
+<td>
+<p>logical.  If <code>TRUE</code> the corresponding components of the fit (the model frame, the model matrix, the response) are returned if g is a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>TypeGmm</code></td>
+<td>
+<p>The name of the class object created by the method <code>getModel</code>. It allows developers to extend the package and create other GMM methods.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centeredVcov</code></td>
+<td>
+<p>Should the moment function be centered when computing its covariance matrix. Doing so may improve inference.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weightsMatrix</code></td>
+<td>
+<p>It allows users to provide <code>gmm</code> with a fixed weighting matrix. This matrix must be <code class="reqn">q \times q</code>, symmetric and strictly positive definite. When provided, the <code>type</code> option becomes irrelevant. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>traceIter</code></td>
+<td>
+<p>Tracing information for GMM of type "iter"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data.frame or a matrix with column names (Optional). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eqConst</code></td>
+<td>
+<p>Either a named vector (if "g" is a function), a simple vector for the nonlinear case indicating which of the <code class="reqn">\theta_0</code> is restricted, or a qx2 vector defining equality constraints of the form <code class="reqn">\theta_i=c_i</code>. See below for an example.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>which, value</code></td>
+<td>
+<p>The equality constraint is of the form which=value. "which" can be a vector of type characters with the names of the coefficients being constrained, or a vector of type numeric with the position of the coefficient in the whole vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obj</code></td>
+<td>
+<p>Object of class "gmm"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eqConstFullVcov</code></td>
+<td>
+<p>If FALSE, the constrained coefficients are assumed to be fixed and only the covariance of the unconstrained coefficients is computed. If TRUE, the covariance matrix of the full set of coefficients is computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mustar</code></td>
+<td>
+<p>If not null, it must be a vector with the number of
+elements being equal to the number of moment conditions. In that case,
+the vector is subtracted from the sample moment vector before
+minimizing the objective function. It is useful to do a bootstrap
+procedure.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>onlyCoefficients</code></td>
+<td>
+<p>If set to <code>TRUE</code>, the function only returns
+the coefficient estimates. It may be of interest when the standard
+errors are not needed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>More options to give to <code>optim</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If we want to estimate a model like <code class="reqn">Y_t = \theta_1 + X_{2t} \theta_2 + \cdots + X_{k}\theta_k + \epsilon_t</code> using the moment conditions <code class="reqn">Cov(\epsilon_tH_t)=0</code>, where <code class="reqn">H_t</code> is a vector of <code class="reqn">Nh</code> instruments, than we can define "g" like we do for <code>lm</code>. We would have <code class="reqn">g = y ~\tilde{}~ x2+x3+ \cdots +xk</code> and the argument "x" above would become the matrix H of instruments. As for <code>lm</code>, <code class="reqn">Y_t</code> can be a <code class="reqn">Ny \times 1</code> vector which would imply that <code class="reqn">k=Nh \times Ny</code>. The intercept is included by default so you do not have to add a column of ones to the matrix <code class="reqn">H</code>. You do not need to provide the gradiant in that case since in that case it is embedded in <code>gmm</code>. The intercept can be removed by adding -1 to the formula. In that case, the column of ones need to be added manually to H. It is also possible to express "x" as a formula. For example, if the instruments are <code class="reqn">\{1,z_1,z_2,z_3\}</code>, we can set "x" to <code class="reqn">\tilde{} z1+z2+z3</code>. By default, a column of ones is added. To remove it, set "x" to <code class="reqn">\tilde{}z1+z2+z3-1</code>. 
+</p>
+<p>The following explains the last example bellow. Thanks to Dieter Rozenich, a student from the Vienna University of Economics and Business Administration. He suggested that it would help to understand the implementation of the Jacobian.  
+</p>
+<p>For the two parameters of a normal distribution <code class="reqn">(\mu,\sigma)</code> we have the following three moment conditions:
+</p>
+<p style="text-align: center;"><code class="reqn">
+m_{1} = \mu - x_{i}
+</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn"> 
+m_{2} = \sigma^2 - (x_{i}-\mu)^2
+</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn"> 
+m_{3} = x_{i}^{3} - \mu (\mu^2+3\sigma^{2}) 
+</code>
+</p>
+
+<p><code class="reqn">m_{1},m_{2}</code> can be directly obtained by the definition of <code class="reqn">(\mu,\sigma)</code>. The third moment condition comes from the third derivative of the moment generating function (MGF)
+</p>
+<p style="text-align: center;"><code class="reqn">
+    M_{X}(t) = exp\Big(\mu t + \frac{\sigma^{2}t^{2}}{2}\Big)
+</code>
+</p>
+
+<p>evaluated at <code class="reqn">(t=0)</code>.
+</p>
+<p>Note that we have more equations (3) than unknown parameters (2).
+</p>
+<p>The Jacobian of these two conditions is (it should be an array but I can't make it work):
+</p>
+<p style="text-align: center;"><code class="reqn"> 1~~~~~~~~~~ 0 </code>
+</p>
+
+<p style="text-align: center;"><code class="reqn"> -2\mu+2x ~~~~~ 2\sigma </code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">-3\mu^{2}-3\sigma^{2} ~~~~ -6\mu\sigma</code>
+</p>
+
+<p><code>gmmWithConst()</code> re-estimates an unrestricted model by adding an
+equality constraint.
+<code>evalGmm()</code> creates an object of class '"gmm"' for a given
+parameter vector. If no vector "tetw" is provided and the weighting
+matrix needs to be computed, "t0" is used.,  
+</p>
+
+
+<h3>Value</h3>
+
+<p>'gmm' returns an object of 'class' '"gmm"' 
+</p>
+<p>The functions 'summary' is used to obtain and print a summary of the results.  It also compute the J-test of overidentying restriction
+</p>
+<p>The object of class "gmm" is a list containing at least:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p><code class="reqn">k\times 1</code> vector of coefficients</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p>the residuals, that is response minus fitted values if "g" is a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>the fitted mean values if "g" is a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov</code></td>
+<td>
+<p>the covariance matrix of the coefficients</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>objective</code></td>
+<td>
+<p>the value of the objective function <code class="reqn">\| var(\bar{g})^{-1/2}\bar{g}\|^2</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms</code></td>
+<td>
+<p>the <code>terms</code> object used when g is a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the matched call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>if requested, the response used (if "g" is a formula).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>if requested, the model matrix used if "g" is a formula or the data if "g" is a function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>if requested (the default), the model frame used if "g" is a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algoInfo</code></td>
+<td>
+<p>Information produced by either <code>optim</code> or <code>nlminb</code> related to the convergence if "g" is a function. It is printed by the <code>summary.gmm</code> method.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Zeileis A (2006), Object-oriented Computation of Sandwich Estimators.
+<em>Journal of Statistical Software</em>, <b>16</b>(9), 1–16.
+URL <a href="https://doi.org/10.18637/jss.v016.i09">doi:10.18637/jss.v016.i09</a>.
+</p>
+<p>Pierre Chausse (2010), Computing Generalized Method of Moments and Generalized Empirical Likelihood with R.
+<em>Journal of Statistical Software</em>, <b>34</b>(11), 1–35.
+URL <a href="https://doi.org/10.18637/jss.v034.i11">doi:10.18637/jss.v034.i11</a>.
+</p>
+<p>Andrews DWK (1991),
+Heteroskedasticity and Autocorrelation Consistent Covariance Matrix Estimation.
+<em>Econometrica</em>, <b>59</b>,
+817–858.
+</p>
+<p>Newey WK &amp; West KD (1987), A Simple, Positive Semi-Definite,
+Heteroskedasticity and Autocorrelation Consistent Covariance
+Matrix. <em>Econometrica</em>, <b>55</b>, 703–708.
+</p>
+<p>Newey WK &amp; West KD (1994), Automatic Lag Selection in Covariance
+Matrix Estimation. <em>Review of Economic Studies</em>, <b>61</b>, 631-653.
+</p>
+<p>Hansen, L.P. (1982),
+Large Sample Properties of Generalized Method of Moments Estimators.
+<em>Econometrica</em>, <b>50</b>,
+1029-1054,
+</p>
+<p>Hansen, L.P. and Heaton, J. and Yaron, A.(1996),
+Finite-Sample Properties of Some Alternative GMM Estimators.
+<em>Journal of Business and Economic Statistics</em>, <b>14</b>
+262-280.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## CAPM test with GMM
+data(Finance)
+r &lt;- Finance[1:300, 1:10]
+rm &lt;- Finance[1:300, "rm"]
+rf &lt;- Finance[1:300, "rf"]
+
+z &lt;- as.matrix(r-rf)
+t &lt;- nrow(z)
+zm &lt;- rm-rf
+h &lt;- matrix(zm, t, 1)
+res &lt;- gmm(z ~ zm, x = h)
+summary(res)
+
+## linear tests can be performed using linearHypothesis from the car package
+## The CAPM can be tested as follows:
+
+library(car)
+linearHypothesis(res,cbind(diag(10),matrix(0,10,10)),rep(0,10))
+
+# The CAPM of Black
+g &lt;- function(theta, x) {
+	e &lt;- x[,2:11] - theta[1] - (x[,1] - theta[1]) %*% matrix(theta[2:11], 1, 10)
+	gmat &lt;- cbind(e, e*c(x[,1]))
+	return(gmat) }
+
+x &lt;- as.matrix(cbind(rm, r))
+res_black &lt;- gmm(g, x = x, t0 = rep(0, 11))
+
+summary(res_black)$coefficients
+
+
+## APT test with Fama-French factors and GMM
+
+f1 &lt;- zm
+f2 &lt;- Finance[1:300, "hml"] 
+f3 &lt;- Finance[1:300, "smb"] 
+h &lt;- cbind(f1, f2, f3)
+res2 &lt;- gmm(z ~ f1 + f2 + f3, x = h)
+coef(res2)
+summary(res2)$coefficients
+
+## Same result with x defined as a formula:
+
+res2 &lt;- gmm(z ~ f1 + f2 + f3, ~ f1 + f2 + f3)
+coef(res2)
+
+## The following example has been provided by Dieter Rozenich (see details).
+# It generates normal random numbers and uses the GMM to estimate 
+# mean and sd.
+#-------------------------------------------------------------------------------
+# Random numbers of a normal distribution
+# First we generate normally distributed random numbers and compute the two parameters:
+n &lt;- 1000
+x &lt;- rnorm(n, mean = 4, sd = 2)
+# Implementing the 3 moment conditions
+g &lt;- function(tet, x)
+        {
+        m1 &lt;- (tet[1] - x)
+        m2 &lt;- (tet[2]^2 - (x - tet[1])^2)
+        m3 &lt;- x^3 - tet[1]*(tet[1]^2 + 3*tet[2]^2)
+        f &lt;- cbind(m1, m2, m3)
+        return(f)
+        }
+# Implementing the jacobian
+Dg &lt;- function(tet, x)
+        {
+        jacobian &lt;- matrix(c( 1, 2*(-tet[1]+mean(x)), -3*tet[1]^2-3*tet[2]^2,0, 2*tet[2],
+			   -6*tet[1]*tet[2]), nrow=3,ncol=2)
+        return(jacobian)
+        }
+# Now we want to estimate the two parameters using the GMM.
+gmm(g, x, c(0, 0), grad = Dg)
+
+# Two-stage-least-squares (2SLS), or IV with iid errors.
+# The model is:
+# Y(t) = b[0] + b[1]C(t) + b[2]Y(t-1) + e(t)
+# e(t) is an MA(1)
+# The instruments are Z(t)={1 C(t) y(t-2) y(t-3) y(t-4)}
+
+getdat &lt;- function(n) {
+e &lt;- arima.sim(n,model=list(ma=.9))
+C &lt;- runif(n,0,5)
+Y &lt;- rep(0,n)
+Y[1] = 1 + 2*C[1] + e[1]
+for (i in 2:n){
+Y[i] = 1 + 2*C[i] + 0.9*Y[i-1] + e[i]
+}
+Yt &lt;- Y[5:n]
+X &lt;- cbind(1,C[5:n],Y[4:(n-1)])
+Z &lt;- cbind(1,C[5:n],Y[3:(n-2)],Y[2:(n-3)],Y[1:(n-4)]) 
+return(list(Y=Yt,X=X,Z=Z))
+}
+
+d &lt;- getdat(5000)
+res4 &lt;- gmm(d$Y~d$X-1,~d$Z-1,vcov="iid")
+res4
+
+### Examples with equality constraint 
+######################################
+
+# Random numbers of a normal distribution
+
+## Not run:
+# The following works but produces warning message because the dimension of coef is 1
+# Brent should be used
+
+# without named vector
+# Method Brent is used because the problem is now one-dimensional
+gmm(g, x, c(4, 0), grad = Dg, eqConst=1, method="Brent", lower=-10,upper=10)
+# with named vector
+gmm(g, x, c(mu=4, sig=2), grad = Dg, eqConst="sig", method="Brent", lower=-10,upper=10)
+
+## End(Not run)
+
+gmm(g, x, c(4, 0), grad = Dg, eqConst=1,method="Brent",lower=0,upper=6)
+gmm(g, x, c(mu=4, sig=2), grad = Dg, eqConst="sig",method="Brent",lower=0,upper=6)
+
+# Example with formula
+# first coef = 0 and second coef = 1
+# Only available for one dimensional yt
+
+z &lt;- z[,1]
+res2 &lt;- gmm(z ~ f1 + f2 + f3, ~ f1 + f2 + f3, eqConst = matrix(c(1,2,0,1),2,2))
+res2
+
+# CUE with starting t0 requires eqConst to be a vector
+
+res3 &lt;- gmm(z ~ f1 + f2 + f3, ~ f1 + f2 + f3, t0=c(0,1,.5,.5), type="cue", eqConst = c(1,2))
+res3
+
+### Examples with equality constraints, where the constrained coefficients is used to compute
+### the covariance matrix.
+### Useful when some coefficients have been estimated before, they are just identified in GMM 
+### and don't need to be re-estimated.
+### To use with caution because the covariance won't be valid if the coefficients do not solve
+### the GMM FOC.
+######################################
+
+res4 &lt;- gmm(z ~ f1 + f2 + f3, ~ f1 + f2 + f3, t0=c(0,1,.5,.5), eqConst = c(1,2), 
+  	    eqConstFullVcov=TRUE)
+summary(res4)
+
+
+### Examples with equality constraint using gmmWithConst
+###########################################################
+
+res2 &lt;- gmm(z ~ f1 + f2 + f3, ~ f1 + f2 + f3)
+gmmWithConst(res2,c("f2","f3"),c(.5,.5))
+gmmWithConst(res2,c(2,3),c(.5,.5))
+
+## Creating an object without estimation for a fixed parameter vector
+###################################################################
+
+res2_2 &lt;- evalGmm(z ~ f1 + f2 + f3, ~ f1 + f2 + f3,
+                  t0=res2$coefficients, tetw=res2$coefficients)
+summary(res2_2)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,107 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>PickStuck</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Which chains get stuck</h2>
+
+<h3>Description</h3>
+
+<p>Calculate each chain separately for the mean (across many MCMC iterations)
+of posterior log-likelihood. If the difference of the means and
+the median (across chains) of the mean of posterior is greater than the
+<code>cut</code>, chains are considered stuck. The default value for <code>cut</code>
+is 10. <code>unstick</code> manually removes stuck chains from posterior samples.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">PickStuck(x, hyper = FALSE, cut = 10, start = 1, end = NA,
+  verbose = FALSE, digits = 2)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>posterior samples</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hyper</code></td>
+<td>
+<p>whether x are hierarhcial samples</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cut</code></td>
+<td>
+<p>a criterion deciding if a chain is stuck.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>start to evaluate from which iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>end</code></td>
+<td>
+<p>end at which iteration for evaeuation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>a boolean switch to print more information</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>print how many digits. Default is 2</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>PickStuck</code> gives an index vector; <code>unstick</code> gives a DMC
+sample.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">model &lt;- BuildModel(
+p.map     = list(A = "1", B = "1", t0 = "1", mean_v = "M", sd_v = "1", st0 = "1"),
+match.map = list(M = list(s1 = 1, s2 = 2)),
+factors   = list(S = c("s1", "s2")),
+constants = c(st0 = 0, sd_v = 1),
+responses = c("r1", "r2"),
+type      = "norm")
+p.vector &lt;- c(A = .75, B = .25, t0 = .2, mean_v.true = 2.5, mean_v.false = 1.5)
+
+p.prior &lt;- BuildPrior(
+  dists = c("tnorm", "tnorm", "beta", "tnorm", "tnorm"),
+  p1    = c(A = .3, B = .3, t0 = 1, mean_v.true = 1, mean_v.false = 0),
+  p2    = c(1, 1,   1, 3, 3),
+  lower = c(0,  0,  0, NA, NA),
+  upper = c(NA,NA,  1, NA, NA))
+
+## Not run: 
+dat &lt;- simulate(model, 30, ps = p.vector)
+dmi &lt;- BuildDMI(dat, model)
+sam &lt;- run(StartNewsamples(dmi, p.prior))
+bad &lt;- PickStuck(sam)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

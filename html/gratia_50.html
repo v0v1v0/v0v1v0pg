@@ -1,0 +1,147 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>confint.fderiv</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Point-wise and simultaneous confidence intervals for derivatives of smooths</h2>
+
+<h3>Description</h3>
+
+<p>Calculates point-wise confidence or simultaneous intervals for the first
+derivatives of smooth terms in a fitted GAM.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'fderiv'
+confint(
+  object,
+  parm,
+  level = 0.95,
+  type = c("confidence", "simultaneous"),
+  nsim = 10000,
+  ncores = 1L,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>an object of class <code>"fderiv"</code> containing the estimated
+derivatives.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parm</code></td>
+<td>
+<p>which parameters (smooth terms) are to be given intervals as a
+vector of terms. If missing, all parameters are considered.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>numeric, <code style="white-space: pre;">⁠0 &lt; level &lt; 1⁠</code>; the confidence level of the
+point-wise or simultaneous interval. The default is <code>0.95</code> for a 95%
+interval.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>character; the type of interval to compute. One of <code>"confidence"</code>
+for point-wise intervals, or <code>"simultaneous"</code> for simultaneous intervals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>integer; the number of simulations used in computing the
+simultaneous intervals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>number of cores for generating random variables from a
+multivariate normal distribution. Passed to <code>mvnfast::rmvn()</code>.
+Parallelization will take place only if OpenMP is supported (but appears
+to work on Windows with current <code>R</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments for methods</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a data frame with components:
+</p>
+
+<ol>
+<li> <p><code>term</code>; factor indicating to which term each row relates,
+</p>
+</li>
+<li> <p><code>lower</code>; lower limit of the confidence or simultaneous interval,
+</p>
+</li>
+<li> <p><code>est</code>; estimated derivative
+</p>
+</li>
+<li> <p><code>upper</code>; upper limit of the confidence or simultaneous interval.
+</p>
+</li>
+</ol>
+<h3>Author(s)</h3>
+
+<p>Gavin L. Simpson
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">load_mgcv()
+
+dat &lt;- data_sim("eg1", n = 1000, dist = "normal", scale = 2, seed = 2)
+mod &lt;- gam(y ~ s(x0) + s(x1) + s(x2) + s(x3), data = dat, method = "REML")
+
+# new data to evaluate the derivatives at, say over the middle 50% of range
+# of each covariate
+middle &lt;- function(x, n = 25, coverage = 0.5) {
+  v &lt;- (1 - coverage) / 2
+  q &lt;- quantile(x, prob = c(0 + v, 1 - v), type = 8)
+  seq(q[1], q[2], length = n)
+}
+new_data &lt;- sapply(dat[c("x0", "x1", "x2", "x3")], middle)
+new_data &lt;- data.frame(new_data)
+## first derivatives of all smooths...
+fd &lt;- fderiv(mod, newdata = new_data)
+
+## point-wise interval
+ci &lt;- confint(fd, type = "confidence")
+ci
+
+## simultaneous interval for smooth term of x2
+
+x2_sint &lt;- confint(fd,
+  parm = "x2", type = "simultaneous",
+  nsim = 10000, ncores = 2
+)
+
+x2_sint
+
+
+</code></pre>
+
+
+</div>

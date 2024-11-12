@@ -1,0 +1,265 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>lmm.aireml</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Linear mixed model fitting with AIREML </h2>
+
+<h3>Description</h3>
+
+<p>Estimate the parameters of a linear mixed model, 
+using Average Information Restricted Maximum Likelihood (AIREML) algorithm.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">lmm.aireml(Y, X = matrix(1, nrow = length(Y)), K,
+           EMsteps = 0L, EMsteps_fail = 1L, EM_alpha = 1,
+           min_tau, min_s2 = 1e-06, theta, constraint = TRUE, max_iter = 50L,
+           eps = 1e-05, verbose = getOption("gaston.verbose", TRUE),
+           contrast = FALSE, get.P = FALSE) </code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p> Phenotype vector </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p> Covariable matrix. By default, a column of ones to include an intercept in the model </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p> A positive definite matrix or a <code>list</code> of such matrices </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>EMsteps</code></td>
+<td>
+<p> Number of EM steps ran prior the AIREML </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>EMsteps_fail</code></td>
+<td>
+<p> Number of EM steps performed when the AIREML algorithm fail to improve the likelihood value </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>EM_alpha</code></td>
+<td>
+<p> Tweaking parameter for the EM (see Details) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_tau</code></td>
+<td>
+<p> Minimal value for model parameter <code class="reqn">\tau</code> (if missing, will be set to <code class="reqn">10^{-6}</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_s2</code></td>
+<td>
+<p> Minimal value for model parameter <code class="reqn">\sigma^2</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p> (Optional) Optimization starting point <code>theta = c(sigma^2, tau)</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constraint</code></td>
+<td>
+<p> If <code>TRUE</code>, the model parameters respect the contraints given by <code>min_tau</code> and <code>min_s2</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_iter</code></td>
+<td>
+<p> Maximum number of iterations </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p> The algorithm stops when the gradient norm is lower than this parameter </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p> If <code>TRUE</code>, display information on the algorithm progress </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrast</code></td>
+<td>
+<p> If <code>TRUE</code>, use a contrast matrix to compute the Restricted Likelihood (usually slower)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>get.P</code></td>
+<td>
+<p>If <code>TRUE</code>, the function sends back the last matrix <code class="reqn">P</code> computed in the optimization process</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Estimate the parameters of the following linear mixed model, using AIREML algorithm:
+</p>
+<p style="text-align: center;"><code class="reqn"> Y = X\beta + \omega_1 + \ldots + \omega_k + \varepsilon </code>
+</p>
+
+<p>with <code class="reqn"> \omega_i \sim N(0,\tau_i K_i) </code> for <code class="reqn"> i \in 1, \dots,k </code> and 
+<code class="reqn"> \varepsilon \sim N(0,\sigma^2 I_n) </code>.
+</p>
+<p>The variance matrices <code class="reqn">K_1</code>, ..., <code class="reqn">K_k</code>, are specified through the parameter <code>K</code>.
+</p>
+<p>If <code>EMsteps</code> is positive, the function will use this number of EM steps to compute a better starting point
+for the AIREML algorithm. Setting <code>EMsteps</code> to a value higher than <code>max_iter</code> leads to an EM optimization.
+It can happen that after an AIREML step, the likelihood did not increase: if this 
+happens, the functions falls back to <code>EMsteps_fail</code> EM steps. The parameter <code>EM_alpha</code> can be set to 
+a value higher than <code class="reqn">1</code> to attempt to accelerate EM convergence; this could also result in uncontrolled
+behaviour and should be used with care.
+</p>
+<p>After convergence, the function also compute Best Linear Unbiased Predictors (BLUPs) for 
+<code class="reqn">\beta</code> and <code class="reqn">\omega</code>, and an 
+estimation of the participation of the fixed effects to the variance of <code class="reqn">Y</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A named list with members:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>sigma2</code></td>
+<td>
+<p> Estimate of the model parameter <code class="reqn">\sigma^2</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p> Estimate(s) of the model parameter(s) <code class="reqn">\tau_1, \dots, \tau_k</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logL</code></td>
+<td>
+<p> Value of log-likelihood </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logL0</code></td>
+<td>
+<p> Value of log-likelihood under the null model (without random effect) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>niter</code></td>
+<td>
+<p> Number of iterations done </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>norm_grad</code></td>
+<td>
+<p> Last computed gradient's norm </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>P</code></td>
+<td>
+<p> Last computed value of matrix P (see reference) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Py</code></td>
+<td>
+<p> Last computed value of vector Py (see reference) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BLUP_omega</code></td>
+<td>
+<p> BLUPs of random effects </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BLUP_beta</code></td>
+<td>
+<p> BLUPs of fixed effects <code class="reqn">\beta</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varbeta</code></td>
+<td>
+<p> Variance matrix for <code class="reqn">\beta</code> estimates </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varXbeta</code></td>
+<td>
+<p> Participation of fixed effects to variance of Y </p>
+</td>
+</tr>
+</table>
+<p>If <code>get.P = TRUE</code>, there is an additional member:
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>P</code></td>
+<td>
+<p>The last matrix <code class="reqn">P</code> computed in the AIREML step</p>
+</td>
+</tr></table>
+<h3>Author(s)</h3>
+
+<p> Hervé Perdry and Claire Dandine-Roulland </p>
+
+
+<h3>References</h3>
+
+<p>Gilmour, A. R., Thompson, R., &amp; Cullis, B. R. (1995), <em>Average information REML: an efficient algorithm for variance parameter estimation in linear mixed models</em>, Biometrics, <b>1440-1450</b></p>
+
+
+<h3>See Also</h3>
+
+<p><code>lmm.diago</code>, <code>logistic.mm.aireml</code>, <code>lmm.simu</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Load data
+data(AGT)
+x &lt;- as.bed.matrix(AGT.gen, AGT.fam, AGT.bim)
+
+# Compute Genetic Relationship Matrix
+standardize(x) &lt;- "p"
+K &lt;- GRM(x)
+
+# Simulate a quantitative genotype under the LMM
+set.seed(1)
+y &lt;- 1 + x %*% rnorm(ncol(x), sd = 1)/sqrt(ncol(x)) + rnorm(nrow(x), sd = sqrt(2))
+
+# Estimates
+estimates &lt;- lmm.aireml(y, K = K, verbose = FALSE)
+str(estimates)
+</code></pre>
+
+
+</div>

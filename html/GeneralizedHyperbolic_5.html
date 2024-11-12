@@ -1,0 +1,377 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gigFit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit the Generalized Inverse Gausssian Distribution to Data</h2>
+
+<h3>Description</h3>
+
+<p>Fits a generalized inverse Gaussian distribution to data.
+Displays the histogram, log-histogram (both with fitted densities),
+Q-Q plot and P-P plot for the fit which has the maximum likelihood.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  gigFit(x, freq = NULL, paramStart = NULL,
+         startMethod = c("Nelder-Mead","BFGS"),
+         startValues = c("LM","GammaIG","MoM","Symb","US"),
+         method = c("Nelder-Mead","BFGS","nlm"),
+         stand = TRUE, plots = FALSE, printOut = FALSE,
+         controlBFGS = list(maxit = 200),
+         controlNM = list(maxit = 1000),
+         maxitNLM = 1500, ...)
+
+
+  ## S3 method for class 'gigFit'
+print(x,
+        digits = max(3, getOption("digits") - 3), ...)
+
+  ## S3 method for class 'gigFit'
+plot(x, which = 1:4,
+       plotTitles = paste(c("Histogram of ", "Log-Histogram of ",
+                          "Q-Q Plot of ", "P-P Plot of "),
+                          x$obsName, sep = ""),
+       ask = prod(par("mfcol")) &lt; length(which) &amp; dev.interactive(), ...)
+
+  ## S3 method for class 'gigFit'
+coef(object, ...)
+
+  ## S3 method for class 'gigFit'
+vcov(object, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Data vector for <code>gigFit</code>. Object of class
+<code>"gigFit"</code> for <code>print.gigFit</code> and <code>plot.gigFit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>freq</code></td>
+<td>
+<p>A vector of weights with length equal to <code>length(x)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>paramStart</code></td>
+<td>
+<p>A user specified starting parameter vector
+<code>param</code> taking the form <code>c(chi, psi, lambda)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startMethod</code></td>
+<td>
+<p>Method used by <code>gigFitStartMoM</code> in calls to
+<code>optim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startValues</code></td>
+<td>
+<p>Code giving the method of determining starting
+values for finding the maximum likelihood estimate of <code>param</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Different optimisation methods to consider.
+See <b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stand</code></td>
+<td>
+<p>Logical. If <code>TRUE</code>, the data is first standardized
+by dividing by the sample standard deviation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plots</code></td>
+<td>
+<p>Logical. If <code>FALSE</code> suppresses printing of the
+histogram, log-histogram, Q-Q plot and P-P plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>printOut</code></td>
+<td>
+<p>Logical. If <code>FALSE</code> suppresses printing of
+results of fitting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>controlBFGS</code></td>
+<td>
+<p>A list of control parameters for <code>optim</code> when using
+the <code>"BFGS"</code> optimisation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>controlNM</code></td>
+<td>
+<p>A list of control parameters for <code>optim</code>
+when using the <code>"Nelder-Mead"</code> optimisation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxitNLM</code></td>
+<td>
+<p>A positive integer specifying the maximum number of
+iterations when using the <code>"nlm"</code> optimisation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Desired number of digits when the object is printed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>which</code></td>
+<td>
+<p>If a subset of the plots is required, specify a subset of
+the numbers <code>1:4</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plotTitles</code></td>
+<td>
+<p>Titles to appear above the plots.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ask</code></td>
+<td>
+<p>Logical. If <code>TRUE</code>, the user is <em>ask</em>ed before
+each plot, see <code>par(ask = .)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Passes arguments to <code>optim</code>, <code>par</code>,
+<code>hist</code>, <code>logHist</code>, <code>qqgig</code> and <code>ppgig</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>Object of class <code>"gigFit"</code> for <code>coef.gigFit</code>
+and for <code>vcov.gigFit</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Possible values of the argument <code>startValues</code> are the following:
+</p>
+
+<dl>
+<dt><code>"LM"</code></dt>
+<dd>
+<p>Based on fitting linear models to the upper tails
+of the data <code>x</code> and the inverse of the data <code>1/x</code>.</p>
+</dd>
+<dt><code>"GammaIG"</code></dt>
+<dd>
+<p>Based on fitting gamma and inverse gamma
+distributions.</p>
+</dd>
+<dt><code>"MoM"</code></dt>
+<dd>
+<p>Method of moments.</p>
+</dd>
+<dt><code>"Symb"</code></dt>
+<dd>
+<p>Not yet implemented.</p>
+</dd>
+<dt><code>"US"</code></dt>
+<dd>
+<p>User-supplied.</p>
+</dd>
+</dl>
+<p>If <code>startValues = "US"</code> then a value must be supplied for
+<code>paramStart</code>.
+</p>
+<p>For the details concerning the use of <code>paramStart</code>,
+<code>startMethod</code>, and <code>startValues</code>, see
+<code>gigFitStart</code>.
+</p>
+<p>The three optimisation methods currently available are:
+</p>
+
+<dl>
+<dt><code>"BFGS"</code></dt>
+<dd>
+<p>Uses the quasi-Newton method <code>"BFGS"</code> as
+documented in <code>optim</code>.</p>
+</dd>
+<dt><code>"Nelder-Mead"</code></dt>
+<dd>
+<p>Uses an implementation of the Nelder and
+Mead method as documented in <code>optim</code>.</p>
+</dd>
+<dt><code>"nlm"</code></dt>
+<dd>
+<p>Uses the <code>nlm</code> function in R.</p>
+</dd>
+</dl>
+<p>For details of how to pass control information for optimisation using
+<code>optim</code> and <code>nlm</code>, see <code>optim</code> and
+<code>nlm.</code>
+</p>
+<p>When <code>method = "nlm"</code> is used, warnings may be produced. These do
+not appear to be a problem.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>gigFit</code> returns a list with components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>A vector giving the maximum likelihood estimate of
+param, as <code>c(chi, psi, lambda)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxLik</code></td>
+<td>
+<p>The value of the maximised log-likelihood.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Optimisation method used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conv</code></td>
+<td>
+<p>Convergence code. See the relevant documentation (either
+<code>optim</code> or <code>nlm</code>) for details on
+convergence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>Number of iterations of optimisation routine.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obs</code></td>
+<td>
+<p>The data used to fit the generalized inverse Gaussian
+distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obsName</code></td>
+<td>
+<p>A character string with the actual <code>x</code> argument
+name.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>paramStart</code></td>
+<td>
+<p>Starting value of <code>param</code> returned by call to
+<code>gigFitStart</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>svName</code></td>
+<td>
+<p>Descriptive name for the method finding start values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startValues</code></td>
+<td>
+<p>Acronym for the method of finding start values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>breaks</code></td>
+<td>
+<p>The cell boundaries found by a call to
+<code>hist</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>midpoints</code></td>
+<td>
+<p>The cell midpoints found by a call to
+<code>hist</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>empDens</code></td>
+<td>
+<p>The estimated density found by a call to
+<code>hist</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>David Scott <a href="mailto:d.scott@auckland.ac.nz">d.scott@auckland.ac.nz</a>, David Cusack</p>
+
+
+<h3>References</h3>
+
+<p>Jörgensen, B. (1982). <em>Statistical Properties of
+the Generalized Inverse Gaussian Distribution</em>. Lecture Notes in
+Statistics, Vol. 9, Springer-Verlag, New York.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>optim</code>, <code>par</code>,
+<code>hist</code>, <code>logHist</code> (pkg <a href="https://CRAN.R-project.org/package=DistributionUtils"><span class="pkg">DistributionUtils</span></a>),
+<code>qqgig</code>, <code>ppgig</code>, and <code>gigFitStart</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">param &lt;- c(1, 1, 1)
+dataVector &lt;- rgig(500, param = param)
+## See how well gigFit works
+gigFit(dataVector)
+##gigFit(dataVector, plots = TRUE)
+
+## See how well gigFit works in the limiting cases
+## Gamma case
+dataVector2 &lt;- rgamma(500, shape = 1, rate = 1)
+gigFit(dataVector2)
+
+## Inverse gamma
+require(actuar)
+dataVector3 &lt;- rinvgamma(500, shape = 1, rate = 1)
+gigFit(dataVector3)
+
+## Use nlm instead of default
+gigFit(dataVector, method = "nlm")
+
+</code></pre>
+
+
+</div>

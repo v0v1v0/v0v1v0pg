@@ -1,0 +1,317 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GEcalib</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generalized Entropy Calibration</h2>
+
+<h3>Description</h3>
+
+<p><code>GEcalib</code> computes the calibration weights.
+Generalized entropy calibration weights maximize the generalized entropy:
+</p>
+<p style="text-align: center;"><code class="reqn">H(\bm{\omega}) = -\sum_{i \in A} G(\omega_i),</code>
+</p>
+
+<p>subject to the calibration constraints <code class="reqn">\sum_{i \in A} \omega_i \bm{z}_i = \sum_{i \in U} \bm{z}_i</code>,
+where <code class="reqn">A</code> denotes the sample index, and <code class="reqn">U</code> represents the population index. 
+The auxiliary variables, whose population totals are known, are defined as <code class="reqn">\bm{z}_i^T = (\bm{x}_i^T, g(d_i))</code>, 
+where <code class="reqn">g</code> is the first-order derivative of the gerenalized entropy <code class="reqn">G</code>, 
+and <code class="reqn">d_i</code> is the design weight for each sampled unit <code class="reqn">i \in A</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GEcalib(
+  formula,
+  dweight,
+  data = NULL,
+  const,
+  method = c("GEC", "GEC0", "DS"),
+  entropy = c("SL", "EL", "ET", "CE", "HD", "PH"),
+  weight.scale = 1,
+  G.scale = 1,
+  K_alpha = NULL,
+  is.total = TRUE,
+  del = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>An object of class "formula" specifying the calibration model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dweight</code></td>
+<td>
+<p>A vector of sampling weights.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>An optional data frame containing the variables in the model (specified by <code>formula</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>const</code></td>
+<td>
+<p>A vector used in the calibration constraint for population totals( or means).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>The method to be used in calibration. See "Details" for more information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>entropy</code></td>
+<td>
+<p>The generalized entropy used in calibration, which can be either a numeric value or a string. 
+If numeric, <code>entropy</code> represents the order of Renyi's entropy, where 
+<code class="reqn">G(\omega) = r^{-1}(r+1)^{-1}\omega^{r+1}</code> if <code class="reqn">r \neq 0, -1</code>.
+If a string, valid options include: 
+"SL" (Squared-loss), "EL" (Empirical Likelihood), "ET" (Exponential Tilting), 
+"CE" (Cross-Entropy), "HD" (Hellinger Distance), and "PH" (Pseudo-Huber). See "Summary" for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight.scale</code></td>
+<td>
+<p>Positive scaling factor for the calibration weights <code class="reqn">\omega_i</code>. Asymptotics justify setting <code>weight.scale</code> 
+to the finite population correction (<code class="reqn">fpc = n / N</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>G.scale</code></td>
+<td>
+<p>Positive scaling factor for the generalized entropy function <code class="reqn">G</code>. Asymptotics justify setting 
+<code>G.scale</code> to the variance of the error term in a linear super-population model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K_alpha</code></td>
+<td>
+<p>The <code class="reqn">K</code> function used in joint optimization when the <code>const</code> of the debiasing covariate 
+<code class="reqn">g(d_i)</code> is not available. <code>K_alpha</code> can be <code>NULL</code>, <code>"log"</code>, or custom functions. See "Details".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>is.total</code></td>
+<td>
+<p>Logical, <code>TRUE</code> if <code>sum(const[1])</code> equals the population size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>del</code></td>
+<td>
+<p>The optional threshold (<code class="reqn">\delta</code>) used when Pseudo-Huber (PH) entropy is selected.
+<code>del = quantile(dweight, 0.75)</code> if not specified.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>GEcal</code> object returns the calibration weights and necessary information for estimating population totals(or mean).
+</p>
+<p>The terms to the right of the ~ symbol in the <code>formula</code> argument define the calibration constraints.
+When <code>method == "GEC"</code>, the debiasing covariate <code>g(dweight)</code> must be included in the <code>formula</code>.
+If the population total(mean) of <code>g(dweight)</code> is unavailable, <code>const</code> that corresponds to <code>g(dweight)</code> can be set to <code>NA</code>.
+In this case, <code>GECalib</code> performs joint optimization over
+both the calibration weights <code class="reqn">\omega_i</code> and the missing value of <code>const</code>.
+</p>
+<p>The length of the <code>const</code> vector should match the number of columns in the <code>model.matrix</code> generated by <code>formula</code>.
+Additionally, the condition number of the <code>model.matrix</code> must exceed <code>.Machine$double.eps</code> to ensure its invertibility.
+</p>
+<p>Both <code>weight.scale</code> and <code>G.scale</code> are positive scaling factors used for calibration.
+Note that <code>weight.scale</code> is not supported when <code>method == "DS"</code>.
+</p>
+<p>Let <code class="reqn">q_i</code> be the scaling factor for the generalized entropy function <code class="reqn">G</code>, 
+and <code class="reqn">\phi_i</code> be the scaling factor for the calibration weights <code class="reqn">\omega_i</code>.
+</p>
+<p>If <code>method == "GEC"</code>, <code>GEcalib</code> minimizes the negative entropy:
+</p>
+<p style="text-align: center;"><code class="reqn">\sum_{i \in A} q_iG(\phi_i\omega_i),</code>
+</p>
+
+<p>with respect to <code class="reqn">\bm \omega</code> subject to the calibration constraints <code class="reqn">\sum_{i \in A} \omega_i \bm{z}_i = \sum_{i \in U} \bm{z}_i</code>,
+where <code class="reqn">\bm{z}_i^T = (\bm{x}_i^T, q_i \phi_i g(\phi_i d_i))</code>, <code class="reqn">A</code> denotes the sample index, and <code class="reqn">U</code> represents the population index. 
+</p>
+<p>If <code>method == "GEC"</code>, but an element of <code>const</code> corresponding to the debiasing covariate 
+<code class="reqn">g(d_i)</code> is <code>NA</code>, <code>GEcalib</code> minimizes the negative adjusted entropy:
+</p>
+<p style="text-align: center;"><code class="reqn">\sum_{i \in A} q_iG(\phi_i\omega_i) - K(\alpha),</code>
+</p>
+
+<p>with respect to <code class="reqn">\bm \omega</code> and <code class="reqn">\alpha</code> subject to the calibration constraints 
+<code class="reqn">\sum_{i \in A} \omega_i (\bm{x}_i^T, q_i \phi_i g(\phi_i d_i)) = \left(\sum_{i \in U} \bm x_i, \alpha \right)</code>,
+where the solution <code class="reqn">\hat \alpha</code> is an estimate of population total for <code class="reqn">g(d_i)</code>.
+Examples of <code class="reqn">K(\alpha)</code> includes <code class="reqn">K(\alpha) = \alpha</code> when <code>K_alpha == NULL</code>, and 
+</p>
+<p style="text-align: center;"><code class="reqn">K(\alpha) = \left(\sum_{i \in A} d_i g(d_i) + N \right) 
+\log \left| \frac{1}{N}\sum_{i \in A}q_i \phi_i \omega_i g(\phi_i \omega_i) + 1  \right|</code>
+</p>
+
+<p>when <code>K_alpha == "log"</code>.
+</p>
+<p>If <code>method == "GEC0"</code>, <code>GEcalib</code> minimizes the negative adjusted entropy:
+</p>
+<p style="text-align: center;"><code class="reqn">\sum_{i \in A} q_iG(\phi_i\omega_i) - q_i\phi_i\omega_i g(\phi_i \omega_i)</code>
+</p>
+
+<p>with respect to <code class="reqn">\bm \omega</code> subject to the calibration constraints <code class="reqn">\sum_{i \in A} \omega_i \bm{x}_i = \sum_{i \in U} \bm{x}_i</code>.
+</p>
+<p>If <code>method == "DS"</code>, <code>GEcalib</code> minimizes the divergence between <code class="reqn">\bm \omega</code> and <code class="reqn">\bm d</code>:
+</p>
+<p style="text-align: center;"><code class="reqn">\sum_{i \in A} q_id_i \tilde G(\omega_i / d_i)</code>
+</p>
+
+<p>with respect to <code class="reqn">\bm \omega</code> subject to the calibration constraints <code class="reqn">\sum_{i \in A} \omega_i \bm{x}_i = \sum_{i \in U} \bm{x}_i</code>. 
+When <code>method == "DS"</code>, <code>weight.scale</code>, the scaling factor for the calibration weights <code class="reqn">\phi_i</code>, is not applicable.
+</p>
+<p>Examples of <code class="reqn">G</code> and <code class="reqn">\tilde G</code> are given in "Summary".
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class <code>calibration</code> including the calibration weights 
+and data needed for estimation.
+</p>
+
+
+<h3>Summary</h3>
+
+<p>The table below provides a comparison between the <strong>GEC</strong> and <strong>DS</strong> methods.
+</p>
+
+<table>
+<tr>
+<td style="text-align: center;">
+<strong>GEC</strong> </td>
+<td style="text-align: center;"> <strong>DS</strong> </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+</td>
+<td style="text-align: center;"> </td>
+</tr>
+<tr>
+<td style="text-align: center;"> 
+<code class="reqn">\min_{\bm \omega} \left(-H(\bm \omega)\right) = \sum_{i \in A}G(\omega_i) \quad</code> </td>
+<td style="text-align: center;"> 
+<code class="reqn">\quad \min_{\bm \omega} D(\bm \omega, \bm d) = \sum_{i \in A}d_i \tilde G(\omega_i / d_i)</code> </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+</td>
+<td style="text-align: center;"> </td>
+</tr>
+<tr>
+<td style="text-align: center;"> 
+s.t. <code class="reqn">\sum_{i \in A} \omega_i (\bm{x}_i^T, g(d_i)) = \sum_{i \in U} (\bm{x}_i^T, g(d_i))</code> </td>
+<td style="text-align: center;">
+s.t. <code class="reqn">\sum_{i \in A} \omega_i \bm{x}_i^T = \sum_{i \in U} \bm{x}_i^T</code> </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+</td>
+<td style="text-align: center;"> </td>
+</tr>
+<tr>
+<td style="text-align: center;"> 
+<code class="reqn">G(\omega) = \begin{cases} \frac{1}{r(r+1)} \omega^{r+1} &amp; r \neq 0, -1\\ 
+\omega \log \omega - \omega &amp; r = 0\text{(ET)} \\ 
+-\log \omega &amp; r = -1\text{(EL)} \end{cases}</code> 
+</td>
+<td style="text-align: center;"> <code class="reqn">\tilde G(\omega) = \begin{cases} \frac{1}{r(r+1)} \left(\omega^{r+1} - (r+1)\omega + r\right) &amp; r \neq 0, -1 \\
+\omega \log \omega - \omega + 1 &amp; r = 0\text{(ET)} \\
+-\log \omega + \omega - 1 &amp; r = -1\text{(EL)} \end{cases}</code> </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+</td>
+</tr>
+</table>
+<p>If <code>method == "GEC"</code>, further examples include
+</p>
+<p style="text-align: center;"><code class="reqn">G(\omega) = (\omega - 1) \log (\omega-1) - \omega \log \omega</code>
+</p>
+
+<p>when <code>entropy == "CE"</code>, and
+</p>
+<p style="text-align: center;"><code class="reqn">G(\omega) = \delta^2 \left(1 + (\omega / \delta)^2 \right)^{1/2}</code>
+</p>
+
+<p>for a threshold <code class="reqn">\delta</code> when <code>entropy == "PH"</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Yonghyun Kwon
+</p>
+
+
+<h3>References</h3>
+
+<p>Kwon, Y., Kim, J., &amp; Qiu, Y. (2024). Debiased calibration estimation using generalized entropy in survey sampling.
+Arxiv preprint &lt;<a href="https://arxiv.org/abs/2404.01076">https://arxiv.org/abs/2404.01076</a>&gt;
+</p>
+<p>Deville, J. C., and Särndal, C. E. (1992). Calibration estimators in survey sampling.
+Journal of the American statistical Association, 87(418), 376-382.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(11)
+N = 10000
+x = data.frame(x1 = rnorm(N, 2, 1), x2= runif(N, 0, 4))
+pi = pt((-x[,1] / 2 - x[,2] / 2), 3);
+pi = ifelse(pi &gt;.7, .7, pi)
+
+delta = rbinom(N, 1, pi)
+Index_S = (delta == 1)
+pi_S = pi[Index_S]; d_S = 1 / pi_S
+x_S = x[Index_S,]
+
+# Deville &amp; Sarndal(1992)'s calibration using divergence
+w1 &lt;- GECal::GEcalib(~ ., dweight = d_S, data = x_S,
+                    const = colSums(cbind(1, x)),
+                    entropy = "ET", method = "DS")$w
+
+# Generalized entropy calibration without debiasing covariate 
+w2 &lt;- GECal::GEcalib(~ ., dweight = d_S, data = x_S,
+                    const = colSums(cbind(1, x)),
+                    entropy = "ET", method = "GEC0")$w
+all.equal(w1, w2)
+
+# Generalized entropy calibration with debiasing covariate
+w3 &lt;- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
+                    const = colSums(cbind(1, x, log(1 / pi))),
+                    entropy = "ET", method = "GEC")$w
+                    
+# Generalized entropy calibration with debiasing covariate
+# when its population total is unknown
+w4 &lt;- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
+                    const = colSums(cbind(1, x, NA)),
+                    entropy = "ET", method = "GEC")$w
+all.equal(w1, w4)
+
+w5 &lt;- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
+const = colSums(cbind(1, x, NA)),
+entropy = "ET", method = "GEC", K_alpha = "log")$w 
+</code></pre>
+
+
+</div>

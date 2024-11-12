@@ -1,0 +1,302 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>modelcomp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Item-level model comparison using Wald, LR or LM tests</h2>
+
+<h3>Description</h3>
+
+<p>This function evaluates whether the saturated G-DINA model can be replaced by reduced
+CDMs without significant loss in model data fit for each item using the Wald test, likelihood ratio (LR) test or Lagrange multiplier (LM) test.
+For Wald test, see de la Torre (2011), de la Torre and Lee (2013), Ma, Iaconangelo and de la Torre (2016) and Ma &amp; de la Torre (2018) for details.
+For LR test and a two-step LR approximation procedure, see Sorrel, de la Torre, Abad, and Olea (2017), Ma (2017) and Ma &amp; de la Torre (2019).
+For LM test, which is only applicable for DINA, DINO and ACDM, see Sorrel, Abad, Olea, de la Torre, and Barrada (2017).
+This function also calculates the dissimilarity
+between the reduced models and the G-DINA model, which can be viewed as a measure of effect size (Ma, Iaconangelo &amp; de la Torre, 2016).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">modelcomp(
+  GDINA.obj = NULL,
+  method = "Wald",
+  items = "all",
+  p.adjust.methods = "holm",
+  models = c("DINA", "DINO", "ACDM", "LLM", "RRUM"),
+  decision.args = list(rule = "largestp", alpha.level = 0.05, adjusted = FALSE),
+  DS = FALSE,
+  Wald.args = list(SE.type = 2, varcov = NULL),
+  LR.args = list(LR.approx = FALSE),
+  LM.args = list(reducedMDINA = NULL, reducedMDINO = NULL, reducedMACDM = NULL, SE.type =
+    2)
+)
+
+## S3 method for class 'modelcomp'
+extract(
+  object,
+  what = c("stats", "pvalues", "adj.pvalues", "df", "DS", "selected.model"),
+  digits = 4,
+  ...
+)
+
+## S3 method for class 'modelcomp'
+summary(object, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>GDINA.obj</code></td>
+<td>
+<p>An estimated model object of class <code>GDINA</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>method for item level model comparison; can be <code>wald</code>, <code>LR</code> or <code>LM</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>items</code></td>
+<td>
+<p>a vector of items to specify the items for model comparsion</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.adjust.methods</code></td>
+<td>
+<p>adjusted p-values for multiple hypothesis tests. This is conducted using <code>p.adjust</code> function in <span class="pkg">stats</span>,
+and therefore all adjustment methods supported by <code>p.adjust</code> can be used, including <code>"holm"</code>,
+<code>"hochberg"</code>, <code>"hommel"</code>, <code>"bonferroni"</code>, <code>"BH"</code> and <code>"BY"</code>. See <code>p.adjust</code>
+for more details. <code>"holm"</code> is the default, indicating the Holm method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>models</code></td>
+<td>
+<p>a vector specifying which reduced CDMs are possible reduced CDMs for each
+item. The default is "DINA","DINO","ACDM","LLM",and "RRUM".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>decision.args</code></td>
+<td>
+<p>a list of options for determining the most appropriate models including (1) <code>rule</code> can be
+either <code>"simpler"</code> or <code>"largestp"</code>. See details;
+(2) <code>alpha.level</code> for the nominal level of decision; and (3) <code>adjusted</code> can be either <code>TRUE</code> or <code>FALSE</code>
+indicating whether the decision is based on p value (<code>adjusted = FALSE</code>) or adjusted p values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DS</code></td>
+<td>
+<p>whether dissimilarity index should be calculated? <code>FALSE</code> is the default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Wald.args</code></td>
+<td>
+<p>a list of options for Wald test including (1) <code>SE.type</code> giving the type of
+covariance matrix for the Wald test; by default, it uses outer product of gradient based on incomplete information matrix;
+(2) <code>varcov</code> for user specified variance-covariance matrix. If supplied, it must
+be a list, giving the variance covariance matrix of success probability for each item or category.
+The default is <code>NULL</code>, in which case, the estimated variance-covariance matrix from the GDINA function
+is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LR.args</code></td>
+<td>
+<p>a list of options for LR test including for now only <code>LR.approx</code>, which is either <code>TRUE</code> or <code>FALSE</code>,
+indicating whether a two-step LR approximation is implemented or not.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LM.args</code></td>
+<td>
+<p>a list of options for LM test including <code>reducedMDINA</code>, <code>reducedMDINO</code>, and <code>reducedMACDM</code> for
+DINA, DINO and ACDM estimates from the <code>GDINA</code> function; <code>SE.type</code> specifies the type of covariance matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>object of class <code>modelcomp</code> for various S3 methods</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>what</code></td>
+<td>
+<p>argument for S3 method <code>extract</code> indicating what to extract;
+It can be <code>"wald"</code> for wald statistics, <code>"wald.p"</code> for associated p-values,
+<code>"df"</code> for degrees of freedom,
+and <code>"DS"</code> for dissimilarity between G-DINA and other CDMs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>How many decimal places in each number? The default is 4.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>After the test statistics for each reduced CDM were calculated for each item, the
+reduced models with p values less than the pre-specified alpha level were rejected.
+If all reduced models were rejected for an item, the G-DINA model was used as the best model;
+if at least one reduced model was retained, two diferent rules can be implemented for selecting
+the best model specified in argument <code>decision.args</code>:
+</p>
+<p>(1) when <code>rule="simpler"</code>,
+</p>
+<p>If (a) the DINA or DINO model
+was one of the retained models, then the DINA or DINO model with the larger p
+value was selected as the best model; but if (b) both DINA and DINO were rejected, the reduced
+model with the largest p value was selected as the best model for this item. Note that
+when the p-values of several reduced models were greater than 0.05, the DINA and DINO models were
+preferred over the A-CDM, LLM, and R-RUM because of their simplicity.
+</p>
+<p>(2) When <code>rule="largestp"</code> (default),
+</p>
+<p>The reduced model with the largest p-values is selected as the most appropriate model.
+</p>
+
+
+<h3>Value</h3>
+
+<p>an object of class <code>modelcomp</code>. Elements that can be
+extracted using <code>extract</code> method include
+</p>
+
+<dl>
+<dt>stats</dt>
+<dd>
+<p>Wald or LR statistics</p>
+</dd>
+<dt>pvalues</dt>
+<dd>
+<p>p-values associated with the test statistics</p>
+</dd>
+<dt>adj.pvalues</dt>
+<dd>
+<p>adjusted p-values</p>
+</dd>
+<dt>df</dt>
+<dd>
+<p>degrees of freedom</p>
+</dd>
+<dt>DS</dt>
+<dd>
+<p>dissimilarity between G-DINA and other CDMs</p>
+</dd>
+</dl>
+<h3>Methods (by generic)</h3>
+
+
+<ul>
+<li> <p><code>extract(modelcomp)</code>: extract various elements from <code>modelcomp</code> objects
+</p>
+</li>
+<li> <p><code>summary(modelcomp)</code>: print summary information
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Wenchao Ma, The University of Alabama, <a href="mailto:wenchao.ma@ua.edu">wenchao.ma@ua.edu</a> <br> Miguel A. Sorrel, Universidad Autonoma de Madrid <br> Jimmy de la Torre, The University of Hong Kong
+</p>
+
+
+<h3>References</h3>
+
+<p>de la Torre, J., &amp; Lee, Y. S. (2013). Evaluating the wald test for item-level comparison of
+saturated and reduced models in cognitive diagnosis. <em>Journal of Educational Measurement, 50</em>, 355-373.
+</p>
+<p>Ma, W., Iaconangelo, C., &amp; de la Torre, J. (2016). Model similarity, model selection and attribute classification.
+<em>Applied Psychological Measurement, 40</em>, 200-217.
+</p>
+<p>Ma, W. (2017). <em>A Sequential Cognitive Diagnosis Model for Graded Response: Model Development, Q-Matrix Validation,and Model Comparison. Unpublished doctoral dissertation.</em> New Brunswick, NJ: Rutgers University.
+</p>
+<p>Ma, W., &amp; de la Torre, J. (2019). Category-Level Model Selection for the Sequential G-DINA Model. <em>Journal of Educational and Behavioral Statistics</em>. 44, 61-82.
+</p>
+<p>Ma, W., &amp; de la Torre, J. (2020). GDINA: An R Package for Cognitive Diagnosis Modeling. <em>Journal of Statistical Software, 93(14)</em>, 1-26.
+</p>
+<p>Sorrel, M. A., Abad, F. J., Olea, J., de la Torre, J., &amp; Barrada, J. R. (2017). Inferential Item-Fit Evaluation in Cognitive Diagnosis Modeling. <em>Applied Psychological Measurement, 41,</em> 614-631.
+</p>
+<p>Sorrel, M. A., de la Torre, J., Abad, F. J., &amp; Olea, J. (2017). Two-Step Likelihood Ratio Test for Item-Level Model Comparison in Cognitive Diagnosis Models. <em>Methodology, 13</em>, 39-47.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GDINA</code>, <code>autoGDINA</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+dat &lt;- sim10GDINA$simdat
+Q &lt;- sim10GDINA$simQ
+# --- GDINA model ---#
+fit &lt;- GDINA(dat = dat, Q = Q, model = "GDINA")
+fit
+
+###################
+#
+# Wald test
+#
+###################
+
+w &lt;- modelcomp(fit)
+w
+# wald statistics
+extract(w,"stats")
+#p values
+extract(w,"pvalues")
+# selected models
+extract(w,"selected.model")
+##########################
+#
+# LR and Two-step LR test
+#
+##########################
+
+lr &lt;- modelcomp(fit,method = "LR")
+lr
+TwostepLR &lt;- modelcomp(fit,items =c(6:10),method = "LR",LR.args = list(LR.approx = TRUE))
+TwostepLR
+
+##########################
+#
+# LM test
+#
+##########################
+
+dina &lt;- GDINA(dat = dat, Q = Q, model = "DINA")
+dino &lt;- GDINA(dat = dat, Q = Q, model = "DINO")
+acdm &lt;- GDINA(dat = dat, Q = Q, model = "ACDM")
+lm &lt;- modelcomp(method = "LM",LM.args=list(reducedMDINA = dina,
+reducedMDINO = dino, reducedMACDM  = acdm))
+lm
+
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

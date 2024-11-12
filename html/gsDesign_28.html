@@ -1,0 +1,184 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gsDensity</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Group sequential design interim density function</h2>
+
+<h3>Description</h3>
+
+<p>Given an interim analysis <code>i</code> of a group sequential design and a vector
+of real values <code>zi</code>, <code>gsDensity()</code> computes an interim density
+function at analysis <code>i</code> at the values in <code>zi</code>.  For each value in
+<code>zi</code>, this interim density is the derivative of the probability that
+the group sequential trial does not cross a boundary prior to the
+<code>i</code>-th analysis and at the <code>i</code>-th analysis the interim Z-statistic
+is less than that value. When integrated over the real line, this density
+computes the probability of not crossing a bound at a previous analysis. It
+corresponds to the subdistribution function at analysis <code>i</code> that
+excludes the probability of crossing a bound at an earlier analysis.
+</p>
+<p>The initial purpose of this routine was as a component needed to compute the
+predictive power for a trial given an interim result; see
+<code>gsPP</code>.
+</p>
+<p>See Jennison and Turnbull (2000) for details on how these computations are
+performed.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gsDensity(x, theta = 0, i = 1, zi = 0, r = 18)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of type <code>gsDesign</code> or <code>gsProbability</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>a vector with <code class="reqn">\theta</code> value(s) at which the interim
+density function is to be computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>i</code></td>
+<td>
+<p>analysis at which interim z-values are given; must be from 1 to
+<code>x$k</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zi</code></td>
+<td>
+<p>interim z-value at analysis <code>i</code> (scalar)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>Integer value controlling grid for numerical integration as in
+Jennison and Turnbull (2000); default is 18, range is 1 to 80.  Larger
+values provide larger number of grid points and greater accuracy.  Normally
+<code>r</code> will not be changed by the user.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>zi</code></td>
+<td>
+<p>The input vector <code>zi</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>The input vector
+<code>theta</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>density</code></td>
+<td>
+<p>A matrix with <code>length(zi)</code> rows and
+<code>length(theta)</code> columns.  The subdensity function for <code>z[j]</code>,
+<code>theta[m]</code> at analysis <code>i</code> is returned in <code>density[j,m]</code>. </p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>The gsDesign technical manual is available at
+<a href="https://keaven.github.io/gsd-tech-manual/">https://keaven.github.io/gsd-tech-manual/</a>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Keaven Anderson <a href="mailto:keaven_anderson@merck.com">keaven_anderson@merck.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Jennison C and Turnbull BW (2000), <em>Group Sequential
+Methods with Applications to Clinical Trials</em>. Boca Raton: Chapman and Hall.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gsDesign</code>, <code>gsProbability</code>,
+<code>gsBoundCP</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(ggplot2)
+# set up a group sequential design
+x &lt;- gsDesign()
+
+# set theta values where density is to be evaluated
+theta &lt;- x$theta[2] * c(0, .5, 1, 1.5)
+
+# set zi values from -1 to 7 where density is to be evaluated
+zi &lt;- seq(-3, 7, .05)
+
+# compute subdensity values at analysis 2
+y &lt;- gsDensity(x, theta = theta, i = 2, zi = zi)
+
+# plot sub-density function for each theta value
+plot(y$zi, y$density[, 3],
+  type = "l", xlab = "Z",
+  ylab = "Interim 2 density", lty = 3, lwd = 2
+)
+lines(y$zi, y$density[, 2], lty = 2, lwd = 2)
+lines(y$zi, y$density[, 1], lwd = 2)
+lines(y$zi, y$density[, 4], lty = 4, lwd = 2)
+title("Sub-density functions at interim analysis 2")
+legend(
+  x = c(3.85, 7.2), y = c(.27, .385), lty = 1:5, lwd = 2, cex = 1.5,
+  legend = c(
+    expression(paste(theta, "=0.0")),
+    expression(paste(theta, "=0.5", delta)),
+    expression(paste(theta, "=1.0", delta)),
+    expression(paste(theta, "=1.5", delta))
+  )
+)
+
+# add vertical lines with lower and upper bounds at analysis 2
+# to demonstrate how likely it is to continue, stop for futility
+# or stop for efficacy at analysis 2 by treatment effect
+lines(rep(x$upper$bound[2], 2), c(0, .4), col = 2)
+lines(rep(x$lower$bound[2], 2), c(0, .4), lty = 2, col = 2)
+
+# Replicate part of figures 8.1 and 8.2 of Jennison and Turnbull text book
+# O'Brien-Fleming design with four analyses
+
+x &lt;- gsDesign(k = 4, test.type = 2, sfu = "OF", alpha = .1, beta = .2)
+
+z &lt;- seq(-4.2, 4.2, .05)
+d &lt;- gsDensity(x = x, theta = x$theta, i = 4, zi = z)
+
+plot(z, d$density[, 1], type = "l", lwd = 2, ylab = expression(paste(p[4], "(z,", theta, ")")))
+lines(z, d$density[, 2], lty = 2, lwd = 2)
+u &lt;- x$upper$bound[4]
+text(expression(paste(theta, "=", delta)), x = 2.2, y = .2, cex = 1.5)
+text(expression(paste(theta, "=0")), x = .55, y = .4, cex = 1.5)
+</code></pre>
+
+
+</div>

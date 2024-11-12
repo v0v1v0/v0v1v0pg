@@ -1,0 +1,246 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>event_prediction</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Event prediction using patient-level survival data and a recruitment RCurve</h2>
+
+<h3>Description</h3>
+
+<p>This is a function to perform event prediction<br>
+It uses the fit_KM_tte_data function to perform MLE regression of Weibull and log-normal curves to the provided survival data.<br>
+It creates an event Curve object from this, and combines it with a recruitment RCurve and an optional dropout(censoring) Curve.<br>
+Using the same numerical integration approach as nph_curve_trajectories it performs an unconditional event prediction.<br>
+If a conditioning time and event number (preferably also a number at risk) are provided, a conditional event prediction is also calculated.<br>
+Analytic standard errors for conditional and unconditional event numbers are provided for the whole trajectory.<br>
+SEs calculated by propagating parameter estimate errors through the integrals by the delta method and then invoking a beta-binomial distribution.<br><br>
+For event prediction, conditional predictions with the Conditional SE of Prediction are most accurate and appropriate.<br>
+Unconditional predictions should be close to conditional ones but technically relate to predictions if the trial were rerun, rather than this specific instance.
+Point estimates are usually very close to the unconditional ones, but the prediction intervals are typically much wider than necessary.
+The conditional and unconditional SEs of fitting relate to the accuracy of the estimated mean event number at a given time, rather than the spread of future observations.
+The conditional and unconditional SEs of prediction relate to the accuracy of prediction of future observations, and should therefore be used for event prediction.
+Note that the Prediction SEs are wider than the Fitting SEs as they also take into account the binomial uncertainty of events occurring (beta-binomial model).
+As of version 1.4.0, the 'CI' argument has been renamed 'PI', and the 'condition' argument has been removed entirely (conditioning automatically occurs if cond_Event specified).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">event_prediction(
+  data,
+  Time = "Time",
+  Event = "Event",
+  censoringOne = FALSE,
+  type = c("automatic", "Exponential", "Weibull", "Lognormal"),
+  rcurve,
+  max_time = 100,
+  dcurve = Blank(),
+  CI = NULL,
+  PI = 0.95,
+  condition = NULL,
+  cond_Events = NULL,
+  cond_NatRisk = NULL,
+  cond_Time = NULL,
+  units = c("Days", "Months"),
+  init = NULL,
+  discountHR = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The dataframe object containing the patient-level survival data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Time</code></td>
+<td>
+<p>The column name for the times. Default is "Time"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Event</code></td>
+<td>
+<p>The column name for the events column (i.e. the binary variable denoting events vs censorings). Default is "Event"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>censoringOne</code></td>
+<td>
+<p>Specify whether censoring is denoted in the Event column by a one (TRUE) or zero (FALSE). Default=FALSE (censorings denoted by 0, events by 1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Type of event curve to fit. Default is "Automatic", fitting both Weibull and Log-normal curves.
+Alternatively accepts "Weibull", "Lognormal" or "Exponential" to force the type.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rcurve</code></td>
+<td>
+<p>Observed and/or expected recruitment distribution as an RCurve object. This should typically be of PieceR type (piecewise linear recruitment).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_time</code></td>
+<td>
+<p>Maximum time to predict events up to.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dcurve</code></td>
+<td>
+<p>Dropout/censoring distribution as a Curve object. This is Blank() by default, i.e. no dropout.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CI</code></td>
+<td>
+<p>DEPRECATED As of version 1.4.0 this argument has been renamed to 'PI'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PI</code></td>
+<td>
+<p>Number between 0 and 1 for the size of prediction interval to calculate. As of 1.4.0 this replaces the 'CI' argument. Default is 0.95 (95 percent prediction interval).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>condition</code></td>
+<td>
+<p>DEPRECATED This argument has been removed as of version 1.4.0. Specifying a value for 'cond_Events' will now enable conditioned predictions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cond_Events</code></td>
+<td>
+<p>Number of observed events at the conditioning time to condition on. If NULL, no conditioned event prediction will be performed. Default=NULL (no conditioning).
+Note that if the discountHR option is used to predict adjusted event numbers, it would be possible to condition on either observed or adjusted events, but the observed number is required by this function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cond_NatRisk</code></td>
+<td>
+<p>Number of patients at risk to condition on. Default=NULL.
+By default, the program will estimate the number at risk assuming no censoring. It is highly recommended to specify this if conditioning.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cond_Time</code></td>
+<td>
+<p>Time, in months, to condition on. A non-negative integer less than max_time is required if conditioning is requested, i.e. cond_Events is non-NULL. Not required otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>units</code></td>
+<td>
+<p>Units that the KM-curve is specified in. Accepts "Days", "Months". Default="Days". Note: gestate assumes conversion factor of 365.25/12.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p>Vector of starting values for parameter values; useful if survreg experiences convergence issues. Default=NULL (no values specified)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>discountHR</code></td>
+<td>
+<p>Hazard ratio for discounting events e.g. used to predict adjudicated events from unadjudicated data where patients remain 'at risk' after an event is adjudicated not to have occurred.
+Values below 1 indicate fewer events will occur than predicted by the curve-fitting.
+When a discountHR is user-specified (i.e. not 1), conditioning event numbers need to be specified in terms of observed values, and not adjusted ones.
+Note that changing this argument is only allowed if type="Weibull" since log-normal curves are not compatible with proportional hazards.
+If patients become not at risk following a failed adjudication (i.e. removed from study), do not use this argument and instead adjust the output event numbers by the required factor.
+Default=1 (No discounting for adjudication)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a list object with the prediction ecurve (after adjustments for unit, discountHR), dcurve, rcurve, required PI, original fitted ecurve parameters (before adjustments)
+and a summary table with one row per month up to max_time containing the following columns:
+</p>
+
+<ul>
+<li>
+<p>"Assessment_Time"Time of assessment.
+</p>
+</li>
+<li>
+<p>"Patients"Number of patients recruited by the assessment time.
+</p>
+</li>
+<li>
+<p>"Predicted_Events"Number of events unconditionally predicted at the assessment time.
+</p>
+</li>
+<li>
+<p>"SE_Fitting"SE of the estimate of the fitted mean. Note that this corresponds to the accuracy of the estimate of the underlying parameter, not future observed event numbers.
+</p>
+</li>
+<li>
+<p>"SE_Prediction"SE of event prediction.
+</p>
+</li>
+<li>
+<p>"Prediction_Lower"Lower bound of X percent interval of unconditional event prediction, where X is the 'PI' argument. This PI is based on the quantiles of the beta-binomial distribution and so is discrete and asymmetric.
+</p>
+</li>
+<li>
+<p>"Prediction_Upper"Upper bound of X percent interval of unconditional event prediction, where X is the 'PI' argument. This PI is based on the quantiles of the beta-binomial distribution and so is discrete and asymmetric.
+</p>
+</li>
+<li>
+<p>"Conditioned_Events"Number of events conditionally predicted at the assessment time (Column present only if conditioning specified).
+</p>
+</li>
+<li>
+<p>"Cond_SE_Fitting"SE of the estimate of the fitted conditional mean. Note that this corresponds to the accuracy of the estimate of the underlying parameter, not future observed event numbers (Column present only if conditioning specified).
+</p>
+</li>
+<li>
+<p>"Cond_SE_Prediction"SE of the conditional event prediction (Column present only if conditioning specified).
+</p>
+</li>
+<li>
+<p>"Cond_Prediction_Lower"Lower bound of X percent interval of conditional event prediction, where X is the 'PI' argument. This PI is based on the quantiles of the beta-binomial distribution and so is discrete and asymmetric.
+</p>
+</li>
+<li>
+<p>"Cond_Prediction_Upper"Upper bound of X percent interval of conditional event prediction, where X is the 'PI' argument. This PI is based on the quantiles of the beta-binomial distribution and so is discrete and asymmetric.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>James Bell
+</p>
+
+
+<h3>References</h3>
+
+<p>Bell J, "Are we nearly there yet?" Quantifying uncertainty in event prediction, 2019, presentation at PSI Conference.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">recruit &lt;- PieceR(matrix(c(rep(1,12),10,15,25,30,45,60,55,50,65,60,55,30),ncol=2),1)
+trial_short &lt;- simulate_trials(active_ecurve=Weibull(50,0.8),control_ecurve=Weibull(50,0.8),
+rcurve=recruit, assess=10,iterations=1,seed=12345,detailed_output=TRUE)
+
+predictions &lt;- event_prediction(data=trial_short, Event="Censored", censoringOne=TRUE,
+type="Weibull", rcurve=recruit, max_time=60, cond_Events=49, cond_NatRisk=451,
+cond_Time=10, units="Months")
+</code></pre>
+
+
+</div>

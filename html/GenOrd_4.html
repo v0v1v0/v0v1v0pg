@@ -1,0 +1,176 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ordcont</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Computing the "intermediate" correlation matrix for the multivariate standard normal in order to achieve the "target" correlation matrix for the multivariate discrete variable
+</h2>
+
+<h3>Description</h3>
+
+<p>The function computes the correlation matrix of the <code class="reqn">k</code>-dimensional standard normal r.v. yielding the desired correlation matrix <code>Sigma</code> for the <code class="reqn">k</code>-dimensional r.v. with desired marginal distributions <code>marginal</code>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ordcont(marginal, Sigma, support = list(), Spearman = FALSE,
+epsilon = 1e-06, maxit = 100)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>marginal</code></td>
+<td>
+
+<p>a list of <code class="reqn">k</code> elements, where <code class="reqn">k</code> is the number of variables.
+The <code class="reqn">i</code>-th element of <code>marginal</code> is the vector of the cumulative probabilities defining the marginal distribution of the <code class="reqn">i</code>-th component of the  multivariate variable. If the <code class="reqn">i</code>-th component can take <code class="reqn">k_i</code> values, the <code class="reqn">i</code>-th element of <code>marginal</code> will contain <code class="reqn">k_i-1</code> probabilities (the <code class="reqn">k_i</code>-th is obviously 1 and shall not be included).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sigma</code></td>
+<td>
+
+<p>the target correlation matrix of the discrete variables
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>support</code></td>
+<td>
+
+<p>a list of <code class="reqn">k</code> elements, where <code class="reqn">k</code> is the number of variables. The <code class="reqn">i</code>-th element of <code>support</code> is the vector containing the ordered values of the support of the <code class="reqn">i</code>-th variable. By default, the support of the <code class="reqn">i</code>-th variable is <code class="reqn">1,2,...,k_i</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Spearman</code></td>
+<td>
+
+<p>if <code>TRUE</code>, the function finds Spearman's correlations (and it is not necessary to provide <code>support</code>), if <code>FALSE</code> (default) Pearson's correlations
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epsilon</code></td>
+<td>
+
+<p>the maximum tolerated error between target and actual correlations
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+
+<p>the maximum number of iterations allowed for the algorithm
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a list of five elements
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>SigmaC</code></td>
+<td>
+
+<p>the correlation matrix of the multivariate standard normal variable
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SigmaO</code></td>
+<td>
+
+<p>the actual correlation matrix of the discretized variables (it should approximately coincide with the target correlation matrix <code>Sigma</code>)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sigma</code></td>
+<td>
+
+<p>the target correlation matrix of the discrete variables
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>niter</code></td>
+<td>
+
+<p>a matrix containing the number of iterations performed by the algorithm, one for each pair of variables
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxerr</code></td>
+<td>
+
+<p>the actual maximum error (the maximum absolute deviation between actual and target correlations of the discrete variables)
+</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>For some choices of <code>marginal</code> and <code>Sigma</code>, there may not exist a feasible <code class="reqn">k</code>-variate probability mass function or the algorithm may not provide a feasible correlation matrix <code>SigmaC</code>. In this case, the procedure stops and exits with an error.
+The value of the maximum tolerated absolute error <code>epsilon</code> on the elements of the correlation matrix for the target r.v. can be set by the user: a value between 1e-6 and 1e-2 seems to be an acceptable compromise assuring both the precision of the results and the convergence of the algorithm; moreover, a maximum number of iterations can be chosen (<code>maxit</code>), in order to avoid possible endless loops
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Alessandro Barbiero, Pier Alda Ferrari
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>contord</code>, <code>ordsample</code>, <code>corrcheck</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># consider a 4-dimensional ordinal variable
+k &lt;- 4
+# with different number of categories
+kj &lt;- c(2,3,4,5)
+# and uniform marginal distributions
+marginal &lt;- list(0.5, (1:2)/3, (1:3)/4, (1:4)/5)
+corrcheck(marginal)
+# and the following correlation matrix
+Sigma &lt;- matrix(c(1,0.5,0.4,0.3,0.5,1,0.5,0.4,0.4,0.5,1,0.5,0.3,0.4,0.5,1),
+4, 4, byrow=TRUE)
+Sigma
+# the correlation matrix of the standard 4-dimensional standard normal
+# ensuring Sigma is
+res &lt;- ordcont(marginal, Sigma)
+res[[1]]
+# change some marginal distributions
+marginal &lt;- list(0.3, c(1/3, 2/3), c(1/5, 2/5, 3/5), c(0.1, 0.2, 0.4, 0.6))
+corrcheck(marginal)
+# and notice how the correlation matrix of the multivariate normal changes...
+res &lt;- ordcont(marginal, Sigma)
+res[[1]]
+# change Sigma, adding a negative correlation
+Sigma[1,2] &lt;- -0.2
+Sigma[2,1] &lt;- Sigma[1,2]
+Sigma
+# checking whether Sigma is still positive definite
+eigen(Sigma)$values # all &gt;0, OK
+res &lt;- ordcont(marginal, Sigma)
+res[[1]]
+</code></pre>
+
+
+</div>

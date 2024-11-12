@@ -1,0 +1,255 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>diseq</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate or Compute Confidence Interval for the Single-Marker Disequilibrium</h2>
+
+<h3>Description</h3>
+
+<p>Estimate or compute confidence interval for single-marker disequilibrium.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">diseq(x, ...)
+## S3 method for class 'diseq'
+print(x, show=c("D","D'","r","R^2","table"), ...)
+diseq.ci(x, R=1000, conf=0.95, correct=TRUE, na.rm=TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>genotype or haplotype object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show</code></td>
+<td>
+<p>a character value or vector indicating which
+disequilibrium measures should be displayed.  The default is to show
+all of the available measures. <code>show="table"</code> will display
+a table of observed, expected, and observed-expected
+frequencies.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf</code></td>
+<td>
+<p>Confidence level to use when computing the confidence
+level for D-hat.  Defaults to 0.95, should be in (0,1). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>Number of bootstrap iterations to use when computing the
+confidence interval. Defaults to 1000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correct</code></td>
+<td>
+<p>See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.rm</code></td>
+<td>
+<p> logical. Should missing values be removed?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> optional parameters passed to <code>boot.ci</code>
+(<code>diseq.ci</code>) or ignored.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For a single-gene marker, <code>diseq</code> computes the Hardy-Weinberg
+(dis)equilibrium statistic D, D', r (the correlation coefficient), and
+<code class="reqn">r^2</code> for each pair of allele values, as well as an overall
+summary value for each measure across all alleles.  <code>print.diseq</code>
+displays the contents of a <code>diseq</code> object. <code>diseq.ci</code>
+computes a bootstrap confidence interval for this estimate.
+</p>
+<p>For consistency, I have applied the standard definitions for D, D',
+and r from the Linkage Disequilibrium case, replacing all marker 
+probabilities with the appropriate allele probabilities.
+</p>
+<p>Thus, for each allele pair,
+</p>
+
+<ul>
+<li>
+<p>D is defined as the half of the raw difference
+in frequency between
+the observed number of heterozygotes and the expected number:
+</p>
+<p style="text-align: center;"><code class="reqn">%
+ 	D = \frac{1}{2} ( p_{ij} + p_{ji} ) - p_i p_j  %
+      </code>
+</p>
+
+
+</li>
+<li>
+<p>D' rescales D to span the range [-1,1] 
+</p>
+<p style="text-align: center;"><code class="reqn">D' = \frac{D}{D_{max} } </code>
+</p>
+
+<p>where, if D &gt; 0:
+</p>
+<p style="text-align: center;"><code class="reqn">%
+  	D_{max} = \min{ p_i p_j, p_j p_i } = p_i p_j   %
+      </code>
+</p>
+ 
+<p>or if D &lt; 0:
+</p>
+<p style="text-align: center;"><code class="reqn">%
+  	D_{max} = \min{ p_i (1 - p_j), p_j (1 - p_i) } %
+      </code>
+</p>
+
+
+</li>
+<li>
+<p>r is the correlation coefficient between two alleles,
+
+and can be computed by
+</p>
+<p style="text-align: center;"><code class="reqn">%
+ 	r = \frac{-D}{\sqrt( p_i * (1-p_i) p(j) (1-p_j ) )} %
+      </code>
+</p>
+
+
+</li>
+</ul>
+<p>where
+</p>
+
+<ul>
+<li>
+<p>- <code class="reqn">p_i</code> defined as the observed probability of
+allele 'i', 
+</p>
+</li>
+<li>
+<p>-<code class="reqn">p_j</code> defined as the observed probability of
+allele 'j', and 
+</p>
+</li>
+<li>
+<p>-<code class="reqn">p_{ij}</code> defined as the observed probability of
+the allele pair 'ij'. 
+</p>
+</li>
+</ul>
+<p>When there are more than two alleles, the summary values for these
+statistics are obtained by computing a weighted average of the
+absolute value of each allele pair, where the weight is determined by
+the expected frequency. For example:
+</p>
+<p style="text-align: center;"><code class="reqn">%
+     D_{overall} = \sum_{i \ne j}  |D_{ij}| * p_{ij} % 
+   </code>
+</p>
+
+<p>Bootstrapping is used to generate confidence interval in order to
+avoid reliance on parametric assumptions, which will not hold for
+alleles with low frequencies (e.g. <code class="reqn">D'</code> following a a Chi-square 
+distribution).  
+</p>
+<p>See the function <code>HWE.test</code> for testing
+Hardy-Weinberg Equilibrium, <code class="reqn">D=0</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>diseq</code> returns an object of class <code>diseq</code> with components
+</p>
+
+<ul>
+<li>
+<p>callfunction call used to create this object
+</p>
+</li>
+<li>
+<p>data2-way table of allele pair counts
+</p>
+</li>
+<li>
+<p>D.hatmatrix giving the observed count, expected count,
+observed - expected difference, and estimate of disequilibrium for
+each pair of alleles as well as an overall disequilibrium value.
+</p>
+</li>
+<li>
+<p>TODOmore slots to be documented
+</p>
+</li>
+</ul>
+<p><code>diseq.ci</code> returns an object of class <code>boot.ci</code>
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Gregory R. Warnes <a href="mailto:greg@warnes.net">greg@warnes.net</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>genotype</code>,
+<code>HWE.test</code>,
+<code>boot</code>,
+<code>boot.ci</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+example.data   &lt;- c("D/D","D/I","D/D","I/I","D/D",
+                    "D/D","D/D","D/D","I/I","")
+g1  &lt;- genotype(example.data)
+g1
+
+diseq(g1)
+diseq.ci(g1)
+HWE.test(g1)  # does the same, plus tests D-hat=0
+
+three.data   &lt;- c(rep("A/A",8),
+                  rep("C/A",20),
+                  rep("C/T",20),
+                  rep("C/C",10),
+                  rep("T/T",3))
+
+g3  &lt;- genotype(three.data)
+g3
+
+diseq(g3)
+diseq.ci(g3, ci.B=10000, ci.type="bca")
+
+# only show observed vs expected table
+print(diseq(g3),show='table')
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,387 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>inference</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Statistical inference on greta models.</h2>
+
+<h3>Description</h3>
+
+<p>Carry out statistical inference on greta models by
+MCMC or likelihood/posterior optimisation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mcmc(
+  model,
+  sampler = hmc(),
+  n_samples = 1000,
+  thin = 1,
+  warmup = 1000,
+  chains = 4,
+  n_cores = NULL,
+  verbose = TRUE,
+  pb_update = 50,
+  one_by_one = FALSE,
+  initial_values = initials(),
+  trace_batch_size = 100
+)
+
+stashed_samples()
+
+extra_samples(
+  draws,
+  n_samples = 1000,
+  thin = 1,
+  n_cores = NULL,
+  verbose = TRUE,
+  pb_update = 50,
+  one_by_one = FALSE,
+  trace_batch_size = 100
+)
+
+initials(...)
+
+opt(
+  model,
+  optimiser = bfgs(),
+  max_iterations = 100,
+  tolerance = 1e-06,
+  initial_values = initials(),
+  adjust = TRUE,
+  hessian = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>greta_model object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sampler</code></td>
+<td>
+<p>sampler used to draw values in MCMC. See
+<code>samplers()</code> for options.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_samples</code></td>
+<td>
+<p>number of MCMC samples to draw per chain (after any warm-up,
+but before thinning)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>MCMC thinning rate; every <code>thin</code> samples is retained, the
+rest are discarded</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warmup</code></td>
+<td>
+<p>number of samples to spend warming up the mcmc sampler (moving
+chains toward the highest density area and tuning sampler hyperparameters).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chains</code></td>
+<td>
+<p>number of MCMC chains to run</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_cores</code></td>
+<td>
+<p>the maximum number of CPU cores used by each sampler (see
+details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>whether to print progress information to the console</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pb_update</code></td>
+<td>
+<p>how regularly to update the progress bar (in iterations).
+If <code>pb_update</code> is less than or equal to <code>thin</code>, it will be set
+to <code>thin + 1</code> to ensure at least one saved iteration per
+<code>pb_update</code> iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>one_by_one</code></td>
+<td>
+<p>whether to run TensorFlow MCMC code one iteration at a
+time, so that greta can handle numerical errors as 'bad' proposals (see
+below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial_values</code></td>
+<td>
+<p>an optional <code>initials</code> object (or list of
+<code>initials</code> objects of length <code>chains</code>) giving initial values for
+some or all of the variables in the model. These will be used as the
+starting point for sampling/optimisation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace_batch_size</code></td>
+<td>
+<p>the number of posterior samples to process at a time
+when tracing the parameters of interest; reduce this to reduce memory
+demands</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>draws</code></td>
+<td>
+<p>a greta_mcmc_list object returned by <code>mcmc</code> or
+<code>stashed_samples</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>named numeric values, giving initial values of some or all of the
+variables in the model (unnamed variables will be automatically
+initialised)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimiser</code></td>
+<td>
+<p>an <code>optimiser</code> object giving the optimisation algorithm
+and parameters See <code>optimisers()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_iterations</code></td>
+<td>
+<p>the maximum number of iterations before giving up</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tolerance</code></td>
+<td>
+<p>the numerical tolerance for the solution, the optimiser
+stops when the (absolute) difference in the joint density between
+successive iterations drops below this level</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adjust</code></td>
+<td>
+<p>whether to account for Jacobian adjustments in the joint
+density. Set to <code>FALSE</code> (and do not use priors) for maximum likelihood
+estimates, or <code>TRUE</code> for maximum <em>a posteriori</em> estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian</code></td>
+<td>
+<p>whether to return a list of <em>analytically</em> differentiated
+Hessian arrays for the parameters</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For <code>mcmc()</code> if <code>verbose = TRUE</code>, the progress bar shows
+the number of iterations so far and the expected time to complete the phase
+of model fitting (warmup or sampling). Occasionally, a proposed set of
+parameters can cause numerical instability (I.e. the log density or its
+gradient is <code>NA</code>, <code>Inf</code> or <code>-Inf</code>); normally because the log
+joint density is so low that it can't be represented as a floating point
+number. When this happens, the progress bar will also display the
+proportion of proposals so far that were 'bad' (numerically unstable) and
+therefore rejected. Some numerical instability during the warmup phase is
+normal, but 'bad' samples during the sampling phase can lead to bias in
+your posterior sample. If you only have a few bad samples (&lt;10\%), you can
+usually resolve this with a longer warmup period or by manually defining
+starting values to move the sampler into a more reasonable part of the
+parameter space. If you have more samples than that, it may be that your
+model is misspecified. You can often diagnose this by using
+<code>calculate()</code> to evaluate the values of greta arrays, given
+fixed values of model parameters, and checking the results are what you
+expect.
+</p>
+<p>greta runs multiple chains simultaneously with a single sampler,
+vectorising all operations across the chains. E.g. a scalar addition in
+your model is computed as an elementwise vector addition (with vectors
+having length <code>chains</code>), a vector addition is computed as a matrix
+addition etc. TensorFlow is able to parallelise these operations, and this
+approach reduced computational overheads, so this is the most efficient of
+computing on multiple chains.
+</p>
+<p>Multiple mcmc samplers (each of which can simultaneously run multiple
+chains) can also be run in parallel by setting the execution plan with the
+<code>future</code> package. Only <code>plan(multisession)</code> futures or
+<code>plan(cluster)</code> futures that don't use fork clusters are allowed,
+since forked processes conflict with TensorFlow's parallelism. Explicitly
+parallelising chains on a local machine with <code>plan(multisession)</code> will
+probably be slower than running multiple chains simultaneously in a single
+sampler (with <code>plan(sequential)</code>, the default) because of the overhead
+required to start new sessions. However, <code>plan(cluster)</code> can be used
+to run chains on a cluster of machines on a local or remote network. See
+<code>future::cluster()</code> for details, and the
+<code>future.batchtools</code> package to set up plans on clusters with job
+schedulers.
+</p>
+<p>If <code>n_cores = NULL</code> and mcmc samplers are being run sequentially, each
+sampler will be allowed to use all CPU cores (possibly to compute multiple
+chains sequentially). If samplers are being run in parallel with the
+<code>future</code> package, <code>n_cores</code> will be set so that <code style="white-space: pre;">⁠n_cores * [future::nbrOfWorkers]⁠</code> is less than the number
+of CPU cores.
+</p>
+<p>After carrying out mcmc on all the model parameters, <code>mcmc()</code>
+calculates the values of (i.e. traces) the parameters of interest for each
+of these samples, similarly to <code>calculate()</code>. Multiple
+posterior samples can be traced simultaneously, though this can require
+large amounts of memory for large models. As in <code>calculate</code>, the
+argument <code>trace_batch_size</code> can be modified to trade-off speed against
+memory usage.
+</p>
+<p>If the sampler is aborted before finishing (and <code>future</code>
+parallelism isn't being used), the samples collected so far can be
+retrieved with <code>stashed_samples()</code>. Only samples from the sampling
+phase will be returned.
+</p>
+<p>Samples returned by <code>mcmc()</code> and <code>stashed_samples()</code> can
+be added to with <code>extra_samples()</code>. This continues the chain from the
+last value of the previous chain and uses the same sampler and model as was
+used to generate the previous samples. It is not possible to change the
+sampler or extend the warmup period.
+</p>
+<p>Because <code>opt()</code> acts on a list of greta arrays with possibly
+varying dimension, the <code>par</code> and <code>hessian</code> objects returned by
+<code>opt()</code> are named lists, rather than a vector (<code>par</code>) and a
+matrix (<code>hessian</code>), as returned by <code>stats::optim()</code>.
+Because greta arrays may not be vectors, the Hessians may not be matrices,
+but could be higher-dimensional arrays. To return a Hessian matrix covering
+multiple model parameters, you can construct your model so that all those
+parameters are in a vector, then split the vector up to define the model.
+The parameter vector can then be passed to model. See example.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>mcmc</code>, <code>stashed_samples</code> &amp; <code>extra_samples</code> - a
+<code>greta_mcmc_list</code> object that can be analysed using functions from the
+coda package. This will contain mcmc samples of the greta arrays used to
+create <code>model</code>.
+</p>
+<p><code>opt</code> - a list containing the following named elements:
+</p>
+
+<ul>
+<li> <p><code>par</code> a named list of the optimal values for the greta arrays
+specified in <code>model</code>
+</p>
+</li>
+<li> <p><code>value</code> the (unadjusted) negative log joint density of the
+model at the parameters 'par'
+</p>
+</li>
+<li> <p><code>iterations</code> the number of iterations taken by the optimiser
+</p>
+</li>
+<li> <p><code>convergence</code> an integer code, 0 indicates successful
+completion, 1 indicates the iteration limit <code>max_iterations</code> had
+been reached
+</p>
+</li>
+<li> <p><code>hessian</code> (if <code>hessian = TRUE</code>) a named list of hessian
+matrices/arrays for the parameters (w.r.t. <code>value</code>)
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# define a simple Bayesian model
+x &lt;- rnorm(10)
+mu &lt;- normal(0, 5)
+sigma &lt;- lognormal(1, 0.1)
+distribution(x) &lt;- normal(mu, sigma)
+m &lt;- model(mu, sigma)
+
+# carry out mcmc on the model
+draws &lt;- mcmc(m, n_samples = 100)
+
+# add some more samples
+draws &lt;- extra_samples(draws, 200)
+
+#' # initial values can be passed for some or all model variables
+draws &lt;- mcmc(m, chains = 1, initial_values = initials(mu = -1))
+
+# if there are multiple chains, a list of initial values should be passed,
+# othewise the same initial values will be used for all chains
+inits &lt;- list(initials(sigma = 0.5), initials(sigma = 1))
+draws &lt;- mcmc(m, chains = 2, initial_values = inits)
+
+# you can auto-generate a list of initials with something like this:
+inits &lt;- replicate(4,
+  initials(mu = rnorm(1), sigma = runif(1)),
+  simplify = FALSE
+)
+draws &lt;- mcmc(m, chains = 4, initial_values = inits)
+
+# or find the MAP estimate
+opt_res &lt;- opt(m)
+
+# get the MLE of the normal variance
+mu &lt;- variable()
+variance &lt;- variable(lower = 0)
+distribution(x) &lt;- normal(mu, sqrt(variance))
+m2 &lt;- model(variance)
+
+# adjust = FALSE skips the jacobian adjustments used in MAP estimation, to
+# give the true maximum likelihood estimates
+o &lt;- opt(m2, adjust = FALSE)
+
+# the MLE corresponds to the *unadjusted* sample variance, but differs
+# from the sample variance
+o$par
+mean((x - mean(x))^2) # same
+var(x) # different
+
+# initial values can also be passed to optimisers:
+o &lt;- opt(m2, initial_values = initials(variance = 1))
+
+# and you can return a list of the Hessians for each of these parameters
+o &lt;- opt(m2, hessian = TRUE)
+o$hessian
+
+
+# to get a hessian matrix across multiple greta arrays, you must first
+# combine them and then split them up for use in the model (so that the
+# combined vector is part of the model) and pass that vector to model:
+params &lt;- c(variable(), variable(lower = 0))
+mu &lt;- params[1]
+variance &lt;- params[2]
+distribution(x) &lt;- normal(mu, sqrt(variance))
+m3 &lt;- model(params)
+o &lt;- opt(m3, hessian = TRUE)
+o$hessian
+
+## End(Not run)
+</code></pre>
+
+
+</div>

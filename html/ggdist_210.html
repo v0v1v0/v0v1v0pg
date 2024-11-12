@@ -1,0 +1,852 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>stat_mcse_dots</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Blurry MCSE dot plot (stat)</h2>
+
+<h3>Description</h3>
+
+<p>Variant of <code>stat_dots()</code> for creating blurry dotplots of quantiles. Uses
+<code>posterior::mcse_quantile()</code> to calculate the Monte Carlo Standard Error
+of each quantile computed for the dotplot, yielding an <code>se</code> computed variable
+that is by default mapped onto the <code>sd</code> aesthetic of <code>geom_blur_dots()</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">stat_mcse_dots(
+  mapping = NULL,
+  data = NULL,
+  geom = "blur_dots",
+  position = "identity",
+  ...,
+  quantiles = NA,
+  orientation = NA,
+  na.rm = FALSE,
+  show.legend = NA,
+  inherit.aes = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mapping</code></td>
+<td>
+<p>Set of aesthetic mappings created by <code>aes()</code>. If specified and
+<code>inherit.aes = TRUE</code> (the default), it is combined with the default mapping
+at the top level of the plot. You must supply <code>mapping</code> if there is no plot
+mapping.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The data to be displayed in this layer. There are three
+options:
+</p>
+<p>If <code>NULL</code>, the default, the data is inherited from the plot
+data as specified in the call to <code>ggplot()</code>.
+</p>
+<p>A <code>data.frame</code>, or other object, will override the plot
+data. All objects will be fortified to produce a data frame. See
+<code>fortify()</code> for which variables will be created.
+</p>
+<p>A <code>function</code> will be called with a single argument,
+the plot data. The return value must be a <code>data.frame</code>, and
+will be used as the layer data. A <code>function</code> can be created
+from a <code>formula</code> (e.g. <code>~ head(.x, 10)</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>geom</code></td>
+<td>
+<p>Use to override the default connection between
+<code>stat_mcse_dots()</code> and <code>geom_blur_dots()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>position</code></td>
+<td>
+<p>Position adjustment, either as a string, or the result of a call to a position adjustment function.
+Setting this equal to <code>"dodge"</code> (<code>position_dodge()</code>) or <code>"dodgejust"</code> (<code>position_dodgejust()</code>) can be useful if
+you have overlapping geometries.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed to <code>layer()</code>. These are often aesthetics, used to set an aesthetic
+to a fixed value, like <code>colour = "red"</code> or <code>linewidth = 3</code> (see <strong>Aesthetics</strong>, below). They may also be
+parameters to the paired geom/stat. When paired with the default geom, <code>geom_blur_dots()</code>,
+these include:
+</p>
+
+<dl>
+<dt><code>blur</code></dt>
+<dd>
+<p>Blur function to apply to dots.
+One of: </p>
+
+<ul>
+<li>
+<p> A function that takes a numeric vector of distances from the dot
+center, the dot radius, and the standard deviation of the blur and returns
+a vector of opacities in <code class="reqn">[0, 1]</code>, such as <code>blur_gaussian()</code>
+or <code>blur_interval()</code>.
+</p>
+</li>
+<li>
+<p> A string indicating what blur function to use, as the suffix to a
+function name starting with <code>blur_</code>; e.g. <code>"gaussian"</code> (the default)
+applies <code>blur_gaussian()</code>.
+</p>
+</li>
+</ul>
+</dd>
+<dt><code>binwidth</code></dt>
+<dd>
+<p>The bin width to use for laying out the dots.
+One of:
+</p>
+
+<ul>
+<li> <p><code>NA</code> (the default): Dynamically select the bin width based on the
+size of the plot when drawn. This will pick a <code>binwidth</code> such that the
+tallest stack of dots is at most <code>scale</code> in height (ideally exactly <code>scale</code>
+in height, though this is not guaranteed).
+</p>
+</li>
+<li>
+<p> A length-1 (scalar) numeric or unit object giving the exact bin width.
+</p>
+</li>
+<li>
+<p> A length-2 (vector) numeric or unit object giving the minimum and maximum
+desired bin width. The bin width will be dynamically selected within
+these bounds.
+</p>
+</li>
+</ul>
+<p>If the value is numeric, it is assumed to be in units of data. The bin width
+(or its bounds) can also be specified using <code>unit()</code>, which may be useful if
+it is desired that the dots be a certain point size or a certain percentage of
+the width/height of the viewport. For example, <code>unit(0.1, "npc")</code> would make
+dots that are <em>exactly</em> 10% of the viewport size along whichever dimension the
+dotplot is drawn; <code>unit(c(0, 0.1), "npc")</code> would make dots that are <em>at most</em>
+10% of the viewport size (while still ensuring the tallest stack is less than
+or equal to <code>scale</code>).</p>
+</dd>
+<dt><code>dotsize</code></dt>
+<dd>
+<p>The width of the dots relative to the <code>binwidth</code>. The default,
+<code>1.07</code>, makes dots be just a bit wider than the bin width, which is a
+manually-tuned parameter that tends to work well with the default circular
+shape, preventing gaps between bins from appearing to be too large visually
+(as might arise from dots being <em>precisely</em> the <code>binwidth</code>). If it is desired
+to have dots be precisely the <code>binwidth</code>, set <code>dotsize = 1</code>.</p>
+</dd>
+<dt><code>stackratio</code></dt>
+<dd>
+<p>The distance between the center of the dots in the same
+stack relative to the dot height. The default, <code>1</code>, makes dots in the same
+stack just touch each other.</p>
+</dd>
+<dt><code>layout</code></dt>
+<dd>
+<p>The layout method used
+for the dots: </p>
+
+<ul>
+<li> <p><code>"bin"</code> (default): places dots on the off-axis at the midpoint of
+their bins as in the classic Wilkinson dotplot. This maintains the
+alignment of rows and columns in the dotplot. This layout is slightly
+different from the classic Wilkinson algorithm in that: (1) it nudges
+bins slightly to avoid overlapping bins and (2) if the input data are
+symmetrical it will return a symmetrical layout.
+</p>
+</li>
+<li> <p><code>"weave"</code>: uses the same basic binning approach of <code>"bin"</code>, but
+places dots in the off-axis at their actual positions (unless
+<code>overlaps = "nudge"</code>, in which case overlaps may be nudged out of the
+way). This maintains the alignment of rows but does not align dots
+within columns.
+</p>
+</li>
+<li> <p><code>"hex"</code>: uses the same basic binning approach of <code>"bin"</code>, but
+alternates placing dots <code>+ binwidth/4</code> or <code>- binwidth/4</code> in the
+off-axis from the bin center. This allows hexagonal packing by setting
+a <code>stackratio</code> less than 1 (something like <code>0.9</code> tends to work).
+</p>
+</li>
+<li> <p><code>"swarm"</code>: uses the <code>"compactswarm"</code> layout from
+<code>beeswarm::beeswarm()</code>. Does not maintain alignment of rows or columns,
+but can be more compact and neat looking, especially for sample data
+(as opposed to quantile dotplots of theoretical distributions, which
+may look better with <code>"bin"</code>, <code>"weave"</code>, or <code>"hex"</code>).
+</p>
+</li>
+<li> <p><code>"bar"</code>: for discrete distributions, lays out duplicate values in
+rectangular bars.
+</p>
+</li>
+</ul>
+</dd>
+<dt><code>overlaps</code></dt>
+<dd>
+<p>How to handle overlapping dots or bins in the <code>"bin"</code>,
+<code>"weave"</code>, and <code>"hex"</code> layouts (dots never overlap in the <code>"swarm"</code> or <code>"bar"</code> layouts).
+For the purposes of this argument, dots are only considered to be overlapping
+if they would be overlapping when <code>dotsize = 1</code> and <code>stackratio = 1</code>; i.e.
+if you set those arguments to other values, overlaps may still occur.
+One of: </p>
+
+<ul>
+<li> <p><code>"keep"</code>: leave overlapping dots as they are. Dots may overlap
+(usually only slightly) in the <code>"bin"</code>, <code>"weave"</code>, and <code>"hex"</code> layouts.
+</p>
+</li>
+<li> <p><code>"nudge"</code>: nudge overlapping dots out of the way. Overlaps are avoided
+using a constrained optimization which minimizes the squared distance of
+dots to their desired positions, subject to the constraint that adjacent
+dots do not overlap.
+</p>
+</li>
+</ul>
+</dd>
+<dt><code>smooth</code></dt>
+<dd>
+<p>Smoother to apply to dot positions.
+One of:
+</p>
+
+<ul>
+<li>
+<p> A function that takes a numeric vector of dot positions and returns a
+smoothed version of that vector, such as <code>smooth_bounded()</code>,
+<code>smooth_unbounded()</code>, smooth_discrete()<code style="white-space: pre;">⁠, or ⁠</code>smooth_bar()'.
+</p>
+</li>
+<li>
+<p> A string indicating what smoother to use, as the suffix to a function
+name starting with <code>smooth_</code>; e.g. <code>"none"</code> (the default) applies
+<code>smooth_none()</code>, which simply returns the given vector without
+applying smoothing.
+</p>
+</li>
+</ul>
+<p>Smoothing is most effective when the smoother is matched to the support of
+the distribution; e.g. using <code>smooth_bounded(bounds = ...)</code>.</p>
+</dd>
+<dt><code>overflow</code></dt>
+<dd>
+<p>How to handle overflow of dots beyond the extent of the geom
+when a minimum <code>binwidth</code> (or an exact <code>binwidth</code>) is supplied.
+One of:
+</p>
+
+<ul>
+<li> <p><code>"keep"</code>: Keep the overflow, drawing dots outside the geom bounds.
+</p>
+</li>
+<li> <p><code>"warn"</code>: Keep the overflow, but produce a warning suggesting solutions,
+such as setting <code>binwidth = NA</code> or <code>overflow = "compress"</code>.
+</p>
+</li>
+<li> <p><code>"compress"</code>: Compress the layout. Reduces the <code>binwidth</code> to the size necessary
+to keep the dots within bounds, then adjusts <code>stackratio</code> and <code>dotsize</code> so that
+the apparent dot size is the user-specified minimum <code>binwidth</code> times the
+user-specified <code>dotsize</code>.
+</p>
+</li>
+</ul>
+<p>If you find the default layout has dots that are too small, and you are okay
+with dots overlapping, consider setting <code>overflow = "compress"</code> and supplying
+an exact or minimum dot size using <code>binwidth</code>.</p>
+</dd>
+<dt><code>verbose</code></dt>
+<dd>
+<p>If <code>TRUE</code>, print out the bin width of the dotplot. Can be useful
+if you want to start from an automatically-selected bin width and then adjust it
+manually. Bin width is printed both as data units and as normalized parent
+coordinates or <code>"npc"</code>s (see <code>unit()</code>). Note that if you just want to scale the
+selected bin width to fit within a desired area, it is probably easier to use
+<code>scale</code> than to copy and scale <code>binwidth</code> manually, and if you just want to
+provide constraints on the bin width, you can pass a length-2 vector to <code>binwidth</code>.
+</p>
+</dd>
+<dt><code>subguide</code></dt>
+<dd>
+<p>Sub-guide used to annotate the <code>thickness</code> scale. One of:
+</p>
+
+<ul>
+<li>
+<p> A function that takes a <code>scale</code> argument giving a ggplot2::Scale
+object and an <code>orientation</code> argument giving the orientation of the
+geometry and then returns a grid::grob that will draw the axis
+annotation, such as <code>subguide_axis()</code> (to draw a traditional axis) or
+<code>subguide_none()</code> (to draw no annotation). See <code>subguide_axis()</code>
+for a list of possibilities and examples.
+</p>
+</li>
+<li>
+<p> A string giving the name of such a function when prefixed
+with <code>"subguide"</code>; e.g. <code>"axis"</code> or <code>"none"</code>.
+</p>
+</li>
+</ul>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quantiles</code></td>
+<td>
+<p>Setting this to a value other than <code>NA</code>
+will produce a quantile dotplot: that is, a dotplot of quantiles from the sample or distribution
+(for analytical distributions, the default of <code>NA</code> is taken to mean <code>100</code> quantiles). The value of
+<code>quantiles</code> determines the number
+of quantiles to plot. See Kay et al. (2016) and Fernandes et al. (2018) for more information on quantile dotplots.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>orientation</code></td>
+<td>
+<p>Whether this geom is drawn horizontally or vertically. One of:
+</p>
+
+<ul>
+<li> <p><code>NA</code> (default): automatically detect the orientation based on how the aesthetics
+are assigned. Automatic detection works most of the time.
+</p>
+</li>
+<li> <p><code>"horizontal"</code> (or <code>"y"</code>): draw horizontally, using the <code>y</code> aesthetic to identify different
+groups. For each group, uses the <code>x</code>, <code>xmin</code>, <code>xmax</code>, and <code>thickness</code> aesthetics to
+draw points, intervals, and slabs.
+</p>
+</li>
+<li> <p><code>"vertical"</code> (or <code>"x"</code>): draw vertically, using the <code>x</code> aesthetic to identify different
+groups. For each group, uses the <code>y</code>, <code>ymin</code>, <code>ymax</code>, and <code>thickness</code> aesthetics to
+draw points, intervals, and slabs.
+</p>
+</li>
+</ul>
+<p>For compatibility with the base ggplot naming scheme for <code>orientation</code>, <code>"x"</code> can be used as an alias
+for <code>"vertical"</code> and <code>"y"</code> as an alias for <code>"horizontal"</code> (<span class="pkg">ggdist</span> had an <code>orientation</code> parameter
+before base ggplot did, hence the discrepancy).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.rm</code></td>
+<td>
+<p>If <code>FALSE</code>, the default, missing values are removed with a warning. If <code>TRUE</code>, missing
+values are silently removed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show.legend</code></td>
+<td>
+<p>logical. Should this layer be included in the legends?
+<code>NA</code>, the default, includes if any aesthetics are mapped.
+<code>FALSE</code> never includes, and <code>TRUE</code> always includes.
+It can also be a named logical vector to finely select the aesthetics to
+display.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inherit.aes</code></td>
+<td>
+<p>If <code>FALSE</code>, overrides the default aesthetics,
+rather than combining with them. This is most useful for helper functions
+that define both data and aesthetics and shouldn't inherit behaviour from
+the default plot specification, e.g. <code>borders()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <em>dots</em> family of stats and geoms are similar to <code>geom_dotplot()</code> but with a number of differences:
+</p>
+
+<ul>
+<li>
+<p> Dots geoms act like slabs in <code>geom_slabinterval()</code> and can be given x positions (or y positions when
+in a horizontal orientation).
+</p>
+</li>
+<li>
+<p> Given the available space to lay out dots, the dots geoms will automatically determine how many bins to
+use to fit the available space.
+</p>
+</li>
+<li>
+<p> Dots geoms use a dynamic layout algorithm that lays out dots from the center out if the input data are
+symmetrical, guaranteeing that symmetrical data results in a symmetrical plot. The layout algorithm also prevents
+dots from overlapping each other.
+</p>
+</li>
+<li>
+<p> The shape of the dots in these geoms can be changed using the <code>slab_shape</code> aesthetic (when using the
+<code>dotsinterval</code> family) or the <code>shape</code> or <code>slab_shape</code> aesthetic (when using the <code>dots</code> family)
+</p>
+</li>
+</ul>
+<p>Stats and geoms in this family include:
+</p>
+
+<ul>
+<li> <p><code>geom_dots()</code>: dotplots on raw data. Ensures the dotplot fits within available space by reducing the size
+of the dots automatically (may result in very small dots).
+</p>
+</li>
+<li> <p><code>geom_swarm()</code> and <code>geom_weave()</code>: dotplots on raw data with defaults intended to create "beeswarm" plots.
+Used <code>side = "both"</code> by default, and sets the default dot size to the same size as <code>geom_point()</code>
+(<code>binwidth = unit(1.5, "mm")</code>), allowing dots to overlap instead of getting very small.
+</p>
+</li>
+<li> <p><code>stat_dots()</code>: dotplots on raw data, <span class="pkg">distributional</span> objects, and <code>posterior::rvar()</code>s
+</p>
+</li>
+<li> <p><code>geom_dotsinterval()</code>: dotplot + interval plots on raw data with already-calculated
+intervals (rarely useful directly).
+</p>
+</li>
+<li> <p><code>stat_dotsinterval()</code>: dotplot + interval plots on raw data, <span class="pkg">distributional</span> objects,
+and <code>posterior::rvar()</code>s (will calculate intervals for you).
+</p>
+</li>
+<li> <p><code>geom_blur_dots()</code>: blurry dotplots that allow the standard deviation of a blur applied to
+each dot to be specified using the <code>sd</code> aesthetic.
+</p>
+</li>
+<li> <p><code>stat_mcse_dots()</code>: blurry dotplots of quantiles using the Monte Carlo Standard Error of each quantile.
+</p>
+</li>
+</ul>
+<p><code>stat_dots()</code> and <code>stat_dotsinterval()</code>, when used with the <code>quantiles</code> argument,
+are particularly useful for constructing quantile dotplots, which can be an effective way to communicate uncertainty
+using a frequency framing that may be easier for laypeople to understand (Kay et al. 2016, Fernandes et al. 2018).
+</p>
+<p><strong>To visualize sample data</strong>, such as a data distribution, samples from a
+bootstrap distribution, or a Bayesian posterior, you can supply samples to
+the <code>x</code> or <code>y</code> aesthetic.
+</p>
+<p><strong>To visualize analytical distributions</strong>, you can use the <code>xdist</code> or <code>ydist</code>
+aesthetic. For historical reasons, you can also use <code>dist</code> to specify the distribution, though
+this is not recommended as it does not work as well with orientation detection.
+These aesthetics can be used as follows:
+</p>
+
+<ul>
+<li> <p><code>xdist</code>, <code>ydist</code>, and <code>dist</code> can be any distribution object from the <a href="https://pkg.mitchelloharawild.com/distributional/">distributional</a>
+package (<code>dist_normal()</code>, <code>dist_beta()</code>, etc) or can be a <code>posterior::rvar()</code> object.
+Since these functions are vectorized,
+other columns can be passed directly to them in an <code>aes()</code> specification; e.g.
+<code>aes(dist = dist_normal(mu, sigma))</code> will work if <code>mu</code> and <code>sigma</code> are columns in the
+input data frame.
+</p>
+</li>
+<li> <p><code>dist</code> can be a character vector giving the distribution name. Then the  <code>arg1</code>, ... <code>arg9</code>
+aesthetics (or <code>args</code> as a list column) specify distribution arguments. Distribution names
+should correspond to R functions that have <code>"p"</code>, <code>"q"</code>, and <code>"d"</code> functions; e.g. <code>"norm"</code>
+is a valid distribution name because R defines the <code>pnorm()</code>, <code>qnorm()</code>, and <code>dnorm()</code>
+functions for Normal distributions.
+</p>
+<p>See the <code>parse_dist()</code> function for a useful way to generate <code>dist</code> and <code>args</code>
+values from human-readable distribution specs (like <code>"normal(0,1)"</code>). Such specs are also
+produced by other packages (like the <code>brms::get_prior</code> function in brms); thus,
+<code>parse_dist()</code> combined with the stats described here can help you visualize the output
+of those functions.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>A ggplot2::Stat representing a blurry MCSE dot geometry which can
+be added to a <code>ggplot()</code> object.
+</p>
+
+
+<h3>Computed Variables</h3>
+
+<p>The following variables are computed by this stat and made available for
+use in aesthetic specifications (<code>aes()</code>) using the <code>after_stat()</code>
+function or the <code>after_stat</code> argument of <code>stage()</code>:
+</p>
+
+<ul>
+<li> <p><code>x</code> or <code>y</code>: For slabs, the input values to the slab function.
+For intervals, the point summary from the interval function. Whether it is <code>x</code> or <code>y</code> depends on <code>orientation</code>
+</p>
+</li>
+<li> <p><code>xmin</code> or <code>ymin</code>: For intervals, the lower end of the interval from the interval function.
+</p>
+</li>
+<li> <p><code>xmax</code> or <code>ymax</code>: For intervals, the upper end of the interval from the interval function.
+</p>
+</li>
+<li> <p><code>.width</code>: For intervals, the interval width as a numeric value in <code style="white-space: pre;">⁠[0, 1]⁠</code>.
+For slabs, the width of the smallest interval containing that value of the slab.
+</p>
+</li>
+<li> <p><code>level</code>: For intervals, the interval width as an ordered factor.
+For slabs, the level of the smallest interval containing that value of the slab.
+</p>
+</li>
+<li> <p><code>pdf</code>: For slabs, the probability density function (PDF).
+If <code>options("ggdist.experimental.slab_data_in_intervals")</code> is <code>TRUE</code>:
+For intervals, the PDF at the point summary; intervals also have <code>pdf_min</code> and <code>pdf_max</code>
+for the PDF at the lower and upper ends of the interval.
+</p>
+</li>
+<li> <p><code>cdf</code>: For slabs, the cumulative distribution function.
+If <code>options("ggdist.experimental.slab_data_in_intervals")</code> is <code>TRUE</code>:
+For intervals, the CDF at the point summary; intervals also have <code>cdf_min</code> and <code>cdf_max</code>
+for the CDF at the lower and upper ends of the interval.
+</p>
+</li>
+<li> <p><code>n</code>: For slabs, the number of data points summarized into that slab. If the slab was created from
+an analytical distribution via the <code>xdist</code>, <code>ydist</code>, or <code>dist</code> aesthetic, <code>n</code> will be <code>Inf</code>.
+</p>
+</li>
+<li> <p><code>f</code>: (deprecated) For slabs, the output values from the slab function (such as the PDF, CDF, or CCDF),
+determined by <code>slab_type</code>. Instead of using <code>slab_type</code> to change <code>f</code> and then mapping <code>f</code> onto an
+aesthetic, it is now recommended to simply map the corresponding computed variable (e.g. <code>pdf</code>, <code>cdf</code>, or
+<code>1 - cdf</code>) directly onto the desired aesthetic.
+</p>
+</li>
+<li> <p><code>se</code>: For dots, the Monte Carlo Standard Error of the quantile corresponding to each dot.
+</p>
+</li>
+</ul>
+<h3>Aesthetics</h3>
+
+<p>The dots+interval <code>stat</code>s and <code>geom</code>s have a wide variety of aesthetics that control
+the appearance of their three sub-geometries: the <strong>dots</strong> (aka the <strong>slab</strong>), the
+<strong>point</strong>, and the <strong>interval</strong>.
+</p>
+<p>These <code>stat</code>s support the following aesthetics:
+</p>
+
+<ul>
+<li>
+<p><code>x</code>: x position of the geometry (when orientation = <code>"vertical"</code>); or sample data to be summarized
+(when <code>orientation = "horizontal"</code> with sample data).
+</p>
+</li>
+<li>
+<p><code>y</code>: y position of the geometry (when orientation = <code>"horizontal"</code>); or sample data to be summarized
+(when <code>orientation = "vertical"</code> with sample data).
+</p>
+</li>
+<li>
+<p><code>weight</code>: When using samples (i.e. the <code>x</code> and <code>y</code> aesthetics, not <code>xdist</code> or <code>ydist</code>), optional
+weights to be applied to each draw.
+</p>
+</li>
+<li>
+<p><code>xdist</code>: When using analytical distributions, distribution to map on the x axis: a <span class="pkg">distributional</span>
+object (e.g. <code>dist_normal()</code>) or a <code>posterior::rvar()</code> object.
+</p>
+</li>
+<li>
+<p><code>ydist</code>: When using analytical distributions, distribution to map on the y axis: a <span class="pkg">distributional</span>
+object (e.g. <code>dist_normal()</code>) or a <code>posterior::rvar()</code> object.
+</p>
+</li>
+<li>
+<p><code>dist</code>: When using analytical distributions, a name of a distribution (e.g. <code>"norm"</code>), a
+<span class="pkg">distributional</span> object (e.g. <code>dist_normal()</code>), or a <code>posterior::rvar()</code> object. See <strong>Details</strong>.
+</p>
+</li>
+<li>
+<p><code>args</code>: Distribution arguments (<code>args</code> or <code>arg1</code>, ... <code>arg9</code>). See <strong>Details</strong>.
+</p>
+</li>
+</ul>
+<p>In addition, in their default configuration (paired with <code>geom_blur_dots()</code>)
+the following aesthetics are supported by the underlying geom:
+</p>
+<p><strong>Dots-specific (aka Slab-specific) aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>sd</code>: The standard deviation (in data units) of the blur associated with each dot.
+</p>
+</li>
+<li>
+<p><code>order</code>: The order in which data points are stacked within bins. Can be used to create the effect of
+"stacked" dots by ordering dots according to a discrete variable. If omitted (<code>NULL</code>), the
+value of the data points themselves are used to determine stacking order. Only applies when
+<code>layout</code> is <code>"bin"</code> or <code>"hex"</code>, as the other layout methods fully determine both <em>x</em> and <em>y</em> positions.
+</p>
+</li>
+<li>
+<p><code>side</code>: Which side to place the slab on. <code>"topright"</code>, <code>"top"</code>, and <code>"right"</code> are synonyms
+which cause the slab to be drawn on the top or the right depending on if <code>orientation</code> is <code>"horizontal"</code>
+or <code>"vertical"</code>. <code>"bottomleft"</code>, <code>"bottom"</code>, and <code>"left"</code> are synonyms which cause the slab
+to be drawn on the bottom or the left depending on if <code>orientation</code> is <code>"horizontal"</code> or
+<code>"vertical"</code>. <code>"topleft"</code> causes the slab to be drawn on the top or the left, and <code>"bottomright"</code>
+causes the slab to be drawn on the bottom or the right. <code>"both"</code> draws the slab mirrored on both
+sides (as in a violin plot).
+</p>
+</li>
+<li>
+<p><code>scale</code>: What proportion of the region allocated to this geom to use to draw the slab. If <code>scale = 1</code>,
+slabs that use the maximum range will just touch each other. Default is <code>0.9</code> to leave some space
+between adjacent slabs. For a comprehensive discussion and examples of slab scaling and normalization,
+see the <a href="https://mjskay.github.io/ggdist/articles/thickness.html"><code>thickness</code> scale article</a>.
+</p>
+</li>
+<li>
+<p><code>justification</code>: Justification of the interval relative to the slab, where <code>0</code> indicates bottom/left
+justification and <code>1</code> indicates top/right justification (depending on <code>orientation</code>). If <code>justification</code>
+is <code>NULL</code> (the default), then it is set automatically based on the value of <code>side</code>: when <code>side</code> is
+<code>"top"</code>/<code>"right"</code> <code>justification</code> is set to <code>0</code>, when <code>side</code> is <code>"bottom"</code>/<code>"left"</code>
+<code>justification</code> is set to <code>1</code>, and when <code>side</code> is <code>"both"</code> <code>justification</code> is set to 0.5.
+</p>
+</li>
+<li>
+<p><code>datatype</code>: When using composite geoms directly without a <code>stat</code> (e.g. <code>geom_slabinterval()</code>), <code>datatype</code> is used to
+indicate which part of the geom a row in the data targets: rows with <code>datatype = "slab"</code> target the
+slab portion of the geometry and rows with <code>datatype = "interval"</code> target the interval portion of
+the geometry. This is set automatically when using ggdist <code>stat</code>s.
+</p>
+</li>
+</ul>
+<p><strong>Interval-specific aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>xmin</code>: Left end of the interval sub-geometry (if <code>orientation = "horizontal"</code>).
+</p>
+</li>
+<li>
+<p><code>xmax</code>: Right end of the interval sub-geometry (if <code>orientation = "horizontal"</code>).
+</p>
+</li>
+<li>
+<p><code>ymin</code>: Lower end of the interval sub-geometry (if <code>orientation = "vertical"</code>).
+</p>
+</li>
+<li>
+<p><code>ymax</code>: Upper end of the interval sub-geometry (if <code>orientation = "vertical"</code>).
+</p>
+</li>
+</ul>
+<p><strong>Color aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>colour</code>: (or <code>color</code>) The color of the <strong>interval</strong> and <strong>point</strong> sub-geometries.
+Use the <code>slab_color</code>, <code>interval_color</code>, or <code>point_color</code> aesthetics (below) to
+set sub-geometry colors separately.
+</p>
+</li>
+<li>
+<p><code>fill</code>: The fill color of the <strong>slab</strong> and <strong>point</strong> sub-geometries. Use the <code>slab_fill</code>
+or <code>point_fill</code> aesthetics (below) to set sub-geometry colors separately.
+</p>
+</li>
+<li>
+<p><code>alpha</code>: The opacity of the <strong>slab</strong>, <strong>interval</strong>, and <strong>point</strong> sub-geometries. Use the <code>slab_alpha</code>,
+<code>interval_alpha</code>, or <code>point_alpha</code> aesthetics (below) to set sub-geometry colors separately.
+</p>
+</li>
+<li>
+<p><code>colour_ramp</code>: (or <code>color_ramp</code>) A secondary scale that modifies the <code>color</code>
+scale to "ramp" to another color. See <code>scale_colour_ramp()</code> for examples.
+</p>
+</li>
+<li>
+<p><code>fill_ramp</code>: A secondary scale that modifies the <code>fill</code>
+scale to "ramp" to another color. See <code>scale_fill_ramp()</code> for examples.
+</p>
+</li>
+</ul>
+<p><strong>Line aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>linewidth</code>: Width of the line used to draw the <strong>interval</strong> (except with <code>geom_slab()</code>: then
+it is the width of the <strong>slab</strong>). With composite geometries including an interval and slab,
+use <code>slab_linewidth</code> to set the line width of the <strong>slab</strong> (see below). For <strong>interval</strong>, raw
+<code>linewidth</code> values are transformed according to the <code>interval_size_domain</code> and <code>interval_size_range</code>
+parameters of the <code>geom</code> (see above).
+</p>
+</li>
+<li>
+<p><code>size</code>: Determines the size of the <strong>point</strong>. If <code>linewidth</code> is not provided, <code>size</code> will
+also determines the width of the line used to draw the <strong>interval</strong> (this allows line width and
+point size to be modified together by setting only <code>size</code> and not <code>linewidth</code>). Raw
+<code>size</code> values are transformed according to the <code>interval_size_domain</code>, <code>interval_size_range</code>,
+and <code>fatten_point</code> parameters of the <code>geom</code> (see above). Use the <code>point_size</code> aesthetic
+(below) to set sub-geometry size directly without applying the effects of
+<code>interval_size_domain</code>, <code>interval_size_range</code>, and <code>fatten_point</code>.
+</p>
+</li>
+<li>
+<p><code>stroke</code>: Width of the outline around the <strong>point</strong> sub-geometry.
+</p>
+</li>
+<li>
+<p><code>linetype</code>: Type of line (e.g., <code>"solid"</code>, <code>"dashed"</code>, etc) used to draw the <strong>interval</strong>
+and the outline of the <strong>slab</strong> (if it is visible). Use the <code>slab_linetype</code> or
+<code>interval_linetype</code> aesthetics (below) to set sub-geometry line types separately.
+</p>
+</li>
+</ul>
+<p><strong>Slab-specific color and line override aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>slab_fill</code>: Override for <code>fill</code>: the fill color of the slab.
+</p>
+</li>
+<li>
+<p><code>slab_colour</code>: (or <code>slab_color</code>) Override for <code>colour</code>/<code>color</code>: the outline color of the slab.
+</p>
+</li>
+<li>
+<p><code>slab_alpha</code>: Override for <code>alpha</code>: the opacity of the slab.
+</p>
+</li>
+<li>
+<p><code>slab_linewidth</code>: Override for <code>linwidth</code>: the width of the outline of the slab.
+</p>
+</li>
+<li>
+<p><code>slab_linetype</code>: Override for <code>linetype</code>: the line type of the outline of the slab.
+</p>
+</li>
+<li>
+<p><code>slab_shape</code>: Override for <code>shape</code>: the shape of the dots used to draw the dotplot slab.
+</p>
+</li>
+</ul>
+<p><strong>Interval-specific color and line override aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>interval_colour</code>: (or <code>interval_color</code>) Override for <code>colour</code>/<code>color</code>: the color of the interval.
+</p>
+</li>
+<li>
+<p><code>interval_alpha</code>: Override for <code>alpha</code>: the opacity of the interval.
+</p>
+</li>
+<li>
+<p><code>interval_linetype</code>: Override for <code>linetype</code>: the line type of the interval.
+</p>
+</li>
+</ul>
+<p><strong>Point-specific color and line override aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>point_fill</code>: Override for <code>fill</code>: the fill color of the point.
+</p>
+</li>
+<li>
+<p><code>point_colour</code>: (or <code>point_color</code>) Override for <code>colour</code>/<code>color</code>: the outline color of the point.
+</p>
+</li>
+<li>
+<p><code>point_alpha</code>: Override for <code>alpha</code>: the opacity of the point.
+</p>
+</li>
+<li>
+<p><code>point_size</code>: Override for <code>size</code>: the size of the point.
+</p>
+</li>
+</ul>
+<p><strong>Deprecated aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>slab_size</code>: Use <code>slab_linewidth</code>.
+</p>
+</li>
+<li>
+<p><code>interval_size</code>: Use <code>interval_linewidth</code>.
+</p>
+</li>
+</ul>
+<p><strong>Other aesthetics</strong> (these work as in standard <code>geom</code>s)
+</p>
+
+<ul>
+<li>
+<p><code>width</code>
+</p>
+</li>
+<li>
+<p><code>height</code>
+</p>
+</li>
+<li>
+<p><code>group</code>
+</p>
+</li>
+</ul>
+<p>See examples of some of these aesthetics in action in <code>vignette("dotsinterval")</code>.
+Learn more about the sub-geom override aesthetics (like <code>interval_color</code>) in the
+scales documentation. Learn more about basic ggplot aesthetics in
+<code>vignette("ggplot2-specs")</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Kay, M., Kola, T., Hullman, J. R., &amp; Munson, S. A. (2016). When (ish) is My Bus? User-centered Visualizations
+of Uncertainty in Everyday, Mobile Predictive Systems. <em>Conference on Human Factors
+in Computing Systems - CHI '16</em>, 5092–5103. <a href="https://doi.org/10.1145/2858036.2858558">doi:10.1145/2858036.2858558</a>.
+</p>
+<p>Fernandes, M., Walls, L., Munson, S., Hullman, J., &amp; Kay, M. (2018). Uncertainty Displays Using Quantile Dotplots
+or CDFs Improve Transit Decision-Making. <em>Conference on Human Factors in Computing Systems - CHI '18</em>.
+<a href="https://doi.org/10.1145/3173574.3173718">doi:10.1145/3173574.3173718</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>See <code>geom_blur_dots()</code> for the geom underlying this stat.
+See <code>vignette("dotsinterval")</code> for a variety of examples of use.
+</p>
+<p>Other dotsinterval stats: 
+<code>stat_dots()</code>,
+<code>stat_dotsinterval()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(dplyr)
+library(ggplot2)
+
+theme_set(theme_ggdist())
+
+set.seed(1234)
+data.frame(x = rnorm(1000)) %&gt;%
+  ggplot(aes(x = x)) +
+  stat_mcse_dots(quantiles = 100, layout = "weave")
+
+</code></pre>
+
+
+</div>

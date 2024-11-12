@@ -1,0 +1,147 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>partition</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Partition a layer into subgroups (Layer operation)</h2>
+
+<h3>Description</h3>
+
+<p>A layer operation for adding a <code>partition</code> aesthetic to a layer.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">partition(object, partition)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>One of:
+</p>
+
+<ul>
+<li>
+<p> A layer-like object: applies this operation to the layer.
+</p>
+</li>
+<li>
+<p> A missing argument: creates an operation
+</p>
+</li>
+<li>
+<p> Anything else: creates an operation, passing <code>object</code> along to the
+<code>partition</code> argument
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>partition</code></td>
+<td>
+<p>One of:
+</p>
+
+<ul>
+<li>
+<p> A list of quosures, such as returned by <code>vars()</code>, giving a (possibly multi-)
+column expression for the <code>partition</code> aesthetic. These expressions are
+combined using <code>interaction()</code> to be passed on to <code>aes(partition = ...)</code>
+</p>
+</li>
+<li>
+<p> A one-sided formula, giving a single-column expression for the <code>partition</code>
+aesthetic, which is passed on to <code>aes_(partition = ...)</code>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This is a shortcut for setting the <code>partition</code> aesthetic of a layer.
+</p>
+
+<ul>
+<li> <p><code>partition(~ XXX)</code> is roughly equivalent to <code>adjust(aes(partition = XXX))</code>
+</p>
+</li>
+<li> <p><code>partition(vars(X, Y, ...))</code> is roughly equivalent to <code>adjust(aes(partition = interaction(X, Y, ...)))</code>
+</p>
+</li>
+</ul>
+<p>When a layer with a <code>partition</code> aesthetic is used by the following
+operations, the effects of the operations are applied across groups:
+</p>
+
+<ul><li> <p><code>blend()</code>: Blends graphical objects within the subgroups defined by the
+partition together using normal (<code>"over"</code>) blending before applying its
+blend between subgroups.
+</p>
+</li></ul>
+<h3>Value</h3>
+
+<p>A layer-like object (if <code>object</code> is layer-like) or an operation (if not).
+</p>
+
+
+<h3>See Also</h3>
+
+<p>operation for a description of layer operations.
+</p>
+<p>Other layer operations: 
+<code>adjust</code>,
+<code>affine_transform</code>,
+<code>blend</code>,
+<code>copy</code>,
+<code>nop</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(ggplot2)
+
+# create two versions of a dataset, where draw order can affect output
+set.seed(1234)
+df_a = data.frame(x = rnorm(500, 0), y = rnorm(500, 1), set = "a")
+df_b = data.frame(x = rnorm(500, 1), y = rnorm(500, 2), set = "b")
+df_ab = rbind(df_a, df_b) |&gt;
+  transform(order = "draw a then b")
+df_ba = rbind(df_b, df_a) |&gt;
+  transform(order = "draw b then a")
+df = rbind(df_ab, df_ba)
+
+# Using the "multiply" blend mode, draw order does not matter, but
+# the "multiply" blend is applied to all points, creating dark regions
+# outside the intersection:
+df |&gt;
+  ggplot(aes(x, y, color = set)) +
+  geom_point(size = 3, alpha = 0.5) |&gt; blend("multiply") +
+  scale_color_brewer(palette = "Set1") +
+  facet_grid(~ order)
+
+# By partitioning (either through |&gt; partition(vars(set)) or aes(partition = set))
+# we will blend using the default blend mode (over) first, then we can apply the
+# "multiply" blend just between the two sets, so the regions outside the
+# intersection are not blended using "multiply":
+df |&gt;
+  ggplot(aes(x, y, color = set, partition = set)) +
+  geom_point(size = 3, alpha = 0.5) |&gt; blend("multiply") +
+  scale_color_brewer(palette = "Set1") +
+  facet_grid(~ order)
+
+</code></pre>
+
+
+</div>

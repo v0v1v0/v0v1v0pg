@@ -1,0 +1,184 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>aemet_temp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>AEMET daily temperatures during 1974–2013</h2>
+
+<h3>Description</h3>
+
+<p>Series of daily temperatures of 73 Spanish weather stations
+during the 40-year period 1974–2013.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">aemet_temp
+</code></pre>
+
+
+<h3>Format</h3>
+
+<p>A list with the following entries:
+</p>
+
+<dl>
+<dt>temp</dt>
+<dd>
+<p>an <code>fdata</code> with 2892 temperature
+(in Celsius degrees) curves, discretized on 365 equispaced
+grid points (days) on <code class="reqn">[0.5, 364.5]</code>. Each curve corresponds to the
+yearly records of a weather station.</p>
+</dd>
+<dt>df</dt>
+<dd>
+<p>a dataframe with metadata for each curve:
+</p>
+
+<ul>
+<li>
+<p><code>ind</code>: identifier of the weather station.
+</p>
+</li>
+<li>
+<p><code>name</code>: name of the weather station.
+</p>
+</li>
+<li>
+<p><code>year</code>: year of the observation.
+</p>
+</li>
+</ul>
+</dd>
+</dl>
+<h3>Details</h3>
+
+<p>For consistency with the <code>fda.usc-package</code>'s
+<code>aemet</code> dataset, the names and identifiers of the 73
+weather stations are the same as in that dataset. Only a minor fix has been
+applied to the "A CORUÑA/ALVEDRO" station, whose identifier was the same
+as the "A CORUÑA" station, <code>"1387"</code>. The former was set to
+<code>"1387A"</code>.
+</p>
+<p>Information about the province, altitude, longitude, and latitude of
+each weather station can be retrieved in <code>df</code> from the
+<code>fda.usc-package</code>'s <code>aemet</code>
+dataset.
+</p>
+<p>The dataset is a curated version of a larger database of 115 stations. It
+excludes stations with inconsistent records or that were relocated, closed,
+or opened during the 40-year period. There are 9 stations with missing
+years. The total of missing years is 28.
+</p>
+<p>In leap years, the daily-average temperature is computed as the average of
+February 28th and 29th.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Original data processing scripts by Manuel Febrero-Bande and Manuel Oviedo
+de la Fuente. Adaptations by Eduardo García-Portugués.
+</p>
+
+
+<h3>Source</h3>
+
+<p>The data was retrieved from the FTP of the
+<a href="https://www.aemet.es/es/portada/">Meteorological State Agency of Spain
+(AEMET)</a> in 2014 using a processing script by the authors of the
+<code>fda.usc-package</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Febrero-Bande, M. and Oviedo de la Fuente, M. (2012). Statistical Computing
+in Functional Data Analysis: The R Package fda.usc. <em>Journal of
+Statistical Software</em>, 51(4):1–28. <a href="https://doi.org/10.18637/jss.v051.i04">doi:10.18637/jss.v051.i04</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Data splitting
+
+# Load raw data
+data("aemet_temp")
+
+# Partition the dataset in the first and last 20 years
+with(aemet_temp, {
+  ind_pred &lt;- which((1974 &lt;= df$year) &amp; (df$year &lt;= 1993))
+  ind_resp &lt;- which((1994 &lt;= df$year) &amp; (df$year &lt;= 2013))
+  aemet_temp_pred &lt;&lt;- list("df" = df[ind_pred, ], "temp" = temp[ind_pred])
+  aemet_temp_resp &lt;&lt;- list("df" = df[ind_resp, ], "temp" = temp[ind_resp])
+})
+
+# Average the temperature on each period
+mean_aemet &lt;- function(x) {
+  m &lt;- tapply(X = 1:nrow(x$temp$data), INDEX = x$df$ind,
+              FUN = function(i) colMeans(x$temp$data[i, , drop = FALSE],
+                                         na.rm = TRUE))
+ x$temp$data &lt;- do.call(rbind, m)
+ return(x$temp)
+}
+
+# Build predictor and response fdatas
+aemet_temp_pred &lt;- mean_aemet(aemet_temp_pred)
+aemet_temp_resp &lt;- mean_aemet(aemet_temp_resp)
+
+# Plot
+old_par &lt;- par(mfrow = c(1, 2))
+plot(aemet_temp_pred)
+plot(aemet_temp_resp)
+par(old_par)
+
+# Average daily temperatures
+day_avg_pred &lt;- func_mean(aemet_temp_pred)
+day_avg_resp &lt;- func_mean(aemet_temp_resp)
+
+# Average yearly temperatures
+avg_year_pred &lt;- rowMeans(aemet_temp_pred$data)
+avg_year_resp &lt;- rowMeans(aemet_temp_resp$data)
+
+## Test the linear model with functional response and predictor
+
+(comp_flmfr &lt;- flm_test(X = aemet_temp_pred, Y = aemet_temp_resp,
+                        est_method = "fpcr_l1s"))
+beta0 &lt;- diag(rep(1, length(aemet_temp_pred$argvals)))
+(simp_flmfr &lt;- flm_test(X = aemet_temp_pred, Y = aemet_temp_resp,
+                        beta0 = beta0, est_method = "fpcr_l1s"))
+
+# Visualize estimation
+filled.contour(x = aemet_temp_pred$argvals, y = aemet_temp_resp$argvals,
+               z = comp_flmfr$fit_flm$Beta_hat,
+               color.palette = viridisLite::viridis, nlevels = 20)
+
+## Test the linear model with scalar response and functional predictor
+
+(comp_flmsr &lt;- flm_test(X = aemet_temp_pred, Y = avg_year_resp,
+                        est_method = "fpcr_l1s"))
+(simp_flmsr &lt;- flm_test(X = aemet_temp_pred, Y = avg_year_resp,
+                        beta0 = 1 / 365, est_method = "fpcr_l1s"))
+
+# Visualize estimation
+plot(aemet_temp_pred$argvals, comp_flmsr$fit_flm$Beta_hat, type = "l",
+     ylim = c(0, 30 / 365))
+abline(h = 1 / 365, col = 2)
+
+## Test the linear model with functional response and scalar predictor
+
+(comp_frsp &lt;- flm_test(X = avg_year_pred, Y = aemet_temp_resp))
+(simp_frsp &lt;- flm_test(X = avg_year_pred, Y = aemet_temp_resp, beta0 = 1))
+
+## Test the linear model with scalar response and predictor
+
+(comp_srsp &lt;- flm_test(X = avg_year_pred, Y = avg_year_resp))
+(simp_srsp &lt;- flm_test(X = avg_year_pred, Y = avg_year_resp, beta0 = 1))
+
+</code></pre>
+
+
+</div>

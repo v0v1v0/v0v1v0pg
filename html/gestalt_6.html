@@ -1,0 +1,149 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>partial</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fix a Number of Arguments to a Function</h2>
+
+<h3>Description</h3>
+
+<p><code>partial()</code> enables
+<a href="https://en.wikipedia.org/wiki/Partial_application">partial application</a>:
+given a function, it fixes the value of selected arguments to produce a
+function of the remaining arguments.
+</p>
+<p><code>departial()</code> undoes the application of <code>partial()</code> by returning the original
+function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">partial(..f, ...)
+
+departial(..f)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>..f</code></td>
+<td>
+<p>Function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Argument values of <code>..f</code> to fix, specified by name or position.
+Captured as quosures.
+Unquoting and splicing
+are supported (see ‘Examples’). Argument values may match the <code>...</code>
+argument of <code>..f</code> (if present), but only when specified by name.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Even while <code>partial()</code> truncates formals, it remains compatible with
+functions that use <code>missing()</code> to test whether a
+specified argument was supplied in a call. For example,
+<code>draw3 &lt;- partial(sample, size = 3)</code> works as a function that randomly
+draws three elements, even though <code>sample()</code> invokes <code>missing(size)</code> and
+<code>draw3()</code> has the form <code>function(x, replace, prob) {...}</code>.
+</p>
+<p>Because partially applied functions call the original function in an ad hoc
+environment, impure functions that depend on the calling context as a
+<em>value</em>, rather than as a lexical scope, may not be amenable to
+<code>partial()</code>. For example, <code>partial(ls, all.names = TRUE)()</code> is not
+equivalent to <code>ls(all.names = TRUE)</code>, because <code>ls()</code> inspects the calling
+environment to produce its value, whereas <code>partial(ls, all.names = TRUE)()</code>
+calls <code>ls(all.names = TRUE)</code> from an (ephemeral) evaluation environment.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>partial()</code> returns a function whose formals are a
+truncation of the formals of <code>..f</code> (as a closure) by the fixed arguments.
+NB the original default values do not appear in the formals of a
+partialized function, but are nonetheless applied when the function is
+called.
+</p>
+<p>The function <code>partial(..f)</code> is identical to <code>..f</code>.
+</p>
+<p>In conformance with R's calling convention, fixed argument values are lazy
+promises. Moreover, when forced, they are tidily evaluated. Lazy evaluation of fixed arguments can be
+overridden via unquoting, see ‘Examples’.
+</p>
+<p>When <code>..f</code> is a partially applied function, <code>departial(..f)</code> is the
+(closure of) the underlying function. For ordinary (non-partially applied)
+functions, <code>departial(..f)</code> is identical to <code>..f</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Arguments can be fixed by name
+draw3 &lt;- partial(sample, size = 3)
+draw3(letters)
+
+# Arguments can be fixed by position
+draw3 &lt;- partial(sample, , 3)
+draw3(letters)
+
+# Use departial() to recover the original function
+stopifnot(identical(departial(draw3), sample))
+
+# Lazily evaluate argument values by default
+# The value of 'n' is evaluated whenever rnd() is called.
+rnd &lt;- partial(runif, n = rpois(1, 5))
+replicate(4, rnd(), simplify = FALSE)   # variable length
+
+# Eagerly evaluate argument values with unquoting (`!!`)
+# The value of 'n' is fixed when 'rnd_eager' is created.
+rnd_eager &lt;- partial(runif, n = !!rpois(1, 5))
+len &lt;- length(rnd_eager())
+reps &lt;- replicate(4, rnd_eager(), simplify = FALSE)   # constant length
+stopifnot(all(vapply(reps, length, integer(1)) == len))
+
+# Mix evaluation schemes by combining lazy evaluation with unquoting (`!!`)
+# Here 'n' is lazily evaluated, while 'max' is eagerly evaluated.
+rnd_mixed &lt;- partial(runif, n = rpois(1, 5), max = !!sample(10, 1))
+replicate(4, rnd_mixed(), simplify = FALSE)
+
+# Arguments to fix can be spliced
+args_eager &lt;- list(n = rpois(1, 5), max = sample(10, 1))
+rnd_eager2 &lt;- partial(runif, !!!args_eager)
+replicate(4, rnd_eager2(), simplify = FALSE)
+
+# Use rlang::exprs() to selectively evaluate arguments to fix
+args_mixed &lt;- rlang::exprs(n = rpois(1, 5), max = !!sample(10, 1))
+rnd_mixed2 &lt;- partial(runif, !!!args_mixed)
+replicate(4, rnd_mixed2(), simplify = FALSE)
+
+# partial() truncates formals by the fixed arguments, omits default values
+foo &lt;- function(x, y = x, ..., z = "z") NULL
+stopifnot(
+  identical(formals(partial(foo)),
+            formals(foo)),
+  identical(formals(partial(foo, x = 1)),
+            formals(function(y, ..., z) NULL)),
+  identical(formals(partial(foo, x = 1, y = 2)),
+            formals(function(..., z) NULL)),
+  identical(formals(partial(foo, x = 1, y = 2, z = 3)),
+            formals(function(...) NULL))
+)
+
+# Nevertheless, partial() remembers default argument values when called
+f &lt;- function(x, y = x) c(x, y)
+p &lt;- partial(f, x = 1)
+stopifnot(identical(p(), c(1, 1)))
+
+</code></pre>
+
+
+</div>

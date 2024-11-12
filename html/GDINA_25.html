@@ -1,0 +1,212 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GMSCDM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimating multiple-strategy cognitive diagnosis models</h2>
+
+<h3>Description</h3>
+
+<p>An (experimental) function for calibrating the multiple-strategy CDMs for dichotomous response data (Ma &amp; Guo, 2019)
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GMSCDM(
+  dat,
+  msQ,
+  model = "ACDM",
+  s = 1,
+  att.prior = NULL,
+  delta = NULL,
+  control = list()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dat</code></td>
+<td>
+<p>A required binary item response matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>msQ</code></td>
+<td>
+<p>A multiple-strategy Q-matrix; the first column gives item numbers and the second column gives
+the strategy number. See examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>CDM used; can be <code>"DINA"</code>,<code>"DINO"</code>,<code>"ACDM"</code>,<code>"LLM"</code>, and <code>"RRUM"</code>, representing
+the GMS-DINA, GMS-DINO, GMS-ACDM, GMS-LLM and GMS-RRUM in Ma &amp; Guo (2019), respectively. It can also be <code>"rDINA"</code> and <code>"rDINO"</code>,
+representing restricted GMS-DINA and GMS-DINO models where delta_jm1 are equal for all strategies. Note that only a single model can be used
+for the whole test.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s</code></td>
+<td>
+<p>strategy selection parameter. It is equal to 1 by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>att.prior</code></td>
+<td>
+<p>mixing proportion parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>delta parameters in list format.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>a list of control arguments</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>an object of class <code>GMSCDM</code> with the following components:
+</p>
+
+<dl>
+<dt>IRF</dt>
+<dd>
+<p>A matrix of success probabilities for each latent class on each item (IRF)</p>
+</dd>
+<dt>delta</dt>
+<dd>
+<p>A list of delta parameters</p>
+</dd>
+<dt>attribute</dt>
+<dd>
+<p>A list of estimated attribute profiles including EAP, MLE and MAP estimates.</p>
+</dd>
+<dt>testfit</dt>
+<dd>
+<p>A list of test fit statistics including deviance, number of parameters, AIC and BIC</p>
+</dd>
+<dt>sIRF</dt>
+<dd>
+<p>strategy-specific item response function</p>
+</dd>
+<dt>pjmc</dt>
+<dd>
+<p>Probability of adopting each strategy on each item for each latent class</p>
+</dd>
+<dt>sprv</dt>
+<dd>
+<p>Strategy pravelence</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Wenchao Ma, The University of Alabama, <a href="mailto:wenchao.ma@ua.edu">wenchao.ma@ua.edu</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Ma, W., &amp; de la Torre, J. (2020). GDINA: An R Package for Cognitive Diagnosis Modeling. <em>Journal of Statistical Software, 93(14)</em>, 1-26.
+</p>
+<p>Ma, W., &amp; Guo, W. (2019). Cognitive Diagnosis Models for Multiple Strategies. <em>British Journal of Mathematical and Statistical Psychology.</em>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GDINA</code> for MS-DINA model and single strategy CDMs,
+and <code>DTM</code> for diagnostic tree model for multiple strategies in polytomous response data
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+##################
+#
+# data simulation
+#
+##################
+set.seed(123)
+msQ &lt;- matrix(
+c(1,1,0,1,
+1,2,1,0,
+2,1,1,0,
+3,1,0,1,
+4,1,1,1,
+5,1,1,1),6,4,byrow = T)
+# J x L - 00,10,01,11
+LC.prob &lt;- matrix(c(
+0.2,0.7727,0.5889,0.8125,
+0.1,0.9,0.1,0.9,
+0.1,0.1,0.8,0.8,
+0.2,0.5,0.4,0.7,
+0.2,0.4,0.7,0.9),5,4,byrow=TRUE)
+N &lt;- 10000
+att &lt;- sample(1:4,N,replace=TRUE)
+dat &lt;- 1*(t(LC.prob[,att])&gt;matrix(runif(N*5),N,5))
+
+
+est &lt;- GMSCDM(dat,msQ)
+# item response function
+est$IRF
+# strategy specific IRF
+est$sIRF
+
+
+################################
+#
+# Example 14 from GDINA function
+#
+################################
+Q &lt;- matrix(c(1,1,1,1,0,
+1,2,0,1,1,
+2,1,1,0,0,
+3,1,0,1,0,
+4,1,0,0,1,
+5,1,1,0,0,
+5,2,0,0,1),ncol = 5,byrow = TRUE)
+d &lt;- list(
+  item1=c(0.2,0.7),
+  item2=c(0.1,0.6),
+  item3=c(0.2,0.6),
+  item4=c(0.2,0.7),
+  item5=c(0.1,0.8))
+
+  set.seed(123)
+sim &lt;- simGDINA(N=1000,Q = Q, delta.parm = d,
+               model = c("MSDINA","MSDINA","DINA",
+                         "DINA","DINA","MSDINA","MSDINA"))
+
+# simulated data
+dat &lt;- extract(sim,what = "dat")
+# estimation
+# MSDINA need to be specified for each strategy
+est &lt;- GDINA(dat,Q,model = c("MSDINA","MSDINA","DINA",
+                             "DINA","DINA","MSDINA","MSDINA"),
+             control = list(conv.type = "neg2LL",conv.crit = .01))
+
+# Approximate the MS-DINA model using GMS DINA model
+est2 &lt;- GMSCDM(dat, Q, model = "rDINA", s = 10,
+               control = list(conv.type = "neg2LL",conv.crit = .01))
+
+## End(Not run)
+
+
+</code></pre>
+
+
+</div>

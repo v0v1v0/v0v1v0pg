@@ -1,0 +1,198 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>unit_conversion</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get a conversion factor across two measurement units of a given class</h2>
+
+<h3>Description</h3>
+
+<p>The <code>unit_conversion()</code> helper function gives us a conversion factor for
+transforming a value from one form of measurement units to a target form.
+For example if you have a length value that is expressed in miles you could
+transform that value to one in kilometers through multiplication of the value
+by the conversion factor (in this case <code>1.60934</code>).
+</p>
+<p>For <code>unit_conversion()</code> to understand the source and destination units, you
+need to provide a keyword value for the <code>from</code> and <code>to</code> arguments. To aid as
+a reference for this, call <code>info_unit_conversions()</code> to display an
+information table that contains all of the keywords for every conversion
+type.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">unit_conversion(from, to)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>from</code></td>
+<td>
+<p><em>Units for the input value</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>The keyword representing the units for the value that requires unit
+conversion. In the case where the value has units of miles, the necessary
+input is <code>"length.mile"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>to</code></td>
+<td>
+<p><em>Desired units for the value</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>The keyword representing the target units for the value with units defined
+in <code>from</code>. In the case where input value has units of miles and we would
+rather want the value to be expressed as kilometers, the <code>to</code> value should
+be <code>"length.kilometer"</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A single numerical value.
+</p>
+
+
+<h3>Examples</h3>
+
+<p>Let's use a portion of the <code>towny</code> dataset and create a table showing
+population, density, and land area for 10 municipalities. The <code>land_area_km2</code>
+values are in units of square kilometers, however, we'd rather the values
+were in square miles. We can convert the numeric values while formatting the
+values with <code>fmt_number()</code> by using <code>unit_conversion()</code> in the <code>scale_by</code>
+argument since the return value of that is a conversion factor (which is
+applied to each value by multiplication). The same is done for converting the
+'people per square kilometer' values in <code>density_2021</code> to 'people per square
+mile', however, the units to convert are in the denominator so the inverse
+of the conversion factor must be used.
+</p>
+<div class="sourceCode r"><pre>towny |&gt;
+  dplyr::arrange(desc(density_2021)) |&gt;
+  dplyr::slice_head(n = 10) |&gt;
+  dplyr::select(name, population_2021, density_2021, land_area_km2) |&gt;
+  gt(rowname_col = "name") |&gt;
+  fmt_integer(columns = population_2021) |&gt;
+  fmt_number(
+    columns = land_area_km2,
+    decimals = 1,
+    scale_by = unit_conversion(
+      from = "area.square-kilometer",
+      to = "area.square-mile"
+    )
+  ) |&gt;
+  fmt_number(
+    columns = density_2021,
+    decimals = 1,
+    scale_by = 1 / unit_conversion(
+      from = "area.square-kilometer",
+      to = "area.square-mile"
+    )
+  ) |&gt;
+  cols_label(
+    land_area_km2 = "Land Area,&lt;br&gt;sq. mi",
+    population_2021 = "Population",
+    density_2021 = "Density,&lt;br&gt;ppl / sq. mi",
+    .fn = md
+  )
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_unit_conversion_1.png" alt="This image of a table was generated from the first code example in the `unit_conversion()` help file." style="width:100%;"><p>With a small slice of the <code>gibraltar</code> dataset, let's display the
+temperature values in terms of degrees Celsius (present in the data) <em>and</em> as
+temperatures in degrees Fahrenheit (achievable via conversion). We can
+duplicate the <code>temp</code> column through <code>cols_add()</code> (naming the new column as
+<code>temp_f</code>) and when formatting through <code>fmt_integer()</code> we can call
+<code>unit_conversion()</code> within the <code>scale_by</code> argument to perform this
+transformation while formatting the values as integers.
+</p>
+<div class="sourceCode r"><pre>gibraltar |&gt;
+  dplyr::filter(
+    date == "2023-05-15",
+    time &gt;= "06:00",
+    time &lt;= "12:00"
+  ) |&gt;
+  dplyr::select(time, temp) |&gt;
+  gt() |&gt;
+  tab_header(
+    title = "Air Temperature During Late Morning Hours at LXGB Stn.",
+    subtitle = "May 15, 2023"
+  ) |&gt;
+  cols_add(temp_f = temp) |&gt;
+  cols_move(columns = temp_f, after = temp) |&gt;
+  tab_spanner(
+    label = "Temperature",
+    columns = starts_with("temp")
+  ) |&gt;
+  fmt_number(
+    columns = temp,
+    decimals = 1
+  ) |&gt;
+  fmt_integer(
+    columns = temp_f,
+    scale_by = unit_conversion(
+      from = "temperature.C",
+      to = "temperature.F"
+    )
+  ) |&gt;
+  cols_label(
+    time = "Time",
+    temp = "{{degC}}",
+    temp_f = "{{degF}}"
+  ) |&gt;
+  cols_width(
+    starts_with("temp") ~ px(80),
+    time ~ px(100)
+  ) |&gt;
+  opt_horizontal_padding(scale = 3) |&gt;
+  opt_vertical_padding(scale = 0.5) |&gt;
+  opt_align_table_header(align = "left") |&gt;
+  tab_options(heading.title.font.size = px(16))
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_unit_conversion_2.png" alt="This image of a table was generated from the second code example in the `unit_conversion()` help file." style="width:100%;"><h3>Function ID</h3>
+
+<p>8-7
+</p>
+
+
+<h3>Function Introduced</h3>
+
+<p><code>v0.11.0</code> (July 9, 2024)
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other helper functions: 
+<code>adjust_luminance()</code>,
+<code>cell_borders()</code>,
+<code>cell_fill()</code>,
+<code>cell_text()</code>,
+<code>currency()</code>,
+<code>default_fonts()</code>,
+<code>escape_latex()</code>,
+<code>from_column()</code>,
+<code>google_font()</code>,
+<code>gt_latex_dependencies()</code>,
+<code>html()</code>,
+<code>md()</code>,
+<code>nanoplot_options()</code>,
+<code>pct()</code>,
+<code>px()</code>,
+<code>random_id()</code>,
+<code>row_group()</code>,
+<code>stub()</code>,
+<code>system_fonts()</code>
+</p>
+
+
+</div>

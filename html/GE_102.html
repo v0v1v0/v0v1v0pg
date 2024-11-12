@@ -1,0 +1,213 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemPersistentTechnologicalProgress</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some Examples of Spot Market Clearing Paths with Persistent Technological Progress</h2>
+
+<h3>Description</h3>
+
+<p>Some examples of spot market clearing paths (alias instantaneous equilibrium paths) with persistent technological progress.
+From the fifth period, technological progress occurs.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemPersistentTechnologicalProgress(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>See Also</h3>
+
+
+<p><code>gemCapitalAccumulation</code>
+
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### a 2-by-2 example with labor-saving technological progress
+tpr &lt;- 0.03 # technological progress rate
+
+dst.firm &lt;- node_new(
+  "prod",
+  type = "SCES",
+  es = 0.5, alpha = 1,
+  beta = c(0.5, 0.5),
+  "prod", "cc1"
+)
+node_set(dst.firm, "cc1",
+         type = "Leontief", a = 1,
+         "lab"
+)
+
+dst.consumer &lt;- node_new(
+  "util",
+  type = "Leontief", a = 1,
+  "prod"
+)
+
+dstl &lt;- list(dst.firm, dst.consumer)
+
+ge &lt;- sdm2(
+  A = dstl,
+  B = matrix(c(
+    1, 0,
+    0, 0
+  ), 2, 2, TRUE),
+  S0Exg = matrix(c(
+    NA, NA,
+    NA, 100
+  ), 2, 2, TRUE),
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm", "consumer"),
+  numeraire = "prod",
+  ts = TRUE,
+  policy = list(
+    function(time, A) {
+      if (time &gt;= 5) {
+        node_set(A[[1]], "cc1",
+                 a = (1 + tpr)^-(time - 4)
+        )
+      }
+    },
+    policyMarketClearingPrice
+  ),
+  numberOfPeriods = 40,
+  maxIteration = 1,
+  z0 = c(200, 100),
+  p0 = c(1, 1)
+)
+
+matplot(growth_rate(ge$ts.z), type = "o", pch = 20)
+matplot(growth_rate(ge$ts.p), type = "o", pch = 20)
+
+#### a 3-by-3 example with labor-saving technological progress
+tpr &lt;- 0.03 # technological progress rate
+
+dst.manu &lt;- node_new("manu",
+                     type = "SCES", es = 0.5, alpha = 1,
+                     beta = c(0.6, 0.4),
+                     "manu", "cc1"
+)
+node_set(dst.manu, "cc1",
+         type = "Leontief", a = 1,
+         "lab"
+)
+
+dst.serv &lt;- node_new("serv",
+                     type = "SCES", es = 0.5, alpha = 1,
+                     beta = c(0.4, 0.6),
+                     "manu", "lab"
+)
+
+dst.consumer &lt;- node_new("util",
+                         type = "SCES", es = 0.5, alpha = 1,
+                         beta = c(0.4, 0.6),
+                         "manu", "serv"
+)
+
+dstl &lt;- list(dst.manu, dst.serv, dst.consumer)
+
+ge &lt;- sdm2(
+  A = dstl,
+  B = matrix(c(
+    1, 0, 0,
+    0, 1, 0,
+    0, 0, 0
+  ), 3, 3, TRUE),
+  S0Exg = {
+    S0Exg &lt;- matrix(NA, 3, 3)
+    S0Exg[3, 3] &lt;- 100
+    S0Exg
+  },
+  names.commodity = c("manu", "serv", "lab"),
+  names.agent = c("manu", "serv", "consumer"),
+  numeraire = c("manu"),
+  ts = TRUE,
+  policy = list(
+    function(time, A) {
+      if (time &gt;= 5) {
+        node_set(A[[1]], "cc1",
+                 a = (1 + tpr)^-(time - 4)
+        )
+      }
+    },
+    policyMarketClearingPrice
+  ),
+  numberOfPeriods = 40,
+  maxIteration = 1,
+  z0 = c(160, 60, 100),
+  p0 = c(1, 1, 1)
+)
+
+matplot(ge$ts.z, type = "o", pch = 20)
+matplot(growth_rate(ge$ts.z), type = "o", pch = 20)
+matplot(growth_rate(ge$ts.p), type = "o", pch = 20)
+
+#### a 3-by-3 example with labor-saving technological
+#### progress and capital accumulation
+dst.firm1 &lt;- node_new(
+  "prod",
+  type = "CD",
+  alpha = 2, beta = c(0.5, 0.5),
+  "cap", "cc1"
+)
+node_set(dst.firm1, "cc1",
+         type="Leontief", a=1,
+         "lab")
+
+dst.consumer &lt;- dst.firm2 &lt;- node_new(
+  "util",
+  type = "Leontief",
+  a= 1,
+  "prod"
+)
+
+ge &lt;- sdm2(
+  A = list(dst.firm1, dst.consumer, dst.firm2),
+  B = matrix(c(
+    1, 0, 0.5,
+    0, 0, 1,
+    0, 0, 0
+  ), 3, 3, TRUE),
+  S0Exg = matrix(c(
+    NA, NA, NA,
+    NA, NA, NA,
+    NA, 100,NA
+  ), 3, 3, TRUE),
+  names.commodity = c("prod", "cap", "lab"),
+  names.agent = c("firm1", "laborer","firm2"),
+  numeraire = "prod",
+  z0=c(400,200,400),
+  policy = list(
+    function(time, A) {
+      if (time &gt;= 5) {
+        node_set(A[[1]],"cc1", a = (1 + 0.03)^-(time - 4))
+      }
+    },
+    policyMarketClearingPrice
+  ),
+  maxIteration = 1,
+  numberOfPeriods = 30,
+  ts=TRUE
+)
+
+matplot(growth_rate(ge$ts.z), type="l")
+
+</code></pre>
+
+
+</div>

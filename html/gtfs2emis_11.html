@@ -1,0 +1,133 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>emis_grid</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Spatial aggregation of emission estimates into a grid</h2>
+
+<h3>Description</h3>
+
+<p>Aggregate emissions proportionally in an sf polygon grid, by performing an
+intersection operation between emissions data in <code style="white-space: pre;">⁠sf linestring⁠</code> format and
+the input grid cells. User can also aggregate the emissions in the grid
+by time of the day.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">emis_grid(
+  emi_list,
+  grid,
+  time_resolution = "day",
+  quiet = TRUE,
+  aggregate = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>emi_list</code></td>
+<td>
+<p>list. A list containing the data of emissions 'emi'
+("data.frame" class) and the transport model 'tp_model' ("sf"
+"data.frame" classes).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+<p>Sf polygon. Grid cell data to allocate emissions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_resolution</code></td>
+<td>
+<p>character. Time resolution in which the emissions is
+aggregated. Options are 'hour', 'minute', or 'day (Default).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>logical. User can print the total emissions before and after the
+intersection operation in order to check if the gridded emissions were
+estimated correctly. Default is 'TRUE'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aggregate</code></td>
+<td>
+<p>logical. Aggregate emissions by pollutant. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An <code style="white-space: pre;">⁠"sf" "data.frame"⁠</code> object with emissions estimates per grid cell.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other emission analysis: 
+<code>emis_summary()</code>,
+<code>emis_to_dt()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(gtfs2emis)
+library(gtfstools)
+
+# read GTFS
+gtfs_file &lt;- system.file("extdata/bra_cur_gtfs.zip", package = "gtfs2emis")
+gtfs &lt;- gtfstools::read_gtfs(gtfs_file) 
+
+# keep a single trip_id to speed up this example
+gtfs_small &lt;- gtfstools::filter_by_trip_id(gtfs, trip_id ="4451136")
+  
+# run transport model
+tp_model &lt;- transport_model(gtfs_data = gtfs_small,
+                            spatial_resolution = 100,
+                            parallel = FALSE)
+
+# Fleet data, using Brazilian emission model and fleet
+fleet_data_ef_cetesb &lt;- data.frame(veh_type = "BUS_URBAN_D",
+                                   model_year = 2010:2019,
+                                   fuel = "D",
+                                   fleet_composition = rep(0.1,10)
+                                   )
+# Emission model
+emi_list &lt;- emission_model(
+                tp_model = tp_model,
+                ef_model = "ef_brazil_cetesb",
+                fleet_data = fleet_data_ef_cetesb,
+                pollutant = c("CO","PM10","CO2","CH4","NOx")
+                )
+
+# create spatial grid
+grid &lt;- sf::st_make_grid(
+  x = sf::st_make_valid(emi_list$tp_model)
+  , cellsize = 0.25 / 200
+  , crs= 4326
+  , what = "polygons"
+  , square = FALSE
+  )
+
+emi_grid &lt;- emis_grid( emi_list,grid,'day')
+
+plot(grid)
+plot(emi_grid["PM10_2010"],add = TRUE)
+plot(st_geometry(emi_list$tp_model), add = TRUE,col = "black")
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,195 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>lmm.diago</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Linear mixed model fitting with the diagonalization trick </h2>
+
+<h3>Description</h3>
+
+<p>Estimate the parameters of a linear mixed model, using the "diagonalization trick".
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R"> lmm.diago(Y, X = matrix(1, nrow=length(Y)), eigenK, p = 0, 
+                  method = c("newton", "brent"), min_h2 = 0, max_h2 = 1,
+                  verbose = getOption("gaston.verbose", TRUE), 
+                  tol = .Machine$double.eps^0.25) </code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p> Phenotype vector </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p> Covariable matrix </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eigenK</code></td>
+<td>
+<p> Eigen decomposition of <code class="reqn">K</code> (a positive symmetric matrix)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p> Number of Principal Components included in the mixed model with fixed effect </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p> Optimization method to use </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_h2</code></td>
+<td>
+<p> Minimum admissible value </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_h2</code></td>
+<td>
+<p> Maximum admissible value </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p> If <code>TRUE</code>, display information on the function actions </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p> Accuracy of estimation</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Estimate the parameters of the following linear mixed model, computing the restricted likelihood as in <code>lmm.diago.likelihood</code>,
+and using either a Newton algorithm, or Brent algorithm as in <code>optimize</code>:
+</p>
+<p style="text-align: center;"><code class="reqn"> Y = (X|PC)\beta + \omega + \varepsilon </code>
+</p>
+
+<p>with <code class="reqn"> \omega \sim N(0,\tau K) </code> and
+<code class="reqn"> \varepsilon \sim N(0,\sigma^2 I_n) </code>.
+</p>
+<p>The matrix <code class="reqn">K</code> is given through its eigen decomposition, as produced by <code>eigenK = eigen(K, symmetric = TRUE)</code>.
+The matrix <code class="reqn">(X|PC)</code> is the concatenation of the covariable matrix <code class="reqn">X</code> and  
+of the first <code class="reqn">p</code> eigenvectors of <code class="reqn">K</code>, included in the model with fixed effects.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If the parameter <code>p</code> is a scalar, a list with following elements :
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>sigma2</code></td>
+<td>
+<p> Estimate of the model parameter <code class="reqn">\sigma^2</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p> Estimate(s) of the model parameter(s) <code class="reqn">\tau_1, \dots, \tau_k</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Py</code></td>
+<td>
+<p> Last computed value of vector Py (see reference) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BLUP_omega</code></td>
+<td>
+<p> BLUPs of random effects </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BLUP_beta</code></td>
+<td>
+<p> BLUPs of fixed effects <code class="reqn">\beta</code> (only the components corresponding to <code class="reqn">X</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Xbeta</code></td>
+<td>
+<p> Estimate of <code class="reqn">(X|PC)\beta</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varbeta</code></td>
+<td>
+<p> Variance matrix for <code class="reqn">\beta</code> estimates (only the components corresponding to <code class="reqn">X</code>) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varXbeta</code></td>
+<td>
+<p> Participation of fixed effects to variance of Y </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p> Number of Principal Components included in the linear mixed model with fixed effect </p>
+</td>
+</tr>
+</table>
+<p>If the paramer <code>p</code> is a vector of length <code>&gt; 1</code>, a <code>list</code> of lists as described above,
+one for each value in <code>p</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Hervé Perdry and Claire Dandine-Roulland </p>
+
+
+<h3>See Also</h3>
+
+ <p><code>lmm.diago.likelihood</code>, <code>lmm.aireml</code>, <code>optimize</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Load data
+data(AGT)
+x &lt;- as.bed.matrix(AGT.gen, AGT.fam, AGT.bim)
+
+# Compute Genetic Relationship Matrix
+K &lt;- GRM(x)
+
+# eigen decomposition of K
+eiK &lt;- eigen(K)
+
+# simulate a phenotype
+set.seed(1)
+y &lt;- 1 + lmm.simu(tau = 1, sigma2 = 2, eigenK = eiK)$y
+
+# Estimations
+R &lt;- lmm.diago(Y = y, eigenK = eiK, p = c(0,10))
+str(R)
+</code></pre>
+
+
+</div>

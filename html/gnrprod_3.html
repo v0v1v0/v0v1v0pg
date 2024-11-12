@@ -1,0 +1,181 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gnrflex</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate flexible input elasticity: Gandhi, Navarro, Rivers (GNR) share regression; first stage</h2>
+
+<h3>Description</h3>
+
+<p>The <code>gnrflex</code> function implements the first stage (share
+regression) of the GNR production function estimation routine,
+nonparametrically identifying the flexible input elasticity of the
+production function. This function is called within the main wrapper
+function <code>gnrprod</code>. If the production-related inputs
+are characters, a <code>data.frame</code> must be specified under
+<code>data</code>. Alternatively, matrices/vectors may be directly specified
+without specifying <code>data</code>. <code>gnrprod</code> currently supports only one
+flexible input. The parameters are optimized using the Gauss-Newton
+algorithm. <code>gnrflex</code> currently supports only one flexible input.
+</p>
+<p>For details, see Gandhi, Navarro, and Rivers (2020).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gnrflex(output, fixed, flex, share, id, time, data, control)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>output</code></td>
+<td>
+<p>name (character) of variable of log gross output in data or a numeric vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed</code></td>
+<td>
+<p>name (character or character vector) of variables of log fixed inputs in data or a numeric matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>flex</code></td>
+<td>
+<p>name (character) of variable of log flexible input in data or a numeric vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>share</code></td>
+<td>
+<p>name (character) of variable of log intermediate input's revenue share in data or a numeric vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>name (character) of variable of firm id in data or a numeric vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>name (character) of variable of time in data or a numeric vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p><code>data.frame</code> containing all variables with names specified by arguments above (left empty if arguments above are vector/matrix rather than strings).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>an optional list of convergence settings. See <code>gnrflex.control</code> for listing.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a list of class 'gnrflex' containing three elements:
+</p>
+<p><code>elas</code>: a list containing six elements describing the share regression:
+</p>
+
+<ul>
+<li>
+<p><code>flex_elas</code>: a numeric vector of the estimated flexible input elasticity for each observation.
+</p>
+</li>
+<li>
+<p><code>coefficients</code>: a numeric vector of the coefficients of the estimator scaled by a constant. See Gandhi, Navarro, and Rivers (2020, p. 2994, equation (21)).
+</p>
+</li>
+<li>
+<p><code>residuals</code>: a numeric vector of the residuals.
+</p>
+</li>
+<li>
+<p><code>SSR</code>: sum of squared residuals.
+</p>
+</li>
+<li>
+<p><code>iterations</code>: number of iterations performed.
+</p>
+</li>
+<li>
+<p><code>convergence</code>: boolean indicating whether convergence was achieved.
+</p>
+</li>
+</ul>
+<p><code>arg</code>: a list containing eight elements to be passed to the second stage function <code>gnriv</code>:
+</p>
+
+<ul>
+<li>
+<p><code>input</code>: a numeric matrix (S3: <code>poly</code>) of the polynomial expansion of all inputs.
+</p>
+</li>
+<li>
+<p><code>input_degree</code>: a numeric matrix corresponding to <code>input</code> denoting each vector's degree.
+</p>
+</li>
+<li>
+<p><code>all_input</code>: a numeric matrix of the inputs without polynomial expansion.
+</p>
+</li>
+<li>
+<p><code>big_Y</code>: a numeric vector of persistent productivity minus the constant of integration. See Gandhi, Navarro, and Rivers (2020, p. 2991, equation (16)).
+</p>
+</li>
+<li>
+<p><code>D_coef</code>: a numeric vector equaling <code>coef</code> divided by an estimate of the constant.
+</p>
+</li>
+<li>
+<p><code>id</code>: a numeric vector of the firm ids.
+</p>
+</li>
+<li>
+<p><code>time</code>: a numeric vector of time.
+</p>
+</li>
+<li>
+<p><code>degree</code>: the degree of the share regression.
+</p>
+</li>
+<li>
+<p><code>fixed_names</code>: the names of fixed inputs. To be used in the second stage.
+</p>
+</li>
+</ul>
+<p><code>control</code>: the list of convergence control parameters. See <code>gnrflex.control</code> for available parameters.
+</p>
+
+
+<h3>References</h3>
+
+<p>Gandhi, Amit, Salvador Navarro, and David Rivers. 2020. "On the Identification of Gross Output Production Functions." <em>Journal of Political Economy</em>, 128(8): 2973-3016. <a href="https://doi.org/10.1086/707736">doi:10.1086/707736</a>.
+</p>
+<p>Davidson, Russell, James G. MacKinnon. 1993. "The Gauss-Newton Regression." In <em>Estimation and Inference in Econometrics</em>, 176-207. New York: Oxford University Press.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">require(gnrprod)
+data &lt;- colombian
+industry_311_flex &lt;- gnrflex(output = "RGO", fixed = c("L", "K"),
+                             flex = "RI", share = "share", id = "id",
+                             time = "year", data = data,
+                             control = list(degree = 2, maxit = 200))
+</code></pre>
+
+
+</div>

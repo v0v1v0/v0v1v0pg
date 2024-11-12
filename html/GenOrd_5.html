@@ -1,0 +1,328 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ordsample</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Drawing a sample of discrete data
+</h2>
+
+<h3>Description</h3>
+
+<p>The function draws a sample from a multivariate discrete variable with correlation matrix <code>Sigma</code> and prescribed marginal distributions <code>marginal</code></p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ordsample(n, marginal, Sigma, support = list(), Spearman = FALSE,
+cormat = "discrete")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+
+<p>the sample size
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginal</code></td>
+<td>
+
+<p>a list of <code class="reqn">k</code> elements, where <code class="reqn">k</code> is the number of variables.
+The <code class="reqn">i</code>-th element of <code>marginal</code> is the vector of the cumulative probabilities defining the marginal distribution of the <code class="reqn">i</code>-th component of the  multivariate variable. If the <code class="reqn">i</code>-th component can take <code class="reqn">k_i</code> values, the <code class="reqn">i</code>-th element of marginal will contain <code class="reqn">k_i-1</code> probabilities (the <code class="reqn">k_i</code>-th is obviously 1 and shall not be included).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sigma</code></td>
+<td>
+
+<p>the target correlation matrix of the multivariate discrete variable
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>support</code></td>
+<td>
+
+<p>a list of <code class="reqn">k</code> elements, where <code class="reqn">k</code> is the number of variables. The <code class="reqn">i</code>-th element of <code>support</code> is the vector containing the ordered values of the support of the <code class="reqn">i</code>-th variable. By default, the support of the <code class="reqn">i</code>-th variable is <code class="reqn">1,2,...,k_i</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Spearman</code></td>
+<td>
+
+<p>if <code>TRUE</code>, the function finds Spearman's correlations (and it is not necessary to provide <code>support</code>), if <code>FALSE</code> (default) Pearson's correlations 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cormat</code></td>
+<td>
+
+<p><code>"discrete"</code> if the <code>Sigma</code> in input is the target correlation matrix of the multivariate discrete variable; <code>"continuous"</code> if the <code>Sigma</code> in input is the intermediate correlation matrix of the multivariate standard normal
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a <code class="reqn">n\times k</code> matrix of values drawn from the <code class="reqn">k</code>-variate discrete r.v. with the desired marginal distributions and correlation matrix
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Alessandro Barbiero, Pier Alda Ferrari
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>contord</code>, <code>ordcont</code>, <code>corrcheck</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Example 1
+
+# draw a sample from a bivariate ordinal variable
+# with 4 of categories and asymmetrical marginal distributions
+# and correlation coefficient 0.6 (to be checked)
+k &lt;- 2
+marginal &lt;- list(c(0.1,0.3,0.6), c(0.4,0.7,0.9))
+corrcheck(marginal) # check ok
+Sigma &lt;- matrix(c(1,0.6,0.6,1),2,2)
+# sample size 1000
+n &lt;- 1000
+# generate a sample of size n
+m &lt;- ordsample(n, marginal, Sigma)
+head(m)
+# sample correlation matrix
+cor(m) # compare it with Sigma
+# empirical marginal distributions
+cumsum(table(m[,1]))/n
+cumsum(table(m[,2]))/n # compare them with the two marginal distributions
+
+# Example 1bis
+
+# draw a sample from a bivariate ordinal variable
+# with 4 of categories and asymmetrical marginal distributions
+# and Spearman correlation coefficient 0.6 (to be checked)
+k &lt;- 2
+marginal &lt;- list(c(0.1,0.3,0.6), c(0.4,0.7,0.9))
+corrcheck(marginal, Spearman=TRUE) # check ok
+Sigma &lt;- matrix(c(1,0.6,0.6,1),2,2)
+# sample size 1000
+n &lt;- 1000
+# generate a sample of size n
+m &lt;- ordsample(n, marginal, Sigma, Spearman=TRUE)
+head(m)
+# sample correlation matrix
+cor(rank(m[,1]),rank(m[,2])) # compare it with Sigma
+# empirical marginal distributions
+cumsum(table(m[,1]))/n
+cumsum(table(m[,2]))/n # compare them with the two marginal distributions
+
+# Example 1ter
+
+# draw a sample from a bivariate random variable
+# with binomial marginal distributions (n=3, p=1/3 and n=4, p=2/3)
+# and Pearson correlation coefficient 0.6 (to be checked)
+k &lt;- 2
+marginal &lt;- list(pbinom(0:2, 3, 1/3),pbinom(0:3, 4, 2/3))
+marginal
+corrcheck(marginal, support=list(0:3, 0:4)) # check ok
+Sigma &lt;- matrix(c(1,0.6,0.6,1),2,2)
+# sample size 1000
+n &lt;- 1000
+# generate a sample of size n
+m &lt;- ordsample(n, marginal, Sigma, support=list(0:3,0:4))
+head(m)
+# sample correlation matrix
+cor(m) # compare it with Sigma
+# empirical marginal distributions
+cumsum(table(m[,1]))/n
+cumsum(table(m[,2]))/n # compare them with the two marginal distributions
+
+# Example 2
+
+# draw a sample from a 4-dimensional ordinal variable
+# with different number of categories and uniform marginal distributions
+# and different correlation coefficients
+k &lt;- 4
+marginal &lt;- list(0.5, c(1/3,2/3), c(1/4,2/4,3/4), c(1/5,2/5,3/5,4/5))
+corrcheck(marginal)
+# select a feasible correlation matrix
+Sigma &lt;- matrix(c(1,0.5,0.4,0.3,0.5,1,0.5,0.4,0.4,0.5,1,0.5,0.3,0.4,0.5,1),
+4, 4, byrow=TRUE)
+Sigma
+# sample size 100
+n &lt;- 100
+# generate a sample of size n
+set.seed(1)
+m &lt;- ordsample(n, marginal, Sigma)
+# sample correlation matrix
+cor(m) # compare it with Sigma
+# empirical marginal distribution
+cumsum(table(m[,4]))/n # compare it with the fourth marginal
+head(m)
+# or equivalently...
+set.seed(1)
+res &lt;- ordcont(marginal, Sigma)
+res[[1]] # the intermediate correlation matrix of the multivariate normal
+m &lt;- ordsample(n, marginal, res[[1]], cormat="continuous")
+head(m)
+
+# Example 3
+# simulation of two correlated Poisson r.v.
+# modification to GenOrd sampling function for Poisson distribution
+ordsamplep&lt;-function (n, lambda, Sigma) 
+{
+   k &lt;- length(lambda)
+   valori &lt;- mvrnorm(n, rep(0, k), Sigma)
+   for (i in 1:k)
+   {
+   valori[, i] &lt;- qpois(pnorm(valori[,i]), lambda[i])
+   }
+   return(valori)
+}
+# number of variables
+k &lt;- 2
+# Poisson parameters
+lambda &lt;- c(2, 5)
+# correlation matrix
+Sigma &lt;- matrix(0.25, 2, 2)
+diag(Sigma) &lt;- 1
+# sample size
+n &lt;- 10000
+# preliminar stage: support TRUNCATION
+# required for recovering the correlation matrix
+# of the standard bivariate normal
+# truncation error
+epsilon &lt;- 0.0001
+# corresponding maximum value
+kmax &lt;- qpois(1-epsilon, lambda)
+# truncated marginals
+l &lt;- list()
+for(i in 1:k)
+{
+l[[i]] &lt;- 0:kmax[i]
+}
+marg &lt;- list()
+for(i in 1:k)
+{
+marg[[i]] &lt;- dpois(0:kmax[i],lambda[i])
+marg[[i]][kmax[i]+1] &lt;- 1-sum(marg[[i]][1:(kmax[i])])
+}
+cm &lt;- list()
+for(i in 1:k)
+{
+cm[[i]] &lt;- cumsum(marg[[i]])
+cm[[i]] &lt;- cm[[i]][-(kmax[i]+1)]
+}
+# check feasibility of correlation matrix
+RB &lt;- corrcheck(cm, support=l)
+RL &lt;- RB[[1]]
+RU &lt;- RB[[2]]
+Sigma &lt;= RU &amp; Sigma &gt;= RL # OK
+res &lt;- ordcont(cm, Sigma, support=l)
+res[[1]]
+Sigma &lt;- res[[1]]
+# draw the sample
+m &lt;- ordsamplep(n, lambda, Sigma)
+# sample correlation matrix
+cor(m)
+head(m)
+
+# Example 4
+# simulation of 4 correlated binary and Poisson r.v.'s (2+2)
+# modification to GenOrd sampling function
+ordsamplep &lt;- function (n, marginal, lambda, Sigma) 
+{
+k &lt;- length(lambda)
+valori &lt;- mvrnorm(n, rep(0, k), Sigma)
+for(i in 1:k)
+{
+if(lambda[i]==0)
+{
+	valori[, i] &lt;- as.integer(cut(valori[, i], breaks = c(min(valori[,i]) - 1,
+               qnorm(marginal[[i]]), max(valori[, i]) + 1)))
+valori[, i] &lt;- support[[i]][valori[, i]]
+}
+else
+{
+	valori[, i] &lt;- qpois(pnorm(valori[,i]), lambda[i])
+}
+	}
+return(valori)
+}
+# number of variables
+k &lt;- 4
+# Poisson parameters (only 3rd and 4th are Poisson)
+lambda &lt;- c(0, 0, 2, 5)
+# 1st and 2nd are Bernoulli with p=0.5
+marginal &lt;- list()
+marginal[[1]] &lt;- .5
+marginal[[2]] &lt;- .5
+marginal[[3]] &lt;- 0
+marginal[[4]] &lt;- 0
+# support
+support &lt;- list()
+support[[1]] &lt;- 0:1
+support[[2]] &lt;- 0:1
+# correlation matrix
+Sigma &lt;- matrix(0.25, k, k)
+diag(Sigma) &lt;- 1
+# sample size
+n &lt;- 10000
+# preliminar stage: support TRUNCATION
+# required for recovering the correlation matrix
+# of the standard bivariate normal
+# truncation error
+epsilon &lt;- 0.0001
+# corresponding maximum value
+kmax &lt;- qpois(1-epsilon, lambda)
+# truncated marginals
+for(i in 3:4)
+{
+support[[i]] &lt;- 0:kmax[i]
+}
+marg &lt;- list()
+for(i in 3:4)
+{
+marg[[i]] &lt;- dpois(0:kmax[i],lambda[i])
+marg[[i]][kmax[i]+1] &lt;- 1-sum(marg[[i]][1:(kmax[i])])
+}
+for(i in 3:4)
+{
+marginal[[i]] &lt;- cumsum(marg[[i]])
+marginal[[i]] &lt;- marginal[[i]][-(kmax[i]+1)]
+}
+# check feasibility of correlation matrix
+RB &lt;- corrcheck(marginal, support=support)
+RL &lt;- RB[[1]]
+RU &lt;- RB[[2]]
+Sigma &lt;= RU &amp; Sigma &gt;= RL # OK
+# compute correlation matrix of the 4-variate standard normal
+res &lt;- ordcont(marginal, Sigma, support=support)
+res[[1]]
+Sigma &lt;- res[[1]]
+# draw the sample
+m &lt;- ordsamplep(n, marginal, lambda, Sigma)
+# sample correlation matrix
+cor(m)
+head(m)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>LM_GAGA</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a linear model via the GAGA algorithm</h2>
+
+<h3>Description</h3>
+
+<p>Fit a linear model with a Gaussian noise via the Global Adaptive Generative Adjustment algorithm
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">LM_GAGA(
+  X,
+  y,
+  alpha = 3,
+  itrNum = 50,
+  thresh = 0.001,
+  QR_flag = FALSE,
+  flag = TRUE,
+  lamda_0 = 0.001,
+  fix_sigma = FALSE,
+  sigm2_0 = 1,
+  fdiag = TRUE,
+  frp = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Input matrix, of dimension nobs*nvars; each row is an observation.
+If the intercept term needs to be considered in the estimation process, then the first column of <code>X</code> must be all 1s.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Quantitative response vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Hyperparameter. The suggested value for alpha is 2 or 3.
+When the collinearity of the load matrix is serious, the hyperparameters can be selected larger, such as 5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>itrNum</code></td>
+<td>
+<p>The number of iteration steps. In general, 20 steps are enough.
+If the condition number of <code>X</code> is large, it is recommended to greatly increase the
+number of iteration steps.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thresh</code></td>
+<td>
+<p>Convergence threshold for beta Change, if <code>max(abs(beta-beta_old))&lt;threshold</code>, return.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>QR_flag</code></td>
+<td>
+<p>It identifies whether to use QR decomposition to speed up the algorithm.
+Currently only valid for linear models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>flag</code></td>
+<td>
+<p>It identifies whether to make model selection. The default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lamda_0</code></td>
+<td>
+<p>The initial value of the regularization parameter for ridge regression.
+The running result of the algorithm is not sensitive to this value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fix_sigma</code></td>
+<td>
+<p>It identifies whether to update the variance estimate of the Gaussian noise or not.
+<code>fix_sigma=TRUE</code> uses the initial variance as the variance estimate in each loop.
+<code>fix_sigma=FALSE</code> updates the variance estimate in each loop.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigm2_0</code></td>
+<td>
+<p>The initial variance of the Gaussian noise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fdiag</code></td>
+<td>
+<p>It identifies whether to use diag Approximation to speed up the algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>frp</code></td>
+<td>
+<p>Identifies whether pre-processing is performed by the OMP method to reduce the number of parameters</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Coefficient vector.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Gaussian
+set.seed(2022)
+p_size = 30
+sample_size=300
+R1 = 3
+R2 = 2
+ratio = 0.5 # The ratio of zeroes in coefficients
+# Set the true coefficients
+zeroNum = round(ratio*p_size)
+ind = sample(1:p_size,zeroNum)
+beta_true = runif(p_size,0,R2)
+beta_true[ind] = 0
+X = R1*matrix(rnorm(sample_size * p_size), ncol = p_size)
+y=X%*%beta_true + rnorm(sample_size,mean=0,sd=2)
+# Estimation
+fit = GAGAs(X,y,alpha = 3,family="gaussian")
+Eb = fit$beta
+#Create testing data
+X_t = R1*matrix(rnorm(sample_size * p_size), ncol = p_size)
+y_t=X_t%*%beta_true + rnorm(sample_size,mean=0,sd=2)
+#Prediction
+Ey = predict.GAGA(fit,newx=X_t)
+
+cat("\n err:", norm(Eb-beta_true,type="2")/norm(beta_true,type="2"))
+cat("\n acc:", cal.w.acc(as.character(Eb!=0),as.character(beta_true!=0)))
+cat("\n perr:", norm(Ey-y_t,type="2")/sqrt(sample_size))
+</code></pre>
+
+
+</div>

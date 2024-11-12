@@ -1,0 +1,105 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>HICP</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Harmonised Index of Consumer Prices (1990–2010, OECD)</h2>
+
+<h3>Description</h3>
+
+<p>Time series data with HICP (Harmonised Index of Consumer Prices)
+for 21 countries (plus EU) for 1990–2010 as provided by the OECD; and
+corresponding seasonally adjusted inflation ratios.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  data("HICP")
+
+  data("hicps")  
+</code></pre>
+
+
+<h3>Format</h3>
+
+<p>Monthly multiple <code>"zooreg"</code> time series with <code>"yearmon"</code> index
+from Jan 1990 (<code>HICP</code>) or Feb 1990 (<code>hicps</code>) to Dec 2010 for
+21 countries (plus EU).
+</p>
+
+
+<h3>Details</h3>
+
+<p><code>HICP</code> contains the raw unadjusted Harmonised Index of Consumer Prices
+as provided by the OECD from which unadjusted inflation rates can be easily
+computed (see examples).
+</p>
+<p>As the different countries have rather different seasonal patterns which
+vary over time (especially in the 2000s), they will typically require seasonal
+adjustment before modeling. Hence, a seasonally adjusted version of the
+inflation rate series is provided as <code>hicps</code>, where X-12-ARIMA (version 0.3)
+has been employed for adjusted. An alternative seasonal adjustment can be easily
+computed use <code>stl</code> (see examples).
+</p>
+
+
+<h3>Source</h3>
+
+<p>Organisation for Economic Co-operation and Development (OECD)
+</p>
+<p><a href="https://stats.oecd.org/">https://stats.oecd.org/</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Wikipedia (2010). "Harmonised Index of Consumer Prices – Wikipedia, The Free Encyclopedia."
+<a href="https://en.wikipedia.org/wiki/Harmonised_Index_of_Consumer_Prices">https://en.wikipedia.org/wiki/Harmonised_Index_of_Consumer_Prices</a>, accessed 2010-06-10.
+</p>
+<p>Windberger T, Zeileis A (2014). Structural Breaks in Inflation Dynamics within the
+European Monetary Union. <em>Eastern European Economics</em>, <b>52</b>(3), 66–88.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## price series
+data("HICP", package = "glogis")
+
+## corresponding raw unadjusted inflation rates (in percent)
+hicp &lt;- 100 * diff(log(HICP))
+
+## seasonal adjustment of inflation rates (via STL)
+hicps1 &lt;- do.call("merge", lapply(1:ncol(hicp), function(i) {
+  z &lt;- na.omit(hicp[,i])
+  coredata(z) &lt;- coredata(as.ts(z) - stl(as.ts(z), s.window = 13)$time.series[, "seasonal"])
+  z
+}))
+colnames(hicps1) &lt;- colnames(hicp)
+
+## load X-12-ARIMA adjusted inflation rates
+data("hicps", package = "glogis")
+
+## compare graphically for one country (Austria)
+plot(hicp[, "Austria"], lwd = 2, col = "lightgray")
+lines(hicps1[, "Austria"], col = "red")
+lines(hicps[, "Austria"], col = "blue")
+legend("topleft", c("unadjusted", "STL", "X-12-ARIMA"), lty = c(1, 1, 1),
+  col = c("lightgray", "red", "blue"), bty = "n")
+
+## compare graphically across all countries (via lattice)
+if(require("lattice")) {
+trellis.par.set(theme = canonical.theme(color = FALSE))
+xyplot(merge(hicp, hicps1, hicps), 
+  screen = names(hicp)[rep(1:ncol(hicp), 3)],
+  col = c("lightgray", "red", "blue")[rep(1:3, each = ncol(hicp))],
+  lwd = c(2, 1, 1)[rep(1:3, each = ncol(hicp))])
+}
+
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,338 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gmrfdpgrow</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian instrinsic Gaussian Markov Random Field model for dependent time-indexed functions</h2>
+
+<h3>Description</h3>
+
+<p>Estimates a collection of time-indexed functions under intrinsic Gaussian Markov random
+field prior formulations where a Dirichlet process mixture allows sub-groupings of the functions to share the same 
+iGMRF precision parameter.  The iGMRF formulation supports any number of additive precision terms,
+expressing either or both of multiple trend and seasonality.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gmrfdpgrow(
+  y,
+  ksi,
+  E,
+  ipr,
+  q_order,
+  q_type,
+  q_shape,
+  q_rate,
+  tau_shape,
+  tau_rate,
+  dp_shape,
+  dp_rate,
+  M_init,
+  w_star,
+  n.iter,
+  n.burn,
+  n.thin,
+  nu,
+  Rep,
+  progress,
+  jitter,
+  kappa_fast,
+  stable_launch
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A multivariate continuous response, specified as an <em>N x T</em> matrix, where <code>N</code>
+denotes the number of functions and <code>T</code>, the number of time points per function. Intermittent 
+missing-at-random values are allowed and will be estimated from the posterior
+predictive distribution.  Missing cells should be denoted with <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ksi</code></td>
+<td>
+<p>An <em>N x P</em> matrix of N observations of P predictors to be used
+in prior probability of co-clustering of set of N, T x 1 observations. 
+Defaults to <code>ksi = NULL</code> such that predictors are not used to a priori
+determine co-clustering probabilities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>E</code></td>
+<td>
+<p>A multivariate offset variable, specified as an <em>N x T</em> matrix, in the case
+that <code>y</code> is of type count data.  The offset will be used to model the <code>y</code>
+as under a poisson lognormal where <code>y ~ Pois(E*exp(Psi))</code>.  Defaults to <code>NULL</code>,
+in which case the response type is assumed continuous.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ipr</code></td>
+<td>
+<p>An optional input vector of inclusion probabilities for each observation unit 
+in the case the observed data were acquired through an informative sampling design, so 
+that unbiased inference about the population requires adjustments to the observed sample
+Defaults to <code>ipr = rep(1,nrow(y))</code> indicating an iid sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q_order</code></td>
+<td>
+<p>An integer vector of length <code>K</code> to select the order for each iGMRF precision term.
+e.g. If the first term is a RW2 and there is a second is a 3-month seasonality term, where the time
+points are indexed by month, then <code>q_order = c(2,3)</code>.  Defaults to <code>q_order = 2</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q_type</code></td>
+<td>
+<p>A vector of length <code>K</code>, the number of iGMRF precision terms, with each entry 
+indicating whether the associated term is a trend (<code>"tr"</code>) or seasonality (<code>"sn"</code>) term.
+So all entries must be one of <code>c("tr","sn")</code>. Defaults to <code>q_type = "tr"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q_shape</code></td>
+<td>
+<p>The value (in (0,infty)) for the shape hyperparameter for the Gamma base distribution for
+the iGMRF scale parameters, <code>kappa_star(k,m)</code>, where <code>k</code> denotes the term
+and <code>m</code>, the cluster.  Defaults to <code>q_shape = 0.3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q_rate</code></td>
+<td>
+<p>The rate parameter of the Gamma base distribution on <code>kappa_star</code>. 
+Defaults to <code>q_rate = 0.0005</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau_shape</code></td>
+<td>
+<p>The value (in (0,infty)) for the shape hyperparameter for the Gamma prior on the error
+precision parameter. Defaults to <code>tau_shape = 1.0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau_rate</code></td>
+<td>
+<p>The rate parameter of the Gamma prior distribution on <code>tau_e</code>. 
+Defaults to <code>tau_rate = 1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dp_shape</code></td>
+<td>
+<p>The shape parameter for the Gamma prior on the DP concentration parameter, 
+<code>conc</code>. Defaults to <code>dp_shape = 1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dp_rate</code></td>
+<td>
+<p>The rate parameter for the Gamma prior on the DP concentration parameter, 
+<code>conc</code>. Defaults to <code>dp_rate = 1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M_init</code></td>
+<td>
+<p>Starting number of clusters of <code>nrow(y)</code> units to initialize sampler.
+Defaults to <code>M_init = nrow(y)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w_star</code></td>
+<td>
+<p>Integer value denoting the number of cluster locations to sample ahead of 
+observations in the auxiliary Gibbs sampler used to sample the number of clusters
+and associated cluster assignments.  A higher value reduces sampling auto-correlation, 
+but increases computational burden.  Defaults to <code>w_star = 2</code>.  The auxiliary
+Gibbs sampler is only used in the case that <code>!is.null(ksi)</code>, for predictor-
+assisted clustering; otherwise, the full conditionals for cluster assigment are
+conjugate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.iter</code></td>
+<td>
+<p>Total number of MCMC iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.burn</code></td>
+<td>
+<p>Number of MCMC iterations to discard.
+<code>gmrfdpgrow</code> will return <code>(n.iter - n.burn)</code> posterior samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.thin</code></td>
+<td>
+<p>Gap between successive sampling iterations to save.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu</code></td>
+<td>
+<p>The degree of freedom parameter for the Huang and Wand prior on precision
+<code>R x R</code> matrix locations, <code>Lambda_star</code>, 
+in the case that <code>N x R</code> predictors, <code>ksi</code>,
+are entered to instantiate a predictor-dependent prior for co-clustering.
+Default value is <code>4</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Rep</code></td>
+<td>
+<p>The number of times to draw samples of the <code>N x T</code> log-mean
+parameters, <code>Psi</code>, for each MCMC iteration
+under a Poisson-lognormal model when the response
+type for <code>y</code> is count (not continuous), which is indicated by inputing
+an offset matrix, <code>E</code>.
+Default value is <code>1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress</code></td>
+<td>
+<p>A boolean value denoting whether to display a progress bar during model execution.
+Defaults to <code>progress = true</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>jitter</code></td>
+<td>
+<p>A scalar double indicating amount of jitter to subract from the posterior 
+rate and shape hyperparameters of <code>tau_e</code> to stabilize computation.  
+Defaults to <code>jitter = 0.0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kappa_fast</code></td>
+<td>
+<p>Boolean for whether to generate rate hyperparameter from full conditionals
+versus joint Gaussian (on random effects, <code>bb</code>, given <code>kappa</code>.  The
+former is faster, but numerically less stable. 
+Defaults to <code>kappa_fast = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stable_launch</code></td>
+<td>
+<p>A boolean indicator on whether to generate initial values for
+<code>N x T</code> log-mean, <code>Psi</code>, when <code>y</code> are count data from a Gaussian
+prior distribution, which can induce numerical launch instabilities, or whether 
+to initialize as <code>y/E</code> (where missing values in <code>y</code> are imputed).
+Defaults to <code>stable_launch = TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>S3 <code>gmrfdpgrow</code> object, for which many methods are available to return and view results.  
+Generic functions applied to an object, <code>res</code> of class <code>gmrfdpgrow</code>, includes:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>plot(res)</code></td>
+<td>
+<p> returns results plots, including fit functions versus data and allocation
+of fitted functions into clusters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>samples(res)</code></td>
+<td>
+<p> contains (<code>n.iter - n.burn</code>) posterior sampling iterations 
+for every model parameter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resid(res)</code></td>
+<td>
+<p> contains the model residuals.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>The intended focus for this package are data composed of observed noisy functions (each of 
+length <code>T</code>) for a set of experimental units where the functions may express dependence
+among the experimental units
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Terrance Savitsky <a href="mailto:tds151@gmail.com">tds151@gmail.com</a> Daniell toth <a href="mailto:danielltoth@yahoo.com">danielltoth@yahoo.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>T. D. Savitsky and D. Toth (2014) Bayesian Non-parametric Models for Collections of Time-
+indexed Functions. submitted to: JRSS Series A (Statistics in Society).
+</p>
+<p>T. D. Savitsky (2014) Bayesian Non-parametric Functional Mixture
+Estimation for Time-indexed data. submitted to: Annals of Applied Statistics.
+</p>
+<p>T. D. Savitsky (2014) Bayesian Non-Parametric Mixture Estimation for Time-Indexed Functional
+Data for <code>R</code>. Submitted to: Journal of Statistical Software.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gmrfdpgrow</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">{
+library(growfunctions)
+
+## load the monthly employment count data for a collection of 
+## U.S. states from the Current 
+## Population Survey (cps)
+data(cps)
+## subselect the columns of N x T, y, associated 
+## with the years 2008 - 2013
+## to examine the state level employment levels 
+## during the "great recession"
+y_short   &lt;- cps$y[,(cps$yr_label %in% c(2008:2013))]
+
+## Run the DP mixture of iGMRF's to estimate posterior 
+## distributions for model parameters
+## Under default RW2(kappa) = order 2 trend 
+## precision term
+## Run for 1500 iterations, with half as burn-in for a
+## more useful (converged) result.
+res_gmrf            &lt;- gmrfdpgrow(y = y_short, 
+                                     n.iter = 40, 
+                                     n.burn = 20, 
+                                     n.thin = 1) 
+                                     
+## 2 plots of estimated functions: 1. faceted by cluster and fit;
+## 2.  data for experimental units.
+## for a group of randomly-selected functions
+fit_plots_gmrf      &lt;- cluster_plot( object = res_gmrf, 
+                                     units_name = "state", 
+                                     units_label = cps$st, 
+                                     single_unit = FALSE, 
+                                     credible = TRUE )    
+}
+</code></pre>
+
+
+</div>

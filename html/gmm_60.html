@@ -1,0 +1,186 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>confint</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Confidence intervals for GMM or GEL</h2>
+
+<h3>Description</h3>
+
+<p>It produces confidence intervals for the coefficients from <code>gel</code> or <code>gmm</code> estimation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'gel'
+confint(object, parm, level = 0.95, lambda = FALSE,
+                        type = c("Wald", "invLR", "invLM", "invJ"),
+                        fact = 3, corr = NULL, ...)
+## S3 method for class 'gmm'
+confint(object, parm, level = 0.95, ...)
+## S3 method for class 'ategel'
+confint(object, parm, level = 0.95, lambda = FALSE,
+                            type = c("Wald", "invLR", "invLM", "invJ"), fact = 3,
+                            corr = NULL, robToMiss=TRUE, ...)
+## S3 method for class 'confint'
+print(x, digits = 5, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class <code>gel</code> or <code>gmm</code> returned by the function <code>gel</code> or <code>gmm</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parm</code></td>
+<td>
+<p>A specification of which parameters are to be given confidence intervals, either a vector of numbers or a vector
+of names.  If missing, all parameters are considered.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>The confidence level</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>If set to TRUE, the confidence intervals for the Lagrange
+multipliers are produced.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>'Wald' is the usual symetric confidence interval. The thee
+others are based on the inversion of the LR, LM, and J tests.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fact</code></td>
+<td>
+<p>This parameter control the span of search for the inversion
+of the test. By default we search within plus or minus 3 times the
+standard error of the coefficient estimate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corr</code></td>
+<td>
+<p>This numeric scalar is meant to apply a correction to the
+critical value, such as a Bartlett correction. This value depends on
+the model (See Owen; 2001)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of class <code>confint</code> produced by <code>confint.gel</code> and <code>confint.gmm</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>The number of digits to be printed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>robToMiss</code></td>
+<td>
+<p>If <code>TRUE</code>, the confidence interval is based on the
+standard errors that are robust to  misspecification</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments when <code>confint</code> is applied to another classe object</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>It returns a matrix with the first column being the lower bound and the second the upper bound.</p>
+
+
+<h3>References</h3>
+
+<p>Hansen, L.P. (1982),
+Large Sample Properties of Generalized Method of Moments Estimators.
+<em>Econometrica</em>, <b>50</b>,
+1029-1054,
+Hansen, L.P. and Heaton, J. and Yaron, A.(1996),
+Finit-Sample Properties of Some Alternative GMM Estimators.
+<em>Journal of Business and Economic Statistics</em>, <b>14</b>
+262-280.
+Owen, A.B. (2001),
+Empirical Likelihood.
+<em>Monographs on Statistics and Applied Probability 92, Chapman and
+Hall/CRC</em>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#################
+n = 500
+phi&lt;-c(.2,.7)
+thet &lt;- 0
+sd &lt;- .2
+x &lt;- matrix(arima.sim(n = n, list(order = c(2,0,1), ar = phi, ma = thet, sd = sd)), ncol = 1)
+y &lt;- x[7:n]
+ym1 &lt;- x[6:(n-1)]
+ym2 &lt;- x[5:(n-2)]
+
+H &lt;- cbind(x[4:(n-3)], x[3:(n-4)], x[2:(n-5)], x[1:(n-6)])
+g &lt;- y ~ ym1 + ym2
+x &lt;- H
+t0 &lt;- c(0,.5,.5)
+
+resGel &lt;- gel(g, x, t0)
+
+confint(resGel)
+confint(resGel, level = 0.90)
+confint(resGel, lambda = TRUE)
+
+########################
+
+resGmm &lt;- gmm(g, x)
+
+confint(resGmm)
+confint(resGmm, level = 0.90)
+
+## Confidence interval with inversion of the LR, LM or J test.
+##############################################################
+
+set.seed(112233)
+x &lt;- rt(40, 3)
+y &lt;- x+rt(40,3)
+# Simple interval on the mean
+res &lt;- gel(x~1, ~1, method="Brent", lower=-4, upper=4)
+confint(res, type = "invLR")
+confint(res)
+# Using a Bartlett correction
+k &lt;- mean((x-mean(x))^4)/sd(x)^4
+s &lt;- mean((x-mean(x))^3)/sd(x)^3
+a &lt;- k/2-s^2/3
+corr &lt;- 1+a/40
+confint(res, type = "invLR", corr=corr)
+
+# Interval on the slope
+res &lt;- gel(y~x, ~x)
+confint(res, "x", type="invLR")
+confint(res, "x")
+</code></pre>
+
+
+</div>

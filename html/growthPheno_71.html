@@ -1,0 +1,338 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>smoothSpline</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a spline to smooth the relationship between a <code>response</code> and an <code>x</code> in a <code>data.frame</code>, 
+optionally computing growth rates using derivatives.</h2>
+
+<h3>Description</h3>
+
+<p>Uses <code>smooth.spline</code> to fit a natural cubic smoothing spline  or <code>JOPS</code> to fit a 
+P-spline to all the values of <code>response</code> stored in <code>data</code>. 
+</p>
+<p>The amount of smoothing can be controlled by tuning parameters, these being 
+related to the penalty. For a natural cubic smoothing spline, these are 
+<code>df</code> or <code>lambda</code> and, for a P-spline, it is <code>lambda</code>. 
+For a P-spline, <code>npspline.segments</code> also influences the smoothness of the fit. 
+The <code>smoothing.method</code> provides for <code>direct</code> and <code>logarithmic</code> 
+smoothing. The method of Huang (2001) for correcting the fitted spline for 
+estimation bias at the end-points will be applied when fitting using a 
+natural cubic smoothing spline if <code>correctBoundaries</code> is <code>TRUE</code>. 
+</p>
+<p>The derivatives of the fitted spline can also be obtained, and the 
+Absolute and Relative Growth Rates ( AGR and RGR) computed using them, provided 
+<code>correctBoundaries</code> is <code>FALSE</code>. Otherwise, growth rates can be 
+obtained by difference using <code>byIndv4Times_GRsDiff</code>.
+</p>
+<p>The handling of missing values in the observations is controlled via 
+<code>na.x.action</code> and <code>na.y.action</code>. If there are not 
+at least four distinct, nonmissing x-values, a warning is issued and 
+all smoothed values and derivatives are set to <code>NA</code>. 
+</p>
+<p>The function <code>probeSmooths</code> can be used to investgate the effect 
+the smoothing parameters (<code>smoothing.method</code> and <code>df</code> or  
+<code>lambda</code>) on the smooth that results.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">smoothSpline(data, response, response.smoothed = NULL, x, 
+             smoothing.method = "direct", 
+             spline.type = "NCSS", df = NULL, lambda = NULL, 
+             npspline.segments = NULL, correctBoundaries = FALSE, 
+             rates = NULL, suffices.rates = NULL, sep.rates = ".", 
+             extra.derivs = NULL, suffices.extra.derivs=NULL, 
+             na.x.action = "exclude", na.y.action = "trimx", ...)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A <code>data.frame</code> containing the column to be smoothed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response</code></td>
+<td>
+<p>A <code>character</code> giving the name of the column in 
+<code>data</code> that is to be smoothed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response.smoothed</code></td>
+<td>
+<p>A <code>character</code> specifying the name of the column 
+containing the values of the smoothed response variable, corresponding 
+to <code>response</code>. If <code>response.smoothed</code> is <code>NULL</code>, then 
+<code>response.smoothed</code> is set to the <code>response</code> to which is added 
+the prefix <code>s</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A <code>character</code> giving the name of the column in 
+<code>data</code> that contains the values of the predictor variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smoothing.method</code></td>
+<td>
+<p>A <code>character</code> giving the smoothing method 
+to use. The two possibilites are (i) <code>"direct"</code>, for directly 
+smoothing the observed <code>response</code>, and (ii) <code>"logarithmic"</code>, for 
+smoothing the <code>log</code>-transformed <code>response</code> and then 
+back-transforming by taking the exponentional of the fitted values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spline.type</code></td>
+<td>
+<p>A <code>character</code> giving the type of spline  
+to use. Currently, the possibilites are (i) <code>"NCSS"</code>, for natural 
+cubic smoothing splines, and (ii) <code>"PS"</code>, for P-splines.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>A <code>numeric</code> specifying, for natural cubic smoothing splines 
+(<code>NCSS</code>), the desired equivalent number of degrees of freedom of the 
+smooth (trace of the smoother matrix). Lower values result in more smoothing. 
+If <code>df = NULL</code>, the amount of smoothing can be controlled by setting 
+<code>lambda</code>. If both <code>df</code> and <code>lambda</code> are <code>NULL</code>, smoothing 
+is controlled by the default arguments for <code>smooth.spline</code>, and any 
+that you supply via the ellipsis (...) argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>A <code>numeric</code> specifying the positive penalty to apply. 
+The amount of smoothing decreases as <code>lamda</code> decreases.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>npspline.segments</code></td>
+<td>
+<p>A <code>numeric</code> specifying, for P-splines (<code>PS</code>), 
+the number of equally spaced segments between <code>min(x)</code> and <code>max(x)</code>, 
+excluding missing values, to use in constructing the B-spline basis for the 
+spline fitting. If <code>npspline.segments</code> is NULL, <code>npspline.segments</code> 
+is set to the maximum of 10 and <code>ceiling((nrow(data)-1)/2)</code> i.e. there will 
+be at least 10 segments and, for more than 22 <code>x</code> values, there will be 
+half as many segments as there are <code>x</code> values. The amount of smoothing 
+decreases as <code>npspline.segments</code> increases.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correctBoundaries</code></td>
+<td>
+<p>A <code>logical</code> indicating whether the fitted spline 
+values are to have the method of Huang (2001) applied 
+to them to correct for estimation bias at the end-points. Note that 
+<code>spline.type</code> must be <code>NCSS</code> and <code>lambda</code> and <code>deriv</code> 
+must be <code>NULL</code> for <code>correctBoundaries</code> to be set to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rates</code></td>
+<td>
+<p>A <code>character</code> giving the growth rates that are 
+to be calculated using derivative. It should be a combination of one or more 
+of <code>"AGR"</code>, <code>"PGR"</code> and <code>"RGR"</code>. If <code>NULL</code>, then 
+growth rates are not computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>suffices.rates</code></td>
+<td>
+<p>A <code>character</code> giving the characters to be 
+appended to the names of the responses to provide the names of the 
+columns containing the calculated growth rates. The order of the 
+suffices in <code>suffices.rates</code> should correspond to the order 
+of the elements of <code>which.rates</code>. If <code>NULL</code>, the values 
+of <code>rates</code> are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sep.rates</code></td>
+<td>
+<p>A <code>character</code> giving the character(s) to be used 
+to separate the <code>suffices.rates</code> value from a <code>response</code> 
+value in constructing the name for a new rate. For no separator, 
+set to <code>""</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extra.derivs</code></td>
+<td>
+<p>A <code>numeric</code> specifying one or more orders of derivatives 
+that are required, in addition to any required for calculating the growth 
+rates. When <code>rates.method</code> is <code>derivatives</code>, these can be 
+derivatives other than the first. Otherwise, any derivatives can be 
+specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>suffices.extra.derivs</code></td>
+<td>
+<p>A <code>character</code> giving the characters to be 
+appended to <code>response.method</code> to construct the names of the derivatives. 
+If <code>NULL</code> and the derivatives are to be retained, then <code>.dv</code> 
+followed by the order of the derivative is appended to 
+<code>response.method</code></p>
+</td>
+</tr>
+</table>
+<p>.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>na.x.action</code></td>
+<td>
+<p>A <code>character</code> string that specifies the action to 
+be taken when values of <code>x</code> are <code>NA</code>. The possible 
+values are <code>fail</code>, <code>exclude</code> or <code>omit</code>. 
+For <code>exclude</code> and <code>omit</code>, predictions and derivatives 
+will only be obtained for nonmissing values of <code>x</code>. 
+The difference between these two codes is that for <code>exclude</code> 
+the returned <code>data.frame</code> will have as many rows as 
+<code>data</code>, the missing values have been incorporated. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.y.action</code></td>
+<td>
+<p>A <code>character</code> string that specifies the action to 
+be taken when values of <code>y</code>, or the <code>response</code>, are 
+<code>NA</code>.  The possible values are <code>fail</code>, <code>exclude</code>, 
+<code>omit</code>, <code>allx</code>, <code>trimx</code>, <code>ltrimx</code> or 
+<code>rtrimx</code>. For  all options, except <code>fail</code>, missing 
+values in <code>y</code> will be removed before smoothing. 
+For <code>exclude</code> and <code>omit</code>, predictions 
+and derivatives will be obtained only for nonmissing values of 
+<code>x</code> that do not have missing <code>y</code> values. Again, the 
+difference between these two is that, only for <code>exclude</code> 
+will the missing values be incorporated into the 
+returned <code>data.frame</code>. For <code>allx</code>, predictions and 
+derivatives will be obtained for all nonmissing <code>x</code>. 
+For <code>trimx</code>, they will be obtained for all nonmissing 
+<code>x</code> between the first and last nonmissing <code>y</code> values 
+that have been ordered for <code>x</code>; for <code>ltrimx</code> and 
+<code>utrimx</code> either the lower or upper missing <code>y</code> 
+values, respectively, are trimmed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>allows for arguments to be passed to <code>smooth.spline</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>list</code> with two components named <code>predictions</code> and 
+<code>fit.spline</code>.
+</p>
+<p>The <code>predictions</code> component is a <code>data.frame</code> containing <code>x</code> 
+and the fitted smooth. The names of the columns will be the value of 
+<code>x</code> and the value of <code>response.smoothed</code>. The number of rows in 
+the <code>data.frame</code> will be equal to the number of pairs that have neither 
+a missing <code>x</code> or <code>response</code> and the order of <code>x</code> will be the 
+same as the order in <code>data</code>. If <code>deriv</code> is not <code>NULL</code>, 
+columns containing the values of the derivative(s) will be added to the 
+<code>data.frame</code>; the name each of these columns will be the value of 
+<code>response.smoothed</code> with <code>.dvf</code> appended, where <code>f</code> is the 
+order of the derivative, or  the value of <code>response.smoothed</code> and the 
+corresponding element of <code>suffices.deriv</code> appended. If <code>RGR</code> is 
+not <code>NULL</code>, the RGR is calculated as the ratio of value of the first 
+derivative of the fitted spline and the fitted value for the spline.
+</p>
+<p>The <code>fit.spline</code> component is a <code>list</code> with components
+</p>
+
+<dl>
+<dt>
+<code>x</code>:</dt>
+<dd>
+<p>the distinct x values in increasing order;</p>
+</dd>
+<dt>
+<code>y</code>:</dt>
+<dd>
+<p>the fitted values, with boundary values possibly corrected, and corresponding to <code>x</code>;</p>
+</dd>
+<dt>
+<code>lev</code>:</dt>
+<dd>
+<p>leverages, the diagonal values of the smoother matrix (NCSS only);</p>
+</dd>
+<dt>
+<code>lambda</code>:</dt>
+<dd>
+<p>the value of lambda (corresponding to <code>spar</code> for NCSS - see <code>smooth.spline</code>);</p>
+</dd> 
+<dt>
+<code>df</code>:</dt>
+<dd>
+<p>the efective degrees of freedom;</p>
+</dd>
+<dt>
+<code>npspline.segments</code>:</dt>
+<dd>
+<p>the number of equally spaced segments used for smoothing method set to <code>PS</code>;</p>
+</dd>
+<dt>
+<code>uncorrected.fit</code>:</dt>
+<dd>
+<p>the object returned by <code>smooth.spline</code> for <code>smoothing method</code> set to <code>NCSS</code> or by <code>JOPS::psNormal</code> for <code>PS</code>.</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Chris Brien</p>
+
+
+<h3>References</h3>
+
+<p>Eilers, P.H.C and Marx, B.D. (2021) <em>Practical smoothing: the joys of P-splines</em>. Cambridge University Press, Cambridge.
+</p>
+<p>Huang, C. (2001) Boundary corrected cubic smoothing splines. <em>Journal of Statistical Computation and Simulation</em>, <b>70</b>, 107-121.</p>
+
+
+<h3>See Also</h3>
+
+<p><code>byIndv4Times_SplinesGRs</code>, <code>probeSmoothing</code>, 
+<code>byIndv4Times_GRsDiff</code>, <code>smooth.spline</code>, <br><code>predict.smooth.spline</code>, JOPS.</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(exampleData)
+fit &lt;- smoothSpline(longi.dat, response="PSA", response.smoothed = "sPSA", 
+                    x="xDAP", df = 4,
+                    rates = c("AGR", "RGR"))
+fit &lt;- smoothSpline(longi.dat, response="PSA", response.smoothed = "sPSA", 
+                    x="xDAP", df = 4,
+                    rates = "AGR", suffices.rates = "AGRdv", 
+                    extra.derivs =  2, suffices.extra.derivs = "Acc")
+fit &lt;- smoothSpline(longi.dat, response="PSA", response.smoothed = "sPSA", 
+                    x="xDAP", 
+                    spline.type = "PS", lambda = 0.1, npspline.segments = 10, 
+                    rates = "AGR", suffices.rates = "AGRdv", 
+                    extra.derivs =  2, suffices.extra.derivs = "Acc")
+fit &lt;- smoothSpline(longi.dat, response="PSA", response.smoothed = "sPSA", 
+                    x="xDAP", df = 4,
+                    rates = "AGR", suffices.rates = "AGRdv")
+</code></pre>
+
+
+</div>

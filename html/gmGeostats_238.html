@@ -1,0 +1,166 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>spatialDecorrelation</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute diagonalisation measures</h2>
+
+<h3>Description</h3>
+
+<p>Compute one or more diagonalisation measures out of an empirical multivariate variogram.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">spatialDecorrelation(vgemp, ...)
+
+## S3 method for class 'gstatVariogram'
+spatialDecorrelation(
+  vgemp,
+  vgemp0 = NULL,
+  method = "add",
+  quadratic = method[1] != "rdd",
+  ...
+)
+
+## S3 method for class 'logratioVariogram'
+spatialDecorrelation(vgemp, vgemp0 = NULL, method = "add", ...)
+
+## S3 method for class 'gmEVario'
+spatialDecorrelation(vgemp, vgemp0 = NULL, method = "add", ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>vgemp</code></td>
+<td>
+<p>the empirical variogram to qualify</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>ignored</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vgemp0</code></td>
+<td>
+<p>optionally, a reference variogram (see below; necessary for <code>method="sde"</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>which quantities are desired? one or more of c("rdd", "add", "sde")</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quadratic</code></td>
+<td>
+<p>should the quantities be computed for a variogram or for its square? see below</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The three measures provided are
+</p>
+
+<dl>
+<dt>absolute deviation from diagonality ("add")</dt>
+<dd>
+<p>defined as the sum of all off-diagonal elements
+of the variogram, possibly squared ($p=2$ if <code>quadratic=TRUE</code> the default; otherwise $p=1$)</p>
+</dd>
+</dl>
+<p style="text-align: center;"><code class="reqn">
+\zeta(h)=\sum_{k=1}^n\sum_{j\neq k}^n \gamma_{k,j}^p(h)
+</code>
+</p>
+
+
+<dl>
+<dt>relative deviation from diagonality ("rdd")</dt>
+<dd>
+<p>comparing the absolute sum of off-diagonal elements
+with the sum of the diagonal elements of the variogram, each possibly squared ($p=2$ if <code>quadratic=TRUE</code>;
+otherwise $p=1$ the default)</p>
+</dd>
+</dl>
+<p style="text-align: center;"><code class="reqn">
+\tau(h)=\frac{\sum_{k=1}^n\sum_{j \neq k}^n |\gamma_{k,j}(h)|^p}{\sum_{k=1}^n|\gamma_{k,k}(h)|^p}
+</code>
+</p>
+
+
+<dl>
+<dt>spatial diagonalisation efficiency ("sde")</dt>
+<dd>
+<p>is the only one requiring <code>vgemp0</code>, because it compares
+an initial state with a diagonalised state of the variogram system</p>
+</dd>
+</dl>
+<p style="text-align: center;"><code class="reqn">
+\kappa(h)=1-
+\frac{\sum_{k=1}^n\sum_{j \neq k}^n |\gamma_{k,j}(h)|^p}{\sum_{k=1}^n\sum_{j \neq k}^n |\gamma_{(0)k,j}(h)|^p }
+</code>
+</p>
+
+<p>The value of $p$ is controlled by the first value of <code>method</code>. That is, the results with <code>method=c("rdd", "add")</code>
+are not the same as those obtained with <code>method=c("add", "rdd")</code>, as in the first case $p=1$ and in the second case $p=2$.
+</p>
+
+
+<h3>Value</h3>
+
+<p>an object of a similar nature to <code>vgemp</code>, but where the desired quantities are
+reported for each lag. This can then be plotted or averages be computed.
+</p>
+
+
+<h3>Methods (by class)</h3>
+
+
+<ul>
+<li> <p><code>gstatVariogram</code>: Compute diagonalisation measures
+</p>
+</li>
+<li> <p><code>logratioVariogram</code>: Compute diagonalisation measures
+</p>
+</li>
+<li> <p><code>gmEVario</code>: Compute diagonalisation measures
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">data("jura", package="gstat")
+X = jura.pred[, 1:2]
+Z = jura.pred[,-(1:6)]
+gm1 = make.gmCompositionalGaussianSpatialModel(data=Z, coords=X, V="alr")
+vg1 = variogram(as.gstat(gm1)) 
+(r1 = spatialDecorrelation(vg1, method=c("add", "rdd")))
+plot(r1)
+mean(r1)
+require("compositions")
+pc = princomp(acomp(Z))
+v = pc$loadings
+colnames(v)=paste("pc", 1:ncol(v), sep="")
+gm2 = make.gmCompositionalGaussianSpatialModel(data=Z, coords=X, V=v, prefix="pc")
+vg2 = variogram(as.gstat(gm2)) 
+(r2 = spatialDecorrelation(vg2, method=c("add", "rdd")))
+plot(r2)
+mean(r2)
+(r21 = spatialDecorrelation(vg2, vg1, method="sde") )
+plot(r21)
+mean(r21)
+</code></pre>
+
+
+</div>

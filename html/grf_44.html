@@ -1,0 +1,129 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.lm_forest</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict with a lm forest</h2>
+
+<h3>Description</h3>
+
+<p>Gets estimates of <code class="reqn">h_k(x)</code>, k = 1..K in the conditionally linear model
+<code class="reqn">Y = c(x) + h_1(x)W_1 + ... + h_K(x)W_K</code>, for a target sample X = x.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'lm_forest'
+predict(
+  object,
+  newdata = NULL,
+  num.threads = NULL,
+  estimate.variance = FALSE,
+  drop = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>The trained forest.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>Points at which predictions should be made. If NULL, makes out-of-bag
+predictions on the training set instead (i.e., provides predictions at
+Xi using only trees that did not use the i-th training example). Note
+that this matrix should have the number of columns as the training
+matrix, and that the columns must appear in the same order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num.threads</code></td>
+<td>
+<p>Number of threads used in training. If set to NULL, the software
+automatically selects an appropriate amount.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimate.variance</code></td>
+<td>
+<p>Whether variance estimates for <code class="reqn">\hat h_k(x)</code> are desired
+(for confidence intervals). This option is currently
+only supported for univariate outcomes Y.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drop</code></td>
+<td>
+<p>If TRUE, coerce the prediction result to the lowest possible dimension. Default is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments (currently ignored).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list with elements 'predictions': a 3d array of dimension [num.samples, K, M] with
+predictions for regressor W, for each outcome 1,..,M (singleton dimensions in this array can
+be dropped by passing the 'drop' argument to '[', or with the shorthand '$predictions[,,]'),
+and optionally 'variance.estimates': a matrix with K columns with variance estimates.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+if (require("rdd", quietly = TRUE)) {
+# Train a LM Forest to estimate CATEs in a regression discontinuity design.
+# Simulate a simple example with a heterogeneous jump in the CEF.
+n &lt;- 2000
+p &lt;- 5
+X &lt;- matrix(rnorm(n * p), n, p)
+Z &lt;- runif(n, -4, 4)
+cutoff &lt;- 0
+W &lt;- as.numeric(Z &gt;= cutoff)
+tau &lt;- pmax(0.5 * X[, 1], 0)
+Y &lt;- tau * W  + 1 / (1 + exp(2 * Z)) + 0.2 * rnorm(n)
+
+# Compute the Imbens-Kalyanaraman MSE-optimal bandwidth for a local linear regression.
+bandwidth &lt;- IKbandwidth(Z, Y, cutoff)
+# Compute kernel weights for a triangular kernel.
+sample.weights &lt;- kernelwts(Z, cutoff, bandwidth, "triangular")
+
+# Alternatively, specify bandwith and triangular kernel weights without using the `rdd` package.
+# bandwidth &lt;- # user can hand-specify this.
+# dist &lt;- abs((Z - cutoff) / bandwidth)
+# sample.weights &lt;- (1 - dist) * (dist &lt;= 1) / bandwidth
+
+# Estimate a local linear regression with the running variable Z conditional on covariates X = x:
+# Y = c(x) + tau(x) W + b(x) Z.
+# Specify gradient.weights = c(1, 0) to target heterogeneity in the RDD coefficient tau(x).
+# Also, fit forest on subset with non-zero weights for faster estimation.
+subset &lt;- sample.weights &gt; 0
+lmf &lt;- lm_forest(X[subset, ], Y[subset], cbind(W, Z)[subset, ],
+                 sample.weights = sample.weights[subset], gradient.weights = c(1, 0))
+tau.hat &lt;- predict(lmf)$predictions[, 1, ]
+
+# Plot estimated tau(x) vs simulated ground truth.
+plot(X[subset, 1], tau.hat)
+points(X[subset, 1], tau[subset], col = "red", cex = 0.1)
+}
+
+
+</code></pre>
+
+
+</div>

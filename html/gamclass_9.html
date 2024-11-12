@@ -1,0 +1,161 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>confusion</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Given actual and predicted group assignments, give the confusion matrix
+</h2>
+
+<h3>Description</h3>
+
+<p>Given actual and predicted group assignments, give the confusion matrix
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">confusion(actual, predicted, gpnames = NULL, rowcol=c("actual", "predicted"),
+printit = c("overall","confusion"), prior = NULL, digits=3)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>actual</code></td>
+<td>
+
+<p>Actual (prior) group assigments
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predicted</code></td>
+<td>
+
+<p>Predicted group assigments.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gpnames</code></td>
+<td>
+
+<p>Names for groups, if different from <code>levels(actual)</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rowcol</code></td>
+<td>
+<p>For predicted categories to appear as rows,
+specify <code>rowcol="predicted"</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>printit</code></td>
+<td>
+
+<p>Character vector. Print <code>"overall"</code>, or <code>"confusion"</code> matrix, or both.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+
+<p>Prior probabilities for groups, if different from the relative group
+frequencies
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Number of decimal digits to display in printed output
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Predicted group assignments should be estimated from cross-validation
+or from bootstrap out-of-bag data.  Better still, work with assignments
+for test data that are completely separate from the data used to
+dervive the model.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with elements overall (overall accuracy), confusion (confusion
+matrix) and prior (prior used for calculation of overall accuracy)
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>John H Maindonald
+</p>
+
+
+<h3>References</h3>
+
+<p>Maindonald and Braun: 'Data Analysis and Graphics Using R',
+3rd edition 2010, Section 12.2.2
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(MASS)
+library(DAAG)
+cl &lt;- lda(species ~ length+breadth, data=cuckoos, CV=TRUE)$class
+confusion(cl, cuckoos$species)
+
+## The function is currently defined as
+function (actual, predicted, gpnames = NULL,
+            rowcol = c("actual", "predicted"),
+            printit = c("overall","confusion"),
+            prior = NULL, digits = 3) 
+{
+  if (is.null(gpnames)) 
+    gpnames &lt;- levels(actual)
+  if (is.logical(printit)){
+    if(printit)printit &lt;- c("overall","confusion")
+    else printit &lt;- ""
+  }
+  tab &lt;- table(actual, predicted)
+  acctab &lt;- t(apply(tab, 1, function(x) x/sum(x)))
+  dimnames(acctab) &lt;- list(Actual = gpnames, `Predicted (cv)` = gpnames)
+  if (is.null(prior)) {
+    relnum &lt;- table(actual)
+    prior &lt;- relnum/sum(relnum)
+    acc &lt;- sum(tab[row(tab) == col(tab)])/sum(tab)
+  }
+  else {
+    acc &lt;- sum(prior * diag(acctab))
+  }
+  names(prior) &lt;- gpnames
+  if ("overall"%in%printit) {
+    cat("Overall accuracy =", round(acc, digits), "\n")
+    if(is.null(prior)){
+      cat("This assumes the following prior frequencies:", 
+          "\n")
+      print(round(prior, digits))
+    }
+  }
+  if ("confusion"%in%printit) {
+    cat("\nConfusion matrix", "\n")
+    print(round(acctab, digits))
+  }
+  invisible(list(overall=acc, confusion=acctab, prior=prior))
+}
+</code></pre>
+
+
+</div>

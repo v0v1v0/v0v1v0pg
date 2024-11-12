@@ -1,0 +1,135 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>structuredEstimate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimation of Partial Correlation Matrix Given Zero Structure.</h2>
+
+<h3>Description</h3>
+
+<p>Estimation of nonzero entries of the partial correlation matrix given zero 
+structure.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">structuredEstimate(x, E)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>n by p data matrix with the number of variables p and sample size n.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>E</code></td>
+<td>
+<p>The row and column indices of zero entries of the partial 
+correlation matrix.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>R </code></td>
+<td>
+<p>The partial correlation matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K </code></td>
+<td>
+<p>The inverse covariance matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RSS </code></td>
+<td>
+<p>The residual sum of squares.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Min Jin Ha
+</p>
+
+
+<h3>References</h3>
+
+<p>Ha, M. J. and Sun, W. 
+(2014).
+Partial correlation matrix estimation using ridge penalty followed 
+by thresholding and re-estimation.
+Biometrics, 70, 762–770.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> p &lt;- 100 # number of variables
+ n &lt;- 50 # sample size
+ 
+ ###############################
+ # Simulate data
+ ###############################
+ simulation &lt;- simulateData(G = p, etaA = 0.02, n = n, r = 1)
+ data &lt;- simulation$data[[1L]]
+ stddata &lt;- scale(x = data, center = TRUE, scale = TRUE)
+ 
+ ###############################
+ # estimate ridge parameter
+ ###############################
+ lambda.array &lt;- seq(from = 0.1, to = 20, by = 0.1) * (n-1.0)
+ fit &lt;- lambda.cv(x = stddata, lambda = lambda.array, fold = 10L)
+ lambda &lt;- fit$lambda[which.min(fit$spe)]/(n-1)
+ 
+ ###############################
+ # calculate partial correlation 
+ # using ridge inverse
+ ###############################
+ w.upper &lt;- which(upper.tri(diag(p)))
+ 
+ partial &lt;- solve(lambda * diag(p) + cor(data))
+ partial &lt;- (-scaledMat(x = partial))[w.upper]
+ 
+ ###############################
+ # get p-values from empirical 
+ # null distribution 
+ ###############################
+ efron.fit &lt;- getEfronp(z = transFisher(x = partial), 
+                        bins = 50L, 
+                        maxQ = 13)
+ 
+ ###############################
+ # estimate the edge set of 
+ # partial correlation graph with 
+ # FDR control at level 0.01
+ ###############################
+ w.array &lt;- which(upper.tri(diag(p)),arr.ind=TRUE)
+ th &lt;- 0.01
+ wsig &lt;- which(p.adjust(efron.fit$correctp, method="BH") &lt; th )
+ E &lt;- w.array[wsig,]
+ dim(E)
+ 
+ ###############################
+ # structured estimation
+ ###############################
+ fit &lt;- structuredEstimate(x = stddata, E = E)
+ th.partial &lt;- fit$R
+
+</code></pre>
+
+
+</div>

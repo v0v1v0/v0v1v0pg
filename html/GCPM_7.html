@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>analyze-methods</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Analyze a Credit Portfolio</h2>
+
+<h3>Description</h3>
+
+<p>The method analyzes a given portfolio with a predefined portfolio model
+(i.e. a <code>GCPM</code> object). Portfolio key numbers such as the number of portfolio
+positions, sum of EAD and PL or the expected loss are calculated. Afterwards the
+loss distribution is estimated according to <code>model.type</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">analyze(this,portfolio,alpha,Ncores)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>this</code></td>
+<td>
+<p>object of class <code>GCPM</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>portfolio</code></td>
+<td>
+<p>data frame containing portfolio data. The following columns
+have to be defined (please be aware of the correct spelling of the column names):<br><code>Number</code>: identification number for each portfolio position (numeric)<br><code>Name</code>: counterparty name (character)<br><code>Business</code>: business information (character/factor)<br><code>Country</code>: country information (character/factor)<br><code>EAD</code>: exposure at default (numeric)<br><code>LGD</code>: loss given default (numeric in [0,1])<br><code>PD</code>: probability of default (numeric in [0,1])<br><code>Default</code>: default distribution either “Bernoulli” or
+“Poisson” (employable for pools)<br>
+sectors: starting with the 9th column, the sector weights have to be defined..
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>loss levels for risk measures economic capital, value at risk
+and expected shortfall (optional)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ncores</code></td>
+<td>
+<p>number of (virtual) cores used to perfom Monte Carlo simulation
+(requires package <span class="pkg">parallel</span>, default=1)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In case of an analytical CreditRisk+ model, a modified version of the
+algorithm described in Gundlach &amp; Lehrbass (2003) is used. For a simulative
+model, the loss distribution is estimated based on <code>N</code> simulations with
+sector drawings specified by <code>random.numbers</code> (see <code>init</code>).
+The sector names (column names) should not include any white spaces. In case of a
+CreditMetrics type model, the values of R (not R^2) have to be provided as sector
+weights. In the standard CreditMetrics or CreditRisk+ framework a counterparty can
+be assigned to more than one sector. Within a analytical CreditRisk+ model, the
+sector names have to match the names of <code>sec.var</code> or in a simulative model
+the column names of <code>random.numbers</code> (see <code>init</code>)
+</p>
+
+
+<h3>Value</h3>
+
+<p>object of class <code>GCPM</code>.
+</p>
+
+
+<h3>Methods</h3>
+
+
+<dl>
+<dt><code>signature(this = "GCPM", portfolio = "data.frame",
+alpha = "missing")</code></dt>
+<dd>
+<p>If loss levels <code>alpha</code> are not provided, risk measures such as economic
+capital, value at risk and expected shortfall are not calculated by default.
+However, they can be calculated afterwards by calling the corresponding methods
+(see <code>VaR</code>, <code>ES</code>, <code>EC</code>)
+</p>
+</dd>
+<dt><code>signature(this = "GCPM", portfolio = "data.frame",
+alpha = "numeric")</code></dt>
+<dd>
+<p>If loss levels <code>alpha</code> are provided, risk measures such as economic
+capital, value at risk and expected shortfall are calculated and printed.
+To extract these risk measures into a separate variable you can use the
+corresponding methods.
+</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>Jakob, K. &amp; Fischer, M. "GCPM: A flexible package to explore credit portfolio risk" Austrian Journal of Statistics 45.1 (2016): 25:44<br>
+Morgan, J. P. "CreditMetrics-technical document." JP Morgan, New York, 1997<br> 
+First Boston Financial Products, "CreditRisk+", 1997 <br>
+Gundlach &amp; Lehrbass, "CreditRisk+ in the Banking Industry", Springer, 2003<br></p>
+
+
+<h3>See Also</h3>
+
+<p><code>init</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#create a random portfolio with NC counterparties
+NC=100
+#assign business lines and countries randomly
+business.lines=c("A","B","C")
+CP.business=business.lines[ceiling(runif(NC,0,length(business.lines)))]
+countries=c("A","B","C","D","E")
+CP.country=countries[ceiling(runif(NC,0,length(countries)))]
+
+#create matrix with sector weights (CreditRisk+ setting)
+#according to business lines
+NS=length(business.lines)
+W=matrix(0,nrow = NC,ncol = length(business.lines),
+dimnames = list(1:NC,business.lines))
+for(i in 1:NC){W[i,CP.business[i]]=1}
+
+#create portfolio data frame
+portfolio=data.frame(Number=1:NC,Name=paste("Name ",1:NC),Business=CP.business,
+                     Country=CP.country,EAD=runif(NC,1e3,1e6),LGD=runif(NC),
+                     PD=runif(NC,0,0.3),Default=rep("Bernoulli",NC),W)
+
+#draw sector variances randomly
+sec.var=runif(NS,0.5,1.5)
+names(sec.var)=business.lines
+
+#draw N sector realizations (independent gamma distributed sectors)
+N=5e4
+random.numbers=matrix(NA,ncol=NS,nrow=N,dimnames=list(1:N,business.lines))
+for(i in 1:NS){
+random.numbers[,i]=rgamma(N,shape = 1/sec.var[i],scale=sec.var[i])}
+
+#create a portfolio model and analyze the portfolio
+TestModel=init(model.type = "simulative",link.function = "CRP",N = N,
+loss.unit = 1e3, random.numbers = random.numbers,LHR=rep(1,N),loss.thr=5e6,
+max.entries=2e4)
+TestModel=analyze(TestModel,portfolio)
+
+#plot of pdf of portfolio loss (in million) with indicators for EL, VaR and ES
+alpha=c(0.995,0.999)
+plot(TestModel,1e6,alpha=alpha)
+
+#calculate portfolio VaR and ES
+VaR=VaR(TestModel,alpha)
+ES=ES(TestModel,alpha)
+
+#Calculate risk contributions to VaR and ES
+risk.cont=cbind(VaR.cont(TestModel,alpha = alpha),
+ES.cont(TestModel,alpha = alpha))
+
+#Use parallel computing for Monte Carlo simulation
+TestModel=analyze(TestModel,portfolio,Ncores=2)
+</code></pre>
+
+
+</div>

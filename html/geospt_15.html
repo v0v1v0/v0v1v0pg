@@ -1,0 +1,157 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>graph.idw</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Graph that describes the behavior of the optimized <em>p</em> smoothing parameter.
+</h2>
+
+<h3>Description</h3>
+
+<p>Function for plotting the RMSPE for several values of the <em>p</em> smoothing parameter with the same dataset. A curve is fitted to the points, and
+then the optimal <em>p</em> that provides the smallest
+RMSPE is determined from the curve, by the <code>optimize</code> function from the <code>stats</code>
+package.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">graph.idw(formula, data, locations, np, p.dmax, P.T=NULL, nmax=Inf, nmin=0, pleg, 
+    progress=F, iter, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>formula that defines the dependent variable as a linear model of independent variables; suppose the dependent variable has name <em>z</em>, for a <em>idw</em> detrended use <em>z~1</em></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>SpatialPointsDataFrame: should contain the dependent variable, independent variables, and coordinates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>locations</code></td>
+<td>
+<p>object of class <em>Spatial</em>, or (deprecated) formula defines the spatial data locations (coordinates) such as <em>~x+y</em></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>np</code></td>
+<td>
+<p>number of points, where the idw is calculated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.dmax</code></td>
+<td>
+<p>maximum value of the range of the <em>p</em> parameter that will be evaluated by the <code>optimize</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>P.T</code></td>
+<td>
+<p>logical. Print Table (TRUE) or not (FALSE). Default P.T=NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmax</code></td>
+<td>
+<p>maximum number of nearest observations that should be used for a <em>idw</em> prediction, where nearest is defined in terms of the spatial locations. By default, all observations are used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmin</code></td>
+<td>
+<p>minimum number of nearest observations that should be used for a <em>idw</em> prediction, where nearest is defined in terms of the spatial locations. see <code>krige</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pleg</code></td>
+<td>
+<p>the x and y co-ordinates to be used to position the legend. They can be specified by keyword or in any way which is accepted by <code>xy.coords</code>, by default pleg="topright.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress</code></td>
+<td>
+<p>logical. Use TRUE to see the percentage of progress of the process and FALSE otherwise). Default progress=FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>The maximum allowed number of function evaluations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further parameters to be passed to the minimization functions <code>optimize</code> or <code>bobyqa</code>, typically arguments of the type control() which control the behavior of the minimization algorithm. See documentation about the selected minimization function for further details.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a graph that describes the behavior of the optimized <em>p</em> parameter associated with the RMSPE, and a table of values associated with the graph including optimal smoothing <em>p</em> parameter, which generates the lowest RMSPE.
+</p>
+
+
+<h3>References</h3>
+
+<p>Johnston, K., Ver, J., Krivoruchko, K., Lucas, N. 2001. <em>Using ArcGIS Geostatistical Analysis</em>. ESRI.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+data(ariari)
+data(ariprec)
+# p optimization
+gp &lt;- graph.idw(PRECI_TOT~ 1, ~x+y, data=ariprec, np=50, p.dmax=4, nmax=15, 
+    nmin=15,pleg = "center", progress=T)
+gp
+gp$p
+
+library(sp)
+library(fields)
+plot(ariari)
+gridAri &lt;- spsample(ariari,20000,"regular")
+plot(gridAri)
+
+idw.p &lt;- idw(PRECI_TOT~ 1, ~ x+y, ariprec, gridAri, nmax=15, nmin=15, idp=2)
+pal2 &lt;- colorRampPalette(c("snow3","royalblue1", "blue4"))
+
+# Inverse Distance Interpolations Precipitation Weighted (P = 2)
+p1 &lt;- spplot(idw.p[1], col.regions=pal2(100), cuts =60, scales = list(draw =T), 
+    xlab ="East (m)", ylab = "North (m)",
+       main = "", auto.key = F)
+
+split.screen( rbind(c(0, 1,0,1), c(1,1,0,1)))
+split.screen(c(1,2), screen=1)-&gt; ind
+screen( ind[1])
+p1
+screen( ind[2])
+image.plot(legend.only=TRUE, legend.width=0.5, col=pal2(100), 
+    smallplot=c(0.6,0.68, 0.5,0.75), 
+    zlim=c(min(idw.p$var1.pred),max(idw.p$var1.pred)), 
+    axis.args = list(cex.axis = 0.7))
+close.screen( all=TRUE)
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,151 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GIFT_spatial</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Spatial selection of GIFT checklists</h2>
+
+<h3>Description</h3>
+
+<p>Retrieve checklists overlapping with a shape file or a set of coordinates.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GIFT_spatial(
+  shp = NULL,
+  coordinates = NULL,
+  overlap = "centroid_inside",
+  entity_ID = NULL,
+  GIFT_version = "latest",
+  api = "https://gift.uni-goettingen.de/api/extended/"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>shp</code></td>
+<td>
+<p>Shapefile provided by the user. Its Coordinate Reference System
+(CRS) must be set to WGS84 (EPSG code 4326).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordinates</code></td>
+<td>
+<p>Custom set of coordinates. The format is a two columns,
+the first one being longitudes and the second being latitudes. If 4
+coordinates are given, the function assumes that these are the four corners
+of a bounding box.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>overlap</code></td>
+<td>
+<p>A character string defining the criteria to use in order to
+retrieve checklists. Available options are <code>centroid_inside</code>,
+<code>extent_intersect</code>, <code>shape_intersect</code> and <code>shape_inside</code>. For example,
+<code>extent_intersect</code> means that every polygon from GIFT for which the extent
+intersects the provided shape/coordinates will be retrieved.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>entity_ID</code></td>
+<td>
+<p>Constrain the list of regions to be received by a
+predefined set of entity_IDs. E.g. this list could come from
+GIFT_checklists_conditional().</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GIFT_version</code></td>
+<td>
+<p>character string defining the version of the GIFT
+database to use. The function retrieves by default the <code>latest</code> stable
+version. If set to <code>beta</code>, the most up-to-date version which is still
+subject to changes and edits is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>api</code></td>
+<td>
+<p>character string defining from which API the data will be
+retrieved.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A data frame with 3 columns: <em>entity_ID</em> the identification
+number of a polygon, <em>geo_entity_ref</em> its name, and <em>coverage</em>
+which indicates the percentage of overlap between the provided shape and
+the different polygons of GIFT.
+</p>
+
+
+<h3>References</h3>
+
+<div class="sourceCode"><pre> Denelle, P., Weigelt, P., &amp; Kreft, H. (2023). GIFT—An R package to
+ access the Global Inventory of Floras and Traits. Methods in Ecology
+ and Evolution, 14, 2738-2748.
+ https://doi.org/10.1111/2041-210X.14213
+
+ Weigelt, P, König, C, Kreft, H. GIFT – A Global Inventory of Floras and
+ Traits for macroecology and biogeography. J Biogeogr. 2020; 47: 16– 43.
+ https://doi.org/10.1111/jbi.13623
+</pre></div>
+
+
+<h3>See Also</h3>
+
+<p><code>GIFT_checklists()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# With a shapefile
+data("western_mediterranean")
+ex &lt;- GIFT_spatial(shp = western_mediterranean, overlap = "centroid_inside")
+
+# With a shapefile coming from GIFT
+spain &lt;- GIFT_shapes(entity_ID = 10071)
+ex_spain &lt;- GIFT_spatial(shp = spain)
+
+# With a point 
+custom_point &lt;- cbind(9.9, 51)
+ex2 &lt;- GIFT_spatial(coordinates = custom_point,
+overlap = "extent_intersect")
+
+# With an extent
+custom_extent &lt;- cbind(c(-13, -18), c(27.5, 29.3))
+ex3 &lt;- GIFT_spatial(coordinates = custom_extent,
+overlap = "extent_intersect")
+
+# With a custom polygon
+custom_polygon &lt;- cbind(c(-18, -16.9, -13, -13, -18, -18),
+c(29.3, 33, 29.3, 27.5, 27.5, 29.3))
+ex4 &lt;- GIFT_spatial(coordinates = custom_polygon,
+overlap = "extent_intersect")
+
+#With a linestring
+custom_linestring &lt;- rbind(c(9.9, 51), c(2.35, 48.9))
+custom_linestring &lt;- sf::st_as_sf(as.data.frame(custom_linestring),
+coords = c("V1", "V2"))
+custom_linestring &lt;- dplyr::summarise(custom_linestring,
+geometry = sf::st_combine(geometry))
+sf::st_crs(custom_linestring) &lt;- sf::st_crs(western_mediterranean)
+ex5 &lt;- GIFT_spatial(shp = custom_linestring, overlap = "extent_intersect")
+
+
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,111 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>neg2loglikDiagFactory</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Diagnostics for arbitrarily specified, likelihood-based Gaussian process models</h2>
+
+<h3>Description</h3>
+
+<p>A helper function for rapidly exploring the parameter space around the maximum likelihood estimate
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">neg2loglikDiagFactory(y, X = data.frame(), distmat, covariance, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Dependent variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Optional design matrix with covariates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distmat</code></td>
+<td>
+<p>Distance matrix. Can be provided either as a dense matrix or spam object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariance</code></td>
+<td>
+<p>Covariance function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments to be passed on.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+<dl>
+<dt>theta_list</dt>
+<dd>
+<p>Named list of vectors with parameters to be passed to covariance.</p>
+</dd>
+<dt>cov.args_list (default = <code>list()</code>)</dt>
+<dd>
+<p>Named list of vectors with arguments to be passed to covariance</p>
+</dd>
+<dt>chol.args_list (default = <code>list()</code>)</dt>
+<dd>
+<p>Named list of vectors with arguments to be passed to <code>choleskyFactory</code>.</p>
+</dd>
+</dl>
+<h3>Value</h3>
+
+<p>Returns a function of the form <code>function(theta_list, cov.args_list = list(), chol.args_list = list())</code> which returns a <code>data.frame</code> containing the neg2loglikelihood at all permutations of the provided arguments.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The function manufactured by <code>neg2loglikDiagFactory</code> in principle also accepts covariance functions generated using <code>covarianceFactory</code>. However, the function is not yet compatible with the arguments <code>fixed_range_value</code> and <code>fixed_nugget_value</code>. For now, these should be left at default when using <code>covarianceFactory</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Thomas Caspar Fischer</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(63)
+n &lt;- 50
+range &lt;- 0.7
+theta  &lt;- c(range, 1, 1, 0, 0)
+
+locs &lt;- data.frame(x = runif(n), y = runif(n))
+dmat  &lt;- as.matrix(dist(locs))
+Sigma &lt;- cov.wendland(h = dmat, theta = theta)
+y &lt;- c(spam::rmvnorm(1, Sigma = Sigma))
+
+neg2loglikIterator &lt;- neg2loglikDiagFactory(y = y, distmat = dmat,
+  covariance = cov.wendland)
+theta_list &lt;- list(range = 0.5, sill = 1, kappa = 0, mu = c(0, 0.25, 0.5),
+  nugget = 0)
+cov.args_list &lt;- list(numint.abstol = c(1e-1, 1e-3, 1e-6), numint.reltol = c(1e-3))
+
+results &lt;- neg2loglikIterator(theta_list, cov.args_list = cov.args_list)
+</code></pre>
+
+
+</div>

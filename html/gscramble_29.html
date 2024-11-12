@@ -1,0 +1,97 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>recomb_point</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Randomly sample the positions of recombinations on a chromosome</h2>
+
+<h3>Description</h3>
+
+<p>This function uses the observed recombination fractions such as those
+in the data object RecRates.  These are observed recombination fractions
+in a series of adjacent small bins that are defined by a start position
+<code>start_pos</code> and ending position <code>end_pos</code>.  This function operates on the
+recombination rates for only a single chromosome at a time, so it will
+typically be wrapped up inside a <code>purrr::map()</code> function to operate over
+multiple chromosomes.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">recomb_point(M, at_least_one = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>a tibble that has the columns start_pos, end_pos, and rec_prob (where rec_prob is the
+probability of a recombination occurring during meiosis within the interval defined by start_pos and end_pos.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>at_least_one</code></td>
+<td>
+<p>if this is TRUE then at least one recombination occurs
+on every chromosome (see Details).  If FALSE then the total number of recombinations is
+simulated as a Poisson r.v. with mean equal to the sum of the
+recombination fractions.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>There are two main modes by which this function operates. If
+<code>at_least_one == TRUE</code>, then the chromosome will always have at least
+one recombination.  In this case, the position of that first recombination
+is chosen according to the recombination rates.  Subsequently, the remaining
+number of recombinations is chosen by the random variable Y, which is
+the greater of zero and X - 1, where X is a
+Poisson r.v. with mean given by the sum of the
+recombination fractions.  These additional recombinations are placed
+randomly according to the <code>rec_probs</code> but without interference.
+</p>
+<p>If <code>at_least_one == FALSE</code> then the total number of recombinations is
+simulated as a Poisson r.v. with mean equal to the sum of the
+recombination fractions. Again, their placement assumes no interference.
+</p>
+<p>Locations within each bin are chosen uniformly.  These locations are represented
+as real numbers (rather than as integers) and those are used for describing segments,
+as well.  This simplifies matters such as condensing information about multiple recombinations
+that occurred at the same base pair.  In practice, this will have negligible effects, since
+it is so unlikely that a recombination will ever occur in the same place.
+</p>
+<p>If no recombination occurs, this just returns a zero-length numeric vector.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a numeric vector of recombination breakpoints along the chromome.
+The values are sorted in ascending order.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># for an example, create a tibble of bins, roughly 1 Mb each,
+# on a chromosome of length roughly 150 Mb, and we assign each
+# a rec_prob around 0.01
+ends &lt;- seq(1e6, 150e6, by = 1e6)
+ends &lt;- ends + floor(runif(length(ends), min = -1e4, max = 1e4))
+set.seed(5)
+M &lt;- tibble::tibble(
+    start_pos = c(0, ends[-length(ends)] + 1),
+    end_pos = ends,
+    rec_prob = abs(rnorm(length(ends), 0.01, 0.004))
+)
+recomb_point(M)
+</code></pre>
+
+
+</div>

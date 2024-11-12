@@ -1,0 +1,174 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ga_model_make</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Modelling function factory for Google Analytics data</h2>
+
+<h3>Description</h3>
+
+<p>Create ga_model objects for easy application of models to data
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ga_model_make(
+  data_f,
+  required_columns,
+  model_f,
+  output_f = function(df, ...) {
+     plot(df)
+ },
+  required_packages = NULL,
+  description = NULL,
+  outputShiny = shiny::plotOutput,
+  renderShiny = shiny::renderPlot,
+  inputShiny = shiny::tagList()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data_f</code></td>
+<td>
+<p>A function that gets the data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>required_columns</code></td>
+<td>
+<p>What dimensions and metrics are required</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model_f</code></td>
+<td>
+<p>A function that inputs data, and outputs a list of assets -
+must take data from result of <code>data_f</code> in first argument</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_f</code></td>
+<td>
+<p>A function that inputs the output from <code>model_f</code>, outputs a visualisation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>required_packages</code></td>
+<td>
+<p>The packages needed for <code>data_f</code> and <code>model_f</code> to work</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>description</code></td>
+<td>
+<p>An optional description of what the model does</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outputShiny</code></td>
+<td>
+<p>A shiny UI output function that will display the results <code>renderShiny</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>renderShiny</code></td>
+<td>
+<p>A shiny render function that will create the output for <code>outputShiny</code> from <code>output_f</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inputShiny</code></td>
+<td>
+<p>Optional input shiny functions (like <code>dateInput()</code>) that will be used within the model's Shiny module.  The id should be exactly the same as one of the variables in the model functions.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The passed functions should all have <code>...</code> to make them flexible
+in what arguments can be added.  Do not have the same argument names in both functions.
+The <code>data_f</code> function result will feed to <code>model_f</code>
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>ga_model</code> object to pass to ga_model
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other GA modelling functions: 
+<code>ga_model()</code>,
+<code>ga_model_edit()</code>,
+<code>ga_model_example()</code>,
+<code>ga_model_load()</code>,
+<code>ga_model_save()</code>,
+<code>ga_model_shiny()</code>,
+<code>ga_model_shiny_load()</code>,
+<code>ga_model_shiny_template()</code>,
+<code>ga_model_write()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+
+ get_model_data &lt;- function(viewId,
+                           date_range = c(Sys.Date()- 300, Sys.Date()),
+                           ...){
+   google_analytics(viewId,
+                    date_range = date_range,
+                    metrics = "sessions",
+                    dimensions = "date",
+                    max = -1)
+ }
+
+ decompose_sessions &lt;- function(df, ...){
+   decompose(ts(df$sessions, frequency = 7))
+ }
+
+ decomp_ga &lt;- ga_model_make(get_model_data,
+                            required_columns = c("date", "sessions"),
+                            model_f = decompose_sessions,
+                            description = "Performs decomposition and creates plot")
+
+ # fetches data and outputs decomposition
+ ga_model(81416156, decomp_ga)
+
+ # save the model for later
+ model_location &lt;- "decomp_ga.gamr"
+ ga_model_save(decomp_ga, filename = model_location)
+
+ # can load model from file
+ ga_model(81416156, model_location)
+
+ # or load model to an object and use 
+ model2 &lt;- ga_model_load(model_location)
+
+ ga_model(81416156, model2)
+ 
+ # for shiny include functions for the UI and server rendering
+ decomp_ga &lt;- ga_model_make(get_model_data,
+                            required_columns = c("date", "sessions"),
+                            model_f = decompose_sessions,
+                            output_f = function(df, ...){graphics::plot(df)},
+                            description = "Performs decomposition and creates a plot",
+                            outputShiny = shiny::plotOutput,
+                            renderShiny = shiny::renderPlot)
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,277 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>curve_interval</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Curvewise point and interval summaries for tidy data frames of draws from distributions</h2>
+
+<h3>Description</h3>
+
+<p>Translates draws from distributions in a grouped data frame into a set of point and
+interval summaries using a curve boxplot-inspired approach.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">curve_interval(
+  .data,
+  ...,
+  .along = NULL,
+  .width = 0.5,
+  na.rm = FALSE,
+  .interval = c("mhd", "mbd", "bd", "bd-mbd")
+)
+
+## S3 method for class 'matrix'
+curve_interval(
+  .data,
+  ...,
+  .along = NULL,
+  .width = 0.5,
+  na.rm = FALSE,
+  .interval = c("mhd", "mbd", "bd", "bd-mbd")
+)
+
+## S3 method for class 'rvar'
+curve_interval(
+  .data,
+  ...,
+  .along = NULL,
+  .width = 0.5,
+  na.rm = FALSE,
+  .interval = c("mhd", "mbd", "bd", "bd-mbd")
+)
+
+## S3 method for class 'data.frame'
+curve_interval(
+  .data,
+  ...,
+  .along = NULL,
+  .width = 0.5,
+  na.rm = FALSE,
+  .interval = c("mhd", "mbd", "bd", "bd-mbd"),
+  .simple_names = TRUE,
+  .exclude = c(".chain", ".iteration", ".draw", ".row")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>.data</code></td>
+<td>
+<p>One of:
+</p>
+
+<ul>
+<li>
+<p> A data frame (or grouped data frame as returned by <code>dplyr::group_by()</code>)
+that contains draws to summarize.
+</p>
+</li>
+<li>
+<p> A posterior::rvar vector.
+</p>
+</li>
+<li>
+<p> A matrix; in which case the first dimension should be draws and the second
+dimension values of the curve.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Bare column names or expressions that, when evaluated in the context of
+<code>.data</code>, represent draws to summarize. If this is empty, then by default all
+columns that are not group columns and which are not in <code>.exclude</code> (by default
+<code>".chain"</code>, <code>".iteration"</code>, <code>".draw"</code>, and <code>".row"</code>) will be summarized.
+This can be numeric columns, list columns containing numeric vectors, or
+<code>posterior::rvar()</code>s.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.along</code></td>
+<td>
+<p>Which columns are the input values to the function describing the curve (e.g., the "x"
+values). Supports tidyselect syntax. Intervals are calculated jointly with
+respect to these variables, conditional on all other grouping variables in the data frame. The default
+(<code>NULL</code>) causes <code>curve_interval()</code> to use all grouping variables in the input data frame as the value
+for <code>.along</code>, which will generate the most conservative intervals. However, if you want to calculate
+intervals for some function <code>y = f(x)</code> conditional on some other variable(s) (say, conditional on a
+factor <code>g</code>), you would group by <code>g</code>, then use <code>.along = x</code> to calculate intervals jointly over <code>x</code>
+conditional on <code>g</code>. To avoid selecting any variables as input values to the function describing the
+curve, use <code>character()</code>; this will produce conditional intervals only (the result in this case should
+be very similar to <code>median_qi()</code>). Currently only supported when <code>.data</code> is a data frame.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.width</code></td>
+<td>
+<p>vector of probabilities to use that determine the widths of the resulting intervals.
+If multiple probabilities are provided, multiple rows per group are generated, each with
+a different probability interval (and value of the corresponding <code>.width</code> column).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.rm</code></td>
+<td>
+<p>logical value indicating whether <code>NA</code> values should be stripped before the computation proceeds.
+If <code>FALSE</code> (the default), the presence of <code>NA</code> values in the columns to be summarized will generally
+result in an error. If <code>TRUE</code>, <code>NA</code> values will be removed in the calculation of intervals so long
+as <code>.interval</code> is <code>"mhd"</code>; other methods do not currently support <code>na.rm</code>. Be cautious in applying
+this parameter: in general, it is unclear what a joint interval should be when any of the values
+are missing!</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.interval</code></td>
+<td>
+<p>The method used to calculate the intervals. Currently, all methods rank the curves
+using some measure of <em>data depth</em>, then create envelopes containing the <code>.width</code>% "deepest" curves.
+Available methods are:
+</p>
+
+<ul>
+<li> <p><code>"mhd"</code>: mean halfspace depth (Fraiman and Muniz 2001).
+</p>
+</li>
+<li> <p><code>"mbd"</code>: modified band depth (Sun and Genton 2011): calls <code>fda::fbplot()</code> with <code>method = "MBD"</code>.
+</p>
+</li>
+<li> <p><code>"bd"</code>: band depth (Sun and Genton 2011): calls <code>fda::fbplot()</code> with <code>method = "BD2"</code>.
+</p>
+</li>
+<li> <p><code>"bd-mbd"</code>: band depth, breaking ties with modified band depth (Sun and Genton 2011): calls
+<code>fda::fbplot()</code> with <code>method = "Both"</code>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.simple_names</code></td>
+<td>
+<p>When <code>TRUE</code> and only a single column / vector is to be summarized, use the
+name <code>.lower</code> for the lower end of the interval and <code>.upper</code> for the
+upper end. When <code>FALSE</code> and <code>.data</code> is a data frame,
+names the lower and upper intervals for each column <code>x</code> <code>x.lower</code> and <code>x.upper</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.exclude</code></td>
+<td>
+<p>A character vector of names of columns to be excluded from summarization
+if no column names are specified to be summarized. Default ignores several meta-data column
+names used in <span class="pkg">ggdist</span> and <span class="pkg">tidybayes</span>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Intervals are calculated by ranking the curves using some measure of <em>data depth</em>, then
+using binary search to find a cutoff <code>k</code> such that an envelope containing the <code>k</code>% "deepest"
+curves also contains <code>.width</code>% of the curves, for each value of <code>.width</code> (note that <code>k</code>
+and <code>.width</code> are not necessarily the same). This is in contrast to most functional boxplot
+or curve boxplot approaches, which tend to simply take the <code>.width</code>% deepest curves, and
+are generally quite conservative (i.e. they may contain more than <code>.width</code>% of the curves).
+</p>
+<p>See Mirzargar <em>et al.</em> (2014) or Juul <em>et al.</em> (2020) for an accessible introduction
+to data depth and curve boxplots / functional boxplots.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data frame containing point summaries and intervals, with at least one column corresponding
+to the point summary, one to the lower end of the interval, one to the upper end of the interval, the
+width of the interval (<code>.width</code>), the type of point summary (<code>.point</code>), and the type of interval (<code>.interval</code>).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Matthew Kay
+</p>
+
+
+<h3>References</h3>
+
+<p>Fraiman, Ricardo and Graciela Muniz. (2001).
+"Trimmed means for functional data".
+<em>Test</em> 10: 419–440.
+<a href="https://doi.org/10.1007/BF02595706">doi:10.1007/BF02595706</a>.
+</p>
+<p>Sun, Ying and Marc G. Genton. (2011).
+"Functional Boxplots".
+<em>Journal of Computational and Graphical Statistics</em>, 20(2): 316-334.
+<a href="https://doi.org/10.1198/jcgs.2011.09224">doi:10.1198/jcgs.2011.09224</a>
+</p>
+<p>Mirzargar, Mahsa, Ross T Whitaker, and Robert M Kirby. (2014).
+"Curve Boxplot: Generalization of Boxplot for Ensembles of Curves".
+<em>IEEE Transactions on Visualization and Computer Graphics</em>. 20(12): 2654-2663.
+<a href="https://doi.org/10.1109/TVCG.2014.2346455">doi:10.1109/TVCG.2014.2346455</a>
+</p>
+<p>Juul Jonas, Kaare Græsbøll, Lasse Engbo Christiansen, and Sune Lehmann. (2020).
+"Fixed-time descriptive statistics underestimate extremes of epidemic curve ensembles".
+<em>arXiv e-print</em>.
+<a href="https://arxiv.org/abs/2007.05035">arXiv:2007.05035</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>point_interval()</code> for pointwise intervals. See <code>vignette("lineribbon")</code> for more examples
+and discussion of the differences between pointwise and curvewise intervals.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(dplyr)
+library(ggplot2)
+
+# generate a set of curves
+k = 11 # number of curves
+n = 201
+df = tibble(
+    .draw = rep(1:k, n),
+    mean = rep(seq(-5,5, length.out = k), n),
+    x = rep(seq(-15,15,length.out = n), each = k),
+    y = dnorm(x, mean, 3)
+  )
+
+# see pointwise intervals...
+df %&gt;%
+  group_by(x) %&gt;%
+  median_qi(y, .width = c(.5)) %&gt;%
+  ggplot(aes(x = x, y = y)) +
+  geom_lineribbon(aes(ymin = .lower, ymax = .upper)) +
+  geom_line(aes(group = .draw), alpha=0.15, data = df) +
+  scale_fill_brewer() +
+  ggtitle("50% pointwise intervals with point_interval()") +
+  theme_ggdist()
+
+
+# ... compare them to curvewise intervals
+df %&gt;%
+  group_by(x) %&gt;%
+  curve_interval(y, .width = c(.5)) %&gt;%
+  ggplot(aes(x = x, y = y)) +
+  geom_lineribbon(aes(ymin = .lower, ymax = .upper)) +
+  geom_line(aes(group = .draw), alpha=0.15, data = df) +
+  scale_fill_brewer() +
+  ggtitle("50% curvewise intervals with curve_interval()") +
+  theme_ggdist()
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,152 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BacktestDensity</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Backtest a series of one-step ahead density predictions.
+</h2>
+
+<h3>Description</h3>
+
+<p>The <code>BacktestDensity()</code> function accepts an object of the class uGASRoll, and returns a <code>list</code> with
+two elements: (i) the averages Negative Log Score (NLS) and  weighted Continuous Ranked Probability Score (wCRPS)
+introduced by Gneiting and Ranjan (2012), and (ii) their values at each point in time. The wCRPS is
+evaluated using 5 weight functions, see Details.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BacktestDensity(Roll, lower, upper, K = 1000, a = NULL, b = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>Roll</code></td>
+<td>
+
+<p>an object of the class uGASRoll.</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+
+<p><code>numeric</code> the lower bound used to approximate the wCRSP by Monte Carlo integration as
+detailed in Gneiting and Ranjan (2012).  This coincides with <code class="reqn">y_{l}</code> in Equation 16 of
+Gneiting and Ranjan (2012).</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+
+<p><code>numeric</code> the upper bound used to approximate the wCRSP by Monte Carlo integration as detailed
+in Gneiting and Ranjan (2012).  This coincides with <code class="reqn">y_{u}</code> in Equation 16 of Gneiting and Ranjan (2012).</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+
+<p><code>numeric</code> integer representing the number of points used to discretize the wCRPS integral.
+This is <code class="reqn">I</code> in Equation 16 of Gneiting and Ranjan (2012). By default <code>K = 1000.</code></p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+
+<p><code>numeric</code>. mean of the normal distribution used in the weight function. By default <code>a = NULL</code>, which
+means that it is set equal to the empircial mean of the in sample observations.</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>b</code></td>
+<td>
+
+<p><code>numeric</code>. standard deviation of the normal distribution used in the weight function. By default <code>b = NULL</code>, which
+means that it is set equal to the empircial standard deviation of the in sample observations.</p>
+</td>
+</tr></table>
+<h3>Details</h3>
+
+<p>The average Negative Log Score (NLS) is computed as the negative of the average of the log scores evaluated
+during the out-of-sample period. The average weighted Continuous Ranked Probability Score (wCRPS) is computed as
+the average of the wCRPS evaluated during the out-of-sample period, see Gneiting and Ranjan (2012).<br>
+
+The wCRPS is evaluated using Equation 16 of Gneiting and Ranjan (2012). The weights functions implemented are:
+</p>
+
+<ul>
+<li> <p><code class="reqn">w(z) = 1</code>: Uniform,
+</p>
+</li>
+<li> <p><code class="reqn">w(z) = \phi_{a,b}(z)</code>: Center,
+</p>
+</li>
+<li> <p><code class="reqn">w(z) = 1 - \phi_{a,b}(z)</code>:  Tails,
+</p>
+</li>
+<li> <p><code class="reqn">w(z) = \Phi_{a,b}(z)</code>: Right tail,
+</p>
+</li>
+<li> <p><code class="reqn">w(z) = 1 - \Phi_{a,b}(z)</code>:  Left tail,
+</p>
+</li>
+</ul>
+<p>where <code class="reqn">\phi_{a,b}(z)</code> and <code class="reqn">\Phi_{a,b}(z)</code> are the pdf and cdf of a Gaussian distribution with mean <code class="reqn">a</code>
+and standard deviation <code class="reqn">b</code>, respectively. The label "Uniform" represents the case where equal
+emphasis is given to all the parts of the distribution.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>list</code> with elements: <code>average</code>, <code>series</code>. The element "<code>average</code>" is a named vector
+with the averages NLS and wCRSP. The element "<code>series</code>" is a <code>list</code>: the fist element, <code>LS</code>, contains
+the out-of-sample Log Score (not with the negative sign), the second element, <code>WCRPS</code>, contains a <code>matrix</code>
+with the wCRPS series. The columns of this matrix are named: "<code>uniform</code>", "<code>center</code>", "<code>tails</code>",
+"<code>tail_r</code>", "<code>tail_l</code>", which are associated with the wCRSP with emphasis on: Uniform, Center, Tails,
+Right tail and Left tail, respectively.</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Leopoldo Catania</p>
+
+
+<h3>References</h3>
+
+<p>Gneiting T, Ranjan R (2011).
+"Comparing Density Forecasts using Threshold -and Quantile-Weighted Scoring Rules."
+Journal of Business &amp; Economic Statistics, 29(3), 411-422.
+<a href="https://doi.org/10.1198/jbes.2010.08110">doi:10.1198/jbes.2010.08110</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+data("cpichg")
+
+GASSpec = UniGASSpec(Dist = "std", ScalingType = "Identity",
+                       GASPar = list(location = TRUE, scale = TRUE,
+                                      shape = FALSE))
+
+Roll = UniGASRoll(cpichg, GASSpec, ForecastLength = 50,
+                  RefitEvery = 10, RefitWindow = c("moving"))
+
+BackTest = BacktestDensity(Roll, lower = -100, upper = 100)
+
+BackTest$average
+
+## End(Not run)
+</code></pre>
+
+
+</div>

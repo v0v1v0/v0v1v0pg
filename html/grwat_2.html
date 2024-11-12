@@ -1,0 +1,143 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gr_baseflow</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Extract baseflow</h2>
+
+<h3>Description</h3>
+
+<p>Extract baseflow from hydrological series using the filtering approach
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gr_baseflow(
+  Q,
+  a = 0.925,
+  k = 0.975,
+  C = 0.05,
+  aq = -0.5,
+  passes = 3,
+  padding = 30,
+  method = "lynehollick"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Q</code></td>
+<td>
+<p>Numeric runoff vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+<p>Numeric value of a filtering parameter used in <code>'chapman'</code>, <code>'jakeman'</code> and <code>'lynehollick'</code> methods. Defaults to <code>0.925</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>Numeric value of a filtering parameter used in <code>'boughton'</code> and <code>'maxwell'</code> methods. Defaults to <code>0.975</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>C</code></td>
+<td>
+<p>Numeric value of a separation shape parameter used in <code>'boughton'</code>, <code>'jakeman'</code> and <code>'maxwell'</code> methods</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aq</code></td>
+<td>
+<p>Numeric value of a filtering parameter used in <code>'jakeman'</code> method. Defaults to <code>-0.5</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>passes</code></td>
+<td>
+<p>Integer number of filtering iterations. The first iteration is forward, second is backward, third is forward and so on. Defaults to <code>3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>padding</code></td>
+<td>
+<p>Integer number of elements padded at the beginning and ending of runoff vector to reduce boundary effects. Defaults to <code>30</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Character string to set baseflow filtering method. Available methods are <code>'boughton'</code>, <code>'chapman'</code>, <code>'furey'</code>, <code>'jakeman'</code>, <code>'lynehollick'</code> and <code>'maxwell'</code>. Default is <code>'lynehollick'</code>, which corresponds to Lyne-Hollick (1979) hydrograph separation method.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Numeric baseflow vector with length equal to <code>Q</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(grwat)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+
+data(spas) # example Spas-Zagorye data is included with grwat package
+
+# Calculate baseflow using Line-Hollick approach
+hdata = spas %&gt;% 
+  mutate(Qbase = gr_baseflow(Q, method = 'lynehollick', 
+                             a = 0.925, passes = 3))
+
+# Visualize for 1980 year
+ggplot(hdata) +
+  geom_area(aes(Date, Q), fill = 'steelblue', color = 'black') +
+  geom_area(aes(Date, Qbase), fill = 'orangered', color = 'black') +
+  scale_x_date(limits = c(ymd(19800101), ymd(19801231)))
+
+# Compare various approaches
+hdata = spas %&gt;%
+  mutate(lynehollick = gr_baseflow(Q, method = 'lynehollick', a = 0.9),
+         boughton = gr_baseflow(Q, method = 'boughton', k = 0.9),
+         jakeman = gr_baseflow(Q, method = 'jakeman', k = 0.9),
+         maxwell = gr_baseflow(Q, method = 'maxwell', k = 0.9)) %&gt;% 
+  pivot_longer(lynehollick:maxwell, names_to = 'Method', values_to = 'Qbase')
+
+# Visualize for 1980 year
+ggplot(hdata) +
+  geom_area(aes(Date, Q), fill = 'steelblue', color = 'black') +
+  geom_area(aes(Date, Qbase), fill = 'orangered', color = 'black') +
+  scale_x_date(limits = c(ymd(19810101), ymd(19811231))) +
+  facet_wrap(~Method)
+
+# Compare Lyne to Kudelin
+p = gr_get_params('center')
+p$filter = 'kudelin'
+
+hdata = spas %&gt;% 
+  mutate(lynehollick = gr_baseflow(Q, method = 'lynehollick', 
+                                   a = 0.925, passes = 3),
+         kudelin = gr_separate(spas, p)$Qbase) %&gt;% 
+  pivot_longer(lynehollick:kudelin, names_to = 'Method', values_to = 'Qbase')
+
+# Visualize for 1980 year
+ggplot(hdata) +
+  geom_area(aes(Date, Q), fill = 'steelblue', color = 'black') +
+  geom_area(aes(Date, Qbase), fill = 'orangered', color = 'black') +
+  scale_x_date(limits = c(ymd(19800101), ymd(19801231))) +
+  facet_wrap(~Method)
+</code></pre>
+
+
+</div>

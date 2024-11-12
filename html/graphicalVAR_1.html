@@ -1,0 +1,356 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>graphicalVAR</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Estimate the graphical VAR model.
+</h2>
+
+<h3>Description</h3>
+
+<p>Estimates the graphical VAR (Wild et al., 2010) model through LASSO estimation coupled with extended Bayesian information criterion for choosing the optimal tuning parameters. The estimation procedure is outlined by Rothman, Levina and Zhu (2010) and is further described by Abegaz and Wit (2013). The procedure here is based on the work done in the R package SparseTSCGM (Abegaz and Wit, 2014).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">graphicalVAR(data, nLambda = 50, verbose = TRUE, gamma = 0.5, scale
+                   = TRUE, lambda_beta, lambda_kappa,
+                   regularize_mat_beta, regularize_mat_kappa, maxit.in =
+                   100, maxit.out = 100, deleteMissings = TRUE,
+                   penalize.diagonal = TRUE, lambda_min_kappa = 0.05,
+                   lambda_min_beta = lambda_min_kappa, mimic =
+                   c("current", "0.3.2", "0.1.2", "0.1.4", "0.1.5",
+                   "0.2"), vars, beepvar, dayvar, idvar, lags = 1,
+                   centerWithin = TRUE, likelihood = c("unpenalized",
+                   "penalized"), ebic_tol = 1e-04)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>A matrix or data frame containing repeated measures (rows) on a set of variables (columns).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nLambda</code></td>
+<td>
+
+<p>The number of both lambda parameters to test. Defaults to 50, which results in 2500 models to evaluate.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>Logical, should a progress bar be printed to the console?
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+
+<p>The EBIC hyper-parameter. Set to 0 to use regular BIC.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+
+<p>Logical, should responses be standardized before estimation?
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda_beta</code></td>
+<td>
+
+<p>An optional vector of lambda_beta values to test. Set <code>lambda_beta = 0</code> argument and <code>lambda_kappa = 0</code> for unregularized estimation.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda_kappa</code></td>
+<td>
+
+<p>An optional vector of lambda_kappa values to test. Set <code>lambda_beta = 0</code> argument and <code>lambda_kappa = 0</code> for unregularized estimation.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>regularize_mat_beta</code></td>
+<td>
+
+<p>A logical matrix indicating which elements of the beta matrix should be regularized (experimental).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>regularize_mat_kappa</code></td>
+<td>
+
+<p>A logical matrix indicating which elements of the kappa matrix should be regularized (experimental).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit.in</code></td>
+<td>
+
+<p>Maximum number of iterations in the inner loop (computing beta)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit.out</code></td>
+<td>
+
+<p>Maximum number of iterations in the outer loop
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deleteMissings</code></td>
+<td>
+
+<p>Logical, should missing responses be deleted?
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalize.diagonal</code></td>
+<td>
+
+<p>Logical, should the diagonal of beta be penalized (i.e., penalize auto-regressions)?
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda_min_kappa</code></td>
+<td>
+
+<p>Multiplier of maximal tuning parameter for kappa
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda_min_beta</code></td>
+<td>
+
+<p>Multiplier of maximal tuning parameter for beta
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mimic</code></td>
+<td>
+
+<p>Allows one to mimic earlier versions of graphicalVAR
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vars</code></td>
+<td>
+
+<p>Vectors of variables to include in the analysis
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beepvar</code></td>
+<td>
+
+<p>String indicating assessment beep per day (if missing, is added). Adding this argument will cause non-consecutive beeps to be treated as missing!
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dayvar</code></td>
+<td>
+
+<p>String indicating assessment day. Adding this argument makes sure that the first measurement of a day is not regressed on the last measurement of the previous day. IMPORTANT: only add this if the data has multiple observations per day.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idvar</code></td>
+<td>
+
+<p>String indicating the subject ID
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lags</code></td>
+<td>
+
+<p>Vector of lags to include
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centerWithin</code></td>
+<td>
+
+<p>Logical, should subject data be within-person centered before estimating fixed effects?
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>likelihood</code></td>
+<td>
+
+<p>Should likelihood be computed based on penalized contemporaneous matrix or unpenalized contemporaneous matrix. Set to <code>"penalized"</code> to mimic version 2.5 and later of <code>sparseTSCGM</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ebic_tol</code></td>
+<td>
+
+<p>Tolerance used to judge if two EBIC values are the same. If two values are deemed the same the model with the lowest tuning parameter (kappa preferred) will be selected.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Let y_t denote the vector of centered responses of a subject on a set of items on time point t. The graphical VAR model, using only one lag, is defined as follows:
+</p>
+<p>y[t] = Beta y[y-1] + epsilon[t]
+</p>
+<p>In which epsilon_t is a vector of error and is independent between time points but not within time points. Within time points, the error is normally distributed with mean vector 0 and precision matrix (inverse covariance matrix) Kappa. The Beta matrix encodes the between time point interactions and the Kappa matrix encodes the within time point interactions. We aim to find a sparse solution for both Beta and Kappa, and do so by applying the LASSO algorithm as detailed by Rothman, Levina and Zhu (2010). The LASSO algorithm uses two tuning parameters, lambda_beta controlling the sparsity in Beta and lambda_kappa controlling the sparsity in Kappa. We estimate the model under a (by default) 50 by 50 grid of tuning parameters and choose the tuning parameters that optimize the extended Bayesian Information Criterion (EBIC; Chen and Chen,2008).
+</p>
+<p>After estimation, the Beta and Kappa matrices can be standardized as described by Wild et al. (2010). The Kappa matrix can be standardized to partial contemporaneous correlations (PCC) as follows:
+</p>
+<p>PCC(y[i,t], y[j,t]) = - kappa[ij] / sqrt(kappa[ii] kappa[jj])
+</p>
+<p>Similarly, the beta matrix can be standardized to partial directed correlations (PDC):
+</p>
+<p>PDC(y[i,t-1], y[j,t]) = beta[ji] / sqrt( sigma[jj] kappa[ii] + beta[ji]^2 )
+</p>
+<p>In which sigma is the inverse of kappa. Note that this process transposes the beta matrix. This is done because in representing a directed network it is typical to let rows indicate the node of origin and columns the node of destination.
+</p>
+<p>Set <code>lambda_beta = 0</code> argument and <code>lambda_kappa = 0</code> for unregularized estimation.
+</p>
+<p>Missing data are removed listwise after augmenting the dataset. This means that if there is a missing response at time t, the row corresponding to time t-1 and time t and the row corresponding to time t and time t+1 are removed.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>graphicalVAR</code> object, which is a list containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>PCC</code></td>
+<td>
+<p>The partial contemporaneous correlation network</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PDC</code></td>
+<td>
+<p>The  partial directed correlation network</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>The estimated beta matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kappa</code></td>
+<td>
+<p>The estimated kappa matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>EBIC</code></td>
+<td>
+<p>The optimal EBIC</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>path</code></td>
+<td>
+<p>Results of all tested tuning parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>labels</code></td>
+<td>
+<p>A vector containing the node labels</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Sacha Epskamp &lt;mail@sachaepskamp.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Chen, J., &amp; Chen, Z. (2008). Extended Bayesian information criteria for model selection with large model spaces. Biometrika, 95(3), 759-771.
+</p>
+<p>Fentaw Abegaz and Ernst Wit (2013). Sparse time series chain graphical
+models for reconstructing genetic networks. Biostatistics. 14, 3:
+586-599.
+</p>
+<p>Fentaw Abegaz and Ernst Wit (2014). SparseTSCGM: Sparse time series chain graphical
+models. R package version 2.1.1. http://CRAN.R-project.org/package=SparseTSCGM
+</p>
+<p>Rothman, A.J., Levina, E., and Zhu, J. (2010). Sparse multivariate
+regression with covariance estimation. Journal of Computational and
+Graphical Statistics. 19: 947-962.
+</p>
+<p>Wild, B., Eichler, M., Friederich, H. C., Hartmann, M., Zipfel, S., &amp;
+Herzog, W. (2010). A graphical vector autoregressive modelling
+approach to the analysis of electronic diary data. BMC medical
+research methodology, 10(1), 28.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Simulate model:
+Mod &lt;- randomGVARmodel(4,probKappaEdge = 0.8,probBetaEdge = 0.8)
+
+# Simulate data:
+Data &lt;- graphicalVARsim(100,Mod$beta,Mod$kappa)
+
+# Estimate model:
+Res &lt;- graphicalVAR(Data, gamma = 0, nLambda = 5)
+
+
+## Not run: 
+# For more precision, run:
+Res &lt;- graphicalVAR(Data, gamma = 0)
+
+# Plot results:
+layout(t(1:2))
+plot(Mod, "PCC", layout = "circle")
+plot(Res, "PCC", layout = "circle")
+
+plot(Mod, "PDC", layout = "circle")
+plot(Res, "PDC", layout = "circle")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,112 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>set_trip_speed</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Set trip average speed</h2>
+
+<h3>Description</h3>
+
+<p>Sets the average speed of each specified <code>trip_id</code> by changing the
+<code>arrival_time</code> and <code>departure_time</code> columns in <code>stop_times</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">set_trip_speed(gtfs, trip_id, speed, unit = "km/h", by_reference = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>gtfs</code></td>
+<td>
+<p>A GTFS object, as created by <code>read_gtfs()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trip_id</code></td>
+<td>
+<p>A string vector including the <code>trip_id</code>s to have their
+average speed set.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>speed</code></td>
+<td>
+<p>A numeric representing the speed to be set. Its length must
+either equal 1, in which case the value is recycled for all
+<code>trip_id</code>s, or equal <code>trip_id</code>'s length.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unit</code></td>
+<td>
+<p>A string representing the unit in which the speed is given. One
+of <code>"km/h"</code> (the default) or <code>"m/s"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by_reference</code></td>
+<td>
+<p>Whether to update <code>stop_times</code>' <code>data.table</code> by
+reference. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>If <code>by_reference</code> is set to <code>FALSE</code>, returns a GTFS object with the
+time columns of its <code>stop_times</code> adjusted. Else, returns a GTFS object
+invisibly (note that in this case the original GTFS object is altered).
+</p>
+
+
+<h3>Details</h3>
+
+<p>The average speed is calculated as the difference between the arrival time
+at the last stop minus the departure time at the first top, over the trip's
+length (as calculated via <code>get_trip_geometry()</code>, based on the <code>shapes</code>
+file). The arrival and departure times at all other stops (i.e. not the
+first neither the last) are set as <code>""</code>, which is written as <code>NA</code> with
+<code>write_gtfs()</code>. Some transport routing software, such as
+<a href="http://www.opentripplanner.org/">OpenTripPlanner</a>, support specifying stop
+times like so. In such cases, they estimate arrival/departure times at the
+others stops based on the average speed as well. We plan to add that feature
+to this function in the future.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data_path &lt;- system.file("extdata/spo_gtfs.zip", package = "gtfstools")
+
+gtfs &lt;- read_gtfs(data_path)
+
+gtfs_new_speed &lt;- set_trip_speed(gtfs, trip_id = "CPTM L07-0", 50)
+gtfs_new_speed$stop_times[trip_id == "CPTM L07-0"]
+
+# use the unit argument to change the speed unit
+gtfs_new_speed &lt;- set_trip_speed(
+  gtfs,
+  trip_id = "CPTM L07-0",
+  speed = 15,
+  unit = "m/s"
+)
+gtfs_new_speed$stop_times[trip_id == "CPTM L07-0"]
+
+# original gtfs remains unchanged
+gtfs$stop_times[trip_id == "CPTM L07-0"]
+
+# when doing by reference, original gtfs is changed
+set_trip_speed(gtfs, trip_id = "CPTM L07-0", 50, by_reference = TRUE)
+gtfs$stop_times[trip_id == "CPTM L07-0"]
+
+</code></pre>
+
+
+</div>

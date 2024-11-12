@@ -1,0 +1,533 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>segmentation</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Perform Segmentation on GENEActiv Accelerometer Data</h2>
+
+<h3>Description</h3>
+
+<p>Perform segmentation of Activinsights accelerometer data.
+Data are smoothed by the second, or by 10 data points,
+whichever number of records is greater.
+</p>
+<p>Filtering is performed by tools from <span class="pkg">waveslim</span>.
+Options are passed to <code>wavelet.filter</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">segmentation(
+  data,
+  outputfile = "detectedChanges",
+  outputdir = "GENEAclassification",
+  datacols = "default",
+  decimalplaces = "default",
+  filterWave = FALSE,
+  filtername = "haar",
+  j = 8,
+  changepoint = c("UpDownDegrees", "TempFreq", "UpDownFreq", "UpDownMean", "UpDownVar",
+    "UpDownMeanVar", "DegreesMean", "DegreesVar", "DegreesMeanVar",
+    "UpDownMeanVarDegreesMeanVar", "UpDownMeanVarMagMeanVar", "RadiansMean",
+    "RadiansVar", "RadiansMeanVar", "UpDownMeanDegreesVar"),
+  penalty = "Manual",
+  pen.value1 = 40,
+  pen.value2 = 400,
+  intervalseconds = 30,
+  mininterval = 5,
+  samplefreq = 100,
+  filterorder = 2,
+  boundaries = c(0.5, 5),
+  Rp = 3,
+  plot.it = FALSE,
+  hysteresis = 0.1,
+  stft_win = 10,
+  verbose = FALSE,
+  verbose_timer = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>the GENEActiv bin object to be segmented which should be the output
+of the <code>dataImport</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outputfile</code></td>
+<td>
+<p>single character, file name for saving the segmentation output as CSV
+(and if plot.it is TRUE, corresponding plot PNG). If NULL, create no files.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outputdir</code></td>
+<td>
+<p>single character, the absolute or relative path to directory in which
+plot and changes files) should be created, or NULL
+(default "GENEAclassification"). Ignored if outputfile is NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>datacols</code></td>
+<td>
+<p>character vector constructed 'column.summary'.
+This object specifies the data and summary to output for the classification.
+The first part of each element must name column in the GENEAbin datasets specified by filePath.
+Derived columns may also be selected:</p>
+
+<ul>
+<li>
+<p> Step (zero-crossing step counter method),
+</p>
+</li>
+<li>
+<p> Principal.Frequency.
+</p>
+</li>
+</ul>
+<p>The second should be the name of a function that evaluates to lenth one.
+The functions must contain only alphabetical characters
+(no numbers, underscores or punctuation).
+The default matrix, specified using the length 1 character vector
+<code>'default'</code> is: </p>
+
+<ul>
+<li>
+<p> UpDown.mean
+</p>
+</li>
+<li>
+<p> UpDown.sd
+</p>
+</li>
+<li>
+<p> UpDown.mad
+</p>
+</li>
+<li>
+<p> Degrees.mean
+</p>
+</li>
+<li>
+<p> Degrees.var
+</p>
+</li>
+<li>
+<p> Degrees.sd
+</p>
+</li>
+<li>
+<p> Light.mean
+</p>
+</li>
+<li>
+<p> Light.max
+</p>
+</li>
+<li>
+<p> Temp.mean
+</p>
+</li>
+<li>
+<p> Temp.sumdiff
+</p>
+</li>
+<li>
+<p> Temp.meandiff
+</p>
+</li>
+<li>
+<p> Temp.abssumdiff
+</p>
+</li>
+<li>
+<p> Temp.sddiff
+</p>
+</li>
+<li>
+<p> Magnitude.mean
+</p>
+</li>
+<li>
+<p> Step.GENEAcount
+</p>
+</li>
+<li>
+<p> Step.sd
+</p>
+</li>
+<li>
+<p> Step.mean
+</p>
+</li>
+<li>
+<p> Step.GENEAamplitude
+</p>
+</li>
+<li>
+<p> Step.GENEAwavelength
+</p>
+</li>
+<li>
+<p> Principal.Frequency.median
+</p>
+</li>
+<li>
+<p> Principal.Frequency.mad
+</p>
+</li>
+<li>
+<p> Principal.Frequency.ratio
+</p>
+</li>
+<li>
+<p> Principal.Frequency.sumdiff
+</p>
+</li>
+<li>
+<p> Principal.Frequency.meandiff
+</p>
+</li>
+<li>
+<p> Principal.Frequency.abssumdiff
+</p>
+</li>
+<li>
+<p> Principal.Frequency.sddiff
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>decimalplaces</code></td>
+<td>
+<p>named numeric vector of decimal places with which to
+round summary columns. <code>NULL</code> returns unrounded values.
+The length 1 character vector 'default' applies default roundings: </p>
+
+<ul>
+<li>
+<p> Start.Time = 0,
+</p>
+</li>
+<li>
+<p> Degrees.mean = 3,
+</p>
+</li>
+<li>
+<p> Degrees.median = 3,
+</p>
+</li>
+<li>
+<p> Degrees.var = 3,
+</p>
+</li>
+<li>
+<p> Degrees.sd = 3,
+</p>
+</li>
+<li>
+<p> Degrees.mad = 3,
+</p>
+</li>
+<li>
+<p> Magnitude.mean = 3,
+</p>
+</li>
+<li>
+<p> UpDown.mean = 3,
+</p>
+</li>
+<li>
+<p> UpDown.median = 3,
+</p>
+</li>
+<li>
+<p> UpDown.var = 3
+</p>
+</li>
+<li>
+<p> UpDown.sd = 3,
+</p>
+</li>
+<li>
+<p> UpDown.mad = 3,
+</p>
+</li>
+<li>
+<p> Principal.Frequency.median = 3,
+</p>
+</li>
+<li>
+<p> Principal.Frequency.mad = 3,
+</p>
+</li>
+<li>
+<p> Principal.Frequency.ratio = 3,
+</p>
+</li>
+<li>
+<p> Principal.Frequency.sumdiff = 3,
+</p>
+</li>
+<li>
+<p> Principal.Frequency.meandiff = 3,
+</p>
+</li>
+<li>
+<p> Principal.Frequency.abssumdiff = 3,
+</p>
+</li>
+<li>
+<p> Principal.Frequency.sddiff = 3,
+</p>
+</li>
+<li>
+<p> Light.mean = 0,
+</p>
+</li>
+<li>
+<p> Light.max = 0,
+</p>
+</li>
+<li>
+<p> Temp.mean = 1,
+</p>
+</li>
+<li>
+<p> Temp.sumdiff = 3
+</p>
+</li>
+<li>
+<p> Temp.meandiff = 3
+</p>
+</li>
+<li>
+<p> Temp.abssumdiff = 3
+</p>
+</li>
+<li>
+<p> Temp.sddiff = 3
+</p>
+</li>
+<li>
+<p> Step.GENEAcount = 0
+</p>
+</li>
+<li>
+<p> Step.sd = 1
+</p>
+</li>
+<li>
+<p> Step.mean = 0
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filterWave</code></td>
+<td>
+<p>single logical, should a smoothing filter from <code>wave.filter</code> be applied? (default FALSE).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filtername</code></td>
+<td>
+<p>single character, the name of the wavelet to use for smoothing
+when filter is TRUE. (default "haar") Passed to <code>link[waveslim]{wave.filter}</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>j</code></td>
+<td>
+<p>single numeric, the level to which to smooth. Passed to <code>link[waveslim]{wave.filter}</code> (default 8).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>changepoint</code></td>
+<td>
+<p>defines the change point analysis to use. UpDownDegrees performs the change point analysis on the variance of arm elevation and wrist rotation. 
+TempFreq performs a change point on the variance in the temeprature and frequency (Typically better for sleep behaviours).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalty</code></td>
+<td>
+<p>single characgter, the penalty to use for changepoint detection. default ("SIC").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pen.value1</code></td>
+<td>
+<p>Value of the type 1 error required when penalty is "Asymptotic".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pen.value2</code></td>
+<td>
+<p>Default set as NULL and so equals pen.value1 if no input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intervalseconds</code></td>
+<td>
+<p>An integer number of seconds between 5 and 30 during which at most one changepoint may occur.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mininterval</code></td>
+<td>
+<p>single numeric that defines the smallest changepoint initially found. Passed to <code>cpt.var</code> as the variable minseglen</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>samplefreq</code></td>
+<td>
+<p>The sampling frequency of the data, in hertz,
+when calculating the step number. (default 100).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filterorder</code></td>
+<td>
+<p>The order of the filter applied with respect to the butter or cheby options if stepCounter is used. The order of the moving average filter if step counter 2 is used.
+See <code>cheby1</code> or <code>butter</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boundaries</code></td>
+<td>
+<p>to pass to the filter in the step counting algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Rp</code></td>
+<td>
+<p>the decibel level that the cheby filter takes. See <code>cheby1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot.it</code></td>
+<td>
+<p>single logical, Creates a plot showing the zero crossings counted by the step counting algorithm#' @param Centre Centres the xz signal about 0 when set to True.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hysteresis</code></td>
+<td>
+<p>The hysteresis applied after zero crossing. (default 100mg)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stft_win</code></td>
+<td>
+<p>numeric for the window to calculate the frequency of an event using the <code>stft</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>single logical to print additional progress reporting (default FALSE).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose_timer</code></td>
+<td>
+<p>single logical tp print additional progress reporting on time for each section of the function (default FALSE).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>other arguments to be passed to <code>dataImport</code>,
+<code>segmentation</code> and other functions with these functions.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Performs the segmentation procedure on the provided elevation data.
+Optionally a wavelet filter is first applied to smooth the data.
+The number of changes occuring in a given number of seconds may be controlled using the
+intervalseconds argument. Changes will be removed based on which segments are the closest match in terms of variance.
+A series of features for each of the segments will then be calculated and returned as a csv file.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The segment data are returned invisibly. This data frame has columns:</p>
+
+<ul>
+<li>
+<p> Serial.Number
+</p>
+</li>
+<li>
+<p> Start.Time
+</p>
+</li>
+<li>
+<p> Segment.Start.Time
+</p>
+</li>
+<li>
+<p> Segment.Duration
+</p>
+</li>
+<li>
+<p> UpDown.median
+</p>
+</li>
+<li>
+<p> UpDown.var
+</p>
+</li>
+<li>
+<p> Degrees.median
+</p>
+</li>
+<li>
+<p> Degrees.mad
+</p>
+</li>
+</ul>
+<p>In addition, the requested columns are included.
+Optionally, as a side effect a csv file is returned listing all of the segments
+found in the data along with a variety of features for that segment.
+Optionally a png file plotting the data and the
+detected changes can also be produced.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">### Load the data to segment keeping only the first quarter of the data
+## library(GENEAread)
+## testfile = file.path(system.file(package = "GENEAread"),
+##                                  "binfile",
+##                                  "TESTfile.bin")
+## segData &lt;- dataImport(binfile = testfile,
+##     downsample = 100, start = 0, end = 0.25)
+## head(segData)
+### Run loaded data through segmentation function
+## segment &lt;- segmentation(data = segData, outputfile = NULL)
+## head(segment)
+## segment2 &lt;- segmentation(data = segData, outputfile = NULL,
+##     datacols = "Degrees.skew")
+## head(segment2)
+</code></pre>
+
+
+</div>

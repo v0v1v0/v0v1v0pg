@@ -1,0 +1,128 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>RRprofStart</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+RRprofStart
+</h2>
+
+<h3>Description</h3>
+
+<p>Rprof() is activated and started
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">RRprofStart(filename = "RRprof.out", interval = 0.02, numfiles = 100L, bufsize = 10000L)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>filename</code></td>
+<td>
+
+<p>The file to be used for recording the profiling results.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interval</code></td>
+<td>
+
+<p>real: time interval between samples. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numfiles</code></td>
+<td>
+
+<p>integers: line profiling memory 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bufsize</code></td>
+<td>
+
+<p>allocation
+</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>The profiler interrupts R asynchronously, and it cannot allocate memory to store results as it runs. This affects line profiling, which needs to store an unknown number of file pathnames. The numfiles and bufsize arguments control the size of pre-allocated buffers to hold these results: the former counts the maximum number of paths, the latter counts the numbers of bytes in them. If the profiler runs out of space it will skip recording the line information for new files, and issue a warning when Rprof(NULL) is called to finish profiling.
+</p>
+<p>The timing interval cannot be too small, for the time spent in each profiling step is added to the interval. What is feasible is machine-dependent, but 10ms seemed as small as advisable on a 1GHz machine.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Fernando de Villar and Angel Rubio
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>RRprofStop</code>, <code>RRprofReport</code>, <code>Rprof</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">temp&lt;-tempdir()
+# Definition of two functions
+normal.solve &lt;- function(A,b) {
+  Output &lt;- solve(crossprod(A), t(A)%*%b)
+}
+
+chol.solve &lt;- function(A,b) {
+  L &lt;- chol(crossprod(A))
+  Output1 &lt;- backsolve(L, t(A)%*%b, transpose=TRUE)
+  Output2 &lt;- backsolve(L, Output1)
+}
+
+compareMethods &lt;- function() {
+  library(MASS)
+  # Call the functions
+  source(paste(temp,"/normal.solve.R",sep=""))
+  source(paste(temp,"/chol.solve.R",sep=""))
+  # Solving a big system of equations
+  nrows &lt;- 1000
+  ncols &lt;- 500
+  A &lt;- matrix(rnorm(nrows*ncols),nrows,ncols)
+  b &lt;- rnorm(nrows)
+  # Testing different possibilities
+  Sol1 &lt;- qr.solve(A,b) # Using QR factorization
+  Sol2 &lt;- coefficients(lm.fit(A,b)) # lm.fit, based on QR but with some overhead
+  Sol3 &lt;- ginv(A) %*% b # Using the pseudoinverse based on SVD
+  Sol4 &lt;- normal.solve(A,b) # Using a function based on the normal equations.
+  Sol5 &lt;- chol.solve(A,b) # Using a function based on the Choleski factorization.
+}
+
+# Dump these functions to three different files
+
+dump("normal.solve",file=paste(temp,"/normal.solve.R",sep=""))
+dump("chol.solve",file=paste(temp,"/chol.solve.R",sep=""))
+dump("compareMethods",file=paste(temp,"/compareMethods.R",sep=""))
+source(paste(temp,"/compareMethods.R",sep=""))
+
+# Profile the code
+
+RRprofStart()
+compareMethods()
+RRprofStop()
+# Uncomment to open the report
+#RRprofReport()
+</code></pre>
+
+
+</div>

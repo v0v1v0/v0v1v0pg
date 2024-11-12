@@ -1,0 +1,190 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GET.localcor</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>The test of local correlations</h2>
+
+<h3>Description</h3>
+
+<p>The test of local correlations using Vilodomat et al. (2014) procedure for resamples
+and the FDR envelope of Mrkvička and Myllymäki (2023).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GET.localcor(
+  data,
+  Delta,
+  nsim = 1000,
+  ...,
+  varying.bandwidth = FALSE,
+  bandwidth.nn = 0.1,
+  bandwidth.h = 5.281,
+  maxk = 300,
+  savefuns = FALSE,
+  N_s = 1000,
+  mc.cores = 1L,
+  mc.args = NULL,
+  cl = NULL,
+  notest = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data.frame where the first two columns correspond to the values of the two random fields,
+whose correlations are to be studied, and the third and fourth columns correspond to the x- and y-coordinates
+where these random fields have been observed. In addition, the width and height of the pixels at each (x,y)
+can be given in the fifth and sixth column. Warning: no checks for the data input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Delta</code></td>
+<td>
+<p>A smoothing parameter of the local correlation.
+According to Vilodomat et al. (2014): Delta is a set of values for the proportion of neighbors
+to consider for the smoothing step. No default. The user may have to experiment with different
+values to find one suitable for their data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>The number of resamples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional parameters to be passed to <code>global_envelope_test</code>.
+Note that for testing local correlations, it may often be preferable to use FDR control.
+This can be specified by setting <code>typeone = "fdr"</code>, while the default is FWER control.
+See <code>global_envelope_test</code> for defaults and available options.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varying.bandwidth</code></td>
+<td>
+<p>Logical, whether to use a varying bandwidth to calculate the local correlations or not.
+See Vilodomat et al. (2014).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bandwidth.nn</code></td>
+<td>
+<p>Nearest neighbor component of the smoothing parameter for varying bandwidth to
+be passed to the argument <code>nn</code> of the function <code>lp</code> of the <span class="pkg">locfit</span> package.
+The user may have to experiment with different values to find one suitable for their data.
+Default set to to 0.1 according to Vilodamat et al. (2014, supporting information).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bandwidth.h</code></td>
+<td>
+<p>Non-varying bandwidth, to be passed to the argument <code>h</code> of
+the function <code>lp</code> of <span class="pkg">locfit</span>.
+The user may have to experiment with different values to find one suitable for their data.
+Default to 5.281 according to Vilodamat et al. (2014, supporting information).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxk</code></td>
+<td>
+<p>See <code>locfit</code> and <code>locfit.raw</code> of <span class="pkg">locfit</span>. Default here to 300
+following Vilodomat et al. (2014).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>savefuns</code></td>
+<td>
+<p>Logical. If TRUE, then the functions from permutations are saved to the attribute
+simfuns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N_s</code></td>
+<td>
+<p>If the number of observations is bigger than <code>N_s</code>, following Vilodomat et al. (2014)
+a subsample of size N_s is taken every time when a variogram is calculated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.cores</code></td>
+<td>
+<p>The number of cores to use, i.e. at most how many child processes will be run simultaneously.
+Must be at least one, and parallelization requires at least two cores. On a Windows computer mc.cores must be 1
+(no parallelization). For details, see <code>mclapply</code>, for which the argument is passed.
+Parallelization can be used in generating simulations and in calculating the second stage tests.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.args</code></td>
+<td>
+<p>A named list of additional arguments to be passed to <code>mclapply</code>.
+Only relevant if <code>mc.cores</code> is more than 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl</code></td>
+<td>
+<p>Allows parallelization through the use of <code>parLapply</code> (works also
+in Windows), see the argument <code>cl</code> there, and examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>notest</code></td>
+<td>
+<p>Logical. FALSE means that the test is done. TRUE allows to calculate only local
+correlation for the data, which can be beneficial for choosing the bandwidths before running
+the test. If TRUE, then only the observed local correlations will be returned.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The code is a modification of the supporting information code of Vilodomat et al. (2014)
+available at https://doi.org/10.1111/biom.12139. The modification includes the FDR or FWER envelopes
+(as specified by the argument <code>typeone</code> in <code>...</code>, passed to <code>global_envelope_test</code>)
+for the test of local correlations, i.e. multiple testing correction and
+graphical illustration of the test results.
+</p>
+<p>Variograms are calculated using the package <span class="pkg">geoR</span> and the local correlations using the R
+package <span class="pkg">locfit</span>. These packages should be installed to use <code>GET.localcor</code>.
+</p>
+<p>Currently the data is provided in the format of Vilodomat et al. (2014, Supporting information).
+Additionally width and height of area represented by a data point can be provided, see the argument <code>data</code>.
+This information is used for plotting purposes when plotting the output by <code>plot()</code>.
+</p>
+<p>Examples are provided in the vignette 'FDRenvelopes', see e.g. https://cran.r-project.org/package=GET.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A global envelope object (with possible additional classes), see description of main components 
+in <code>global_envelope</code> (Value).
+Additional attributes: <code>p_global</code> contains the Monte Carlo p-value for the global test of correlation.
+<code>cor_global</code> and <code>cor_global_sim</code> contain the value of the correlation for data and permuted data,
+respectively. If <code>savefuns = TRUE</code>, then <code>permutations</code> contain the permuted values of the first
+random field according to Viladomat et al. (2014) procedure, and <code>cset</code> contains all the local correlations
+for the data and permuted data in a <code>curve_set</code> object (see <code>create_curve_set</code>).
+</p>
+
+
+<h3>References</h3>
+
+<p>Viladomat, J., Mazumder, R., McInturff, A., McCauley, D.J. and Hastie, T. (2014). Assessing the significance of global and local correlations under spatial autocorrelation: A nonparametric approach. Biometrics 70, 409-418. doi: 10.1111/biom.12139
+</p>
+<p>Mrkvička, T., Myllymäki, M. (2023) False discovery rate envelopes. Statistics and Computing 33, 109. https://doi.org/10.1007/s11222-023-10275-7
+</p>
+
+
+</div>

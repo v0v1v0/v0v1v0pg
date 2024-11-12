@@ -1,0 +1,162 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ode_solve</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>solve ODEs</h2>
+
+<h3>Description</h3>
+
+<p>Solve a system of ordinary differential equations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ode_solve(derivative, y0, times, ..., method = c("ode45", "rk4", "midpoint"))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>derivative</code></td>
+<td>
+<p>a derivative function. The first two arguments must be 'y'
+and 't', the state parameter and scalar timestep respectively. The
+remaining parameters must be named arguments representing (temporally
+static) model parameters. Variables and distributions cannot be defined in
+the function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y0</code></td>
+<td>
+<p>a greta array for the value of the state parameter y at time 0</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>times</code></td>
+<td>
+<p>a column vector of times at which to evaluate y</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>named arguments giving greta arrays for the additional (fixed)
+parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>which solver to use. <code>"ode45"</code> uses adaptive step
+sizes, whilst <code>"rk4"</code> and <code>"midpoint"</code> use the fixed grid defined
+by <code>times</code>; they may be faster but less accurate than <code>"ode45"</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>greta array
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# replicate the Lotka-Volterra example from deSolve
+library(deSolve)
+LVmod &lt;- function(Time, State, Pars) {
+  with(as.list(c(State, Pars)), {
+    Ingestion &lt;- rIng * Prey * Predator
+    GrowthPrey &lt;- rGrow * Prey * (1 - Prey / K)
+    MortPredator &lt;- rMort * Predator
+
+    dPrey &lt;- GrowthPrey - Ingestion
+    dPredator &lt;- Ingestion * assEff - MortPredator
+
+    return(list(c(dPrey, dPredator)))
+  })
+}
+
+pars &lt;- c(
+  rIng = 0.2, # /day, rate of ingestion
+  rGrow = 1.0, # /day, growth rate of prey
+  rMort = 0.2, # /day, mortality rate of predator
+  assEff = 0.5, # -, assimilation efficiency
+  K = 10
+) # mmol/m3, carrying capacity
+
+yini &lt;- c(Prey = 1, Predator = 2)
+times &lt;- seq(0, 30, by = 1)
+out &lt;- ode(yini, times, LVmod, pars)
+
+# simulate observations
+jitter &lt;- rnorm(2 * length(times), 0, 0.1)
+y_obs &lt;- out[, -1] + matrix(jitter, ncol = 2)
+
+# ~~~~~~~~~
+# fit a greta model to infer the parameters from this simulated data
+
+# greta version of the function
+lotka_volterra &lt;- function(y, t, rIng, rGrow, rMort, assEff, K) {
+  Prey &lt;- y[1, 1]
+  Predator &lt;- y[1, 2]
+
+  Ingestion &lt;- rIng * Prey * Predator
+  GrowthPrey &lt;- rGrow * Prey * (1 - Prey / K)
+  MortPredator &lt;- rMort * Predator
+
+  dPrey &lt;- GrowthPrey - Ingestion
+  dPredator &lt;- Ingestion * assEff - MortPredator
+
+  cbind(dPrey, dPredator)
+}
+
+# priors for the parameters
+rIng &lt;- uniform(0, 2) # /day, rate of ingestion
+rGrow &lt;- uniform(0, 3) # /day, growth rate of prey
+rMort &lt;- uniform(0, 1) # /day, mortality rate of predator
+assEff &lt;- uniform(0, 1) # -, assimilation efficiency
+K &lt;- uniform(0, 30) # mmol/m3, carrying capacity
+
+# initial values and observation error
+y0 &lt;- uniform(0, 5, dim = c(1, 2))
+obs_sd &lt;- uniform(0, 1)
+
+# solution to the ODE
+y &lt;- ode_solve(lotka_volterra, y0, times, rIng, rGrow, rMort, assEff, K)
+
+# sampling statement/observation model
+distribution(y_obs) &lt;- normal(y, obs_sd)
+
+# we can use greta to solve directly, for a fixed set of parameters (the true
+# ones in this case)
+values &lt;- c(
+  list(y0 = t(1:2)),
+  as.list(pars)
+)
+vals &lt;- calculate(y, values = values)[[1]]
+plot(vals[, 1] ~ times, type = "l", ylim = range(vals))
+lines(vals[, 2] ~ times, lty = 2)
+points(y_obs[, 1] ~ times)
+points(y_obs[, 2] ~ times, pch = 2)
+
+# or we can do inference on the parameters:
+
+# build the model (takes a few seconds to define the tensorflow graph)
+m &lt;- model(rIng, rGrow, rMort, assEff, K, obs_sd)
+
+# compute MAP estimate
+o &lt;- opt(m)
+o
+
+## End(Not run)
+</code></pre>
+
+
+</div>

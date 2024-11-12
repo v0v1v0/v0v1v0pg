@@ -1,0 +1,221 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>transmute_weights</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Transmute weights</h2>
+
+<h3>Description</h3>
+
+<p>Transmute weights to turn a generalized mean of order <code class="reqn">r</code> into a
+generalized mean of order <code class="reqn">s</code>. Useful for calculating additive and
+multiplicative decompositions for a generalized-mean index, and those made
+of nested generalized means (e.g., Fisher index).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">transmute_weights(r, s)
+
+nested_transmute(r1, r2, s, t = c(1, 1))
+
+nested_transmute2(r1, r2, s, t = c(1, 1))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>r, s</code></td>
+<td>
+<p>A finite number giving the order of the generalized mean. See
+details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r1</code></td>
+<td>
+<p>A finite number giving the order of the outer generalized mean.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r2</code></td>
+<td>
+<p>A pair of finite numbers giving the order of the inner generalized
+means.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t</code></td>
+<td>
+<p>A pair of strictly positive weights for the inner generalized
+means. The default is equal weights.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function <code>transmute_weights(r, s)</code> returns a function to compute a
+vector of weights <code>v(x, w)</code> such that
+</p>
+<pre>generalized_mean(r)(x, w) == generalized_mean(s)(x, v(x, w))</pre>
+<p><code>nested_transmute(r1, r2, t, s)</code> and <code>nested_transmute2(r1, r2, t, s)</code> do
+the same for nested generalized means, so that
+</p>
+<pre>nested_mean(r1, r2, t)(x, w1, w2) ==
+  generalized_mean(s)(x, v(x, w1, w2))</pre>
+<p>This generalizes the result for turning a geometric mean into an arithmetic
+mean (and vice versa) in section 4.2 of Balk (2008), and a Fisher mean into
+an arithmetic mean in section 6 of Reinsdorf et al. (2002), although these
+are usually the most important cases. See Martin (2021) for details.
+<code>nested_transmute2()</code> takes a slightly different approach than
+<code>nested_transmute()</code>, generalizing the van IJzeren arithmetic
+decomposition for the Fisher index (Balk, 2008, section 4.2.2) using the
+approach by Martin (2021), although in most cases the results are broadly
+similar.
+</p>
+<p>Transmuting weights returns a value that is the same length as <code>x</code>,
+so any missing values in <code>x</code> or the weights will return <code>NA</code>.
+Unless all values are <code>NA</code>, however, the result for will still satisfy
+the above identities when <code>na.rm = TRUE</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>transmute_weights()</code> returns a function:
+</p>
+<pre>function(x, w = NULL){...}</pre>
+<p><code>nested_transmute()</code> and <code>nested_transmute2()</code> similarly return a
+function:
+</p>
+<pre>function(x, w1 = NULL, w2 = NULL){...}</pre>
+
+
+<h3>References</h3>
+
+<p>Balk, B. M. (2008). <em>Price and Quantity Index Numbers</em>.
+Cambridge University Press.
+</p>
+<p>Martin, S. (2021). A note on general decompositions for price indexes.
+<em>Prices Analytical Series</em>, Statistics Canada catalogue no. 62F0014M.
+Statistics Canada, Ottawa.
+</p>
+<p>Reinsdorf, M. B., Diewert, W. E., and Ehemann, C. (2002). Additive
+decompositions for Fisher, Törnqvist and geometric mean indexes.
+<em>Journal of Economic and Social Measurement</em>, 28(1-2):51–61.
+</p>
+<p>Sydsaeter, K., Strom, A., and Berck, P. (2005). <em>Economists'
+Mathematical Manual</em> (4th edition). Springer.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>generalized_mean()</code> for the generalized mean and <code>nested_mean()</code> for the
+nested mean.
+</p>
+<p><code>extended_mean()</code> for the extended mean that underlies
+<code>transmute_weights()</code>.
+</p>
+<p><code>contributions()</code> for calculating additive percent-change
+contributions.
+</p>
+<p><code>grouped()</code> to make these functions operate on grouped data.
+</p>
+<p>Other weights functions: 
+<code>factor_weights()</code>,
+<code>scale_weights()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">x &lt;- 1:3
+y &lt;- 4:6
+w &lt;- 3:1
+
+#---- Transforming generalized means ----
+
+# Calculate the geometric mean as an arithmetic mean and
+# harmonic mean by transmuting the weights
+
+geometric_mean(x)
+arithmetic_mean(x, transmute_weights(0, 1)(x))
+harmonic_mean(x, transmute_weights(0, -1)(x))
+
+# Transmuting the weights for a harmonic mean into those
+# for an arithmetic mean is the same as using weights w / x
+
+all.equal(transmute_weights(-1, 1)(x, w), scale_weights(w / x))
+
+# Transmuting the weights for an arithmetic mean into those
+# for a harmonic mean is the same as using weights w * x
+
+all.equal(transmute_weights(1, -1)(x, w), scale_weights(w * x))
+
+# Works for nested means, too
+
+w1 &lt;- 3:1
+w2 &lt;- 1:3
+
+fisher_mean(x, w1, w2)
+
+arithmetic_mean(x, nested_transmute(0, c(1, -1), 1)(x, w1, w2))
+arithmetic_mean(x, nested_transmute2(0, c(1, -1), 1)(x, w1, w2))
+
+# Note that nested_transmute() has an invariance property
+# not shared by nested_transmute2()
+
+all.equal(
+  nested_transmute(0, c(1, -1), 1)(x, w1, w2),
+  transmute_weights(2, 1)(
+    x, nested_transmute(0, c(1, -1), 2)(x, w1, w2)
+  )
+)
+
+all.equal(
+  nested_transmute2(0, c(1, -1), 1)(x, w1, w2),
+  transmute_weights(2, 1)(
+    x, nested_transmute2(0, c(1, -1), 2)(x, w1, w2)
+  )
+)
+
+#---- Monotonicity ----
+
+# Transmuted weights increase when x is small and decrease
+# when x is large if r &lt; s
+
+transmute_weights(0, 1)(x, w) &gt; scale_weights(w)
+
+# The opposite happens when r &gt; s
+
+transmute_weights(1, 0)(x, w) &gt; scale_weights(w)
+
+#---- Percent-change contributions ----
+
+# Transmuted weights can be used to calculate percent-change
+# contributions for, e.g., a geometric price index
+
+transmute_weights(0, 1)(x) * (x - 1)
+geometric_contributions(x) # the more convenient way
+
+#---- Basket representation of a price index ----
+
+# Any generalized-mean index can be represented as a basket-style
+# index by transmuting the weights, which is how some authors
+# define a price index (e.g., Sydsaeter et al., 2005, p. 174)
+
+p1 &lt;- 2:6
+p0 &lt;- 1:5
+
+qs &lt;- transmute_weights(-1, 1)(p1 / p0) / p0
+all.equal(harmonic_mean(p1 / p0), sum(p1 * qs) / sum(p0 * qs))
+
+</code></pre>
+
+
+</div>

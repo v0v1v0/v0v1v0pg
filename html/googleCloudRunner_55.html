@@ -1,0 +1,336 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cr_build_targets</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Set up Google Cloud Build to run a targets pipeline</h2>
+
+<h3>Description</h3>
+
+<p>Creates a Google Cloud Build yaml file so as to execute tar_make pipelines
+</p>
+<p>Historical runs accumulate in the
+configured Google Cloud Storage bucket, and the latest output is downloaded before
+tar_make executes so up-to-date steps do not rerun.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cr_build_targets(
+  buildsteps = cr_buildstep_targets_multi(),
+  execute = c("trigger", "now"),
+  path = "cloudbuild_targets.yaml",
+  local = ".",
+  predefinedAcl = "bucketLevel",
+  bucket = cr_bucket_get(),
+  download_folder = getwd(),
+  ...
+)
+
+cr_build_targets_artifacts(
+  build,
+  bucket = cr_bucket_get(),
+  target_folder = NULL,
+  download_folder = NULL,
+  target_subfolder = c("all", "meta", "objects", "user"),
+  overwrite = TRUE
+)
+
+cr_buildstep_targets_single(
+  target_folder = NULL,
+  bucket = cr_bucket_get(),
+  tar_config = NULL,
+  task_image = "gcr.io/gcer-public/targets",
+  task_args = NULL,
+  tar_make = "targets::tar_make()"
+)
+
+cr_buildstep_targets_multi(
+  target_folder = NULL,
+  bucket = cr_bucket_get(),
+  tar_config = NULL,
+  task_image = "gcr.io/gcer-public/targets",
+  task_args = NULL,
+  last_id = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>buildsteps</code></td>
+<td>
+<p>Generated buildsteps that create the targets build</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>execute</code></td>
+<td>
+<p>Whether to run the Cloud Build now or to write to a file for use within triggers or otherwise</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>path</code></td>
+<td>
+<p>File path to write the Google Cloud Build yaml workflow file. Set to NULL to write no file and just return the <code>Yaml</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>local</code></td>
+<td>
+<p>If executing now, the local folder that will be uploaded as the context for the target build</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predefinedAcl</code></td>
+<td>
+<p>The ACL rules for the object uploaded. Set to "bucketLevel" for buckets with bucket level access enabled</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bucket</code></td>
+<td>
+<p>The Google Cloud Storage bucket the target metadata will be saved to in folder 'target_folder'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>download_folder</code></td>
+<td>
+<p>Set to NULL to overwrite local _target folder: <code>_targets/*</code> otherwise will write to <code>download_folder/_targets/*</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Arguments passed on to <code>cr_build_yaml</code>, <code>cr_build_yaml</code>
+</p>
+
+<dl>
+<dt><code>steps</code></dt>
+<dd>
+<p>A vector of cr_buildstep</p>
+</dd>
+<dt><code>timeout</code></dt>
+<dd>
+<p>How long the entire build will run. If not set will be 10mins</p>
+</dd>
+<dt><code>logsBucket</code></dt>
+<dd>
+<p>Where logs are written.  If you don't set this field, Cloud Build will use a default bucket to store your build logs.</p>
+</dd>
+<dt><code>options</code></dt>
+<dd>
+<p>A named list of options</p>
+</dd>
+<dt><code>substitutions</code></dt>
+<dd>
+<p>Build macros that will replace entries in other elements</p>
+</dd>
+<dt><code>tags</code></dt>
+<dd>
+<p>Tags for the build</p>
+</dd>
+<dt><code>secrets</code></dt>
+<dd>
+<p>A secrets object</p>
+</dd>
+<dt><code>images</code></dt>
+<dd>
+<p>What images will be build from this cloudbuild</p>
+</dd>
+<dt><code>artifacts</code></dt>
+<dd>
+<p>What artifacts may be built from this cloudbuild - create via cr_build_yaml_artifact</p>
+</dd>
+<dt><code>availableSecrets</code></dt>
+<dd>
+<p>What environment arguments from Secret Manager are available to the build - create via cr_build_yaml_secrets</p>
+</dd>
+<dt><code>serviceAccount</code></dt>
+<dd>
+<p>What service account should the build be run under?</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>build</code></td>
+<td>
+<p>A Build object that includes the artifact location</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>target_folder</code></td>
+<td>
+<p>Where target metadata will sit within the Google Cloud Storage bucket as a folder.  If NULL defaults to RStudio project name or "targets_cloudbuild" if no RStudio project found.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>target_subfolder</code></td>
+<td>
+<p>If you only want to download a specific folder from the _targets/ folder on Cloud Build then specify it here.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>overwrite</code></td>
+<td>
+<p>Whether to overwrite existing local data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tar_config</code></td>
+<td>
+<p>An R script that will run before <code>targets::tar_make()</code> in the build e.g. <code>"targets::tar_config_set(script = 'targets/_targets.R')"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>task_image</code></td>
+<td>
+<p>An existing Docker image that will be used to run your targets workflow after the targets meta has been downloaded from Google Cloud Storage</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>task_args</code></td>
+<td>
+<p>A named list of additional arguments to send to cr_buildstep_r when its executing the tar_make command (such as environment arguments)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tar_make</code></td>
+<td>
+<p>The R script that will run in the tar_make() step. Modify to include custom settings such as "script"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>last_id</code></td>
+<td>
+<p>The final buildstep that needs to complete before the upload.  If left NULL then will default to the last tar_target step.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Steps to set up your target task in Cloud Build:
+</p>
+
+<ul>
+<li>
+<p> Create your 'targets' workflow.
+</p>
+</li>
+<li>
+<p> Create a Dockerfile that holds the R and system dependencies for your workflow.  You can test the image using cr_deploy_docker.  Include <code>library(targets)</code> dependencies - a Docker image with <code>targets</code> installed is available at <code>gcr.io/gcer-public/targets</code>.
+</p>
+</li>
+<li>
+<p> Run <code>cr_build_targets</code> to create the cloudbuild yaml file.
+</p>
+</li>
+<li>
+<p> Run the build via cr_build or similar.  Each build should only recompute outdated targets.
+</p>
+</li>
+<li>
+<p> Optionally create a build trigger via cr_buildtrigger.
+</p>
+</li>
+<li>
+<p> Trigger a build. The first trigger will run the targets pipeline, subsequent runs will only recompute the outdated targets.
+</p>
+</li>
+</ul>
+<p>Use <code>cr_build_targets_artifacts</code> to download the return values of a
+target Cloud Build, then tar_read to read the results.  You can set the downloaded files as the target store via <code>targets::tar_config_set(store="_targets_cloudbuild")</code>.  Set <code>download_folder = "_targets"</code> to overwrite your local targets store.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A Yaml object as generated by cr_build_yaml if <code>execute="trigger"</code> or the built object if <code>execute="now"</code>
+</p>
+<p><code>cr_build_targets_artifacts</code> returns the file path to where the download occurred.
+</p>
+
+
+<h3>DAGs</h3>
+
+<p>If your target workflow has parallel processing steps then leaving this as default <code>cr_buildstep_targets_multi()</code> will create a build that uses waitFor and build ids to create a DAG.  Setting this to <code>cr_buildstep_targets_single()</code> will be single thread but you can then customise the <code>targets::tar_make</code> script.  Or add your own custom target buildsteps here using cr_buildstep_targets - for example you could create the docker environment targets runs within before the main pipeline.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>cr_buildstep_targets if you want to customise the build
+</p>
+<p>Other Cloud Build functions: 
+<code>Build()</code>,
+<code>RepoSource()</code>,
+<code>Source()</code>,
+<code>StorageSource()</code>,
+<code>cr_build_artifacts()</code>,
+<code>cr_build_list()</code>,
+<code>cr_build_logs()</code>,
+<code>cr_build_make()</code>,
+<code>cr_build_status()</code>,
+<code>cr_build_upload_gcs()</code>,
+<code>cr_build_wait()</code>,
+<code>cr_build_write()</code>,
+<code>cr_build_yaml_artifact()</code>,
+<code>cr_build_yaml_secrets()</code>,
+<code>cr_build_yaml()</code>,
+<code>cr_build()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+write.csv(mtcars, file = "mtcars.csv", row.names = FALSE)
+
+targets::tar_script(
+  list(
+    targets::tar_target(file1,
+      "mtcars.csv", format = "file"),
+    targets::tar_target(input1,
+      read.csv(file1)),
+    targets::tar_target(result1,
+      sum(input1$mpg)),
+    targets::tar_target(result2,
+      mean(input1$mpg)),
+    targets::tar_target(result3,
+      max(input1$mpg)),
+    targets::tar_target(result4,
+      min(input1$mpg)),
+    targets::tar_target(merge1,
+      paste(result1, result2, result3, result4))
+    ),
+ ask = FALSE)
+
+bs &lt;- cr_buildstep_targets_multi()
+
+# only create the yaml
+par_build &lt;- cr_build_targets(bs, path = NULL)
+par_build
+
+# clean up example
+unlink("mtcars.csv")
+unlink("_targets.R")
+
+## Not run: 
+# run it immediately in cloud
+cr_build_targets(bs, execute="now")
+
+# create a yaml file for use in build triggers
+cr_build_targets(bs)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

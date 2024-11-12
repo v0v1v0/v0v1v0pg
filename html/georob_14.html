@@ -1,0 +1,182 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pmm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Parallelized Matrix Multiplication</h2>
+
+<h3>Description</h3>
+
+<p>This page documents the function <code>pmm</code> for parallelized matrix
+multiplication and the function<br><code>control.pcmp</code>, which controls
+the behaviour of <code>pmm</code> and other functions that execute tasks in
+parallel.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pmm(A, B, control = control.pcmp())
+
+control.pcmp(pmm.ncores = 1, gcr.ncores = 1, max.ncores = parallel::detectCores(),
+    f = 1, sfstop = FALSE, allow.recursive = FALSE,
+    fork = !identical(.Platform[["OS.type"]], "windows"), ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>A, B</code></td>
+<td>
+<p>two numeric matrices to be multiplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>a list with the arguments <code>pmm.ncores</code>,
+<code>gcr.ncores</code>, <code>max.ncores</code>, <code>f</code>, <code>sfstop</code> and
+<code>allow.recursive</code> or a function such as <code>control.pcmp</code> that
+generates such a list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pmm.ncores</code></td>
+<td>
+<p>an integer (default 1) with the number of cores used
+for parallelized matrix multiplication.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gcr.ncores</code></td>
+<td>
+<p>an integer (default 1) with the number of cores used
+for parallelized computation of (generalized) covariances or
+semi-variances.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.ncores</code></td>
+<td>
+<p>maximum number of cores (integer, default all cores of
+a machine) used for parallelized computations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>f</code></td>
+<td>
+<p>an integer (default 1) with the number of tasks assigned to each
+core in parallelized operations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sfstop</code></td>
+<td>
+<p>a logical scalar controlling whether the SNOW socket
+cluster is stopped after each parallelized matrix multiplication on
+windows OS (default <code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allow.recursive</code></td>
+<td>
+<p>a logical scalar controlling whether parallelized
+matrix multiplicaction and computation of generalized) covariances should
+be allowed by child processes running already in parallel (default
+<code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fork</code></td>
+<td>
+<p>a logical scalar controlling whether forking should be used for
+parallel computations (default <code>TRUE</code> on unix and <code>FALSE</code> on
+windows operating systems).  Note that settting <code>fork = TRUE</code> on
+windows suppresses parallel computations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments, currently not used.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Parallelized matrix multiplication shortens computing time for large data
+sets (<code class="reqn">n&gt;1000</code>).  However, spawning child processes requires itself
+resources and increasing the number of cores for parallelized matrix
+multiplication and parallelized computation of covariances does not always
+result in reduced computing time.  Furthermore, these operations may be
+initiated by child processes, that were itself spawned by functions like
+<code>cv.georob</code>, <code>predict.georob</code>,
+<code>profilelogLik</code>, <code>add1.georob</code>,
+<code>drop1.georob</code> and <code>step.georob</code>.  By default,
+parallelized matrix multiplication and computation of covariances is then
+suppressed to avoid that child processes itself spawn child processes.  To
+allow parallelized matrix multipliation and parallelized computation of
+covariances by child processes one has to use the argument
+<code>allow.recursive = TRUE</code>.
+</p>
+<p>Note that very substantial reductions in computing time results when one
+uses the <strong>OpenBLAS</strong> library instead of the reference BLAS library
+that ships with R, see
+<a href="https://www.openblas.net/">https://www.openblas.net/</a> and R FAQ for your OS. With OpenBLAS no
+gains are obtained by using more than one core for matrix
+multiplication, and one should therefore use the default arguments
+<code>pmm.ncores = 1</code> for <code>control.pcmp()</code>.
+</p>
+<p><code>max.ncores</code> controls how many child processes are spawned in total.
+This can be used to prevent that child processes spawn
+themselves children which may result in a considerable number of child
+processes.
+</p>
+
+
+<h3>Value</h3>
+
+
+<dl>
+<dt>
+<code>pmm</code>:</dt>
+<dd>
+<p>the matrix product <code>A %*% B</code>,</p>
+</dd>
+<dt>
+<code>control.pcmp</code>:</dt>
+<dd>
+<p>a list with components
+<code>pmm.ncores</code>, <code>gcr.ncores</code>, <code>max.ncores</code>, <code>f</code>,
+<code>sfstop</code>,<br><code>allow.recursive</code>.</p>
+</dd> </dl>
+<h3>Author(s)</h3>
+
+<p>Andreas Papritz <a href="mailto:papritz@retired.ethz.ch">papritz@retired.ethz.ch</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>georobPackage</code> for a description of the model and a brief summary of the algorithms;
+</p>
+<p><code>georob</code> for (robust) fitting of spatial linear models.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  A &lt;- as.matrix(dist(rnorm(2000)))
+  B &lt;- as.matrix(dist(rnorm(2000)))
+  system.time(C &lt;- A %*% B)
+  system.time(C &lt;- pmm(
+      A, B, control = control.pcmp(pmm.ncores = 2L)))
+}
+</code></pre>
+
+
+</div>

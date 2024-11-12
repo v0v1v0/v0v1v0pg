@@ -1,0 +1,149 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tar_git_checkout</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Check out a snapshot of the data (Git)</h2>
+
+<h3>Description</h3>
+
+<p>Check out a snapshot of the data associated with
+a particular code commit (default: <code>HEAD</code>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tar_git_checkout(
+  ref = "HEAD",
+  code = getwd(),
+  store = targets::tar_config_get("store"),
+  force = FALSE,
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ref</code></td>
+<td>
+<p>Character of length 1. SHA1 hash, branch name,
+or other reference in the code repository
+that points to a code commit. (You can also identify the code
+commit by supplying a data branch of the form <code style="white-space: pre;">⁠code=&lt;SHA1&gt;⁠</code>.)
+Defaults to <code>"HEAD"</code>, which points to the currently
+checked out code commit.
+</p>
+<p>Once the desired code commit is identified,
+<code>tar_git_snapshot()</code> checks out the latest corresponding data snapshot.
+There may be earlier data snapshots corresponding to this code commit,
+but <code>tar_git_snapshot()</code> only checks out the latest one.
+To check out an earlier superseded data snapshot,
+you will need to manually use command line Git in the data repository.
+</p>
+<p>If <code>tar_git_snapshot()</code> cannot find a data snapshot for the
+desired code commit, then it will throw an error.
+For a list of commits in the current code branch
+that have available data snapshots, see the <code>commit_code</code>
+column of the output of <code>tar_git_log()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>code</code></td>
+<td>
+<p>Character of length 1, directory path to the code repository,
+usually the root of the <code>targets</code> project.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>store</code></td>
+<td>
+<p>Character of length 1, path to the data store of the pipeline.
+If <code>NULL</code>, the <code>store</code> setting is left unchanged in the
+YAML configuration file (default: <code style="white-space: pre;">⁠_targets.yaml⁠</code>).
+Usually, the data store lives at <code style="white-space: pre;">⁠_targets⁠</code>.
+Set <code>store</code> to a custom directory
+to specify a path other than <code style="white-space: pre;">⁠_targets/⁠</code>. The path need not exist
+before the pipeline begins, and it need not end with "_targets",
+but it must be writeable.
+For optimal performance, choose a storage location
+with fast read/write access.
+If the argument <code>NULL</code>, the setting is not modified.
+Use <code>tar_config_unset()</code> to delete a setting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>force</code></td>
+<td>
+<p>ignore conflicts and overwrite modified files</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical of length 1, whether to print R console messages
+confirming that a snapshot was created.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Nothing (invisibly).
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other git: 
+<code>tar_git_init()</code>,
+<code>tar_git_log()</code>,
+<code>tar_git_ok()</code>,
+<code>tar_git_snapshot()</code>,
+<code>tar_git_status_code()</code>,
+<code>tar_git_status_data()</code>,
+<code>tar_git_status_targets()</code>,
+<code>tar_git_status()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if (Sys.getenv("TAR_EXAMPLES") == "true" &amp;&amp; tar_git_ok(verbose = FALSE)) {
+targets::tar_dir({ # Containing code does not modify the user's filespace.
+# Work on an initial branch.
+targets::tar_script(tar_target(data, "old_data"))
+targets::tar_make()
+targets::tar_read(data) # "old_data"
+gert::git_init()
+gert::git_add("_targets.R")
+gert::git_commit("First commit")
+gert::git_branch_create("old_branch")
+tar_git_init()
+# Work on a new branch.
+tar_git_snapshot(status = FALSE, verbose = FALSE)
+targets::tar_script(tar_target(data, "new_data"))
+targets::tar_make()
+targets::tar_read(data) # "new_data"
+gert::git_branch_create("new_branch")
+gert::git_add("_targets.R")
+gert::git_commit("Second commit")
+tar_git_snapshot(status = FALSE, verbose = FALSE)
+# Go back to the old branch.
+gert::git_branch_checkout("old_branch")
+# The target is out of date because we only reverted the code.
+targets::tar_outdated()
+# But tar_git_checkout() lets us restore the old version of the data!
+tar_git_checkout()
+targets::tar_read(data) # "old_data"
+# Now, the target is up to date! And we did not even have to rerun it!
+targets::tar_outdated()
+})
+}
+</code></pre>
+
+
+</div>

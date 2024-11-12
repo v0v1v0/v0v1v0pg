@@ -1,0 +1,264 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>geomc.vs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Markov chain Monte Carlo for Bayesian variable selection
+using a geometric MH algorithm.</h2>
+
+<h3>Description</h3>
+
+<p>geomc.vs uses a geometric approach to MCMC for performing Bayesian variable selection.
+It produces MCMC samples from the posterior density of a Bayesian hierarchical feature selection model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">geomc.vs(
+  X,
+  y,
+  initial = NULL,
+  n.iter = 50,
+  burnin = 1,
+  eps = 0.5,
+  symm = TRUE,
+  move.prob = c(0.4, 0.4, 0.2),
+  model.threshold = 0.5,
+  lam = nrow(X)/ncol(X)^2,
+  w = sqrt(nrow(X))/ncol(X)
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>The <code class="reqn">n\times p</code> covariate matrix without intercept. The following classes are supported:
+<code>matrix</code> and <code>dgCMatrix</code>.  No need to center or scale this matrix manually. Scaling is performed implicitly and
+regression coefficients are returned on the original scale.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The response vector of length <code class="reqn">n</code>. No need to center or scale.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial</code></td>
+<td>
+<p>is the initial model (the set of active variables). Default: Null model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.iter</code></td>
+<td>
+<p>is the no. of samples needed. Default: 50.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>is the value of burnin used to compute the median probability model. Default: 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>is the value for epsilon perturbation. Default: 0.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>symm</code></td>
+<td>
+<p>indicates if the base density is of symmetric RW-MH. Default: True.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>move.prob</code></td>
+<td>
+<p>is the vector of ('addition', 'deletion', 'swap') move probabilities. Default: (0.4,0.4,0.2).
+move.prob is used only when symm is set to False.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.threshold</code></td>
+<td>
+<p>The threshold probability to select the covariates for
+the median model (median.model) and the weighted average model (wam).
+A covariate will be included in median.model (wam) if its marginal inclusion
+probability (weighted marginal inclusion probability) is greater than the threshold. Default: 0.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lam</code></td>
+<td>
+<p>The slab precision parameter. Default: <code class="reqn">n/p^2</code>
+as suggested by the theoretical results of Li, Dutta, Roy (2023).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>The prior inclusion probability of each variable. Default: <code class="reqn">\sqrt{n}/p</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>geomc.vs provides MCMC samples using the geometric MH algorithm of Roy (2024)
+for variable selection based on a hierarchical Gaussian linear model with priors placed
+on the regression coefficients as well as on the model space as follows:
+</p>
+<p style="text-align: center;"><code class="reqn">y | X, \beta_0,\beta,\gamma,\sigma^2,w,\lambda \sim N(\beta_01 + X_\gamma\beta_\gamma,\sigma^2I_n)</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\beta_i|\beta_0,\gamma,\sigma^2,w,\lambda \stackrel{indep.}{\sim} N(0, \gamma_i\sigma^2/\lambda),~i=1,\ldots,p,</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">(\beta_0,\sigma^2)|\gamma,w,p \sim p(\beta_0,\sigma^2) \propto 1/\sigma^2</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\gamma_i|w,\lambda \stackrel{iid}{\sim} Bernoulli(w)</code>
+</p>
+
+<p>where <code class="reqn">X_\gamma</code> is the <code class="reqn">n \times |\gamma|</code> submatrix of <code class="reqn">X</code> consisting of
+those columns of <code class="reqn">X</code> for which <code class="reqn">\gamma_i=1</code> and similarly, <code class="reqn">\beta_\gamma</code> is the
+<code class="reqn">|\gamma|</code> subvector of <code class="reqn">\beta</code> corresponding to <code class="reqn">\gamma</code>.
+geomc.vs provides MCMC samples from the posterior pmf of the models <code class="reqn">P(\gamma|y)</code>, which is available
+up to a normalizing constant.
+geomc.vs also returns the marginal inclusion probabilities (mip)
+computed by the Monte Carlo average as well as the weighted marginal inclusion
+probabilities (wmip) computed with weights </p>
+<p style="text-align: center;"><code class="reqn">w_i =
+P(\gamma^{(i)}|y)/\sum_{k=1}^K P(\gamma^{(k)}|y), i=1,2,...,K</code>
+</p>
+<p> where <code class="reqn">K</code> is the number of distinct
+models sampled. Thus, based on the samples <code class="reqn">\gamma^{(k)}, k=1,2,...,n.iter</code> mip for the <code class="reqn">j</code>th variable is </p>
+<p style="text-align: center;"><code class="reqn">mip_j =
+\sum_{k=1}^{n.iter} I(\gamma^{(k)}_j = 1)/n.iter</code>
+</p>
+<p> and
+wmip is as </p>
+<p style="text-align: center;"><code class="reqn">wmip_j =
+\sum_{k=1}^K w_k I(\gamma^{(k)}_j = 1).</code>
+</p>
+
+<p>The median.model is the model containing variables <code class="reqn">j</code> with <code class="reqn">mip_j &gt;
+\code{model.threshold}</code> and the wam is the model containing variables <code class="reqn">j</code> with <code class="reqn">wmip_j &gt;
+\code{model.threshold}</code>. The conditional posterior mean of <code class="reqn">\beta</code> given a model is
+available in closed form. geomc.vs returns the posterior means of <code class="reqn">\beta</code> conditional on the median.model and
+the wam.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with components
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>samples</code></td>
+<td>
+<p>MCMC samples from  <code class="reqn">P(\gamma|y)</code> returned as <code class="reqn">p \times</code>n.iter sparse <code>dgCMatrix</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>acceptance.rate</code></td>
+<td>
+<p>The acceptance rate based on all samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mip</code></td>
+<td>
+<p>The <code class="reqn">p</code> vector of marginal inclusion probabilities of all variables based on post burnin samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>median.model</code></td>
+<td>
+<p>The  median probability model based on post burnin samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.med</code></td>
+<td>
+<p>The posterior  mean of <code class="reqn">\beta</code> (the <code class="reqn">p+1</code> vector c(intercept, regression
+coefficients)) conditional on the median.model based on post burnin samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wmip</code></td>
+<td>
+<p>The <code class="reqn">p</code> vector of weighted marginal inclusion probabilities of all variables based on post burnin samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wam</code></td>
+<td>
+<p>The weighted average model based on post burnin samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.wam</code></td>
+<td>
+<p>The posterior  mean of <code class="reqn">\beta</code> (the <code class="reqn">p+1</code> vector c(intercept, regression
+coefficients)) conditional on the wam based on post burnin samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log.post</code></td>
+<td>
+<p>The n.iter vector of log of the unnormalized marginal posterior pmf <code class="reqn">P(\gamma|y)</code> evaluated
+at the samples.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Vivekananda Roy
+</p>
+
+
+<h3>References</h3>
+
+<p>Roy, V.(2024) A geometric approach to informative MCMC
+sampling https://arxiv.org/abs/2406.09010
+</p>
+<p>Li, D., Dutta, S., Roy, V.(2023) Model Based Screening Embedded Bayesian
+Variable Selection for Ultra-high Dimensional Settings, Journal of Computational and
+Graphical Statistics, 32, 61-73
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">n=50; p=100; nonzero = 3
+trueidx &lt;- 1:3
+nonzero.value &lt;- 4
+TrueBeta &lt;- numeric(p)
+TrueBeta[trueidx] &lt;- nonzero.value
+rho &lt;- 0.5
+xone &lt;- matrix(rnorm(n*p), n, p)
+X &lt;- sqrt(1-rho)*xone + sqrt(rho)*rnorm(n)
+y &lt;- 0.5 + X %*% TrueBeta + rnorm(n)
+result &lt;- geomc.vs(X=X, y=y)
+result$samples # the MCMC samples
+result$acceptance.rate #the acceptance.rate
+result$mip #marginal inclusion probabilities
+result$wmip #weighted marginal inclusion probabilities
+result$median.model #the median.model
+result$wam #the weighted average model
+result$beta.med #the posterior mean of regression coefficients for the median.model
+result$beta.wam #the posterior mean of regression coefficients for the wam
+result$log.post #the log (unnormalized) posterior probabilities of the MCMC samples.
+</code></pre>
+
+
+</div>

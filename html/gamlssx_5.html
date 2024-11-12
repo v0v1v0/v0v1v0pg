@@ -1,0 +1,219 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fitGEV</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a Generalized Extreme value (GEV) GAMLSS Model</h2>
+
+<h3>Description</h3>
+
+<p>Describe
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fitGEV(
+  formula,
+  data,
+  scoring = c("fisher", "quasi"),
+  mu.link = "identity",
+  sigma.link = "log",
+  xi.link = "identity",
+  stepLength = 1,
+  stepAttempts = 2,
+  stepReduce = 2,
+  steps = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>a formula object, with the response on the left of an ~ operator, and the terms, separated by <code class="reqn">+</code> operators, on the right.
+Nonparametric smoothing terms are indicated by <code>pb()</code> for penalised beta splines, <code>cs</code> for smoothing splines, <code>lo</code> for <code>loess</code> smooth terms and <code>random</code> or <code>ra</code>
+for random terms, e.g. <code>y~cs(x,df=5)+x1+x2*x3</code>.  Additional smoothers can be added by creating the appropriate interface.
+Interactions with nonparametric smooth terms are not fully supported, but will not produce errors;
+they will simply produce the usual parametric interaction 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a data frame containing the variables occurring in the formula, e.g. <code>data=aids</code>. If this is missing, the variables should be on the search list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scoring</code></td>
+<td>
+<p>A character scalar. If <code>scoring = "fisher"</code> then the weights
+used in the fitting algorithm are based on the expected Fisher
+information, that is, a Fisher's scoring algorithm is used.
+If <code>scoring = "quasi"</code> then these weights are based on the cross products
+of the first derivatives of the log-likelihood, leading to a quasi Newton
+scoring algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu.link, sigma.link, xi.link</code></td>
+<td>
+<p>Character scalars to set the respective
+link functions for the location (<code>mu</code>), scale (<code>sigma</code>) and shape (<code>xi</code>)
+parameters. The latter is passed to <code>gamlss::gamlss()</code>
+as <code>nu.link</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stepLength</code></td>
+<td>
+<p>A numeric vector of positive values. The initial
+values of the step lengths <code>mu.step</code>, <code>sigma.step</code> and <code>nu.step</code> passed to
+<code>gamlss::gamlss.control()</code> in the first attempt
+to fit the model by calling <code>gamlss::gamlss()</code>. If
+<code>stepLength</code> has a length that is less than 3 then <code>stepLength</code> is
+recycled to have length 3.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stepAttempts</code></td>
+<td>
+<p>A non-negative integer. If the first call to
+<code>gamlss::gamlss()</code> throws an error then we make
+<code>stepAttempts</code> further attempts to fit the model, each time dividing by 2
+the values of <code>mu.step</code>, <code>sigma.step</code> and <code>nu.step</code> supplied to
+<code>gamlss::gamlss.control()</code>. If
+<code>stepAttempts &lt; 1</code> then no further attempts are made.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stepReduce</code></td>
+<td>
+<p>A number greater than 1. The factor by which the step
+lengths in <code>stepLength</code> are reduced for each extra attempt to fit the
+model. The default, <code>stepReduce = 2</code> means that the step lengths are
+halved for each extra attempt.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>steps</code></td>
+<td>
+<p>A logical scalar. Pass <code>steps = TRUE</code> to write to the
+console the current value of <code>stepLength</code> for each call to
+<code>gamlss::gamlss()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to
+<code>gamlss::gamlss()</code>, in particular <code>method</code>, which sets
+the fitting algorithm, with options <code>RS()</code>, <code>CG()</code> or <code>mixed()</code>. The
+default, <code>method = RS()</code> seems to work well, as does <code>method = mixed()</code>.
+In contrast, <code>method = CG()</code> often requires the step length to be reduced
+before convergence is achieved. <code>fitGEV()</code> attempts to do this
+automatically. See <code>stepAttempts</code>. Pass <code>trace = FALSE</code>
+(to <code>gamlss::gamlss.control()</code>) to avoid
+writing to the console the global deviance after each outer iteration of
+the gamlss fitting algorithm.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>See <code>gamlss::gamlss()</code> for information about
+the model and the fitting algorithm.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a <code>gamlss</code> object. See the <strong>Value</strong> section of
+<code>gamlss::gamlss()</code>. The class of the returned object is
+<code>c("gamlssx", "gamlss", "gam", "glm", "lm")</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GEV</code>,
+<code>gamlss.dist::gamlss.family()</code>,
+<code>gamlss::gamlss()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Load gamlss, for the function pb()
+library(gamlss)
+
+##### Simulated data
+
+set.seed(17012023)
+n &lt;- 100
+x &lt;- stats::runif(n)
+mu &lt;- 1 + 2 * x
+sigma &lt;- 1
+xi &lt;- 0.25
+y &lt;- nieve::rGEV(n = 1, loc = mu, scale = sigma, shape = xi)
+data &lt;- data.frame(y = as.numeric(y), x = x)
+plot(x, y)
+
+# Fit model using the default RS method with Fisher's scoring
+mod &lt;- fitGEV(y ~ gamlss::pb(x), data = data)
+# Summary of model fit
+summary(mod)
+# Residual diagnostic plots
+plot(mod, xlab = "x", ylab = "y")
+# Data plus fitted curve
+plot(data$x, data$y, xlab = "x", ylab = "y")
+lines(data$x, fitted(mod))
+
+# Fit model using the mixed method and quasi-Newton scoring
+# Use trace = FALSE to prevent writing the global deviance to the console
+mod &lt;- fitGEV(y ~ pb(x), data = data, method = mixed(), scoring = "quasi",
+              trace = FALSE)
+
+# Fit model using the CG method
+# The default step length of 1 needs to be reduced to enable convergence
+# Use steps = TRUE to write the step lengths to the console
+mod &lt;- fitGEV(y ~ pb(x), data = data, method = CG(), steps = TRUE)
+
+##### Fremantle annual maximum sea levels
+##### See also the gamlssx package README file
+
+# Transform Year so that it is centred on 0
+fremantle &lt;- transform(fremantle, cYear = Year - median(Year))
+
+# Plot sea level against year and against SOI
+plot(fremantle$Year, fremantle$SeaLevel, xlab = "year", ylab = "sea level (m)")
+plot(fremantle$SOI, fremantle$SeaLevel, xlab = "SOI", ylab = "sea level (m)")
+
+# Fit a model with P-spline effects of cYear and SOI on location and scale
+# The default links are identity for location and log for scale
+mod &lt;- fitGEV(SeaLevel ~ pb(cYear) + pb(SOI),
+             sigma.formula = ~ pb(cYear) + pb(SOI),
+             data = fremantle)
+
+# Summary of model fit
+summary(mod)
+# Model diagnostic plots
+plot(mod)
+# Worm plot
+wp(mod)
+# Plot of the fitted component smooth functions
+# Note: gamlss::term.plot() does not include uncertainty about the intercept
+# Location mu
+term.plot(mod, rug = TRUE, pages = 1)
+# Scale sigma
+term.plot(mod, what = "sigma", rug = TRUE, pages = 1)
+</code></pre>
+
+
+</div>

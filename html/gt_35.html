@@ -1,0 +1,256 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cols_merge</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Merge data from two or more columns to a single column</h2>
+
+<h3>Description</h3>
+
+<p>This function takes input from two or more columns and allows the contents to
+be merged into a single column by using a pattern that specifies the
+arrangement. We can specify which columns to merge together in the <code>columns</code>
+argument. The string-combining pattern is to be provided in the <code>pattern</code>
+argument. The first column in the <code>columns</code> series operates as the target
+column (i.e., the column that will undergo mutation) whereas all following
+<code>columns</code> will be untouched. There is the option to hide the non-target
+columns (i.e., second and subsequent columns given in <code>columns</code>). The
+formatting of values in different columns will be preserved upon merging.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cols_merge(
+  data,
+  columns,
+  hide_columns = columns[-1],
+  rows = everything(),
+  pattern = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p><em>The gt table data object</em>
+</p>
+<p><code style="white-space: pre;">⁠obj:&lt;gt_tbl&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>This is the <strong>gt</strong> table object that is commonly created through use of the
+<code>gt()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>columns</code></td>
+<td>
+<p><em>Columns to target</em>
+</p>
+<p><code style="white-space: pre;">⁠&lt;column-targeting expression&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>The columns for which the merging operations should be applied. The first
+column resolved will be the target column (i.e., undergo mutation) and the
+other columns will serve to provide input. Can either be a series of column
+names provided in <code>c()</code>, a vector of column indices, or a select helper
+function (e.g. <code>starts_with()</code>, <code>ends_with()</code>, <code>contains()</code>, <code>matches()</code>,
+<code>num_range()</code>, and <code>everything()</code>). A vector is recommended because in that
+case we are absolutely certain about the order of columns, and, that order
+information is needed for this and other arguments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hide_columns</code></td>
+<td>
+<p><em>Subset of <code>columns</code> to hide</em>
+</p>
+<p><code style="white-space: pre;">⁠&lt;column-targeting expression&gt;|FALSE⁠</code> // <em>default:</em> <code>columns[-1]</code>
+</p>
+<p>Any column names provided here will have their state changed to <code>hidden</code>
+(via internal use of <code>cols_hide()</code>) if they aren't already hidden. This is
+convenient if the shared purpose of these specified columns is only to
+provide string input to the target column. To suppress any hiding of
+columns, <code>FALSE</code> can be used here.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rows</code></td>
+<td>
+<p><em>Rows to target</em>
+</p>
+<p><code style="white-space: pre;">⁠&lt;row-targeting expression&gt;⁠</code> // <em>default:</em> <code>everything()</code>
+</p>
+<p>In conjunction with <code>columns</code>, we can specify which of their rows should
+participate in the merging process. The default <code>everything()</code> results in
+all rows in <code>columns</code> being formatted. Alternatively, we can supply a
+vector of row IDs within <code>c()</code>, a vector of row indices, or a select
+helper function (e.g. <code>starts_with()</code>, <code>ends_with()</code>, <code>contains()</code>,
+<code>matches()</code>, <code>num_range()</code>, and <code>everything()</code>). We can also use
+expressions to filter down to the rows we need
+(e.g., <code style="white-space: pre;">⁠[colname_1] &gt; 100 &amp; [colname_2] &lt; 50⁠</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pattern</code></td>
+<td>
+<p><em>Formatting pattern</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <em>default:</em> <code>NULL</code> (<code>optional</code>)
+</p>
+<p>A formatting pattern that specifies the arrangement of the <code>columns</code> values
+and any string literals. The pattern uses numbers (within <code>{ }</code>) that
+correspond to the indices of columns provided in <code>columns</code>. If two columns
+are provided in <code>columns</code> and we would like to combine the cell data onto
+the first column, <code>"{1} {2}"</code> could be used. If a pattern isn't provided
+then a space-separated pattern that includes all <code>columns</code> will be
+generated automatically. Further details are provided in the <em>How the
+<code>pattern</code> works</em> section.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>gt_tbl</code>.
+</p>
+
+
+<h3>How the <code>pattern</code> works</h3>
+
+<p>There are two types of templating for the <code>pattern</code> string:
+</p>
+
+<ol>
+<li> <p><code>{ }</code> for arranging single column values in a row-wise fashion
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠&lt;&lt; &gt;&gt;⁠</code> to surround spans of text that will be removed if any of the
+contained <code>{ }</code> yields a missing value
+</p>
+</li>
+</ol>
+<p>Integer values are placed in <code>{ }</code> and those values correspond to the columns
+involved in the merge, in the order they are provided in the <code>columns</code>
+argument. So the pattern <code>"{1} ({2}-{3})"</code> corresponds to the target column
+value listed first in <code>columns</code> and the second and third columns cited
+(formatted as a range in parentheses). With hypothetical values, this might
+result as the merged string <code>"38.2 (3-8)"</code>.
+</p>
+<p>Because some values involved in merging may be missing, it is likely that
+something like <code>"38.2 (3-NA)"</code> would be undesirable. For such cases, placing
+sections of text in <code style="white-space: pre;">⁠&lt;&lt; &gt;&gt;⁠</code> results in the entire span being eliminated if
+there were to be an <code>NA</code> value (arising from <code>{ }</code> values). We could instead
+opt for a pattern like <code>"{1}&lt;&lt; ({2}-{3})&gt;&gt;"</code>, which results in <code>"38.2"</code> if
+either columns <code>{2}</code> or <code>{3}</code> have an <code>NA</code> value. We can even use a more
+complex nesting pattern like <code>"{1}&lt;&lt; ({2}-&lt;&lt;{3}&gt;&gt;)&gt;&gt;"</code> to retain a lower
+limit in parentheses (where <code>{3}</code> is <code>NA</code>) but remove the range altogether
+if <code>{2}</code> is <code>NA</code>.
+</p>
+<p>One more thing to note here is that if <code>sub_missing()</code> is used on values in
+a column, those specific values affected won't be considered truly missing by
+<code>cols_merge()</code> (since it's been handled with substitute text). So, the
+complex pattern <code>"{1}&lt;&lt; ({2}-&lt;&lt;{3}&gt;&gt;)&gt;&gt;"</code> might result in something like
+<code>"38.2 (3-limit)"</code> if <code>sub_missing(..., missing_text = "limit")</code> were used
+on the third column supplied in <code>columns</code>.
+</p>
+
+
+<h3>Comparison with other column-merging functions</h3>
+
+<p>There are three other column-merging functions that offer specialized
+behavior that is optimized for common table tasks: <code>cols_merge_range()</code>,
+<code>cols_merge_uncert()</code>, and <code>cols_merge_n_pct()</code>. These functions operate
+similarly, where the non-target columns can be optionally hidden from the
+output table through the <code>autohide</code> option.
+</p>
+
+
+<h3>Examples</h3>
+
+<p>Use a subset of the <code>sp500</code> dataset to create a <strong>gt</strong> table. Use the
+<code>cols_merge()</code> function to merge the <code>open</code> &amp; <code>close</code> columns together, and,
+the <code>low</code> &amp; <code>high</code> columns (putting an em dash between both). Relabel the
+columns with <code>cols_label()</code>.
+</p>
+<div class="sourceCode r"><pre>sp500 |&gt;
+  dplyr::slice(50:55) |&gt;
+  dplyr::select(-volume, -adj_close) |&gt;
+  gt() |&gt;
+  cols_merge(
+    columns = c(open, close),
+    pattern = "{1}&amp;mdash;{2}"
+  ) |&gt;
+  cols_merge(
+    columns = c(low, high),
+    pattern = "{1}&amp;mdash;{2}"
+  ) |&gt;
+  cols_label(
+    open = "open/close",
+    low = "low/high"
+  )
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_cols_merge_1.png" alt="This image of a table was generated from the first code example in the `cols_merge()` help file." style="width:100%;"><p>Use a portion of <code>gtcars</code> to create a <strong>gt</strong> table. Use the <code>cols_merge()</code>
+function to merge the <code>trq</code> &amp; <code>trq_rpm</code> columns together, and, the <code>mpg_c</code> &amp;
+<code>mpg_h</code> columns. Given the presence of <code>NA</code> values, we can use patterns that
+drop parts of the output text whenever missing values are encountered.
+</p>
+<div class="sourceCode r"><pre>gtcars |&gt;
+  dplyr::filter(year == 2017) |&gt;
+  dplyr::select(mfr, model, starts_with(c("trq", "mpg"))) |&gt;
+  gt() |&gt;
+  fmt_integer(columns = trq_rpm) |&gt;
+  cols_merge(
+    columns = starts_with("trq"),
+    pattern = "{1}&lt;&lt; ({2} rpm)&gt;&gt;"
+  ) |&gt;
+  cols_merge(
+    columns = starts_with("mpg"),
+    pattern = "&lt;&lt;{1} city&lt;&lt;/{2} hwy&gt;&gt;&gt;&gt;"
+  ) |&gt;
+  cols_label(
+    mfr = "Manufacturer",
+    model = "Car Model",
+    trq = "Torque",
+    mpg_c = "MPG"
+  )
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_cols_merge_2.png" alt="This image of a table was generated from the second code example in the `cols_merge()` help file." style="width:100%;"><h3>Function ID</h3>
+
+<p>5-14
+</p>
+
+
+<h3>Function Introduced</h3>
+
+<p><code>v0.2.0.5</code> (March 31, 2020)
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other column modification functions: 
+<code>cols_add()</code>,
+<code>cols_align()</code>,
+<code>cols_align_decimal()</code>,
+<code>cols_hide()</code>,
+<code>cols_label()</code>,
+<code>cols_label_with()</code>,
+<code>cols_merge_n_pct()</code>,
+<code>cols_merge_range()</code>,
+<code>cols_merge_uncert()</code>,
+<code>cols_move()</code>,
+<code>cols_move_to_end()</code>,
+<code>cols_move_to_start()</code>,
+<code>cols_nanoplot()</code>,
+<code>cols_unhide()</code>,
+<code>cols_units()</code>,
+<code>cols_width()</code>
+</p>
+
+
+</div>

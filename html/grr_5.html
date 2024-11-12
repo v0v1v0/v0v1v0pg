@@ -1,0 +1,162 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>matches</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Value Matching</h2>
+
+<h3>Description</h3>
+
+<p>Returns a lookup table or list of the positions of ALL matches of its first
+argument in its second and vice versa. Similar to <code>match</code>, though
+that function only returns the first match.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">matches(x, y, all.x = TRUE, all.y = TRUE, list = FALSE, indexes = TRUE,
+  nomatch = NA)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>vector.  The values to be matched.  Long vectors are not currently
+supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>vector.  The values to be matched.  Long vectors are not currently
+supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>all.x</code></td>
+<td>
+<p>logical; if <code>TRUE</code>, then each value in <code>x</code> will be
+included even if it has no matching values in <code>y</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>all.y</code></td>
+<td>
+<p>logical; if <code>TRUE</code>, then each value in <code>y</code> will be
+included even if it has no matching values in <code>x</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>list</code></td>
+<td>
+<p>logical.  If <code>TRUE</code>, the result will be returned as a list
+of vectors, each vector being the matching values in y. If <code>FALSE</code>,
+result is returned as a data frame with repeated values for each match.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>indexes</code></td>
+<td>
+<p>logical.  Whether to return the indices of the matches or the
+actual values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nomatch</code></td>
+<td>
+<p>the value to be returned in the case when no match is found.
+If not provided and <code>indexes=TRUE</code>, items with no match will be
+represented as <code>NA</code>.  If set to <code>NULL</code>, items with no match will
+be set to an index value of <code>length+1</code>.  If indexes=FALSE, they will
+default to <code>NA</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This behavior can be imitated by using joins to create lookup tables, but
+<code>matches</code> is simpler and faster: usually faster than the best joins in
+other packages and thousands of times faster than the built in
+<code>merge</code>.
+</p>
+<p><code>all.x/all.y</code> correspond to the four types of database joins in the
+following way:
+</p>
+ <dl>
+<dt>left</dt>
+<dd>
+<p><code>all.x=TRUE</code>, <code>all.y=FALSE</code></p>
+</dd> 
+<dt>right</dt>
+<dd>
+<p><code>all.x=FALSE</code>, <code>all.y=TRUE</code></p>
+</dd> 
+<dt>inner</dt>
+<dd>
+<p><code>all.x=FALSE</code>, <code>all.y=FALSE</code></p>
+</dd> 
+<dt>full</dt>
+<dd>
+<p><code>all.x=TRUE</code>, <code>all.y=TRUE</code></p>
+</dd> </dl>
+<p>Note that <code>NA</code> values will match other <code>NA</code> values.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">one&lt;-as.integer(1:10000)
+two&lt;-as.integer(sample(1:10000,1e3,TRUE))
+system.time(a&lt;-lapply(one, function (x) which(two %in% x)))
+system.time(b&lt;-matches(one,two,all.y=FALSE,list=TRUE))
+
+#Only retain items from one with a match in two
+b&lt;-matches(one,two,all.x=FALSE,all.y=FALSE,list=TRUE)
+length(b)==length(unique(two))
+
+one&lt;-round(runif(1e3),3)
+two&lt;-round(runif(1e3),3)
+system.time(a&lt;-lapply(one, function (x) which(two %in% x)))
+system.time(b&lt;-matches(one,two,all.y=FALSE,list=TRUE))
+ 
+one&lt;-as.character(1:1e5)
+two&lt;-as.character(sample(1:1e5,1e5,TRUE))
+system.time(b&lt;-matches(one,two,list=FALSE))
+system.time(c&lt;-merge(data.frame(key=one),data.frame(key=two),all=TRUE))
+
+## Not run: 
+one&lt;-as.integer(1:1000000)
+two&lt;-as.integer(sample(1:1000000,1e5,TRUE))
+system.time(b&lt;-matches(one,two,indexes=FALSE))
+if(requireNamespace("dplyr",quietly=TRUE))
+ system.time(c&lt;-dplyr::full_join(data.frame(key=one),data.frame(key=two)))
+if(require(data.table,quietly=TRUE))
+ system.time(d&lt;-merge(data.table(data.frame(key=one))
+             ,data.table(data.frame(key=two))
+             ,by='key',all=TRUE,allow.cartesian=TRUE))
+
+one&lt;-as.character(1:1000000)
+two&lt;-as.character(sample(1:1000000,1e5,TRUE))
+system.time(a&lt;-merge(one,two)) #Times out
+system.time(b&lt;-matches(one,two,indexes=FALSE))
+if(requireNamespace("dplyr",quietly=TRUE))
+ system.time(c&lt;-dplyr::full_join(data.frame(key=one),data.frame(key=two)))#'
+if(require(data.table,quietly=TRUE))
+{
+ system.time(d&lt;-merge(data.table(data.frame(key=one))
+             ,data.table(data.frame(key=two))
+             ,by='key',all=TRUE,allow.cartesian=TRUE))
+ identical(b[,1],as.character(d$key))
+}
+
+## End(Not run)
+</code></pre>
+
+
+</div>

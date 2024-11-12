@@ -1,0 +1,68 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>saar</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Global SA lookup file</h2>
+
+<h3>Description</h3>
+
+<p>This dataset is not intended for users, but rather for internal use
+within the <code>gsw</code> package. The dataset stores the 1.4M lookup
+table defined in the 8.3M file <code>src/gsw_saar_data.c</code> in the C
+library. (The .c file exceeds CRAN limitations on size.)
+</p>
+
+
+<h3>Details</h3>
+
+<p>The data are designed to replace C elements defined as below
+in <code>src/gsw_saar_data.c</code>:
+</p>
+<pre>
+    static int	gsw_nx=91, gsw_ny=45, gsw_nz=45;
+    static double	longs_ref[91];
+    static double	lats_ref[45];
+    static double	p_ref[45];
+    static double	ndepth_ref[4095];
+    static double	saar_ref[184275];
+    static double	delta_sa_ref[184275];
+</pre>
+<p>R storage is in a list named <code>saar</code>, with elements named
+as in the C code, i.e. <code>gsw_nx</code> etc.
+</p>
+<p>C storage for these variables is allocated as needed,
+and the data are inserted, when <code>gsw</code> is launched.
+Thus, the existing C library code "knows" about the data
+as local storage, which keeps alterations to the C library to
+a minimum.
+</p>
+<p>The <code>saar</code> dataset was created by the following R code. The
+netcdf file used in this code comes from the GSW-Fortran
+repository (at commit <code>baa0c09ffc7ed1f74972a1a2902d8754caa5b4cb</code>)
+and its md5 value is <code>dacb3f981e8e710ac2e83477701b3905</code>.
+</p>
+<pre>
+  library(ncdf4)
+  nc &lt;- nc_open("~/git/GSW-Fortran/test/gsw_data_v3_0.nc")
+  ## Use as.vector() since these will all get handed into C, which does not understand matrices.
+  p_ref &lt;- as.vector(ncvar_get(nc, "p_ref"))
+  lats_ref &lt;- as.vector(ncvar_get(nc, "lats_ref"))
+  longs_ref &lt;- as.vector(ncvar_get(nc, "longs_ref"))
+  ndepth_ref &lt;- as.vector(ncvar_get(nc, "ndepth_ref"))
+  ndepth_ref[!is.finite(ndepth_ref)] &lt;- -9e99
+  saar_ref &lt;- as.vector(ncvar_get(nc, "SAAR_ref"))
+  saar_ref[!is.finite(saar_ref)] &lt;- -9e99
+  delta_sa_ref &lt;- as.vector(ncvar_get(nc, "deltaSA_ref"))
+  delta_sa_ref[!is.finite(delta_sa_ref)] &lt;- -9e99
+  saar &lt;- list(gsw_nx=gsw_nx, gsw_ny=gsw_ny, gsw_nz=gsw_nz,
+               longs_ref=longs_ref, lats_ref=lats_ref, p_ref=p_ref, ndepth_ref=ndepth_ref,
+               saar_ref=saar_ref, delta_sa_ref=delta_sa_ref)
+  save(saar, file="saar.rda")
+  tools::resaveRdaFiles("saar.rda")
+  nc_close(nc)
+</pre>
+
+
+</div>

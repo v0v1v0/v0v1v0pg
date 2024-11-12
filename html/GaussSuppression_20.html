@@ -1,0 +1,190 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>IncrementalTimeSuppression</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Incremental Time Suppression</h2>
+
+<h3>Description</h3>
+
+<p>Suppression function useful for sequential calculations over successive time periods.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">IncrementalTimeSuppression(
+  data,
+  fun,
+  timeVar,
+  formula,
+  suppressedData = NULL,
+  subTotals = FALSE,
+  finalTotal = FALSE,
+  totalPriority = !isFALSE(finalTotal),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Input data as a data frame</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fun</code></td>
+<td>
+<p>A function: <code>GaussSuppressionFromData</code> or one of its wrappers such as
+<code>SuppressSmallCounts</code> and <code>SuppressDominantCells</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timeVar</code></td>
+<td>
+<p>The time period variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>formula A formula defining tables within the time periods.
+Therefore, the variable <code>timeVar</code>  should not be included.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>suppressedData</code></td>
+<td>
+<p>A data frame or a list of data frames as output from <code>GaussSuppressionFromData</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subTotals</code></td>
+<td>
+<p>Whether all cumulative totals over time should be included.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>finalTotal</code></td>
+<td>
+<p>When <code>FALSE</code>, the <code>timeVar</code> total is named according to time period categories.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>totalPriority</code></td>
+<td>
+<p>When <code>FALSE</code>, the <code>timeVar</code>  totals are not prioritized
+for publication. In other words, these totals are preferred for secondary suppression.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further parameters to <code>GaussSuppressionFromData</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A data.frame
+</p>
+
+
+<h3>Note</h3>
+
+<p>This function has been made internal since it is new and future non-backward compatible changes may occur.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>AdditionalSuppression</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Generating a dataset spanning four quarters 
+d2s &lt;- SSBtoolsData("d2s")
+d &lt;- rbind(d2s, d2s, d2s, d2s)
+set.seed(10)
+d$freq[25:96] &lt;- round(d$freq[25:96] + 9 * rnorm(72))
+d$freq[d$freq &lt; 0] &lt;- 0
+d$quarter &lt;- rep(c("Q1", "Q2", "Q3", "Q4"), each = 24)
+
+# Redefine the function so that several parameters are preset. 
+# Also, a simpler function name.   
+STS &lt;- function(data, ...) {
+  IncrementalTimeSuppression(data, 
+          fun = SuppressSmallCounts, 
+          timeVar = "quarter", 
+          formula = ~main_income * size, 
+          maxN = 15, freqVar = "freq", ...)}
+          
+          
+# Default settings without suppressedData as input
+a1 &lt;- STS(d[1:24, ])   
+a2 &lt;- STS(d[1:48, ])
+a3 &lt;- STS(d[1:72, ])
+a4 &lt;- STS(d, finalTotal = TRUE)
+
+# The quarters and named totals
+unique(a1$quarter)
+unique(a2$quarter)
+unique(a3$quarter)
+unique(a4$quarter)
+
+# Default settings with suppressedData as input
+b2 &lt;- STS(d[1:48, ], suppressedData = a1)
+b3 &lt;- STS(d[1:72, ], suppressedData = b2)
+b4 &lt;- STS(d, finalTotal = TRUE, suppressedData = b3)
+
+# Without totalPriority, suppression will be the same as before. 
+# suppressedData makes no difference.
+# However, if, for example, there is a changed version of the suppression 
+# algorithm, it may be important to use suppressedData 
+identical(a2$suppressed, b2$suppressed)
+identical(a3$suppressed, b3$suppressed)
+identical(a4$suppressed, b4$suppressed) # totalPriority here, since finalTotal 
+
+# With totalPriority and  all the subtotals 
+# Note: subtotals are not prioritized
+c2 &lt;- STS(d[1:48, ], subTotals = TRUE, totalPriority = TRUE)
+c3 &lt;- STS(d[1:72, ], subTotals = TRUE, totalPriority = TRUE)
+c4 &lt;- STS(d, subTotals = TRUE, finalTotal = TRUE)
+unique(c2$quarter)
+unique(c3$quarter)
+unique(c4$quarter)
+
+# With such a method, we can see that is important to take into account 
+# previously published results.
+# Here this is not done and we see differences.
+a2[a2$suppressed | c2$suppressed, ]
+c2[a2$suppressed | c2$suppressed, ]
+c3[SSBtools::Match( c2[a2$suppressed | c2$suppressed, 1:4], c3[1:4]), ]
+c4[SSBtools::Match( c2[a2$suppressed | c2$suppressed, 1:4], c4[1:4]), ]
+
+
+# Here we take into account previously published results.
+d2 &lt;- STS(d[1:48, ], subTotals = TRUE, totalPriority = TRUE, suppressedData = a1)
+d3 &lt;- STS(d[1:72, ], subTotals = TRUE, totalPriority = TRUE, suppressedData = d2)
+d4 &lt;- STS(d, subTotals = TRUE, finalTotal = TRUE, suppressedData = d3)
+
+SSBtools::SortRows(d2[d2$suppressed, ])
+SSBtools::SortRows(d3[d3$suppressed, ])
+
+# With such a method, some annual totals must be suppressed
+SSBtools::SortRows(d4[d4$suppressed, ]) 
+
+# If necessary, several suppressed data sets can be taken into account
+e4 &lt;- STS(d, finalTotal = TRUE, suppressedData = list(a1, a2))
+
+</code></pre>
+
+
+</div>

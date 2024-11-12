@@ -1,0 +1,100 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>build_sys_dic</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Build system dictionary</h2>
+
+<h3>Description</h3>
+
+<p>Builds a UTF-8 system dictionary from source dictionary files.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">build_sys_dic(dic_dir, out_dir, encoding)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dic_dir</code></td>
+<td>
+<p>Directory where the source dictionaries are located.
+This argument is passed as '-d' option argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>out_dir</code></td>
+<td>
+<p>Directory where the binary dictionary will be written.
+This argument is passed as '-o' option argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>encoding</code></td>
+<td>
+<p>Encoding of input csv files.
+This argument is passed as '-f' option argument.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function is a wrapper around dictionary compiler of 'MeCab'.
+</p>
+<p>Running this function will create 4 files:
+'char.bin', 'matrix.bin', 'sys.dic', and 'unk.dic' in <code>out_dir</code>.
+</p>
+<p>To use these compiled dictionary,
+you also need create a <code>dicrc</code> file in <code>out_dir</code>.
+A <code>dicrc</code> file is included in source dictionaries,
+so you can just copy it to <code>out_dir</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>TRUE</code> is invisibly returned if dictionary is successfully built.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+if (requireNamespace("withr")) {
+  # create a sample dictionary in temporary directory
+  build_sys_dic(
+    dic_dir = system.file("latin", package = "gibasa"),
+    out_dir = tempdir(),
+    encoding = "utf8"
+  )
+  # copy the 'dicrc' file
+  file.copy(
+    system.file("latin/dicrc", package = "gibasa"),
+    tempdir()
+  )
+  # mocking a 'mecabrc' file to temporarily use the dictionary
+  withr::with_envvar(
+    c(
+      "MECABRC" = if (.Platform$OS.type == "windows") {
+        "nul"
+      } else {
+        "/dev/null"
+      },
+      "RCPP_PARALLEL_BACKEND" = "tinythread"
+    ),
+    {
+      tokenize("katta-wokattauresikatta", sys_dic = tempdir())
+    }
+  )
+}
+
+</code></pre>
+
+
+</div>

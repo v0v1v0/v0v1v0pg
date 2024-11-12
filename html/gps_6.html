@@ -1,0 +1,213 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gps2GS</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Penalized B-splines estimation with automatic grid search of their smoothing parameter
+</h2>
+
+<h3>Description</h3>
+
+<p>Fit penalized B-splines (including standard or general P-splines and O-splines) to <code>(x, y, w)</code> for a grid of smoothing parameter values in the automatic search intervals of Li and Cao (2023). The GCV score and effective degree of freedom of each fit are also returned.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gps2GS(x, y, w = NULL, xt, d = 4, m = 2, gps = TRUE, periodic = FALSE,
+       ng = 20, scalePen = TRUE)
+       
+DemoRhoLim(fit, plot = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x, y, w</code></td>
+<td>
+<p>a vector of <code class="reqn">x</code>-values, <code class="reqn">y</code>-values and weights.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xt</code></td>
+<td>
+<p>full knot sequence for ordinary B-splines (<code>length(xt) &gt;= 2 * d</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>B-spline order (<code class="reqn">d \ge 2</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m</code></td>
+<td>
+<p>penalty order (<code class="reqn">1 \le m \le d - 1</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gps</code></td>
+<td>
+<p>if TRUE, use a difference penalty; if FALSE, use a derivative penalty.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>periodic</code></td>
+<td>
+<p>if TRUE, periodic boundary conditions are applied to B-splines and their penalty, so that periodic P-splines are estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ng</code></td>
+<td>
+<p>number of grid points in the grid search of <code class="reqn">\rho</code>; can be set to 0 to set up the grid search only, without actual P-splines estimation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scalePen</code></td>
+<td>
+<p>if TRUE, scale the penalty matrix <code class="reqn">\bm{S}</code> (as <span class="pkg">mgcv</span> does).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>fitted P-splines returned by <code>gps2GS</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>if TRUE, produce summary plots.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>We smooth <code class="reqn">y_i</code> using <code class="reqn">f(x_i) = \bm{B_i\beta}</code>, where <code class="reqn">\bm{B_i}</code> is <code class="reqn">i</code>-th row of the B-spline design matrix <code class="reqn">\bm{B}</code> and <code class="reqn">\bm{\beta}</code> is a vector of B-spline coefficients. These coefficients are estimated by minimizing: </p>
+<p style="text-align: center;"><code class="reqn">\|\bm{y} - \bm{B\beta}\|^2 + \exp(\rho)\cdot\|\bm{D\beta}\|^2,</code>
+</p>
+<p> where the <code class="reqn">L_2</code> penalty <code class="reqn">\|\bm{D\beta}\|^2</code> is some wiggliness measure for <code class="reqn">f(x)</code> and <code class="reqn">\rho \in (-\infty, +\infty)</code> is a smoothing parameter.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>gps2GS</code> returns a large list with the following components:
+</p>
+
+<ul>
+<li> <p><code>eqn</code>
+</p>
+</li>
+<li> <p><code>eigen</code>
+</p>
+</li>
+<li> <p><code>rho.lim</code>
+</p>
+</li>
+<li> <p><code>E</code>
+</p>
+</li>
+<li> <p><code>pwls</code>
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Zheyuan Li <a href="mailto:zheyuan.li@bath.edu">zheyuan.li@bath.edu</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Zheyuan Li and Jiguo Cao (2023). Automatic search intervals for the smoothing parameter in penalized splines, <em>Statistics and Computing</em>, <a href="https://doi.org/10.1007/s11222-022-10178-z">doi:10.1007/s11222-022-10178-z</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">require(gps)
+
+x &lt;- rnorm(100)
+xt &lt;- PlaceKnots(x, d = 4, k = 10)
+
+## set ng = 0 to set up grid search only
+## here the y-values does not matter; we simply use the x-values
+setup &lt;- gps2GS(x, x, xt = xt, d = 4, m = 2, ng = 0)
+
+## compute exact eigenvalues
+DemoResult &lt;- DemoRhoLim(setup)
+
+## simulate 100 (x, y) data from g(x) = sin(2 * pi * x) on [0, 1]
+## x-values are not equidistant but at quantiles of Beta(2, 2)
+## note that g(x) is a periodic function
+x &lt;- qbeta(seq.int(0, 1, length.out = 100), 2, 2)
+gx &lt;- sin(2 * pi * x)
+y &lt;- rnorm(length(x), gx, sd = 0.1)
+
+## place quantile knots with clamped boundary knots
+xt &lt;- PlaceKnots(x, d = 4, k = 10)
+
+## fit a general P-spline with different boundary constraints
+ordinary &lt;- gps2GS(x, y, xt = xt, d = 4, m = 2)
+periodic &lt;- gps2GS(x, y, xt = xt, d = 4, m = 2, periodic = TRUE)
+
+## identify the optimal fit minimizing GCV score
+opt.ordinary &lt;- which.min(ordinary$pwls$gcv)
+opt.periodic &lt;- which.min(periodic$pwls$gcv)
+
+## inspect grid search result
+## column 1: ordinary cubic spline
+## column 2: periodic cubic spline
+op &lt;- par(mfcol = c(2, 2), mar = c(2, 2, 1.5, 0.5))
+## ordinary spline
+with(ordinary$pwls, plot(rho, edf, ann = FALSE))
+title("edf v.s. log(lambda)")
+with(ordinary$pwls, plot(rho, gcv, ann = FALSE))
+with(ordinary$pwls, points(rho[opt.ordinary], gcv[opt.ordinary], pch = 19))
+title("GCV v.s. log(lambda)")
+## periodic spline
+with(periodic$pwls, plot(rho, edf, ann = FALSE))
+title("edf v.s. log(lambda)")
+with(periodic$pwls, plot(rho, gcv, ann = FALSE))
+with(periodic$pwls, points(rho[opt.periodic], gcv[opt.periodic], pch = 19))
+title("GCV v.s. log(lambda)")
+par(op)
+
+## inspect fitted splines
+yhat.ordinary &lt;- with(ordinary, eqn$B %*% pwls$beta)
+yhat.periodic &lt;- with(periodic, eqn$B %*% pwls$beta)
+op &lt;- par(mfrow = c(1, 2), mar = c(2, 2, 1.5, 0.5))
+## ordinary spline
+matplot(x, yhat.ordinary, type = "l", lty = 1, ann = FALSE)
+title("ordinary")
+## periodic spline
+matplot(x, yhat.periodic, type = "l", lty = 1, ann = FALSE)
+title("periodic")
+par(op)
+
+## pick and plot the optimal fit minimizing GCV score
+best.ordinary &lt;- yhat.ordinary[, opt.ordinary]
+best.periodic &lt;- yhat.periodic[, opt.periodic]
+op &lt;- par(mfrow = c(1, 2), mar = c(2, 2, 1.5, 0.5))
+## ordinary spline
+plot(x, y, ann = FALSE)
+lines(x, gx, lwd = 2, col = 2)
+lines(x, best.ordinary, lwd = 2)
+title("ordinary")
+## periodic spline
+plot(x, y, ann = FALSE)
+lines(x, gx, lwd = 2, col = 2)
+lines(x, best.periodic, lwd = 2)
+title("periodic")
+par(op)
+</code></pre>
+
+
+</div>

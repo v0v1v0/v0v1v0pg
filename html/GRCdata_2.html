@@ -1,0 +1,267 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>find.scheme</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+
+Search for the global optimal grouping scheme of grouped and/or right-censored count data
+</h2>
+
+<h3>Description</h3>
+
+
+<p>Given the prior distribution (or values) of parameters,
+and the total/maximum number of groups (N) allowed for grouping schemes,
+this function finds the global optimal grouping scheme that makes
+the sampling process most informative.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">find.scheme(N,
+  densityFUN, lambda.lwr, lambda.upr, p.lwr, p.upr,
+  probs, lambdas, ps,
+  is.0.isolated = TRUE, model = c("Poisson", "ZIP"),
+  matSc = c("A", "D", "E"), M = "auto")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+
+
+<p>(maximum) number of groups allowed for all grouping schemes. A non-integral value will be coerced to an integer.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>densityFUN, lambda.lwr, lambda.upr, p.lwr, p.upr</code></td>
+<td>
+
+<p>prior information of parameters in a continuous form.
+These parameters denote the prior probability density function (optional),
+the lower bound of <code class="reqn">\lambda</code> (for Poisson models), the higher bound of <code class="reqn">\lambda</code> (for Poisson models),
+the lower bound of <code>p</code> (optional for ZIP models),
+the higher bound of <code>p</code> (optional for ZIP models), respectively.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>probs, lambdas, ps</code></td>
+<td>
+
+<p>prior information of the parameters in a discrete form.
+These parameters are vectors denoting the mass probabilities, the corresponding values of <code class="reqn">\lambda</code> and <code>p</code> (optional), respectively.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>is.0.isolated</code></td>
+<td>
+
+
+<p>a logical value indicating whether zero is contained and only contained in a single group.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+
+
+<p>underlying Poisson models to be used for optimal designs: <code>Poisson</code> or <code>ZIP</code>.
+The default value is <code>Poisson</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>matSc</code></td>
+<td>
+
+
+<p>A character indicating types of optimality functions of the Fisher information (matrix).
+It must be one from the three letters: <code>A</code>, <code>D</code>, and <code>E</code>.
+In particular,
+if <code>J</code> is the 2-by-2 Fisher information matrix, then
+</p>
+<p><code>"A"</code> or A-optimality maximizes <code class="reqn">1/\mathrm{tr}(J^{-1})</code>;
+</p>
+<p><code>"D"</code> or D-optimality maximizes <code class="reqn">\mathrm{det}(J)</code>;
+</p>
+<p><code>"E"</code> or E-optimality maximizes the minimum eigenvalue of <code class="reqn">J</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+
+
+<p>a sufficiently large integer needed to facilitate the search, or a character <code>"auto"</code>.
+Theoretically, it could be the lowest integer contained in the last right-censored
+group of the global optimal grouping scheme. A non-integral value will be coerced to an integer.
+If <code>M</code> is set to be <code>"auto"</code>, the algorithm takes longer time to converge
+because it will automatically determine <code>M</code> and return the global optimal
+grouping scheme;
+The default value of <code>M</code> is <code>"auto"</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+<p>This function tries to find the N-group scheme maximizing Fisher information (matrix).
+If <code>model</code> is specified as Poisson, <code>p.lwr</code> or <code>p.upr</code> will be ignored.
+When the prior distribution is discrete, <code>lambdas</code> specify discrete values that <code class="reqn">\lambda</code> may take,
+and <code>probs</code> specify probabilities associated with <code>p</code>.
+In the ZIP model, <code>lambdas</code> and <code>ps</code> specify discrete values that <code class="reqn">\lambda</code> and p may take, respectively.
+<code>probs</code> denotes joint mass probabilities associated with (<code class="reqn">\lambda</code>, p). The values of
+(p.lwr, p.upr) cannot be (0, 1) as the algorithm will not converge. Instead, approximate values, such as
+(0.000001, 0.999999), can be used.
+</p>
+<p>A sufficiently large integer <code>M</code> should be provided by the user so that infinitely many grouping schemes
+could be handled by the search algorithm. <code>M</code> is in theory the lowest integer to be contained in the last
+right-censored group of the global optimal grouping scheme. In practice, the choice of <code>M</code> should be slightly higher than
+its theoretical value because the search algorithem is designed in a way that it prevents any acceptance of a false optimal
+solution at the cost of tolerating false rejection of the correct optimal grouping scheme. This idea is implemented by
+a logical indicator <code>succeed</code> in the output. Its value will be <code>TRUE</code> if the real optimal grouping scheme is identified.
+Otherwise, a <code>FALSE</code> output means that <code>M</code> is not large enough to gurantee that the grouping scheme yielded by
+the search algorithm is the global optimal grouping scheme. Researchers then need to select a larger <code>M</code> and repeat this
+process until the logical indicator <code>succeed</code> becomes <code>TRUE</code>. Alternatively, users may use the <code>"auto"</code> option so that
+this iterative process will be automatically implemented.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The returned value is a list with components.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>best.scheme.compact, best.scheme.loose, best.scheme.innerCode</code></td>
+<td>
+<p>the same optimal grouping scheme is printed in various forms.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>succeed</code></td>
+<td>
+<p>see Details. This is a logical variable. The global optimal grouping scheme is obtained if it is <code>TRUE</code>;
+a larger <code>M</code> needs to be selected for a successful search if it is <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+
+<p>Xin Guo &lt;x.guo@polyu.edu.hk&gt;, Qiang Fu &lt;qiang.fu@ubc.ca&gt;
+</p>
+
+
+<h3>References</h3>
+
+
+<p>Qiang Fu, Xin Guo and Kenneth C. Land. Conditionally accepted. "Optimizing Count Responses in Surveys: A Machine-Learning Approach." Sociological Methods &amp; Research.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Example 1 ####################################
+# M=7, N=3, 0 is not required to be contained
+# in a separate group of grouping schemes.
+# Poisson model, lambda takes 4 and 5 and each value has a probability of 0.5.
+find.scheme(probs = c(0.5, 0.5), lambdas = c(4,5),
+  M = 7, N = 3, is.0.isolated = FALSE, model = "Poisson")
+
+# Example 2 ####################################
+# N=3, 0 is required to be contained in a separate group of grouping schemes.
+# Poisson model, lambda takes 4 and 5 and each value has a probability of 0.5.
+# M is not given, so it will be selected automatically.
+find.scheme(probs = c(0.5, 0.5), lambdas = c(4,5),
+  N = 3, is.0.isolated = TRUE, model = "Poisson")
+
+# Example 3 ####################################
+# M=7, N=3, 0 is not required to be contained in a separate group.
+# ZIP model, (lambda, p) take (4, 0.3) and (5, 0.4)
+# with their probabilities denoted by c(0.5, 0.5)
+
+find.scheme(probs = c(0.5, 0.5), lambdas = c(4,5), ps = c(0.3, 0.5),
+  M = 7, N = 3, is.0.isolated = FALSE, model = "ZIP")
+
+
+# Example 4 ####################################
+# N=3, 0 is not required to be contained in a separate group.
+# Poisson model, lambda takes a normal distribution truncated to [1, 10]
+# M is not given, so it will be selected automatically.
+
+find.scheme(densityFUN = function(lambda)
+  dnorm(lambda, mean = 3, sd = 1),
+  lambda.lwr = 1, lambda.upr = 10,
+  N = 3, is.0.isolated = FALSE, model = "Poisson")
+
+
+# Example 5 ####################################
+# M=7, N=3, 0 is required to be contained in a separate group.
+# Poisson model, lambda takes a normal distribution truncated to [1, 10]
+
+find.scheme(densityFUN = function(lambda)
+  dnorm(lambda, mean = 3, sd = 1),
+  lambda.lwr = 1, lambda.upr = 10,
+  M = 7, N = 3, is.0.isolated = TRUE, model = "Poisson")
+
+
+# Example 6 ####################################
+# N=3, 0 is required to be contained in a separate group.
+# Poisson model, lambda takes an uniform distribution on [1, 10]
+# M is not given, so it will be selected automatically.
+find.scheme(densityFUN = function(lambda)
+  dunif(lambda, min = 1, max = 10),
+  lambda.lwr = 1, lambda.upr = 10,
+  N = 3, is.0.isolated = TRUE, model = "Poisson")
+
+# Example 7 #################################
+# M=7, N=3, 0 is required to be contained in a separate group.
+# ZIP model, (lambda, p) has an uniform distribution with
+# lambda on [1,10] and p on [0.1, 0.9]
+
+find.scheme(densityFUN = function(...) 1,
+  lambda.lwr = 1, lambda.upr = 10, p.lwr = 0.0001, p.upr = 0.9999,
+  M = 7, N = 3, is.0.isolated = TRUE, model = "ZIP")
+
+
+# Example 8 ####################################
+# M=7, N=3, 0 is required to be contained in a separate group.
+# ZIP model, (lambda, p) has a normal distribution centered
+# at (5.5, 0.5) with a covariance matrix showing their correlation
+#    /                 \
+#    |  11/3      3    |
+#    |    3     11/3   |
+#    \                 /.
+# This normal distribution is also truncated to
+# [1, 10] X [0.1, 0.9]
+# Note: this example may take several minutes to converge,
+# depending on your computer configuration.
+
+dsty &lt;- function(lambda, p){
+  vec &lt;- c(lambda - 5.5, p - 0.5)
+  mat &lt;- matrix(c(11/3,3,3,11/3), nrow = 2, ncol = 2)
+  pw &lt;- -0.5 * sum(vec * solve(mat, vec))
+  return(exp(pw))
+}
+find.scheme(densityFUN = dsty,
+  lambda.lwr = 1, lambda.upr = 10, p.lwr = 0.1, p.upr = 0.9,
+  M = 7, N = 3, is.0.isolated = TRUE, model = "ZIP")
+
+</code></pre>
+
+
+</div>

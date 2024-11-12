@@ -1,0 +1,753 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>DesignSpace</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A GLMM Design Space</h2>
+
+<h3>Description</h3>
+
+<p>A GLMM Design Space
+</p>
+<p>A GLMM Design Space
+</p>
+
+
+<h3>Details</h3>
+
+<p>A class-based representation of a "design space" that contains one or more Model objects.
+</p>
+<p>An experimental study is comprised of a collection of experimental conditions, which are one or more observations made a pre-specified locations/values
+of covariates. A design space represents the collection of all possible experimental conditions for the study design and plausible models describing
+the data generating process. The main purpose of this class is to identify optimal study designs, that is the set of 'n' experimental conditions 
+from all possible experimental conditions that minimise the variance of a parameter of interest across the specified GLMMs.
+</p>
+<p>A 'DesignSpace' object is intialised using one or more Model objects. Design objects can be added or removed from the collection. 
+All designs must have the same number of rows in their design matrices (X and Z) and the same number of experimental conditions. 
+The DesignSpace functions can modify the linked design objects.
+</p>
+<p>**Initialisation**
+The experimental condition refers to the smallest "unit" of the study design that could be included in the design. For example, in a
+cluster randomised trial, the experimental condition may be single individuals such that we can observed any number of individuals 
+in any cluster period (including none at all). In this case the experimental condition would be equivalent to row number. Alternatively,
+we may have to observe whole cluster periods, and we need to choose which cluster periods to observe, in which case the each observation 
+in a different cluster-period would have the same experimental condition identifier. Finally, we may determine that the whole cluster in 
+all periods (a "sequence") is either observed or not.
+</p>
+<p>**Approximate c-Optimal designs**
+The function returns approximate c-optimal design(s) of size m from the design space with N experimental conditions. The objective
+function is
+</p>
+<p style="text-align: center;"><code class="reqn">C^TM^{-1}C</code>
+</p>
+
+<p>where M is the information matrix and C is a vector. Typically C will be a vector of zeros with a single 1 in the position of the
+parameter of interest. For example, if the columns of X in the design are an interdept, the treatment indicator, and then time 
+period indicators, the vector C may be 'c(0,1,0,0,...)', such that the objective function is the variance of that parameter. 
+If there are multiple designs in the design space, the C vectors do 
+not have to be the same as the columns of X in each design might differ. All the algorithms included in this package are described in 
+Watson, Hemming, and Girling (2023) &lt;doi:10.1177/09622802231202379&gt; and Watson (2023) &lt;doi:10.1007/s11222-023-10280-w&gt;.
+</p>
+<p>If the experimental conditions are correlated with one another, then one of three combinatorial algorithms can be used, see 
+Watson and Pan, 2022 &lt;doi:10.1007/s11222-023-10280-w&gt;. The algorithms are: (i) local search, which starts from a random design of size m and then
+makes the best swap between an experimental condition in and out of the design until no variance improving swap can be made; 
+(ii) greedy search, which starts from a design of size p &lt;&lt; n and then sequentially adds the best experimental condition until 
+it generates a design of size m; (iii) reverse greedy search, which starts from the complete set of N experimental conditions and 
+sequentially removes the worst experimental condition until it generates a design of size m. Note that only the local search has
+provable bounds on the solution.
+</p>
+<p>If the experimental conditional are uncorrelated (but there is correlation between observations within the same
+experimental condition) then optionally an alternative algorithm can be used to approximate the optimal design using a second-order 
+cone program (see Sangol, 2015 &lt;doi:10.1016/j.jspi.2010.11.031&gt; and Holland-Letz et al 2011 &lt;doi:10.1111/j.1467-9868.2010.00757.x&gt;). 
+The approximate algorithm will return weights in [0,1] for each unique experimental condition representing
+the "proportion of effort" to spend on each design condition. There are different ways to translate these weights into integer
+values, which are returned see apportion. Use of the approximate optimal design algorithm can be disabled used 'use_combin=TRUE'
+</p>
+<p>A weights algorithm for cases including when the observations are correlated are also included. This algorithm determines the 
+GLMM estimation weights that minimise the variance. The algorithm is described in Watson, Hemming, and Girling (2023) &lt;doi:10.1177/09622802231202379&gt;
+along with the other algoithms in this package.
+</p>
+<p>In some cases the optimal design will not be full rank with respect to the design matrix X of the design space. This will result
+in a non-positive definite information matrix, and an error. The program will indicate which columns of X are likely "empty" in the optimal
+design. The user can then optionally remove these columns in the algorithm using the 'rm_cols' argument, which will delete the
+specified columns and linked observations before starting the algorithm. 
+</p>
+<p>The algorithm will also identify robust optimal designs if there are multiple designs in the design space. 
+There are two options for robust optimisation. Both involve a weighted combination of the value of the function from each design, where the weights are specified 
+by the 'weights' field in the design space. The weights represent the prior probability or plausibility of each design. 
+The weighted sum is either a sum of the absolute value of the c-optimal criterion or its log (e.g. see Dette, 1993 &lt;doi:10.1214/aos/1176349149&gt;).
+</p>
+
+
+<h3>Value</h3>
+
+<p>An environment that is 'DesignSpace' class object
+</p>
+
+
+<h3>Public fields</h3>
+
+<div class="r6-fields">
+
+<dl>
+<dt><code>weights</code></dt>
+<dd>
+<p>A vector denoting the prior weighting of each Design in the design space. Required if robust optimisation is used based on a 
+weighted average variance over the linked designs. If it is not specified in the call to 'new()' then designs are assumed
+to have equal weighting.</p>
+</dd>
+<dt><code>experimental_condition</code></dt>
+<dd>
+<p>A vector indicating the unique identifier of the experimental condition for each observation/row in the matrices X and Z.</p>
+</dd>
+</dl>
+</div>
+
+
+<h3>Methods</h3>
+
+
+
+<h4>Public methods</h4>
+
+
+<ul>
+<li> <p><a href="#method-DesignSpace-new"><code>DesignSpace$new()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-DesignSpace-add"><code>DesignSpace$add()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-DesignSpace-remove"><code>DesignSpace$remove()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-DesignSpace-print"><code>DesignSpace$print()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-DesignSpace-n"><code>DesignSpace$n()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-DesignSpace-optimal"><code>DesignSpace$optimal()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-DesignSpace-show"><code>DesignSpace$show()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-DesignSpace-clone"><code>DesignSpace$clone()</code></a>
+</p>
+</li>
+</ul>
+<hr>
+<a id="method-DesignSpace-new"></a>
+
+
+
+<h4>Method <code>new()</code>
+</h4>
+
+<p>Create a new Design Space
+</p>
+<p>Creates a new design space from one or more glmmr designs.
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>DesignSpace$new(..., weights = NULL, experimental_condition = NULL)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>...</code></dt>
+<dd>
+<p>One or more glmmrBase Model objects. The designs must have an equal number of observations.</p>
+</dd>
+<dt><code>weights</code></dt>
+<dd>
+<p>Optional. A numeric vector of values between 0 and 1 indicating the prior weights to assign to each of the designs. The weights
+are required for optimisation, if a weighted average variance is used across the designs. If not specified then designs are assumed 
+to have equal weighting.</p>
+</dd>
+<dt><code>experimental_condition</code></dt>
+<dd>
+<p>Optional. A vector of the same length as the number of observations in each design indicating the unique
+identifier of the experimental condition that observation belongs to, see Details. If not provided, then it is assumed that all observations
+are separate experimental conditions.</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Returns</h5>
+
+<p>A 'DesignSpace' object
+</p>
+
+
+
+<h5>Examples</h5>
+
+<div class="r example copy">
+<pre>\dontshow{
+glmmrBase::setParallel(FALSE) # for the CRAN check
+setParallelOptim(FALSE)
+}
+df &lt;- nelder(~ ((int(2)*t(3)) &gt; cl(3)) &gt; ind(5))
+df$int &lt;- df$int - 1
+des &lt;- Model$new(formula = ~ int + factor(t) - 1+ (1|gr(cl)) + (1|gr(cl,t)),
+                 covariance = c(0.04,0.01),
+                 mean = rep(0,4),
+                 data=df,
+                 family=gaussian())
+ds &lt;- DesignSpace$new(des)
+#add another design
+des2 &lt;- Model$new(formula = ~ int + factor(t) - 1 + (1|gr(cl)) + (1|gr(cl,t)),
+                  covariance = c(0.05,0.8),
+                 mean = rep(0,4),
+                 data=df,
+                 family=gaussian())
+ds$add(des2)
+#report the size of the design
+ds$n()
+#we can access specific designs
+ds$show(2)$n()
+#and then remove it
+ds$remove(2)
+#or we could add them when we construct object
+ds &lt;- DesignSpace$new(des,des2)
+#we can specify weights
+ds &lt;- DesignSpace$new(des,des2,weights=c(0.1,0.9))
+#and add experimental conditions
+ds &lt;- DesignSpace$new(des,des2,experimental_condition = df$cl)                   
+</pre>
+</div>
+
+
+<hr>
+<a id="method-DesignSpace-add"></a>
+
+
+
+<h4>Method <code>add()</code>
+</h4>
+
+<p>Add a design to the design space
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>DesignSpace$add(x)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>x</code></dt>
+<dd>
+<p>A 'Design' to add to the design space</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Returns</h5>
+
+<p>Nothing
+</p>
+
+
+
+<h5>Examples</h5>
+
+<div class="r example copy">
+<pre>#See examples for constructing the class
+</pre>
+</div>
+
+
+<hr>
+<a id="method-DesignSpace-remove"></a>
+
+
+
+<h4>Method <code>remove()</code>
+</h4>
+
+<p>Removes a design from the design space
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>DesignSpace$remove(index)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>index</code></dt>
+<dd>
+<p>Index of the design to remove</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Returns</h5>
+
+<p>Nothing
+</p>
+
+
+
+<h5>Examples</h5>
+
+<div class="r example copy">
+<pre>#See examples for constructing the class
+</pre>
+</div>
+
+
+<hr>
+<a id="method-DesignSpace-print"></a>
+
+
+
+<h4>Method <code>print()</code>
+</h4>
+
+<p>Print method for the Design Space
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>DesignSpace$print()</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>...</code></dt>
+<dd>
+<p>ignored</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Returns</h5>
+
+<p>Prints to the console all the designs in the design space
+</p>
+
+
+
+<h5>Examples</h5>
+
+<div class="r example copy">
+<pre>#See examples for constructing the class
+</pre>
+</div>
+
+
+<hr>
+<a id="method-DesignSpace-n"></a>
+
+
+
+<h4>Method <code>n()</code>
+</h4>
+
+<p>Returns the size of the design space and number of observations
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>DesignSpace$n()</pre></div>
+
+
+
+<h5>Examples</h5>
+
+<div class="r example copy">
+<pre>#See examples for constructing the class
+</pre>
+</div>
+
+
+<hr>
+<a id="method-DesignSpace-optimal"></a>
+
+
+
+<h4>Method <code>optimal()</code>
+</h4>
+
+<p>Approximate c-optimal design of size m
+</p>
+<p>Algorithms to identify an approximate c-optimal design of size m within the design space.
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>DesignSpace$optimal(
+  m,
+  C,
+  attenuate_pars = FALSE,
+  V0 = NULL,
+  rm_cols = NULL,
+  keep = FALSE,
+  verbose = TRUE,
+  algo = c(1),
+  use_combin = FALSE,
+  robust_log = FALSE,
+  kr = FALSE,
+  p,
+  tol = 1e-08
+)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>m</code></dt>
+<dd>
+<p>A positive integer specifying the number of experimental conditions to include.</p>
+</dd>
+<dt><code>C</code></dt>
+<dd>
+<p>Either a vector or a list of vectors of the same length as the number of designs, see Details.</p>
+</dd>
+<dt><code>attenuate_pars</code></dt>
+<dd>
+<p>Logical indicating whether to adapt the marginal expecation in non-linear models</p>
+</dd>
+<dt><code>V0</code></dt>
+<dd>
+<p>Optional. If a Bayesian c-optimality problem then this should be a list of prior covariance matrices for the model parameters
+the same length as the number of designs.</p>
+</dd>
+<dt><code>rm_cols</code></dt>
+<dd>
+<p>Optional. A list of vectors indicating columns of X to remove from each design, see Details.</p>
+</dd>
+<dt><code>keep</code></dt>
+<dd>
+<p>Logical indicating whether to "keep" the optimal design in the linked design objects and remove any experimental
+conditions and columns that are not part of the optimal design. Irreversible, so that these observations will be lost from the 
+linked design objects. Defaults to FALSE.</p>
+</dd>
+<dt><code>verbose</code></dt>
+<dd>
+<p>Logical indicating whether to reported detailed output on the progress of the algorithm. Default is TRUE.</p>
+</dd>
+<dt><code>algo</code></dt>
+<dd>
+<p>A vector of integers indicating the algorithm(s) to use. 1 = local search, 2 = greedy search, 3 = reverse greedy search.
+Declaring 'algo = 1' for example will use the local search. Providing a vector such as 'c(3,1)' will execute the algorithms in order,
+so this would run a reverse greedy search followed by a local search. Note that many combinations will be redundant. For example, running
+a greedy search after a local search will not have any effect. One can also use a general weights algorithm called the 'girling' algorithm,
+setting 'algo="girling"'.</p>
+</dd>
+<dt><code>use_combin</code></dt>
+<dd>
+<p>Logical. If the experimental conditions are uncorrelated, if this option is TRUE then the hill climbing 
+algorithm will be used, otherwise if it is FALSE, then a fast approximate alternative will be used. See Details</p>
+</dd>
+<dt><code>robust_log</code></dt>
+<dd>
+<p>Logical. If TRUE and there are multiple designs in the design space then the robust criterion will be a sum of the log
+of the c-optimality criterion weighted by the study weights, and if FALSE then it will be a weighted sum of the absolute value.</p>
+</dd>
+<dt><code>kr</code></dt>
+<dd>
+<p>Logical. Whether to use the Kenwood-Roger small sample bias corrected variance matrix for the fixed effect parameters. We do not 
+recommend using this as it can produce some strange results and its behaviour is not well understood.</p>
+</dd>
+<dt><code>p</code></dt>
+<dd>
+<p>Optional. Positive integer specifying the size of the starting design for the greedy algorithm</p>
+</dd>
+<dt><code>tol</code></dt>
+<dd>
+<p>Optional scalar specifying the termination tolerance of the Girling algorithm.</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Returns</h5>
+
+<p>A named list. If using the weighting method then the list contains the optimal experimental weights and a 
+list of exact designs of size 'm', see apportion. If using a combinatorial algorithm then 
+the list contains the rows in the optimal design, the indexes of the experimental conditions in the optimal design,
+the variance from this design, and the total number of function evaluations. Optionally the linked designs are also modified (see option 'keep').
+</p>
+
+
+
+<h5>Examples</h5>
+
+<div class="r example copy">
+<pre>\dontshow{
+glmmrBase::setParallel(FALSE) # for the CRAN check
+setParallelOptim(FALSE)
+}
+df &lt;- nelder(~(cl(6)*t(5)) &gt; ind(5))
+df$int &lt;- 0
+df[df$t &gt;= df$cl, 'int'] &lt;- 1
+des &lt;- Model$new(
+  formula = ~ factor(t) + int - 1 + (1|gr(cl)),
+  covariance = c(0.05),
+  mean = c(rep(0,5),0.6),
+  data=df,
+  family=gaussian(),
+  var_par = 1
+)
+ds &lt;- DesignSpace$new(des)
+
+#find the optimal design of size 30 individuals using reverse greedy search
+# change algo=1 for local search, and algo = 2 for greedy search
+opt2 &lt;- ds$optimal(30,C=list(c(rep(0,5),1)),algo=3)
+
+#let the experimental condition be the cluster
+# these experimental conditions are independent of one another
+ds &lt;- DesignSpace$new(des,experimental_condition = df$cl)
+# now find the optimal 4 clusters to include
+# approximately, finding the weights for each condition
+opt &lt;- ds$optimal(4,C=list(c(rep(0,5),1)))
+# or use the local search algorithm
+opt &lt;- ds$optimal(4,C=list(c(rep(0,5),1)),use_combin = TRUE,algo=1)
+
+#robust optimisation using two designs
+des2 &lt;- Model$new(
+  formula = ~ factor(t) + int - 1 + (1|gr(cl)*ar1(t)),
+  covariance = c(0.05,0.8),
+  mean = c(rep(0,5),0.6),
+  data=df,
+  family=gaussian(),
+  var_par = 1
+)
+ds &lt;- DesignSpace$new(des,des2)
+#weighted average assuming equal weights using local search
+\donttest{
+opt &lt;- ds$optimal(30,C=list(c(rep(0,5),1),c(rep(0,5),1)),algo=1)
+}
+</pre>
+</div>
+
+
+<hr>
+<a id="method-DesignSpace-show"></a>
+
+
+
+<h4>Method <code>show()</code>
+</h4>
+
+<p>Returns a linked design
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>DesignSpace$show(i)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>i</code></dt>
+<dd>
+<p>Index of the design to return</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Examples</h5>
+
+<div class="r example copy">
+<pre>#See examples for constructing the class
+</pre>
+</div>
+
+
+<hr>
+<a id="method-DesignSpace-clone"></a>
+
+
+
+<h4>Method <code>clone()</code>
+</h4>
+
+<p>The objects of this class are cloneable with this method.
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>DesignSpace$clone(deep = FALSE)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>deep</code></dt>
+<dd>
+<p>Whether to make a deep clone.</p>
+</dd>
+</dl>
+</div>
+
+
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## ------------------------------------------------
+## Method `DesignSpace$new`
+## ------------------------------------------------
+
+
+df &lt;- nelder(~ ((int(2)*t(3)) &gt; cl(3)) &gt; ind(5))
+df$int &lt;- df$int - 1
+des &lt;- Model$new(formula = ~ int + factor(t) - 1+ (1|gr(cl)) + (1|gr(cl,t)),
+                 covariance = c(0.04,0.01),
+                 mean = rep(0,4),
+                 data=df,
+                 family=gaussian())
+ds &lt;- DesignSpace$new(des)
+#add another design
+des2 &lt;- Model$new(formula = ~ int + factor(t) - 1 + (1|gr(cl)) + (1|gr(cl,t)),
+                  covariance = c(0.05,0.8),
+                 mean = rep(0,4),
+                 data=df,
+                 family=gaussian())
+ds$add(des2)
+#report the size of the design
+ds$n()
+#we can access specific designs
+ds$show(2)$n()
+#and then remove it
+ds$remove(2)
+#or we could add them when we construct object
+ds &lt;- DesignSpace$new(des,des2)
+#we can specify weights
+ds &lt;- DesignSpace$new(des,des2,weights=c(0.1,0.9))
+#and add experimental conditions
+ds &lt;- DesignSpace$new(des,des2,experimental_condition = df$cl)                   
+
+## ------------------------------------------------
+## Method `DesignSpace$add`
+## ------------------------------------------------
+
+#See examples for constructing the class
+
+## ------------------------------------------------
+## Method `DesignSpace$remove`
+## ------------------------------------------------
+
+#See examples for constructing the class
+
+## ------------------------------------------------
+## Method `DesignSpace$print`
+## ------------------------------------------------
+
+#See examples for constructing the class
+
+## ------------------------------------------------
+## Method `DesignSpace$n`
+## ------------------------------------------------
+
+#See examples for constructing the class
+
+## ------------------------------------------------
+## Method `DesignSpace$optimal`
+## ------------------------------------------------
+
+
+df &lt;- nelder(~(cl(6)*t(5)) &gt; ind(5))
+df$int &lt;- 0
+df[df$t &gt;= df$cl, 'int'] &lt;- 1
+des &lt;- Model$new(
+  formula = ~ factor(t) + int - 1 + (1|gr(cl)),
+  covariance = c(0.05),
+  mean = c(rep(0,5),0.6),
+  data=df,
+  family=gaussian(),
+  var_par = 1
+)
+ds &lt;- DesignSpace$new(des)
+
+#find the optimal design of size 30 individuals using reverse greedy search
+# change algo=1 for local search, and algo = 2 for greedy search
+opt2 &lt;- ds$optimal(30,C=list(c(rep(0,5),1)),algo=3)
+
+#let the experimental condition be the cluster
+# these experimental conditions are independent of one another
+ds &lt;- DesignSpace$new(des,experimental_condition = df$cl)
+# now find the optimal 4 clusters to include
+# approximately, finding the weights for each condition
+opt &lt;- ds$optimal(4,C=list(c(rep(0,5),1)))
+# or use the local search algorithm
+opt &lt;- ds$optimal(4,C=list(c(rep(0,5),1)),use_combin = TRUE,algo=1)
+
+#robust optimisation using two designs
+des2 &lt;- Model$new(
+  formula = ~ factor(t) + int - 1 + (1|gr(cl)*ar1(t)),
+  covariance = c(0.05,0.8),
+  mean = c(rep(0,5),0.6),
+  data=df,
+  family=gaussian(),
+  var_par = 1
+)
+ds &lt;- DesignSpace$new(des,des2)
+#weighted average assuming equal weights using local search
+
+opt &lt;- ds$optimal(30,C=list(c(rep(0,5),1),c(rep(0,5),1)),algo=1)
+
+
+## ------------------------------------------------
+## Method `DesignSpace$show`
+## ------------------------------------------------
+
+#See examples for constructing the class
+</code></pre>
+
+
+</div>

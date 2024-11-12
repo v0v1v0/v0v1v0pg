@@ -1,0 +1,232 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cv.glmlep</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Cross-validation for <code>glmlep</code>.
+</h2>
+
+<h3>Description</h3>
+
+<p>Does k-fold cross-validation for <code>glmlep</code>, produces a plot, and returns a value for <code>lambda</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cv.glmlep(x, y, family = c("gaussian", "binomial"), lambda = NULL, 
+lambda.min = ifelse(n &lt; p, 0.05, 0.001), nlambda = 100, lambda2 = 0, 
+kappa = ifelse(n &lt; p, 0.1, 0.05), pen.fac = rep(1, p), tol = 1e-06, 
+max.ite = 1000, foldid, nfolds = 5, cv.seed = 100)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+
+<p>The design matrix, without an intercept.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+
+<p>The response vector. Quantitative for family="gaussian". For family="binomial" should be a vector with two levels.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+
+<p>Response type (see above)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+
+<p>A user supplied lambda sequence. Typical usage is to have the program compute its own lambda sequence based on nlambda and lambda.min.ratio. Supplying a value of lambda overrides this. WARNING: use with care. Do not supply a single value for lambda. Supply instead a decreasing sequence of lambda values. glmnet relies on its warms starts for speed, and its often faster to fit a whole path than compute a single fit.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.min</code></td>
+<td>
+
+<p>Smallest value for lambda, as a fraction of lambda.max, the (data derived) entry value (i.e. the smallest value for which all coefficients are zero). The default depends on the sample size nobs relative to the number of variables nvars. If nobs &gt; nvars, the default is 0.001, close to zero. If nobs &lt; nvars, the default is 0.05. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nlambda</code></td>
+<td>
+
+<p>The number of <code>lambda</code> values; default is 100.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda2</code></td>
+<td>
+
+<p>The tuning parameter for additional L_2 penalty. Use for better grouping effect. The default is 0.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kappa</code></td>
+<td>
+
+<p>The scale tuning parameter of the LEP penalty. One can specify it to get the desired estimates because of the homotopy of LEP function to the L_0 function. If nobs &gt; nvars, the default is 0.05, close to zero. If nobs &lt; nvars, the default is 0.1.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pen.fac</code></td>
+<td>
+
+<p>Separate penalty factors can be applied to each coefficient. This is a number that multiplies lambda to allow differential shrinkage. Can be 0 for some variables, which implies no shrinkage, and that variable is always included in the model. Default is 1 for all variables (and implicitly infinity for variables listed in exclude). Note: the penalty factors are internally rescaled to sum to nobs, and the lambda sequence will reflect this change.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+
+<p>Convergence tolerance for MCD. Each inner MCD loop continues until the change in the estimates is less than <code>tol</code>. default is 1E-6.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.ite</code></td>
+<td>
+
+<p>Maximum number of passes over the data for all lambda values; default is 10^3.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>foldid</code></td>
+<td>
+
+<p>An optional vector of values between 1 and <code>nfold</code> identifying what fold each observation is in. If supplied, nfold can be missing.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nfolds</code></td>
+<td>
+
+<p>Number of folds - default is 5.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv.seed</code></td>
+<td>
+
+<p>The seed for cross-validation. This could be used for simulation replicability.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function runs glmlep nfolds+1 times; the first to get the lambda sequence and the final estimate, and then the remainder to compute the fit with each of the folds omitted. The loss is accumulated, and the average loss over the folds is computed. Note that cv.glmlep does NOT search for values for <code>kappa</code>. A specific value should be supplied, else <code>kappa</code>=0.05 is assumed by default. If users would like to cross-validate <code>kappa</code> as well, they should call cv.glmlep with a pre-computed vector foldid, and then use this same fold vector in separate calls to cv.glmlep with different values of <code>kappa</code>. Note that <code>n</code> is the sample size and <code>p</code> is the dimension of variables.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class "cv.glmlep" is returned, which is a list with the ingredients of the cross-validation fit.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>beta </code></td>
+<td>
+<p>A nrow(x) x length(<code>lambda</code>) matrix of estimated coefficient.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda </code></td>
+<td>
+<p>The sequence of regularization parameter values used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>The degree of freedom for each value of <code>lambda</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loss</code></td>
+<td>
+<p>The -2*log-likelihood value for each value of <code>lambda</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.min </code></td>
+<td>
+<p>The value of lambda with the minimum EBIC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.min </code></td>
+<td>
+<p>The coefficient with the minimum EBIC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The call that produces this object</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Canhong Wen, Hao Lin, Shaoli Wang and Xueqin Wang.
+</p>
+<p>Maintainer: Canhong Wen &lt;wencanhong@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Wen, C., Wang, X., &amp; Wang, S. (2013). Laplace Error Penalty based variable selection in ultra high-dimension. In press.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## generate data from multivariate normal distribution
+require(mvtnorm)
+n = 100;
+beta &lt;- c(3,1.5,0,0,2,0,0,0)
+
+set.seed(100)
+p=length(beta);
+corr_data=diag(rep(1,p));
+x=as.matrix(rmvnorm(n,rep(0,p),corr_data))
+noise=rnorm(n);
+
+## Gaussian
+y &lt;- tcrossprod(x,t(beta)) + noise;
+fit &lt;- cv.glmlep(x,y,family="gaussian")
+
+
+</code></pre>
+
+
+</div>

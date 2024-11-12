@@ -1,0 +1,186 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict_bagg.pltr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+prediction on new features 
+</h2>
+
+<h3>Description</h3>
+
+<p>Prediction on  new features using a set of bagging pltr models
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">predict_bagg.pltr(bag_pltr, Y.name, newdata, type = "response",
+                  thresshold = seq(0, 1, by = 0.1))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>bag_pltr</code></td>
+<td>
+
+<p>the bagging result obtained with the function <code>bagging.pltr</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y.name</code></td>
+<td>
+
+<p>the name  of the binary dependent variable
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+
+<p>a data frame in which to look for predictors and the dependant variable.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+
+<p>the type of prediction required. <code>type = "response"</code> is the default; It gives the predicted probabilities. At this stage of the package, only this type is take into account. Other types such as <code>"link"</code> and <code>"terms"</code> are useless.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thresshold</code></td>
+<td>
+
+<p>a vector of cutoff values for binary prediction. Could be helpfull for computing the AUC on the test sample.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list with 8 elements
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>FINAL_PRED_IND1 </code></td>
+<td>
+
+<p>A list of size the length of the thresshold vector, containing the final prediction of each individual of the testing data by the bagging procedure using the majority rule (the modal prediction).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FINAL_PRED_IND2 </code></td>
+<td>
+
+<p>A list of size the length of the thresshold vector, containing the final prediction of each individual of the testing data by the bagging procedure using the mean estimated probability.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PRED_ERROR1</code></td>
+<td>
+<p>A vector of  estimated errors of the Bagging procedure on the test sample for each thresshold value using <code>FINAL_PRED_IND1</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PRED_ERROR2</code></td>
+<td>
+<p>A vector of estimated errors of the Bagging procedure on the test sample for each thresshold value using <code>FINAL_PRED_IND2</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CONF1</code></td>
+<td>
+<p>A list of confusion matrix using <code>FINAL_PRED_IND1</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CONF2</code></td>
+<td>
+<p>A list of confusion matrix using <code>FINAL_PRED_IND2</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PRED_ERRORS_PBP</code></td>
+<td>
+<p>A list of size the length of the thresshold vector. Each element representing the prediction error obtained via each predictor in the bagging sequence for each thresshold value
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PRED_ERROR_PBP</code></td>
+<td>
+<p>A vector containing the mean of <code>PRED_ERRORS_PBP</code> for each thresshold value</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Cyprien Mbogning
+</p>
+
+
+<h3>References</h3>
+
+<p>Mbogning, C., Perdry, H., Broet, P.: A Bagged partially linear tree-based regression procedure for prediction and variable selection. Human Heredity (To appear), (2015)
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bagging.pltr</code>, <code>predict.glm</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## load the data set
+
+ data(burn)
+
+## set the parameters 
+
+ args.rpart &lt;- list(minbucket = 10, maxdepth = 4, cp = 0, maxsurrogate = 0)
+ family &lt;- "binomial"
+ Y.name &lt;- "D2"
+ X.names &lt;- "Z2"
+ G.names &lt;- c('Z1','Z3','Z4','Z5','Z6','Z7','Z8','Z9','Z10','Z11')
+ args.parallel = list(numWorkers = 1)
+                     
+## Bagging a set of basic unprunned pltr predictors
+
+ Bag.burn &lt;-  bagging.pltr(burn, Y.name, X.names, G.names, family, 
+             args.rpart,epsi = 0.01, iterMax = 4, iterMin = 3, 
+             Bag = 20, verbose = FALSE, doprune = FALSE)
+
+## Use the bagging procedure to predict new features
+
+# ?predict_bagg.pltr
+
+ Pred_Bag.burn &lt;- predict_bagg.pltr(Bag.burn, Y.name, newdata = burn, 
+                type = "response", thresshold = seq(0, 1, by = 0.1))
+
+## The confusion matrix for each thresshold value using the majority vote
+
+Pred_Bag.burn$CONF1
+
+## End(Not run)
+</code></pre>
+
+
+</div>

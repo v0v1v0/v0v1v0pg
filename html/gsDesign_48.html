@@ -1,0 +1,180 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>normalGrid</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Normal Density Grid</h2>
+
+<h3>Description</h3>
+
+<p>normalGrid() is intended to be used for computation of the expected value of
+a function of a normal random variable.  The function produces grid points
+and weights to be used for numerical integration.
+</p>
+<p>This is a utility function to provide a normal density function and a grid
+to integrate over as described by Jennison and Turnbull (2000), Chapter 19.
+While integration can be performed over the real line or over any portion of
+it, the numerical integration does not extend beyond 6 standard deviations
+from the mean. The grid used for integration uses equally spaced points over
+the middle of the distribution function, and spreads points further apart in
+the tails. The values returned in <code>gridwgts</code> may be used to integrate
+any function over the given grid, although the user should take care that
+the function integrated is not large in the tails of the grid where points
+are spread further apart.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">normalGrid(r = 18, bounds = c(0, 0), mu = 0, sigma = 1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>Control for grid points as in Jennison and Turnbull (2000), Chapter
+19; default is 18. Range: 1 to 80.  This might be changed by the user (e.g.,
+<code>r=6</code> which produces 65 gridpoints compare to 185 points when
+<code>r=18</code>) when speed is more important than precision.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bounds</code></td>
+<td>
+<p>Range of integration. Real-valued vector of length 2. Default
+value of 0, 0 produces a range of + or - 6 standard deviations (6*sigma)
+from the mean (=mu).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu</code></td>
+<td>
+<p>Mean of the desired normal distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>Standard deviation of the desired normal distribution.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>z</code></td>
+<td>
+<p>Grid points for numerical integration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>density</code></td>
+<td>
+<p>The
+standard normal density function evaluated at the values in <code>z</code>; see
+examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gridwgts</code></td>
+<td>
+<p>Simpson's rule weights for numerical integration
+on the grid in <code>z</code>; see examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wgts</code></td>
+<td>
+<p>Weights to be used with
+the grid in <code>z</code> for integrating the normal density function; see
+examples. This is equal to <code>density * gridwgts</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>The gsDesign technical manual is available at
+<a href="https://keaven.github.io/gsd-tech-manual/">https://keaven.github.io/gsd-tech-manual/</a>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Keaven Anderson <a href="mailto:keaven_anderson@merck.com">keaven_anderson@merck.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Jennison C and Turnbull BW (2000), <em>Group Sequential
+Methods with Applications to Clinical Trials</em>. Boca Raton: Chapman and Hall.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(ggplot2)
+#  standard normal distribution
+x &lt;- normalGrid(r = 3)
+plot(x$z, x$wgts)
+
+#  verify that numerical integration replicates sigma
+#  get grid points and weights
+x &lt;- normalGrid(mu = 2, sigma = 3)
+
+# compute squared deviation from mean for grid points
+dev &lt;- (x$z - 2)^2
+
+# multiply squared deviations by integration weights and sum
+sigma2 &lt;- sum(dev * x$wgts)
+
+# square root of sigma2 should be sigma (3)
+sqrt(sigma2)
+
+# do it again with larger r to increase accuracy
+x &lt;- normalGrid(r = 22, mu = 2, sigma = 3)
+sqrt(sum((x$z - 2)^2 * x$wgts))
+
+# this can also be done by combining gridwgts and density
+sqrt(sum((x$z - 2)^2 * x$gridwgts * x$density))
+
+# integrate normal density and compare to built-in function
+# to compute probability of being within 1 standard deviation
+# of the mean
+pnorm(1) - pnorm(-1)
+x &lt;- normalGrid(bounds = c(-1, 1))
+sum(x$wgts)
+sum(x$gridwgts * x$density)
+
+# find expected sample size for default design with
+# n.fix=1000
+x &lt;- gsDesign(n.fix = 1000)
+x
+
+# set a prior distribution for theta
+y &lt;- normalGrid(r = 3, mu = x$theta[2], sigma = x$theta[2] / 1.5)
+z &lt;- gsProbability(
+  k = 3, theta = y$z, n.I = x$n.I, a = x$lower$bound,
+  b = x$upper$bound
+)
+z &lt;- gsProbability(d = x, theta = y$z)
+cat(
+  "Expected sample size averaged over normal\n prior distribution for theta with \n mu=",
+  x$theta[2], "sigma=", x$theta[2] / 1.5, ":",
+  round(sum(z$en * y$wgt), 1), "\n"
+)
+plot(y$z, z$en,
+  xlab = "theta", ylab = "E{N}",
+  main = "Expected sample size for different theta values"
+)
+lines(y$z, z$en)
+</code></pre>
+
+
+</div>

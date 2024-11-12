@@ -1,0 +1,137 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>dist2land</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate distance to the closest land for coordinates</h2>
+
+<h3>Description</h3>
+
+<p>Calculates the closest distance to land for coordinates in a data frame
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">dist2land(
+  data,
+  lon = NULL,
+  lat = NULL,
+  shapefile = "DecimalDegree",
+  proj.in = 4326,
+  bind = TRUE,
+  dist.col = "ldist",
+  binary = FALSE,
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame or sf object containing geographic coordinates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lon, lat</code></td>
+<td>
+<p>Either the names of the longitude and latitude columns in <code>data</code> or <code>NULL</code> to guess the longitude and/or latitude columns in <code>data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shapefile</code></td>
+<td>
+<p>Land shape to which distances should be calculated. Either a character argument referring to a name of pre-made shapefiles in <code>shapefile_list</code>, a single sf or <code>sp</code> polygons object object or <code>NULL</code> to enable automatic definition of the land shapes based on <code>data</code>. Set to <code>"DecimalDegree"</code> by default which enables great circle distances using s2 features assuming a spherical Earth (as a contrast to earlier versions of the function which used flat Earth).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>proj.in</code></td>
+<td>
+<p><code>coordinate reference system</code> of <code>data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bind</code></td>
+<td>
+<p>Logical indicating whether <code>x</code> should be returned with the distances (<code>TRUE</code>, default) or should the distances be returned as vector (<code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist.col</code></td>
+<td>
+<p>The name of the distance column, if <code>bind = TRUE</code>. Defaults to "ldist".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binary</code></td>
+<td>
+<p>Logical indicating whether binary (TRUE = the position is in the ocean, FALSE = the position is on land) should be returned instead of distances. Speeds up the function considerably.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical indicating whether information about the process should be returned as messages. Set to <code>FALSE</code> to make the function silent.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function calculates great circle spherical distances using the <code>st_distance</code> function by default. The function can be slow for large datasets. If you only want to use the function to remove (wrong) observations reported on land, set the <code>binary</code> argument to <code>TRUE</code>. This speeds up the calculations by a factor of ten.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a vector if <code>bind = FALSE</code>, otherwise a data frame. The distances are given in a new column defined by the <code>dist.col</code> argument. The distances are <strong>kilometers</strong> if <code>binary = FALSE</code>, otherwise logical (TRUE = the position is in the ocean, FALSE = the position is on land).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Mikko Vihtakari
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Simple example:
+dt &lt;- data.frame(lon = seq(-20, 80, length.out = 41), lat = 50:90)
+dt &lt;- dist2land(dt, verbose = FALSE)
+
+qmap(dt, color = ldist) + scale_color_viridis_c()
+
+# Datasets covering the entire Earth seem to work now, except 0,0 lon/lat point
+lon = deg_to_dd(seq(0,360,30)); lat = c(80,50,20,0,-20,-50,-80)
+
+dt &lt;- data.frame(
+ lon = rep(lon, length(lat)), lat = rep(lat, each = length(lon)))
+
+qmap(dist2land(dt, verbose = FALSE), color = ldist) +
+ scale_color_viridis_c()
+
+## Not run: 
+dt &lt;- data.frame(
+  lon = deg_to_dd(seq(0,360,length.out = 1e3)), 
+  lat = rep(60, 1000))
+  
+# The distance calculation is slow for large datasets
+system.time(dist2land(dt))
+# user  system elapsed 
+# 12.677   0.146  12.849 
+
+# binary = TRUE speeds the function up
+system.time(dist2land(dt, binary = TRUE))
+# user  system elapsed 
+# 1.239   0.120   1.369 
+
+## End(Not run)
+</code></pre>
+
+
+</div>

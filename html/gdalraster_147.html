@@ -1,0 +1,270 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>warp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Raster reprojection and mosaicing</h2>
+
+<h3>Description</h3>
+
+<p><code>warp()</code> is a wrapper of the <code>gdalwarp</code> command-line utility for
+raster mosaicing, reprojection and warping
+(see <a href="https://gdal.org/programs/gdalwarp.html">https://gdal.org/programs/gdalwarp.html</a>).
+The function can reproject to any supported spatial reference system (SRS).
+It can also be used to crop, resample, and optionally write output to a
+different raster format. See Details for a list of commonly used
+processing options that can be passed as arguments to <code>warp()</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">warp(src_files, dst_filename, t_srs, cl_arg = NULL, quiet = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>src_files</code></td>
+<td>
+<p>Character vector of source file(s) to be reprojected.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dst_filename</code></td>
+<td>
+<p>Character string. Filename of the output raster.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t_srs</code></td>
+<td>
+<p>Character string. Target spatial reference system. Usually an
+EPSG code ("EPSG:#####") or a well known text (WKT) SRS definition.
+If empty string <code>""</code>, the spatial reference of <code>src_files[1]</code> will be
+used (see Note).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl_arg</code></td>
+<td>
+<p>Optional character vector of command-line arguments to
+<code>gdalwarp</code> in addition to <code>-t_srs</code> (see Details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>Logical scalar. If <code>TRUE</code>, a progress bar will not be
+displayed. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Several processing options can be performed in one call to <code>warp()</code> by
+passing the necessary command-line arguments. The following list describes
+several commonly used arguments. Note that <code>gdalwarp</code> supports a large
+number of arguments that enable a variety of different processing options.
+Users are encouraged to review the original source documentation provided
+by the GDAL project at the URL above for the full list.
+</p>
+
+<ul>
+<li> <p><code style="white-space: pre;">⁠-te &lt;xmin&gt; &lt;ymin&gt; &lt;xmax&gt; &lt;ymax&gt;⁠</code><br>
+Georeferenced extents of output file to be created (in target SRS by
+default).
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠-te_srs &lt;srs_def&gt;⁠</code><br>
+SRS in which to interpret the coordinates given with <code>-te</code>
+(if different than <code>t_srs</code>).
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠-tr &lt;xres&gt; &lt;yres&gt;⁠</code><br>
+Output pixel resolution (in target georeferenced units).
+</p>
+</li>
+<li> <p><code>-tap</code><br>
+(target aligned pixels) align the coordinates of the extent of the output
+file to the values of the <code>-tr</code>, such that the aligned extent includes
+the minimum extent. Alignment means that xmin / resx, ymin / resy,
+xmax / resx and ymax / resy are integer values.
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠-ovr &lt;level&gt;|AUTO|AUTO-&lt;n&gt;|NONE⁠</code><br>
+Specify which overview level of source files must be used. The default
+choice, <code>AUTO</code>, will select the overview level whose resolution is the
+closest to the target resolution. Specify an integer value (0-based,
+i.e., 0=1st overview level) to select a particular level. Specify
+<code>AUTO-n</code> where <code>n</code> is an integer greater or equal to <code>1</code>, to select an
+overview level below the <code>AUTO</code> one. Or specify <code>NONE</code> to force the base
+resolution to be used (can be useful if overviews have been generated
+with a low quality resampling method, and the warping is done using a
+higher quality resampling method).
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠-wo &lt;NAME&gt;=&lt;VALUE&gt;⁠</code><br>
+Set a warp option as described in the GDAL documentation for
+<a href="https://gdal.org/api/gdalwarp_cpp.html#_CPPv415GDALWarpOptions"><code>GDALWarpOptions</code></a>
+Multiple <code>-wo</code> may be given. See also <code>-multi</code> below.
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠-ot &lt;type&gt;⁠</code><br>
+Force the output raster bands to have a specific data type supported by
+the format, which may be one of the following: <code>Byte</code>, <code>Int8</code>, <code>UInt16</code>,
+<code>Int16</code>, <code>UInt32</code>, <code>Int32</code>, <code>UInt64</code>, <code>Int64</code>, <code>Float32</code>, <code>Float64</code>,
+<code>CInt16</code>, <code>CInt32</code>, <code>CFloat32</code> or <code>CFloat64</code>.
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠-r &lt;resampling_method&gt;⁠</code><br>
+Resampling method to use. Available methods are: <code>near</code> (nearest
+neighbour, the default), <code>bilinear</code>, <code>cubic</code>, <code>cubicspline</code>, <code>lanczos</code>,
+<code>average</code>, <code>rms</code> (root mean square, GDAL &gt;= 3.3), <code>mode</code>, <code>max</code>, <code>min</code>,
+<code>med</code>, <code>q1</code> (first quartile), <code>q3</code> (third quartile), <code>sum</code> (GDAL &gt;= 3.1).
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠-srcnodata "&lt;value&gt;[ &lt;value&gt;]..."⁠</code><br>
+Set nodata masking values for input bands (different values can be
+supplied for each band). If more than one value is supplied all values
+should be quoted to keep them together as a single operating system
+argument. Masked values will not be used in interpolation. Use a value of
+<code>None</code> to ignore intrinsic nodata settings on the source dataset.
+If <code>-srcnodata</code> is not explicitly set, but the source dataset has nodata
+values, they will be taken into account by default.
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠-dstnodata "&lt;value&gt;[ &lt;value&gt;]..."⁠</code><br>
+Set nodata values for output bands (different values can be supplied for
+each band). If more than one value is supplied all values should be
+quoted to keep them together as a single operating system argument. New
+files will be initialized to this value and if possible the nodata value
+will be recorded in the output file. Use a value of <code>"None"</code> to ensure
+that nodata is not defined. If this argument is not used then nodata
+values will be copied from the source dataset.
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠-wm &lt;memory_in_mb&gt;⁠</code><br>
+Set the amount of memory that the warp API is allowed to use for caching.
+The value is interpreted as being in megabytes if the value is &lt;10000.
+For values &gt;=10000, this is interpreted as bytes. The warper will
+total up the memory required to hold the input and output image arrays
+and any auxiliary masking arrays and if they are larger than the
+"warp memory" allowed it will subdivide the chunk into smaller chunks and
+try again. If the <code>-wm</code> value is very small there is some extra overhead
+in doing many small chunks so setting it larger is better but it is a
+matter of diminishing returns.
+</p>
+</li>
+<li> <p><code>-multi</code><br>
+Use multithreaded warping implementation. Two threads will be used to
+process chunks of image and perform input/output operation
+simultaneously. Note that computation is not multithreaded itself. To do
+that, you can use the <code style="white-space: pre;">⁠-wo NUM_THREADS=val/ALL_CPUS⁠</code> option, which can be
+combined with <code>-multi</code>.
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠-of &lt;format&gt;⁠</code>
+Set the output raster format. Will be guessed from the extension if not
+specified. Use the short format name (e.g., <code>"GTiff"</code>).
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠-co &lt;NAME&gt;=&lt;VALUE&gt;⁠</code><br>
+Set one or more format specific creation options for the output dataset.
+For example, the GeoTIFF driver supports creation options to control
+compression, and whether the file should be tiled.
+<code>getCreationOptions()</code> can be used to look up available creation options,
+but the GDAL <a href="https://gdal.org/drivers/raster/index.html">Raster drivers</a>
+documentation is the definitive reference for format specific options.
+Multiple <code>-co</code> may be given, e.g.,
+</p>
+<pre> c("-co", "COMPRESS=LZW", "-co", "BIGTIFF=YES") </pre>
+</li>
+<li> <p><code>-overwrite</code><br>
+Overwrite the target dataset if it already exists. Overwriting means
+deleting and recreating the file from scratch. Note that if this option
+is not specified and the output file already exists, it will be updated
+in place.
+</p>
+</li>
+</ul>
+<p>The documentation for <a href="https://gdal.org/programs/gdalwarp.html"><code>gdalwarp</code></a>
+describes additional command-line options related to spatial reference
+systems, source nodata values, alpha bands, polygon cutlines as mask
+including blending, and more.
+</p>
+<p>Mosaicing into an existing output file is supported if the output file
+already exists. The spatial extent of the existing file will not be
+modified to accommodate new data, so you may have to remove it in that
+case, or use the <code>-overwrite</code> option.
+</p>
+<p>Command-line options are passed to <code>warp()</code> as a character vector. The
+elements of the vector are the individual options followed by their
+individual values, e.g.,
+</p>
+<pre>
+cl_arg = c("-tr", "30", "30", "-r", "bilinear"))
+</pre>
+<p>to set the target pixel resolution to 30 x 30 in target georeferenced
+units and use bilinear resampling.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Logical indicating success (invisible <code>TRUE</code>).
+An error is raised if the operation fails.
+</p>
+
+
+<h3>Note</h3>
+
+<p><code>warp()</code> can be used to reproject and also perform other processing such
+as crop, resample, and mosaic.
+This processing is generally done with a single function call by passing
+arguments for the target (output) pixel resolution, extent, resampling
+method, nodata value, format, and so forth.
+If <code>warp()</code> is called with <code>t_srs</code> set to <code>""</code> (empty string),
+the target spatial reference will be set to that of <code>src_files[1]</code>,
+so that the processing options given in <code>cl_arg</code> will be performed without
+reprojecting (in the case of one input raster or multiple inputs that
+all use the same spatial reference system, otherwise would reproject
+inputs to the SRS of <code>src_files[1]</code> when they are different).
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GDALRaster-class</code>, <code>srs_to_wkt()</code>, <code>translate()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># reproject the elevation raster to NAD83 / CONUS Albers (EPSG:5070)
+elev_file &lt;- system.file("extdata/storml_elev.tif", package="gdalraster")
+
+# command-line arguments for gdalwarp
+# resample to 90-m resolution and keep pixels aligned:
+args &lt;- c("-tr", "90", "90", "-r", "cubic", "-tap")
+# write to Erdas Imagine format (HFA) with compression:
+args &lt;- c(args, "-of", "HFA", "-co", "COMPRESSED=YES")
+
+alb83_file &lt;- file.path(tempdir(), "storml_elev_alb83.img")
+warp(elev_file, alb83_file, t_srs="EPSG:5070", cl_arg = args)
+
+ds &lt;- new(GDALRaster, alb83_file)
+ds$getDriverLongName()
+ds$getProjectionRef()
+ds$res()
+ds$getStatistics(band=1, approx_ok=FALSE, force=TRUE)
+ds$close()
+
+deleteDataset(alb83_file)
+</code></pre>
+
+
+</div>

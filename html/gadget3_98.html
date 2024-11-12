@@ -1,0 +1,398 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>suitability</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gadget3 suitability formulae</h2>
+
+<h3>Description</h3>
+
+<p>Formula-returning functions describing length suitability relationships.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">g3_suitability_exponentiall50(
+    alpha = g3_parameterized("alpha", by_stock = by_stock, by_predator = by_predator),
+    l50 = g3_parameterized("l50", by_stock = by_stock, by_predator = by_predator),
+    by_stock = TRUE,
+    by_predator = TRUE)
+
+g3_suitability_andersen(p0, p1, p2, p3 = p4, p4, p5 = ~predstock__midlen)
+
+g3_suitability_andersenfleet(
+        p0 = g3_parameterized('andersen.p0', value = 0, optimise = FALSE,
+                              by_stock = by_stock),
+        p1 = g3_parameterized('andersen.p1', value = log(2),
+                              by_stock = by_stock, by_predator = by_predator),
+        p2 = g3_parameterized('andersen.p2', value = 1, optimise = FALSE,
+                              by_stock = by_stock),
+        p3 = g3_parameterized('andersen.p3', value = 0.1, exponentiate = exponentiate,
+                              by_stock = by_stock, by_predator = by_predator),
+        p4 = g3_parameterized('andersen.p4', value = 0.1, exponentiate = exponentiate,
+                              by_stock = by_stock, by_predator = by_predator),
+        p5 = quote( stock__maxmidlen ),
+        by_stock = TRUE,
+        by_predator = TRUE,
+        exponentiate = TRUE)
+
+g3_suitability_gamma(alpha, beta, gamma)
+
+g3_suitability_exponential(alpha, beta, gamma, delta)
+
+g3_suitability_straightline(alpha, beta)
+
+g3_suitability_constant(alpha)
+
+g3_suitability_richards(p0, p1, p2, p3, p4)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>alpha,beta,gamma,delta,l50,p0,p1,p2,p3,p4,p5</code></td>
+<td>
+
+<p>formula substituted into calcuations, see below.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by_stock</code></td>
+<td>
+
+<p>Change the default parameterisation (e.g. to be by 'species'), passed through to default calls to
+<code>g3_parameterized</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by_predator</code></td>
+<td>
+
+<p>Change the default parameterisation (e.g. to be by 'fleet'), passed through to default calls to
+<code>g3_parameterized</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exponentiate</code></td>
+<td>
+
+<p>Exponentiate parameters,passed through to default calls to
+<code>g3_parameterized</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>When using these to describe a predator/prey relationship, the stock midlength <code class="reqn">l</code>
+will refer to the prey midlength.
+</p>
+
+
+<h3>Value</h3>
+
+<p>All functions return a formula for use in <code>g3a_predate_fleet</code>'s <var>suitabilities</var> argument:
+</p>
+
+
+<h4>g3_suitability_exponentiall50</h4>
+
+<p>A logarithmic dependence on the length of the prey as given by the following equation
+(note that the prey length dependence is actually dependant on the difference between the length of the prey and <code class="reqn">l_{50}</code>):
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \frac{1}{ 1 + e^{-\alpha (l - l_{50})} }
+    </code>
+</p>
+
+
+<dl>
+<dt><code class="reqn">l</code></dt>
+<dd>
+<p>Vector of stock midlength for each lengthgroup</p>
+</dd>
+<dt><code class="reqn">l_{50}</code></dt>
+<dd>
+<p>Length of the stock with a 50% probability of predation, from parameter <var>l50</var></p>
+</dd>
+</dl>
+<h4>g3_suitability_andersen</h4>
+
+<p>This is a more general suitability function that is dependant on the ratio of the predator length to the prey length as given by the following equation:
+</p>
+<p>If <code class="reqn">p_3 = p_4</code>:
+</p>
+<p style="text-align: center;"><code class="reqn">
+      p_0 + p_2 e^{-\frac{(x - p_1)^2}{p_4}}
+    </code>
+</p>
+
+<p>Otherwise:
+</p>
+<p style="text-align: center;"><code class="reqn">
+      p_0
+      + p_2 e^{-\frac{(x - p_1)^2}{p_4}} * \min(\max(p_1 - x, 0), 1)
+      + p_2 e^{-\frac{(x - p_1)^2}{p_3}} * \min(\max(x, 0), 1)
+    </code>
+</p>
+
+<p>...i.e if <code class="reqn">\log\frac{L}{l} &lt;= p_1</code> then <code class="reqn">p_3</code> used in place of <code class="reqn">p_4</code>.
+</p>
+
+<dl>
+<dt><code class="reqn">x</code></dt>
+<dd>
+<p><code class="reqn">\log\frac{p_5}{l}</code></p>
+</dd>
+<dt><code class="reqn">L</code></dt>
+<dd>
+<p>Vector of predator midlength for each lengthgroup</p>
+</dd>
+<dt><code class="reqn">l</code></dt>
+<dd>
+<p>Vector of stock midlength for each lengthgroup</p>
+</dd>
+<dt>
+<code class="reqn">p_0</code> .. <code class="reqn">p_4</code>
+</dt>
+<dd>
+<p>Function parameter <var>p0</var> .. <var>p4</var></p>
+</dd>
+<dt><code class="reqn">p_5</code></dt>
+<dd>
+<p>Function parameter <var>p5</var>, if unspecified uses <code class="reqn">L</code>, Vector of predator midlength for each lengthgroup.</p>
+</dd>
+</dl>
+<p>NB: Specifying <code class="reqn">p_5</code> is equivalent to using the <code>andersenfleet</code> function in gadget2.
+</p>
+
+
+
+<h4>g3_suitability_andersenfleet</h4>
+
+<p>A simplified version of <code>g3_suitability_andersen</code>, suitable for predation by fleets,
+as the defaults do not rely on the predator's length.
+</p>
+
+
+
+<h4>g3_suitability_gamma</h4>
+
+<p>This is a suitability function that is more suitable for use when considering the predation by a fleet,
+where the parameter <code class="reqn">\gamma</code> would represent the size of the mesh used by the fleet (specified in centimetres).
+</p>
+<p style="text-align: center;"><code class="reqn">
+      (\frac{l}{(\alpha - 1)\beta\gamma}) ^ {(\alpha - 1) e^{\alpha - 1 - \frac{l}{\beta\gamma}}}
+    </code>
+</p>
+
+
+<dl>
+<dt><code class="reqn">l</code></dt>
+<dd>
+<p>Vector of stock midlength for each lengthgroup</p>
+</dd>
+<dt><code class="reqn">\alpha</code></dt>
+<dd>
+<p>Function parameter <var>alpha</var></p>
+</dd>
+<dt><code class="reqn">\beta</code></dt>
+<dd>
+<p>Function parameter <var>beta</var></p>
+</dd>
+<dt><code class="reqn">\gamma</code></dt>
+<dd>
+<p>Function parameter <var>gamma</var></p>
+</dd>
+</dl>
+<p>This is a suitability function that is more suitable for use when
+considering the predation by a fleet, where the parameter <code class="reqn">\gamma</code>
+would represent the size of the mesh used by the fleet (specified in
+centimetres).
+</p>
+
+
+
+<h4>g3_suitability_exponential</h4>
+
+<p>This is a suitability function that has a logarithmic dependence on both the length of the predator and the length of the prey as given by the following equation:
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \frac{\delta}{1 + e^{-\alpha - \beta l - \gamma L}}
+    </code>
+</p>
+
+
+<dl>
+<dt><code class="reqn">L</code></dt>
+<dd>
+<p>Vector of predator midlength for each lengthgroup</p>
+</dd>
+<dt><code class="reqn">l</code></dt>
+<dd>
+<p>Vector of stock midlength for each lengthgroup</p>
+</dd>
+<dt><code class="reqn">\alpha</code></dt>
+<dd>
+<p>Function parameter <var>alpha</var></p>
+</dd>
+<dt><code class="reqn">\beta</code></dt>
+<dd>
+<p>Function parameter <var>beta</var></p>
+</dd>
+<dt><code class="reqn">\gamma</code></dt>
+<dd>
+<p>Function parameter <var>gamma</var></p>
+</dd>
+<dt><code class="reqn">\delta</code></dt>
+<dd>
+<p>Function parameter <var>delta</var></p>
+</dd>
+</dl>
+<h4>g3_suitability_straightline</h4>
+
+<p>Returns a formula for use in predation function's <var>suitabilities</var> argument:
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \alpha + \beta l
+    </code>
+</p>
+
+
+<dl>
+<dt><code class="reqn">l</code></dt>
+<dd>
+<p>Vector of stock midlength for each lengthgroup</p>
+</dd>
+<dt><code class="reqn">\alpha</code></dt>
+<dd>
+<p>Function parameter <var>alpha</var></p>
+</dd>
+<dt><code class="reqn">\beta</code></dt>
+<dd>
+<p>Function parameter <var>beta</var></p>
+</dd>
+</dl>
+<h4>g3_suitability_constant</h4>
+
+<p>Returns a formula for use in predation function's <var>suitabilities</var> argument:
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \alpha
+    </code>
+</p>
+
+
+<dl>
+<dt><code class="reqn">\alpha</code></dt>
+<dd>
+<p>Function parameter <var>alpha</var></p>
+</dd>
+</dl>
+<h4>g3_suitability_richards</h4>
+
+<p>Returns a formula for use in predation function's <var>suitabilities</var> argument:
+</p>
+<p style="text-align: center;"><code class="reqn">
+      {\big( \frac{p_3}{1 + e^{-p_0 - p_1 l - p_2 L}} \big)}^{\frac{1}{p_4}}
+    </code>
+</p>
+
+
+<dl>
+<dt><code class="reqn">L</code></dt>
+<dd>
+<p>Vector of predator midlength for each lengthgroup</p>
+</dd>
+<dt><code class="reqn">l</code></dt>
+<dd>
+<p>Vector of stock midlength for each lengthgroup</p>
+</dd>
+<dt>
+<code class="reqn">p_0</code> .. <code class="reqn">p_4</code>
+</dt>
+<dd>
+<p>Function parameter <var>p0</var> .. <var>p4</var></p>
+</dd>
+</dl>
+<p>This is an extension to g3_suitability_exponential.
+</p>
+
+
+
+<h3>See Also</h3>
+
+<p><a href="https://gadget-framework.github.io/gadget2/userguide/chap-stock.html#sec-suitability">https://gadget-framework.github.io/gadget2/userguide/chap-stock.html#sec-suitability</a>,
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+ling_imm &lt;- g3_stock(c(species = 'ling', 'imm'), seq(20, 156, 4)) %&gt;% g3s_age(3, 10)
+ling_mat &lt;- g3_stock(c(species = 'ling', 'mat'), seq(20, 156, 4)) %&gt;% g3s_age(5, 15)
+igfs &lt;- g3_fleet('igfs')
+
+igfs_landings &lt;-
+  structure(expand.grid(year=1990:1994, step=2, area=1, total_weight=1),
+            area_group = list(`1` = 1))
+
+# Generate a fleet predation action using g3_suitability_exponentiall50
+predate_action &lt;- g3a_predate_fleet(
+    igfs,
+    list(ling_imm, ling_mat),
+    suitabilities = list(
+        ling_imm = g3_suitability_exponentiall50(
+            g3_parameterized('lln.alpha', by_stock = 'species'),
+            g3_parameterized('lln.l50', by_stock = 'species')),
+        ling_mat = g3_suitability_exponentiall50(
+            g3_parameterized('lln.alpha', by_stock = 'species'),
+            g3_parameterized('lln.l50', by_stock = 'species'))),
+    catchability = g3a_predate_catchability_totalfleet(
+        g3_timeareadata('igfs_landings', igfs_landings)))
+
+# You can use g3_eval to directly calculate values for a stock:
+g3_eval(
+    g3_suitability_exponentiall50(alpha = 0.2, l50 = 60),
+    stock = g3_stock('x', seq(0, 100, 10)) )
+
+## Plots
+suit_plot &lt;- function (
+    fn,
+    stock = g3_stock('x', seq(0, 100, 10)),
+    predstock__midlen = 140 ) {
+  cols &lt;- rainbow(5)
+  par(mar = c(2,2,2,2), cex.main = 1)
+
+  plot(
+    g3_stock_def(stock, 'midlen'),
+    seq(0, 1, length.out = length(g3_stock_def(stock, 'midlen'))),
+    main=deparse1(body(fn)),
+    type = "n")
+  for (a in seq_along(cols)) lines(
+    g3_stock_def(stock, 'midlen'),
+    g3_eval(fn(a), stock = stock, predstock__midlen = predstock__midlen),
+    type = "o", col = cols[[a]] )
+}
+
+suit_plot(function (a) g3_suitability_exponentiall50(alpha = a * 0.1, l50 = 50))
+suit_plot(function (a) g3_suitability_andersen(0, log(2), 1, p3 = a * 0.1, 0.1, 140))
+suit_plot(function (a) g3_suitability_andersen(0, log(2), 1, 0.1, p4 = a * 0.1, 140))
+suit_plot(function (a) g3_suitability_gamma(alpha = 2 + a * 0.1, beta = 1, gamma = 40))
+suit_plot(function (a) g3_suitability_exponential(0, 0.01 * a, 0, 1))
+suit_plot(function (a) g3_suitability_straightline(alpha = 0.1, beta = 0.01 * a))
+suit_plot(function (a) g3_suitability_constant(a * 0.1))
+suit_plot(function (a) g3_suitability_richards(0, 0.05, 0, 1, 0.1 * a))
+
+</code></pre>
+
+
+</div>

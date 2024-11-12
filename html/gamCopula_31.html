@@ -1,0 +1,129 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gamVineSimulate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulation from a <code>gamVine-class</code> object</h2>
+
+<h3>Description</h3>
+
+<p>Simulation from a <code>gamVine-class</code> object
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gamVineSimulate(n, GVC, U = NULL, newdata = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>number of d-dimensional observations to simulate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GVC</code></td>
+<td>
+<p>A <code>gamVine</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>U</code></td>
+<td>
+<p>If not <code>NULL</code>, <code>U</code> is an (N,d)-matrix of U[0,1] random
+variates to be transformed to the copula sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>If not <code>NULL</code>, which is mandatory when
+the attribute <code>covariates</code> from <code>GVC</code> is not <code>NA</code>,
+<code>newdata</code> is a data frame containing the values of
+the model covariates at which simulations are required.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A matrix of data simulated from the given
+<code>gamVine</code> object.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">require(VineCopula)
+
+## Example adapted from RVineSim
+
+## Define 5-dimensional R-vine tree structure matrix
+Matrix &lt;- c(
+  5, 2, 3, 1, 4,
+  0, 2, 3, 4, 1,
+  0, 0, 3, 4, 1,
+  0, 0, 0, 4, 1,
+  0, 0, 0, 0, 1
+)
+Matrix &lt;- matrix(Matrix, 5, 5)
+
+## Define R-vine pair-copula family matrix
+family &lt;- c(
+  0, 1, 3, 4, 4,
+  0, 0, 3, 4, 1,
+  0, 0, 0, 4, 1,
+  0, 0, 0, 0, 3,
+  0, 0, 0, 0, 0
+)
+family &lt;- matrix(family, 5, 5)
+
+## Define R-vine pair-copula parameter matrix
+par &lt;- c(
+  0, 0.2, 0.9, 1.5, 3.9,
+  0, 0, 1.1, 1.6, 0.9,
+  0, 0, 0, 1.9, 0.5,
+  0, 0, 0, 0, 4.8,
+  0, 0, 0, 0, 0
+)
+par &lt;- matrix(par, 5, 5)
+
+## Define second R-vine pair-copula parameter matrix
+par2 &lt;- matrix(0, 5, 5)
+
+## Define RVineMatrix object
+RVM &lt;- RVineMatrix(
+  Matrix = Matrix, family = family,
+  par = par, par2 = par2,
+  names = c("V1", "V2", "V3", "V4", "V5")
+)
+
+## Convert to gamVine object
+GVC &lt;- RVM2GVC(RVM)
+
+## U[0,1] random variates to be transformed to the copula sample
+n &lt;- 1e2
+d &lt;- 5
+U &lt;- matrix(runif(n * d), nrow = n)
+
+## The output of gamVineSimulate correspond to that of RVineSim
+sampleRVM &lt;- RVineSim(n, RVM, U)
+sampleGVC &lt;- gamVineSimulate(n, GVC, U)
+all.equal(sampleRVM, sampleGVC)
+
+## Fit the two models and compare the estimated parameter
+fitRVM &lt;- RVM2GVC(RVineSeqEst(sampleRVM, RVM))
+fitGVC &lt;- gamVineSeqFit(sampleGVC, GVC)
+all.equal(
+  simplify2array(attr(fitRVM, "model")),
+  simplify2array(attr(fitGVC, "model"))
+)
+</code></pre>
+
+
+</div>

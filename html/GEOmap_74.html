@@ -1,0 +1,183 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>LandSeaCol</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Land and Sea Colors
+</h2>
+
+<h3>Description</h3>
+
+<p>Color pixels with two
+palettes, one for land the other for sea.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">LandSeaCol(IZ, coastmap, PROJ, calcol = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>IZ</code></td>
+<td>
+<p>list of x, y, z suitable for plotting
+with image or contour.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coastmap</code></td>
+<td>
+<p>coastal map from GEOmap
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PROJ</code></td>
+<td>
+<p>projection list
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>calcol</code></td>
+<td>
+<p>color map for the land
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The program uses closed polygons in
+the map list to separate the pixels
+into land versus sea.  Sea is colored with
+a palette of blues, land is colored according to
+topographic color scheme extracted from
+palettes similar to GMT palettes.
+</p>
+<p>All map and pixel coordinates are
+projected with the same projection parameters.
+calculations are done in XY coordinates.
+</p>
+<p>ETOPO5 or ETOPO2 can be downloaded from
+and installed using these links:
+<a href="http://leesj.sites.oasis.unc.edu/FETCH/GRAB/RPACKAGES/ETOPO2.RData">http://leesj.sites.oasis.unc.edu/FETCH/GRAB/RPACKAGES/ETOPO2.RData</a>
+and
+<a href="http://leesj.sites.oasis.unc.edu/FETCH/GRAB/RPACKAGES/ETOPO5.RData">http://leesj.sites.oasis.unc.edu/FETCH/GRAB/RPACKAGES/ETOPO5.RData</a>
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Cmat</code></td>
+<td>
+<p>Matrix of colors for each pixel</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>UZ</code></td>
+<td>
+<p>Under water </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>AZ</code></td>
+<td>
+<p>Above Sea Level</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Jonathan M. Lees&lt;jonathan.lees@unc.edu&gt;
+</p>
+
+
+<h3>See Also</h3>
+
+<p>settopocol, TOPOCOL
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+
+Lat.range = c(-10, 30)
+Lon.range = c(65, 117)
+######
+
+########  load up the important libraries
+ library(RFOC)
+
+ library(geomapdata)
+
+ data(coastmap)
+
+  ###    data(ETOPO5)
+
+####  need to download and install ETOPO data
+load(ETOPO5)
+
+ PLOC=list(LON=Lon.range,LAT=Lat.range,lon=Lon.range,lat=Lat.range,
+                 x=Lon.range, y=Lat.range )
+
+
+#####   set up topography colors
+COLS = settopocol()
+
+####  set the projection ##   utm
+ PROJ = setPROJ(type=2, LAT0=mean(PLOC$y) , LON0=mean(PLOC$x) )   
+ NK = 300
+    
+   ###   extract topography from the etopo5 data base in geomapdata
+     JMAT = GEOTOPO(ETOPO5, PLOC, PROJ, COLS$calcol,nx=NK, ny=NK )
+#####   select relevant earthquakes
+
+IZ = list(x=JMAT$xo, y=JMAT$yo, z=JMAT$IZ$z)
+
+CMAT = LandSeaCol(IZ, coastmap, PROJ, calcol=NULL)
+
+Mollist =CMAT$Cmat
+dMol = attr(Mollist, "Dcol")
+
+     ####  Under water
+UZ = CMAT$UZ
+    #####  above water
+AZ = CMAT$AZ
+    ####   blues for underwater:
+   blues = shade.col(100, acol=as.vector(col2rgb("darkblue")/255),
+        bcol= as.vector(col2rgb("paleturquoise")/255))
+
+plot(x=range(IZ$x), y=range(IZ$y),
+         type='n', asp=1, axes=FALSE, ann=FALSE)
+
+image(x=IZ$x, y=IZ$y, z=(UZ), col=blues, add=TRUE)
+
+image(x=IZ$x, y=IZ$y, z=(AZ), col=terrain.colors(100) , add=TRUE)
+
+plotGEOmapXY(coastmap,
+       LIM = c(Lon.range[1],Lat.range[1] ,Lon.range[2] ,Lat.range[2]),
+       PROJ =PROJ,MAPstyle =2,MAPcol ="black" ,   add=TRUE  )
+
+
+
+
+
+## End(Not run)
+
+
+</code></pre>
+
+
+</div>

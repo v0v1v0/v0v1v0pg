@@ -1,0 +1,200 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cor.to.par</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Find the correlation parameter given effective range</h2>
+
+<h3>Description</h3>
+
+<p>This function finds the correlation parameter given effective range
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cor.to.par(
+  d,
+  param,
+  family = "CH",
+  cor.target = 0.05,
+  lower = NULL,
+  upper = NULL,
+  tol = .Machine$double.eps
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>a numerical value containing the effective range</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>a list containing correlation parameters. The specification of 
+<strong>param</strong> should depend on the covariance model. If the parameter value is
+<code>NULL</code>, this function will find its value given the effective range via
+root-finding function <code>uniroot</code>.
+</p>
+
+<ul>
+<li>
+<p>For the Confluent Hypergeometric class, <strong>range</strong> is used to denote the range parameter <code class="reqn">\beta</code>. 
+<strong>tail</strong> is used to denote the tail decay parameter <code class="reqn">\alpha</code>. <strong>nu</strong> is used to denote the 
+smoothness parameter <code class="reqn">\nu</code>. 
+</p>
+</li>
+<li>
+<p>For the generalized Cauchy class, <strong>range</strong> is used to denote the range parameter <code class="reqn">\phi</code>. 
+<strong>tail</strong> is used to denote the tail decay parameter <code class="reqn">\alpha</code>. <strong>nu</strong> is used to denote the 
+smoothness parameter <code class="reqn">\nu</code>.
+</p>
+</li>
+<li>
+<p>For the Matérn class, <strong>range</strong> is used to denote the range parameter <code class="reqn">\phi</code>. 
+<strong>nu</strong> is used to denote the smoothness parameter <code class="reqn">\nu</code>. When <code class="reqn">\nu=0.5</code>, the 
+Matérn class corresponds to the exponential covariance.  
+</p>
+</li>
+<li>
+<p>For the powered-exponential class, <strong>range</strong> is used to denote the range parameter <code class="reqn">\phi</code>.
+<strong>nu</strong> is used to denote the smoothness parameter. When <code class="reqn">\nu=2</code>, the powered-exponential class
+corresponds to the Gaussian covariance.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>a string indicating the type of covariance structure.
+The following correlation functions are implemented:
+</p>
+
+<dl>
+<dt>CH</dt>
+<dd>
+<p>The Confluent Hypergeometric correlation function is given by 
+</p>
+<p style="text-align: center;"><code class="reqn">C(h) = \frac{\Gamma(\nu+\alpha)}{\Gamma(\nu)} 
+\mathcal{U}\left(\alpha, 1-\nu, \left(\frac{h}{\beta}\right)^2\right),</code>
+</p>
+
+<p>where <code class="reqn">\alpha</code> is the tail decay parameter. <code class="reqn">\beta</code> is the range parameter.
+<code class="reqn">\nu</code> is the smoothness parameter. <code class="reqn">\mathcal{U}(\cdot)</code> is the confluent hypergeometric
+function of the second kind. Note that this parameterization of the CH covariance is different from the one in Ma and Bhadra (2023). For details about this covariance, 
+see Ma and Bhadra (2023; <a href="https://doi.org/10.1080/01621459.2022.2027775">doi:10.1080/01621459.2022.2027775</a>).  
+</p>
+</dd>
+<dt>cauchy</dt>
+<dd>
+<p>The generalized Cauchy covariance is given by
+</p>
+<p style="text-align: center;"><code class="reqn">C(h) = \left\{ 1 + \left( \frac{h}{\phi} \right)^{\nu}  
+            \right\}^{-\alpha/\nu},</code>
+</p>
+
+<p>where <code class="reqn">\phi</code> is the range parameter. <code class="reqn">\alpha</code> is the tail decay parameter.
+<code class="reqn">\nu</code> is the smoothness parameter.
+</p>
+</dd>
+<dt>matern</dt>
+<dd>
+<p>The Matérn correlation function is given by
+</p>
+<p style="text-align: center;"><code class="reqn">C(h)=\frac{2^{1-\nu}}{\Gamma(\nu)} \left(\frac{h}{\phi} \right)^{\nu} 
+\mathcal{K}_{\nu}\left( \frac{h}{\phi} \right),</code>
+</p>
+
+<p>where <code class="reqn">\phi</code> is the range parameter. <code class="reqn">\nu</code> is the smoothness parameter. 
+<code class="reqn">\mathcal{K}_{\nu}(\cdot)</code> is the modified Bessel function of the second kind of order <code class="reqn">\nu</code>.
+</p>
+</dd>
+<dt>exp</dt>
+<dd>
+<p>The exponential correlation function is given by 
+</p>
+<p style="text-align: center;"><code class="reqn">C(h)=\exp(-h/\phi),</code>
+</p>
+
+<p>where <code class="reqn">\phi</code> is the range parameter. This is the Matérn correlation with <code class="reqn">\nu=0.5</code>.
+</p>
+</dd>
+<dt>matern_3_2</dt>
+<dd>
+<p>The Matérn correlation with <code class="reqn">\nu=1.5</code>.</p>
+</dd>
+<dt>matern_5_2</dt>
+<dd>
+<p>The Matérn correlation with <code class="reqn">\nu=2.5</code>.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cor.target</code></td>
+<td>
+<p>a numerical value. The default value is 0.05, which 
+means that correlation parameters are searched such that the correlation
+is approximately 0.05.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>a numerical value. This sets the lower bound to find the 
+correlation parameter via the <code>R</code> function <code>uniroot</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>a numerical value. This sets the upper bound to find the 
+correlation parameter via the <code>R</code> function <code>uniroot</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>a numerical value. This sets the precision of the solution with default value
+specified as the machine precision <code>.Machine$double.eps</code> in <code>R</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a numerical value of correlation parameters
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Pulong Ma <a href="mailto:mpulong@gmail.com">mpulong@gmail.com</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>GPBayes-package, <code>GaSP</code>, <code>kernel</code>, <code>ikernel</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+range = cor.to.par(1,param=list(tail=0.5,nu=2.5), family="CH")
+tail = cor.to.par(1,param=list(range=0.5,nu=2.5), family="CH")
+range = cor.to.par(1,param=list(nu=2.5),family="matern")
+
+</code></pre>
+
+
+</div>

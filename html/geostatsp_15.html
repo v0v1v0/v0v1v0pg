@@ -1,0 +1,204 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>krigeLgm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Spatial prediction, or Kriging
+</h2>
+
+<h3>Description</h3>
+
+<p>Perform spatial prediction, producing a raster of predictions and conditional standard deviations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">krigeLgm(formula, data, grid,  covariates = NULL,
+	param,  
+    expPred = FALSE, nuggetInPrediction = TRUE,
+    mc.cores=getOption("mc.cores", 1L))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Either a model formula, or a data frame of linear covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>A <code>SpatVector</code>  containing  the data to be interpolated
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+<p>Either a <code>SpatRaster</code> , or a single integer giving the
+number of cells in the X direction which predictions will be made on.  If the later
+the predictions will be a raster of square cells covering the bounding box of <code>data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariates</code></td>
+<td>
+
+<p>The spatial covariates used in prediction, either a <code>SpatRaster</code> stack or list of rasters.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>A vector of named model parameters, as produced by <code>likfitLgm</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expPred</code></td>
+<td>
+
+<p>Should the predictions be exponentiated, defaults to <code>FALSE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nuggetInPrediction</code></td>
+<td>
+<p>If <code>TRUE</code>, predict new observations by adding the 
+nugget effect.  The prediction variances will be adjusted accordingly, and the predictions 
+on the natural scale for logged or Box Cox transformed data will be affected. 
+Otherwise predict fitted values. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.cores</code></td>
+<td>
+<p>passed to <code>mclapply</code> if greater than 1.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Given the model parameters and observed data, conditional means and variances of the spatial random field
+are computed.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A raster  is 
+returned with the following layers:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>fixed</code></td>
+<td>
+<p>Estimated means from the fixed effects portion of the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>random</code></td>
+<td>
+<p>Predicted random effect</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>krige.var</code></td>
+<td>
+<p>Conditional variance of predicted random effect (on the transformed scale if applicable)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predict</code></td>
+<td>
+<p>Prediction of the response, sum of fixed and random effects.  If exp.pred is TRUE, gives predictions
+on the exponentiated scale, and half of krige.var is added prior to exponentiating</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predict.log</code></td>
+<td>
+<p>If exp.pred=TRUE, the prediction of the logged process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predict.boxcox</code></td>
+<td>
+<p>If a box cox transformation was used, the prediction of the process on the transformed scale.</p>
+</td>
+</tr>
+</table>
+<p>If the prediction locations are different for fixed and random effects (typically coarser for the random 
+effects), a list with two raster stacks is returned.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>prediction</code></td>
+<td>
+<p>A raster stack as above, though the random effect prediction is resampled to the 
+same locations as the fixed effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>random</code></td>
+<td>
+<p>the predictions and conditional variance of the random effects, on the same
+raster as <code>newdata</code></p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>lgm</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data('swissRain')
+swissAltitude = unwrap(swissAltitude)
+swissRain = unwrap(swissRain)
+swissRain$lograin = log(swissRain$rain)
+swissRain[[names(swissAltitude)]] = extract(swissAltitude, swissRain, ID=FALSE)
+
+swissFit = likfitLgm(data=swissRain, 
+			formula=lograin~ CHE_alt,
+			param=c(range=46500, nugget=0.05,shape=1,  
+					anisoAngleDegrees=35, anisoRatio=12),
+			paramToEstimate = c("range","nugget", 
+				"anisoAngleDegrees", "anisoRatio")
+)
+myTrend = swissFit$model$formula
+myParams = swissFit$param
+
+
+swissBorder = unwrap(swissBorder)
+
+swissKrige = krigeLgm(
+	data=swissRain, 
+	formula = myTrend,
+	covariates = swissAltitude,  
+	param=myParams,
+	grid = squareRaster(swissBorder, 40), expPred=TRUE)
+
+plot(swissKrige[["predict"]], main="predicted rain")
+plot(swissBorder, add=TRUE)
+
+
+
+
+</code></pre>
+
+
+</div>

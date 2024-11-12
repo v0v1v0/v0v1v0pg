@@ -1,0 +1,248 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tar_git_snapshot</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Snapshot the data repository (Git).</h2>
+
+<h3>Description</h3>
+
+<p>Snapshot the Git data repository of a <code>targets</code> project.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tar_git_snapshot(
+  message = NULL,
+  ref = "HEAD",
+  code = getwd(),
+  script = targets::tar_config_get("script"),
+  store = targets::tar_config_get("store"),
+  stash_gitignore = TRUE,
+  reporter = targets::tar_config_get("reporter_outdated"),
+  envir = parent.frame(),
+  callr_function = callr::r,
+  callr_arguments = NULL,
+  status = interactive(),
+  force = FALSE,
+  pack_refs = TRUE,
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>message</code></td>
+<td>
+<p>Optional Git commit message of the data snapshot.
+If <code>NULL</code>, then the message is the Git commit message of the
+matching code commit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ref</code></td>
+<td>
+<p>Character of length 1, reference
+(branch name, Git SHA1 hash, etc.) of the code commit
+that will map to the new data snapshot. Defaults to the commit
+checked out right now.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>code</code></td>
+<td>
+<p>Character of length 1, directory path to the code repository,
+usually the root of the <code>targets</code> project.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>script</code></td>
+<td>
+<p>Character of length 1, path to the
+target script file. Defaults to <code>tar_config_get("script")</code>,
+which in turn defaults to <code style="white-space: pre;">⁠_targets.R⁠</code>. When you set
+this argument, the value of <code>tar_config_get("script")</code>
+is temporarily changed for the current function call.
+See <code>tar_script()</code>,
+<code>tar_config_get()</code>, and <code>tar_config_set()</code> for details
+about the target script file and how to set it
+persistently for a project.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>store</code></td>
+<td>
+<p>Character of length 1, path to the data store of the pipeline.
+If <code>NULL</code>, the <code>store</code> setting is left unchanged in the
+YAML configuration file (default: <code style="white-space: pre;">⁠_targets.yaml⁠</code>).
+Usually, the data store lives at <code style="white-space: pre;">⁠_targets⁠</code>.
+Set <code>store</code> to a custom directory
+to specify a path other than <code style="white-space: pre;">⁠_targets/⁠</code>. The path need not exist
+before the pipeline begins, and it need not end with "_targets",
+but it must be writeable.
+For optimal performance, choose a storage location
+with fast read/write access.
+If the argument <code>NULL</code>, the setting is not modified.
+Use <code>tar_config_unset()</code> to delete a setting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stash_gitignore</code></td>
+<td>
+<p>Logical of length 1, whether to temporarily
+stash the <code>.gitignore</code> file of the data store. See the
+"Stashing .gitignore" section for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reporter</code></td>
+<td>
+<p>Character of length 1, name of the reporter to user.
+Controls how messages are printed as targets are checked. Choices:
+</p>
+
+<ul>
+<li> <p><code>"silent"</code>: print nothing.
+</p>
+</li>
+<li> <p><code>"forecast"</code>: print running totals of the checked and outdated
+targets found so far.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>envir</code></td>
+<td>
+<p>An environment, where to run the target R script
+(default: <code style="white-space: pre;">⁠_targets.R⁠</code>) if <code>callr_function</code> is <code>NULL</code>.
+Ignored if <code>callr_function</code> is anything other than <code>NULL</code>.
+<code>callr_function</code> should only be <code>NULL</code> for debugging and
+testing purposes, not for serious runs of a pipeline, etc.
+</p>
+<p>The <code>envir</code> argument of <code>tar_make()</code> and related
+functions always overrides
+the current value of <code>tar_option_get("envir")</code> in the current R session
+just before running the target script file,
+so whenever you need to set an alternative <code>envir</code>, you should always set
+it with <code>tar_option_set()</code> from within the target script file.
+In other words, if you call <code>tar_option_set(envir = envir1)</code> in an
+interactive session and then
+<code>tar_make(envir = envir2, callr_function = NULL)</code>,
+then <code>envir2</code> will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>callr_function</code></td>
+<td>
+<p>A function from <code>callr</code> to start a fresh clean R
+process to do the work. Set to <code>NULL</code> to run in the current session
+instead of an external process (but restart your R session just before
+you do in order to clear debris out of the global environment).
+<code>callr_function</code> needs to be <code>NULL</code> for interactive debugging,
+e.g. <code>tar_option_set(debug = "your_target")</code>.
+However, <code>callr_function</code> should not be <code>NULL</code> for serious
+reproducible work.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>callr_arguments</code></td>
+<td>
+<p>A list of arguments to <code>callr_function</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>status</code></td>
+<td>
+<p>Logical of length 1, whether to print the project status
+with <code>tar_git_status()</code> and ask whether a snapshot should be created.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>force</code></td>
+<td>
+<p>Logical of length 1. Force checkout the data branch
+of an existing data snapshot of the current code commit?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pack_refs</code></td>
+<td>
+<p>Logical of length 1, whether to run <code style="white-space: pre;">⁠git pack-refs --all⁠</code>
+in the data store after taking the snapshot. Packing references
+improves efficiency when the number of snapshots is large.
+Learn more at <a href="https://git-scm.com/docs/git-pack-refs">https://git-scm.com/docs/git-pack-refs</a>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical of length 1, whether to print R console messages
+confirming that a snapshot was created.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A Git-backed <code>gittargets</code> data snapshot is a special kind of
+Git commit. Every data commit is part of a branch specific to
+the current code commit.
+That way, when you switch branches or commits in the code,
+<code>tar_git_checkout()</code> checks out the latest data snapshot
+that matches the code in your workspace.
+That way, your targets can stay up to date even as you
+transition among multiple branches.
+</p>
+
+
+<h3>Stashing .gitignore</h3>
+
+<p>The <code>targets</code> package writes a <code>.gitignore</code> file to new data stores
+in order to prevent accidental commits to the code Git repository.
+Unfortunately, for <code>gittargets</code>, this automatic <code>.gitignore</code> file
+interferes with proper data versioning. So by default, <code>gittargets</code>
+temporarily stashes it to a hidden file called <code>.gittargets_gitignore</code>
+inside the data store. If your R program crashes while the stash
+is active, you can simply move it manually back to <code>.gitignore</code>
+or run <code>tar_git_status_data()</code> to restore the stash automatically
+if no <code>.gitignore</code> already exists.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other git: 
+<code>tar_git_checkout()</code>,
+<code>tar_git_init()</code>,
+<code>tar_git_log()</code>,
+<code>tar_git_ok()</code>,
+<code>tar_git_status_code()</code>,
+<code>tar_git_status_data()</code>,
+<code>tar_git_status_targets()</code>,
+<code>tar_git_status()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if (Sys.getenv("TAR_EXAMPLES") == "true" &amp;&amp; tar_git_ok(verbose = FALSE)) {
+targets::tar_dir({ # Containing code does not modify the user's filespace.
+targets::tar_script(tar_target(data, 1))
+targets::tar_make()
+gert::git_init()
+gert::git_add("_targets.R")
+gert::git_commit("First commit")
+tar_git_init()
+tar_git_snapshot(status = FALSE)
+})
+}
+</code></pre>
+
+
+</div>

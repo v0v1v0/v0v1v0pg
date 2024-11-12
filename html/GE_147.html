@@ -1,0 +1,130 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>marginal_utility</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Marginal Utility</h2>
+
+<h3>Description</h3>
+
+<p>If the argument price is null, this function computes the (delta) marginal utility.
+By default, delta is set to 1e-10.
+Otherwise this function computes the (delta) value marginal utility.
+For a utility function U(x), two vector x, y and a scalar price, the marginal utility is (U(x + delta * y) - U(x)) / delta, and
+the value marginal utility is (U(x + delta * y / price) - U(x)) / delta.
+For a marginal utility function M(x), three vector x, y, wt and a scalar price, the marginal utility is sum(M(x) * y * wt), and
+the value marginal utility is sum(M(x) * y * wt / price).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">marginal_utility(x, y, uf, price = NULL, delta = 1e-10, muf = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a numeric k-by-m matrix or a numeric vector (i.e. a k-by-1 matrix).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>a numeric k-by-n matrix or a numeric vector (i.e. a k-by-1 matrix).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>uf</code></td>
+<td>
+<p>a utility function or a list consisting of m utility functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>price</code></td>
+<td>
+<p>NULL or a numeric n-vector consisting of prices of each column of y.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>a scalar.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>muf</code></td>
+<td>
+<p>a marginal utility function or a list consisting of m marginal utility functions.
+A marginal utility function is the gradient of a utility function.
+When the components in the marginal utility vector are the same, a marginal utility function may calculate only one of the components.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An n-by-m marginal utility matrix. Its (i,j)-th element corresponds to the i-th column of y and the j-th column of x.
+</p>
+
+
+<h3>References</h3>
+
+<p>Sharpe, William F. (2008, ISBN: 9780691138503) Investors and Markets: Portfolio Choices, Asset Prices, and Investment Advice. Princeton University Press.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">marginal_utility(1:2, cbind(1:2, 1:1), AMV)
+marginal_utility(1:2, cbind(1:2, 1:1), AMV, delta = 100)
+marginal_utility(cbind(1:2, 3:4), cbind(1:2, 1:1), AMV)
+marginal_utility(
+  cbind(1:2, 3:4), cbind(1:2, 1:1),
+  list(AMV, function(x) AMV(x, gamma = 0.5))
+)
+
+####
+wt &lt;- 1:2
+uf &lt;- function(x) (x - x^2 / 400) %*% wt
+muf &lt;- function(x) (1 - 1 / 200 * x) * wt
+marginal_utility(1:2, cbind(1:2, 1:1), uf)
+marginal_utility(1:2, cbind(1:2, 1:1), muf = muf)
+
+####
+marginal_utility(
+  1:2, cbind(1:2, 1:1),
+  function(x, gamma = 1, p = rep(1, length(x))) CRRA(x, gamma, p)$CE
+)
+marginal_utility(1:2, cbind(1:2, 1:1), function(x) sqrt(prod(x)))
+
+gamma &lt;- 0.8
+wt &lt;- c(0.25, 0.75)
+marginal_utility(
+  1:2, cbind(1:2, 1:1),
+  function(x) CRRA(x, gamma = gamma, prob = wt)$CE
+)
+## the same as above. CRRA and CES utility funcitons are essentially the same.
+es &lt;- 1 / gamma
+beta &lt;- wt^es
+marginal_utility(
+  1:2, cbind(1:2, 1:1),
+  function(x) CES(x = x, sigma = 1 - 1 / es, alpha = 1, beta = wt)
+)
+
+prop.table(marginal_utility(
+  1:2, cbind(1:2, 1:1),
+  function(x) CRRA(x, gamma = gamma, prob = wt)$CE
+))
+prop.table(marginal_utility(
+  1:2, cbind(1:2, 1:1),
+  function(x) CRRA(x, gamma = gamma, prob = wt)$u
+))
+</code></pre>
+
+
+</div>

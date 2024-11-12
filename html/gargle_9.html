@@ -1,0 +1,157 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>credentials_gce</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get a token from the Google metadata server</h2>
+
+<h3>Description</h3>
+
+<p>If your code is running on Google Cloud, we can often obtain a token for an
+attached service account directly from a metadata server. This is more secure
+than working with an explicit a service account key, as
+<code>credentials_service_account()</code> does, and is the preferred method of auth for
+workloads running on Google Cloud.
+</p>
+<p>The most straightforward scenario is when you are working in a VM on Google
+Compute Engine and it's OK to use the default service account. This should
+"just work" automatically.
+</p>
+<p><code>credentials_gce()</code> supports other use cases (such as GKE Workload Identity),
+but may require some explicit setup, such as:
+</p>
+
+<ul>
+<li>
+<p> Create a service account, grant it appropriate scopes(s) and IAM roles,
+attach it to the target resource. This prep work happens outside of R, e.g.,
+in the Google Cloud Console. On the R side, provide the email address of this
+appropriately configured service account via <code>service_account</code>.
+</p>
+</li>
+<li>
+<p> Specify details for constructing the root URL of the metadata service:
+</p>
+
+<ul>
+<li>
+<p> The logical option <code>"gargle.gce.use_ip"</code>. If undefined, this defaults to
+<code>FALSE</code>.
+</p>
+</li>
+<li>
+<p> The environment variable <code>GCE_METADATA_URL</code> is consulted when
+<code>"gargle.gce.use_ip"</code> is <code>FALSE</code>. If undefined, the default is
+<code>metadata.google.internal</code>.
+</p>
+</li>
+<li>
+<p> The environment variable <code>GCE_METADATA_IP</code> is consulted when
+<code>"gargle.gce.use_ip"</code> is <code>TRUE</code>. If undefined, the default is
+<code style="white-space: pre;">⁠169.254.169.254⁠</code>.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> Change (presumably increase) the timeout for requests to the metadata
+server via the <code>"gargle.gce.timeout"</code> global option. This timeout is given in
+seconds and is set to a value (strategy, really) that often works well in
+practice. However, in some cases it may be necessary to increase the timeout
+with code such as:
+</p>
+</li>
+</ul>
+<div class="sourceCode r"><pre>options(gargle.gce.timeout = 3)
+</pre></div>
+<p>For details on specific use cases, such as Google Kubernetes Engine (GKE),
+see <code>vignette("non-interactive-auth")</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">credentials_gce(
+  scopes = "https://www.googleapis.com/auth/cloud-platform",
+  service_account = "default",
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>scopes</code></td>
+<td>
+<p>A character vector of scopes to request. Pick from those listed
+at <a href="https://developers.google.com/identity/protocols/oauth2/scopes">https://developers.google.com/identity/protocols/oauth2/scopes</a>.
+</p>
+<p>For certain token flows, the
+<code>"https://www.googleapis.com/auth/userinfo.email"</code> scope is unconditionally
+included. This grants permission to retrieve the email address associated
+with a token; gargle uses this to index cached OAuth tokens. This grants no
+permission to view or send email and is generally considered a low-value
+scope.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>service_account</code></td>
+<td>
+<p>Name of the GCE service account to use.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to all credential functions.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>GceToken()</code> or <code>NULL</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>A related auth flow that can be used on certain non-Google cloud
+providers is workload identity federation, which is implemented in
+<code>credentials_external_account()</code>.
+</p>
+<p><a href="https://cloud.google.com/compute/docs/access/service-accounts">https://cloud.google.com/compute/docs/access/service-accounts</a>
+</p>
+<p><a href="https://cloud.google.com/iam/docs/best-practices-service-accounts">https://cloud.google.com/iam/docs/best-practices-service-accounts</a>
+</p>
+<p>How to attach a service account to a resource:
+<a href="https://cloud.google.com/iam/docs/impersonating-service-accounts#attaching-to-resources">https://cloud.google.com/iam/docs/impersonating-service-accounts#attaching-to-resources</a>
+</p>
+<p><a href="https://cloud.google.com/kubernetes-engine/docs/concepts/workload-identity">https://cloud.google.com/kubernetes-engine/docs/concepts/workload-identity</a>
+</p>
+<p><a href="https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity">https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity</a>
+</p>
+<p><a href="https://cloud.google.com/compute/docs/metadata/overview">https://cloud.google.com/compute/docs/metadata/overview</a>
+</p>
+<p>Other credential functions: 
+<code>credentials_app_default()</code>,
+<code>credentials_byo_oauth2()</code>,
+<code>credentials_external_account()</code>,
+<code>credentials_service_account()</code>,
+<code>credentials_user_oauth2()</code>,
+<code>token_fetch()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+credentials_gce()
+
+## End(Not run)
+</code></pre>
+
+
+</div>

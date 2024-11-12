@@ -1,0 +1,211 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>drive_get</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get Drive files by path or id</h2>
+
+<h3>Description</h3>
+
+<p>Retrieves metadata for files specified via <code>path</code> or via file <code>id</code>. This
+function is quite straightforward if you specify files by <code>id</code>. But there are
+some important considerations when you specify your target files by <code>path</code>.
+See below for more. If the target files are specified via <code>path</code>, the
+returned <code>dribble</code> will include a <code>path</code> column.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">drive_get(
+  path = NULL,
+  id = NULL,
+  shared_drive = NULL,
+  corpus = NULL,
+  verbose = deprecated(),
+  team_drive = deprecated()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>path</code></td>
+<td>
+<p>Character vector of path(s) to get. Use a trailing slash to
+indicate explicitly that a path is a folder, which can disambiguate if
+there is a file of the same name (yes this is possible on Drive!). If
+<code>path</code> appears to contain Drive URLs or is explicitly marked with
+<code>as_id()</code>, it is treated as if it was provided via the <code>id</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>Character vector of Drive file ids or URLs (it is first processed
+with <code>as_id()</code>). If both <code>path</code> and <code>id</code> are non-<code>NULL</code>, <code>id</code> is silently
+ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shared_drive</code></td>
+<td>
+<p>Anything that identifies one specific shared drive: its
+name, its id or URL marked with <code>as_id()</code>, or a <code>dribble</code>. The value
+provided to <code>shared_drive</code> is pre-processed with <code>as_shared_drive()</code>. Read
+more about shared drives.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corpus</code></td>
+<td>
+<p>Character, specifying which collections of items to search.
+Relevant to those who work with shared drives and/or Google Workspace
+domains. If specified, must be one of <code>"user"</code>, <code>"drive"</code> (requires that
+<code>shared_drive</code> also be specified), <code>"allDrives"</code>, or <code>"domain"</code>. Read more
+about shared drives.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated"><img src="../help/figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> This logical argument to
+individual googledrive functions is deprecated. To globally suppress
+googledrive messaging, use <code>options(googledrive_quiet = TRUE)</code> (the default
+behaviour is to emit informational messages). To suppress messaging in a
+more limited way, use the helpers <code>local_drive_quiet()</code> or
+<code>with_drive_quiet()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>team_drive</code></td>
+<td>
+<p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated"><img src="../help/figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Google Drive and the
+Drive API have replaced Team Drives with shared drives.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>dribble</code>, a tibble with one row per file.
+If the target files were specified via <code>path</code>,
+there will be a <code>path</code> column.
+</p>
+
+
+<h3>Getting by <code>path</code>
+</h3>
+
+<p>Google Drive does NOT behave like your local file system! File and folder
+names need not be unique, even at a given level of the hierarchy. This
+means that a single path can describe multiple files (or 0 or exactly 1).
+</p>
+<p>A single file can also be compatible with multiple paths, i.e. one path
+could be more specific than the other. A file located at <code style="white-space: pre;">⁠~/alfa/bravo⁠</code> can
+be found as <code>bravo</code>, <code>alfa/bravo</code>, and <code style="white-space: pre;">⁠~/alfa/bravo⁠</code>. If all 3 of those
+were included in the input <code>path</code>, they would be represented by a
+<strong>single</strong> row in the output.
+</p>
+<p>It's best to think of <code>drive_get()</code> as a setwise operation when using file
+paths. Do not assume that the <code>i</code>-th input path corresponds to row <code>i</code> in
+the output (although it often does!). If there's not a 1-to-1 relationship
+between the input and output, this will be announced in a message.
+</p>
+<p><code>drive_get()</code> performs just enough path resolution to uniquely identify a
+file compatible with each input <code>path</code>, for all <code>path</code>s at once. If you
+absolutely want the full canonical path, run the output of <code>drive_get()</code>
+through <code>drive_reveal(d, "path")</code>'.
+</p>
+
+
+<h3>Files that you don't own</h3>
+
+<p>If you want to get a file via <code>path</code> and it's not necessarily on your My
+Drive, you may need to specify the <code>shared_drive</code> or <code>corpus</code> arguments to
+search other collections of items. Read more about shared drives.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>To add path information to any <code>dribble</code> that lacks it, use
+<code>drive_reveal(d, "path")</code>. To list the contents of a
+folder, use <code>drive_ls()</code>. For general searching, use <code>drive_find()</code>.
+</p>
+<p>Wraps the <code>files.get</code> endpoint and, if you specify files by name or
+path, also calls <code>files.list</code>:
+</p>
+
+<ul>
+<li> <p><a href="https://developers.google.com/drive/api/v3/reference/files/get">https://developers.google.com/drive/api/v3/reference/files/get</a>
+</p>
+</li>
+<li> <p><a href="https://developers.google.com/drive/api/v3/reference/files/list">https://developers.google.com/drive/api/v3/reference/files/list</a>
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# get info about your "My Drive" root folder
+drive_get("~/")
+# the API reserves the file id "root" for your root folder
+drive_get(id = "root")
+drive_get(id = "root") %&gt;% drive_reveal("path")
+
+# set up some files to get by path
+alfalfa &lt;- drive_mkdir("alfalfa")
+broccoli &lt;- drive_upload(
+  drive_example_local("chicken.txt"),
+  name = "broccoli", path = alfalfa
+)
+drive_get("broccoli")
+drive_get("alfalfa/broccoli")
+drive_get("~/alfalfa/broccoli")
+drive_get(c("broccoli", "alfalfa/", "~/alfalfa/broccoli"))
+
+# Clean up
+drive_rm(alfalfa)
+
+## Not run: 
+# The examples below are indicative of correct syntax.
+# But note these will generally result in an error or a
+# 0-row dribble, unless you replace the inputs with paths
+# or file ids that exist in your Drive.
+
+# multiple names
+drive_get(c("abc", "def"))
+
+# multiple names, one of which must be a folder
+drive_get(c("abc", "def/"))
+
+# query by file id(s)
+drive_get(id = "abcdefgeh123456789")
+drive_get(as_id("abcdefgeh123456789"))
+drive_get(id = c("abcdefgh123456789", "jklmnopq123456789"))
+
+# apply to a browser URL for, e.g., a Google Sheet
+my_url &lt;- "https://docs.google.com/spreadsheets/d/FILE_ID/edit#gid=SHEET_ID"
+drive_get(my_url)
+drive_get(as_id(my_url))
+drive_get(id = my_url)
+
+# access the shared drive named "foo"
+# shared_drive params must be specified if getting by path
+foo &lt;- shared_drive_get("foo")
+drive_get(c("this.jpg", "that-file"), shared_drive = foo)
+# shared_drive params are not necessary if getting by id
+drive_get(as_id("123456789"))
+
+# search all shared drives and other files user has accessed
+drive_get(c("this.jpg", "that-file"), corpus = "allDrives")
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,126 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>scale_facet</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Position scales for individual panels in facets</h2>
+
+<h3>Description</h3>
+
+<p>This function adds position scales (x and y) of individual panels. These
+can be used to fine-tune limits, breaks and other scale parameters for
+individual panels, provided the facet allows free scales.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">scale_x_facet(expr, ..., type = "continuous")
+
+scale_y_facet(expr, ..., type = "continuous")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>expr</code></td>
+<td>
+<p>An <code>expression</code> that, when evaluated in the facet's layout
+data.frame, yields a <code>logical</code> vector. See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed to the scale.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>A <code>character(1)</code> indicating the type of scale, such that
+<code style="white-space: pre;">⁠scale_(x/y)_{type}⁠</code> spells a scale function. Defaults to <code>"continuous"</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>These scale functions work through the mechanism of the
+<code>facetted_pos_scales()</code> function, and the same limitations apply: scale
+transformations are applied after <code>stat</code> transformations, and the <code>oob</code>
+argument of scales is ignored.
+</p>
+<p>For the <code>expr</code> argument, the expression will be evaluated in the context
+of the plot's layout. This is an internal <code>data.frame</code> structure that
+isn't normally exposed, so it requires some extra knowledge. For most
+facets, the layout describes the panels, with one panel per row. It
+typically has <code>COL</code>, <code>ROW</code> and <code>PANEL</code> columns that keep track of what
+panel goes where in a grid of cells. In addition, it contains the
+facetting variables provided to the <code>facets</code> or <code>rows</code> and <code>cols</code> arguments
+of the facets. For example, if we have a plot facetted on the <code>var</code>
+variable with the levels <code>A</code>, <code>B</code> and <code>C</code>, as 1 row and 3 columns, we might
+target the second <code>B</code> panel with any of these expressions: <code>var == "B"</code>,
+<code>PANEL == 2</code> or <code>COL == 2</code>. We can inspect the layout structure by using
+<code>ggplot_build(p)$layout$layout</code>, wherein <code>p</code> is a plot.
+</p>
+<p>When using multiple <code style="white-space: pre;">⁠scale_(x/y)_facet()⁠</code>, the <code>expr</code> argument can target
+the same panels. In such case, the scales added to the plot first overrule
+the scales that were added later.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>scale_facet</code> object that can be added to a plot.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>The <code>facetted_pos_scales()</code> function.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># A standard plot with continuous scales
+p &lt;- ggplot(mtcars, aes(disp, mpg)) +
+  geom_point() +
+  facet_wrap(~ cyl, scales = "free")
+
+# Adding a scale for a value for a facetting variable
+p + scale_x_facet(cyl == 8, limits = c(200, 600))
+
+# Adding a scale by position in the layout
+p + scale_x_facet(COL == 3, limits = c(200, 600))
+
+# Setting the default scale and making an exception for one panel
+p + scale_y_continuous(limits = c(0, 40)) +
+  scale_y_facet(PANEL == 1, limits = c(10, 50))
+
+# Using multiple panel-specific scales
+p + scale_y_facet(PANEL == 1, limits = c(10, 50)) +
+  scale_y_facet(cyl == 6, breaks = scales::breaks_width(0.5))
+
+# When multiple scales target the same panel, the scale added first gets
+# priority over scales added later.
+p + scale_y_facet(COL == 2, limits = c(10, 40)) +
+  scale_y_facet(cyl %in% c(4, 6), breaks = scales::breaks_width(1))
+
+# A standard plot with discrete x scales
+p &lt;- ggplot(mtcars, aes(factor(cyl), mpg)) +
+  geom_boxplot() +
+  facet_wrap(~ vs, scales = "free")
+
+# Expanding limits to show every level
+p + scale_x_facet(vs == 1, limits = factor(c(4, 6, 8)), type = "discrete")
+
+# Shrinking limits to hide a level
+p + scale_x_facet(vs == 0, limits = factor(c(4, 6)), type = "discrete")
+</code></pre>
+
+
+</div>

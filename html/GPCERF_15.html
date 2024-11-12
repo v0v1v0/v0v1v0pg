@@ -1,0 +1,194 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>estimate_cerf_gp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate the conditional exposure response function using Gaussian process</h2>
+
+<h3>Description</h3>
+
+<p>Estimates the conditional exposure response function (cerf) using Gaussian
+Process (gp). The function tune the best match (the lowest covariate balance)
+for the provided set of hyperparameters.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">estimate_cerf_gp(
+  data,
+  w,
+  gps_m,
+  params,
+  outcome_col,
+  treatment_col,
+  covariates_col,
+  nthread = 1,
+  kernel_fn = function(x) exp(-x^2)
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data.frame of observation data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>A vector of exposure level to compute CERF (please also see the
+notes).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gps_m</code></td>
+<td>
+<p>An S3 gps object including:
+gps: A data.frame of GPS vectors.
+- Column 1: GPS
+- Column 2: Prediction of exposure for covariate of each data sample
+(e_gps_pred).
+- Column 3: Standard deviation of  e_gps (e_gps_std)
+used_params:
+- dnorm_log: TRUE or FLASE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>params</code></td>
+<td>
+<p>A list of parameters that is required to run the process.
+These parameters include:
+</p>
+
+<ul>
+<li>
+<p> alpha: A scaling factor for the GPS value.
+</p>
+</li>
+<li>
+<p> beta: A scaling factor for the exposure value.
+</p>
+</li>
+<li>
+<p> g_sigma: A scaling factor for kernel function (gamma/sigma).
+</p>
+</li>
+<li>
+<p> tune_app: A tuning approach. Available approaches:
+</p>
+
+<ul><li>
+<p> all: try all combinations of hyperparameters.
+alpha, beta, and g_sigma can be a vector of parameters.
+</p>
+</li></ul>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome_col</code></td>
+<td>
+<p>An outcome column name in <code>data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>treatment_col</code></td>
+<td>
+<p>A treatment column name in <code>data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariates_col</code></td>
+<td>
+<p>Covariates columns name in <code>data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nthread</code></td>
+<td>
+<p>An integer value that represents the number of threads to be
+used by internal packages.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kernel_fn</code></td>
+<td>
+<p>A kernel function. A default value is a Gaussian Kernel.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A cerf_gp object that includes the following values:
+</p>
+
+<ul>
+<li>
+<p> w, the vector of exposure levels.
+</p>
+</li>
+<li>
+<p> pst_mean, Computed mean for the w vector.
+</p>
+</li>
+<li>
+<p> pst_sd, Computed credible interval for the w vector.
+</p>
+</li>
+</ul>
+<h3>Note</h3>
+
+<p>Please note that <code>w</code> is a vector representing a grid of exposure levels at
+which the CERF is to be estimated. This grid can include both observed and
+hypothetical values of the exposure variable. The purpose of defining this
+grid is to provide a structured set of points across the exposure spectrum
+for estimating the CERF. This approach is essential in nonparametric models
+like Gaussian Processes (GPs), where the CERF is evaluated at specific points
+to understand the relationship between the exposure and outcome variables
+across a continuum. It facilitates a comprehensive analysis by allowing
+practitioners to examine the effect of varying exposure levels, including
+those not directly observed in the dataset.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+set.seed(129)
+data &lt;- generate_synthetic_data(sample_size = 100, gps_spec = 3)
+
+
+# Estimate GPS function
+gps_m &lt;- estimate_gps(cov_mt = data[,-(1:2)],
+                      w_all = data$treat,
+                      sl_lib = c("SL.xgboost"),
+                      dnorm_log = FALSE)
+
+# exposure values
+w_all &lt;- seq(0,10,1)
+
+
+cerf_gp_obj &lt;- estimate_cerf_gp(data,
+                                w_all,
+                                gps_m,
+                                params = list(alpha = c(0.1),
+                                              beta=0.2,
+                                              g_sigma = 1,
+                                              tune_app = "all"),
+                                outcome_col = "Y",
+                                treatment_col = "treat",
+                                covariates_col = paste0("cf", seq(1,6)),
+                                nthread = 1)
+
+
+</code></pre>
+
+
+</div>

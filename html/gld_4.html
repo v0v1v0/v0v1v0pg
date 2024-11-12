@@ -1,0 +1,272 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fit.fkml</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate parameters of the FKML parameterisation of the generalised lambda distribution
+</h2>
+
+<h3>Description</h3>
+
+<p>Estimates parameters of the FKML parameterisation of the Generalised <code class="reqn">\lambda</code> Distribution.  Five estimation methods are available;
+Numerical Maximum Likelihood, 
+Maximum Product of Spacings, Titterington's Method, 
+the Starship (also available in the <code>starship</code> function, which uses the same underlying code as this for the fkml parameterisation),
+Trimmed L-Moments, L-Moments, Distributional Least Absolutes, and Method of Moments.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fit.fkml(x, method = "ML", t1 = 0, t2 = 0, 
+  l3.grid = c(-0.9, -0.5, -0.1, 0, 0.1, 0.2, 0.4, 0.8, 1, 1.5), 
+  l4.grid = l3.grid, record.cpu.time = TRUE, optim.method = "Nelder-Mead",
+  inverse.eps = .Machine$double.eps, optim.control=list(maxit=10000), 
+  optim.penalty=1e20, return.data=FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Data to be fitted, as a vector</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>A character string, to select the estimation method.  One of: <code>ML</code> for numerical Maximum Likelihood, <code>MPS</code> or <code>MSP</code>
+for Maximum Spacings Product, <code>TM</code> for Titterington's Method, <code>SM</code> for  Starship Method, <code>TL</code> for  method of Trimmed L-moments, <code>Lmom</code> for  method of L-moments, <code>DLA</code> for the method of Distributional Least Absolutes, or <code>Mom</code> for method of Moments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t1</code></td>
+<td>
+<p>Number of observations to be trimmed from the left in the conceptual sample, <code class="reqn">t_1</code> (A non-negative integer, only used by TL-moment estimation, see details section)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t2</code></td>
+<td>
+<p>Number of observations to be trimmed from the right in the conceptual sample, <code class="reqn">t_2</code> (A non-negative integer, only used by TL-moment estimation, see details section). These two arguments are 
+restricted by <code class="reqn">t_1+t_2 &lt; n</code>, where n is the sample size</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>l3.grid</code></td>
+<td>
+<p>A vector of values to form the grid of values of <code class="reqn">\lambda_3</code> used to find a starting point for the optimisation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>l4.grid</code></td>
+<td>
+<p>A vector of values to form the grid of values of <code class="reqn">\lambda_4</code> used to find a starting point for the optimisation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>record.cpu.time</code></td>
+<td>
+<p>Boolean — should the CPU time used in fitting be recorded in the fitted model object?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optim.method</code></td>
+<td>
+<p>Optimisation method, use any of the options available under <code>method</code> of <code>optim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inverse.eps</code></td>
+<td>
+<p>Accuracy of calculation for the numerical determination of <code class="reqn">F(x)</code>, defaults to <code>.Machine$double.eps</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optim.control</code></td>
+<td>
+<p>List of options for the optimisation step.  See
+<code>optim</code> for details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optim.penalty</code></td>
+<td>
+<p>The penalty to be added to the objective function
+if parameter values are proposed outside the allowed region</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return.data</code></td>
+<td>
+<p>Logical: Should the function return the data (from the argument <code>data</code>)?</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Maximum Likelihood Estimation of the generalised lambda distribution (<code>gld</code>) proceeds by calculating the density of the data for candidate values of the parameters.  Because the
+gld is defined by its quantile function, the method first numerically 
+obtains F(x) by inverting Q(u), then obtains the density for that observation.
+</p>
+<p>Maximum Product of Spacings estimation (sometimes referred to as Maximum 
+Spacing Estimation, or Maximum Spacings Product)  finds the 
+parameter values that
+maximise the product of the spacings (the difference between successive 
+depths, <code class="reqn">F_\theta(x_{(i+1)})-F_\theta(x_{(i)})</code>, where <code class="reqn">F_\theta(x)</code> is the distribution
+function for the candidate values of the parameters).  See 
+Dean (2013) and Cheng &amp; Amin (1981) for details.
+</p>
+<p>Titterington (1985) remarked that MPS effectively added 
+an “extra observation”; there are N data points in the original 
+sample, but N + 1 spacings in the expression maximised in MPS.
+Instead of using spacings between transformed data points, so method <code>TM</code>
+uses  spacings between transformed, adjacently-averaged, data points.
+The spacings are given by <code class="reqn">D_i=F_\theta(z_{(i)})-F_\theta(z_{(i-1)})</code>,
+where <code class="reqn">\alpha_1 = z_0 &lt; z_1 &lt; \dots &lt; z_n = \alpha_2</code>
+and <code class="reqn">z_i = (x_{(i)} +x_{(i+1)})/2</code> 
+for i = 1,2, ... n-1
+(where <code class="reqn">\alpha_1</code> and <code class="reqn">\alpha_2</code> 
+are the lower and upper bounds on the support of the distribution). 
+This reduces the number of spacings to <code class="reqn">n</code> and achieves concordance 
+with the original sample size. See Titterington (1985) and 
+Dean (2013) for details.
+</p>
+<p>The starship is built on the fact that the <code class="reqn">g\lambda d</code>
+is a transformation of the uniform distribution.  Thus the inverse of 
+this transformation is the distribution function for the gld.  The 
+starship method applies different values of the parameters of the distribution to
+the distribution function, calculates the depths <em>q</em> corresponding to 
+the data and chooses the parameters that make these calculated depths 
+closest (as measured by the Anderson-Darling statistic) to a uniform distribution.
+See King &amp; MacGillivray (1999) for details.
+</p>
+<p>TL-Moment estimation chooses the values of the parameters that minimise the 
+difference between the sample Trimmed L-Moments of the data and the Trimmed 
+L-Moments of the fitted distribution.  
+TL-Moments are based on inflating the conceptual sample size used in the definition of L-Moments.  The <code>t1</code> and <code>t2</code> arguments to the
+function define the extent of trimming of the conceptual sample.  Thus,
+the default values of  <code>t1=0</code> and <code>t2=0</code> reduce the TL-Moment
+method to L-Moment estimation.  <code>t1</code> and <code>t2</code> give the number of 
+observations to be trimmed (from the left and right respectively) from 
+the conceptual sample of size <code class="reqn">n+t_1+t_2</code>.  These two
+arguments should be non-negative integers, and <code class="reqn">t_1+t_2 &lt; n</code>, where n is the sample size.
+See Elamir and Seheult (2003) for more on 
+TL-Moments in general, Asquith, (2007) for TL-Moments of the RS parameterisation of the gld and Dean (2013) for more details on TL-Moment estimation of the gld.
+</p>
+<p>The method of distributional least absolutes (DLA) minimises the sum of absolute deviations between the order statistics and their medians (based on the candidate parameters). See Dean (2013) for more information.
+</p>
+<p>Moment estimation chooses the values of the parameters that minimise the 
+(sum of the squared) difference between the first four sample moments of the data and the first four moments of the fitted distribution.  
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>fit.fkml</code> returns an object of <code>class</code> 
+<code>"starship"</code> (regardless of the estimation method used).
+</p>
+<p><code>print</code> prints the estimated values of the parameters, while
+<code>summary.starship</code> prints these by default, but can also provide
+details of the estimation process (from the components <code>grid.results</code>,
+<code>data</code> and <code>optim</code> detailed below).
+</p>
+<p>The value of <code>fit.fkml</code> is a list containing the
+following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>A vector of length 4, giving 
+the estimated parameters, in order,
+<code class="reqn">\lambda_1</code> - location parameter
+<code class="reqn">\lambda_2</code> - scale parameter
+<code class="reqn">\lambda_3</code> - first shape parameter
+<code class="reqn">\lambda_4</code> - second shape parameter
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid.results</code></td>
+<td>
+<p>output from the grid search</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optim</code></td>
+<td>
+<p>output from the optim search,
+<code>optim</code> for details</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cpu</code></td>
+<td>
+<p>A vector showing the computing time used, returned if 
+<code>record.cpu.time</code> is TRUE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The data, if <code>return.data</code> is TRUE</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Robert King, <a href="mailto:robert.king.newcastle@gmail.com">robert.king.newcastle@gmail.com</a>,
+<a href="https://github.com/newystats/">https://github.com/newystats/</a>
+</p>
+<p>Ben Dean, University of Newcastle
+<a href="mailto:benjamin.dean@uon.edu.au">benjamin.dean@uon.edu.au</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Asquith, W. H. (2007), <em>L-Moments and TL-Moments of the Generalized Lambda
+Distribution</em>, Computational Statistics &amp; Data Analysis, <b>51</b>, 4484–4496.
+</p>
+<p>Cheng, R.C.H. &amp; Amin, N.A.K. (1981), <em>Maximum Likelihood Estimation of Parameters in the Inverse Gaussian Distribution, with Unknown Origin</em>, 
+Technometrics, <b>23(3)</b>, 257–263.
+<a href="https://www.jstor.org/stable/1267789">https://www.jstor.org/stable/1267789</a>
+</p>
+<p>Dean, B. (2013) <em>Improved Estimation and Regression Techniques with the Generalised Lambda Distribution</em>, PhD Thesis, University of Newcastle
+<a href="https://nova.newcastle.edu.au/vital/access/manager/Repository/uon:13503">https://nova.newcastle.edu.au/vital/access/manager/Repository/uon:13503</a>
+</p>
+<p>Elamir, E. A. H., and Seheult, A. H. (2003), <em>Trimmed L-Moments</em>, Computational Statistics &amp; Data Analysis, <b>43</b>, 299–314.
+</p>
+<p>King, R.A.R. &amp; MacGillivray, H. L. (1999), <em>A starship method for
+fitting the generalised <code class="reqn">\lambda</code> distributions</em>,
+Australian and New Zealand Journal of
+Statistics <b>41</b>, 353–374.
+</p>
+<p>Titterington, D. M. (1985), <em>Comment on ‘Estimating Parameters in Continuous Univariate Distributions’</em>, Journal of the Royal Statistical Society, Series B, <b>47</b>, 115–116.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>starship</code> 
+<code>GeneralisedLambdaDistribution</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">example.data &lt;- rgl(200,c(3,1,.4,-0.1),param="fkml")
+example.fit &lt;- fit.fkml(example.data,"MSP",return.data=TRUE)
+print(example.fit)
+summary(example.fit)
+plot(example.fit,one.page=FALSE)
+</code></pre>
+
+
+</div>

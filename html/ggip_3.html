@@ -1,0 +1,186 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>coord_ip</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Coordinate system for IP data</h2>
+
+<h3>Description</h3>
+
+<p>A ggplot2 coordinate system that maps a range of IP address space onto a
+two-dimensional grid using a space-filling curve.
+</p>
+<p><code>coord_ip()</code> forms the foundation of any ggip plot. It translates all
+<code>ip_address</code> and <code>ip_network</code>
+vectors to Cartesian coordinates, ready for use by ggplot2 layers (see
+Accessing Coordinates). This ensures all layers use a common mapping.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">coord_ip(
+  canvas_network = ip_network("0.0.0.0/0"),
+  pixel_prefix = 16,
+  curve = c("hilbert", "morton"),
+  expand = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>canvas_network</code></td>
+<td>
+<p>An <code>ip_network</code> scalar that
+determines the region of IP space visualized by the entire 2D grid. The
+default shows the entire IPv4 address space.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pixel_prefix</code></td>
+<td>
+<p>An integer scalar that sets the prefix length of the
+network represented by a single pixel. The default value is 16. Increasing
+this effectively improves the resolution of the plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>curve</code></td>
+<td>
+<p>A string to choose the space-filling curve. Choices are
+<code>"hilbert"</code> (default) and <code>"morton"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expand</code></td>
+<td>
+<p>If <code>TRUE</code>, adds a small expanded margin around the data grid.
+The default is <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Accessing Coordinates</h3>
+
+<p><code>coord_ip()</code> stores the result of the mapping in a nested data frame column.
+This means each <code>ip_address</code> or
+<code>ip_network</code> column in the original data set is
+converted to a data frame column. When specifying ggplot2 aesthetics, you'll
+need to use <code>$</code> to access the nested data (see Examples).
+</p>
+<p>Each <code>ip_address</code> column will be replaced with a
+data frame containing the following columns:</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+   Column name </td>
+<td style="text-align: left;"> Data type </td>
+<td style="text-align: left;"> Description </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>ip</code> </td>
+<td style="text-align: left;"> <code>ip_address</code> </td>
+<td style="text-align: left;"> Original IP data </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>x</code> </td>
+<td style="text-align: left;"> <code>integer</code> </td>
+<td style="text-align: left;"> Pixel x </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>y</code> </td>
+<td style="text-align: left;"> <code>integer</code> </td>
+<td style="text-align: left;"> Pixel y </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+</tr>
+</table>
+<p>Each <code>ip_network</code> column will be replaced with a
+data frame containing the following columns:</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+   Column name </td>
+<td style="text-align: left;"> Data type </td>
+<td style="text-align: left;"> Description </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>ip</code> </td>
+<td style="text-align: left;"> <code>ip_network</code> </td>
+<td style="text-align: left;"> Original IP data </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>xmin</code> </td>
+<td style="text-align: left;"> <code>integer</code> </td>
+<td style="text-align: left;"> Bounding box xmin </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>ymin</code> </td>
+<td style="text-align: left;"> <code>integer</code> </td>
+<td style="text-align: left;"> Bounding box ymin </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>xmax</code> </td>
+<td style="text-align: left;"> <code>integer</code> </td>
+<td style="text-align: left;"> Bounding box xmax </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>ymax</code> </td>
+<td style="text-align: left;"> <code>integer</code> </td>
+<td style="text-align: left;"> Bounding box ymax </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>vignette("visualizing-ip-data")</code> describes the mapping in more detail.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">suppressPackageStartupMessages(library(dplyr))
+
+tibble(address = ip_address(c("0.0.0.0", "128.0.0.0", "192.168.0.1"))) %&gt;%
+  ggplot(aes(x = address$x, y = address$y, label = address$ip)) +
+  geom_point() +
+  geom_label(nudge_x = c(10, 0, -10), nudge_y = -10) +
+  coord_ip(expand = TRUE) +
+  theme_ip_light()
+
+tibble(network = ip_network(c("0.0.0.0/8", "224.0.0.0/4"))) %&gt;%
+  mutate(
+    start = network_address(network),
+    end = broadcast_address(network)
+  ) %&gt;%
+  ggplot() +
+  geom_point(aes(x = start$x, y = start$y), color = "blue") +
+  geom_point(aes(x = end$x, y = end$y), color = "red") +
+  geom_rect(
+    aes(xmin = network$xmin, xmax = network$xmax, ymin = network$ymin, ymax = network$ymax),
+    alpha = 0.5, fill = "grey"
+  ) +
+  coord_ip(curve = "morton", expand = TRUE) +
+  theme_ip_light()
+</code></pre>
+
+
+</div>

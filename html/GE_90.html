@@ -1,0 +1,362 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemOLGF_PureExchange</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Overlapping Generations Financial Sequential Models for Pure Exchange Economies</h2>
+
+<h3>Description</h3>
+
+<p>Some examples of overlapping generations sequential models with financial instrument for pure exchange economies.
+</p>
+<p>In these examples, there is a financial instrument (namely security) which serves as saving means and can be regarded as money, the shares of a firm, etc.
+Consumers use this security for saving, and this is the only use of the security.
+As Samuelson (1958) wrote, society by using money (i.e. security) will go from the non-optimal configuration
+to the optimal configuration.
+</p>
+<p>Here financial demand structure trees are used, which contain financial nodes.
+A financial demand structure tree reflects the demand structure of a consumer
+who has a demand for financial instruments.
+Although CD-type nodes can be used instead of financial-type nodes in the consumer's demand structure tree,
+the use of financial-type nodes will make the demand structure tree easier to understand.
+</p>
+<p>When there is a population growth, we will take the security-split assumption.
+That is, assume that in each period the security will be split just like share split,
+and the growth rate of the quantity of the security is equal to the growth rate of the population.
+Obviously, this assumption will not affect the calculation results essentially.
+And with this assumption, the equilibrium price vector can keep constant in each period, and
+the nominal rates of profit and interest will equal the real rates of profit and interest (i.e. the population growth rate).
+In contrast, in the time circle model the nominal rates of profit and interest equal zero and the real rates of profit and interest
+equal the population growth rate.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemOLGF_PureExchange(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Note</h3>
+
+<p>As can be seen from the first example below, in a pure exchange economy with two-period-lived consumers,
+if age1 (i.e. young) has one unit of labor and age2 (i.e. old) does not,
+then the optimal allocation can be obtained by introducing securities.
+Here it is assumed that each consumer consumes one unit of labor in total.
+</p>
+<p>However, if age2 (i.e. adult) has one unit of labor and age1 (i.e. child) does not,
+we cannot get the optimal allocation by introducing securities.
+So we need the family system.
+</p>
+
+
+<h3>See Also</h3>
+
+
+<p><code>gemOLG_PureExchange</code>
+
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### an OLGF pure exchange economy with two-period-lived consumers.
+## Suppose each consumer has one unit of labor in her first period
+## and she has a C-D intertemporal utility function
+## (1 - beta) * log(c1) + beta * log(c2) and a constant saving rate beta.
+beta &lt;- 0.5
+ratio.saving.consumption &lt;- beta / (1 - beta)
+
+dst.age1 &lt;- node_new(
+  "util",
+  type = "FIN",
+  rate = c(1, ratio.saving.consumption),
+  "lab", "secy" # security, the financial instrument
+)
+
+dst.age2 &lt;- node_new(
+  "util",
+  type = "Leontief", a = 1,
+  "lab"
+)
+
+ge &lt;- sdm2(
+  A = list(
+    dst.age1, dst.age2
+  ),
+  B = matrix(0, 2, 2, TRUE),
+  S0Exg = matrix(c(
+    100, NA,
+    NA, 100
+  ), 2, 2, TRUE),
+  names.commodity = c("lab", "secy"),
+  names.agent = c("age1", "age2"),
+  numeraire = "secy"
+)
+
+ge$p
+ge$D
+ge$DV
+ge$S
+
+#### the population growth and demographic dividend.
+## Suppose each consumer has a SCES intertemporal utility function.
+gr.lab &lt;- 0.03 # the growth rate of population and labor supply
+
+# share parameters of the SCES function
+beta2 &lt;- 0.4
+beta1 &lt;- 1 - beta2
+es &lt;- 0.5 # the elasticity of substitution in the SCES function
+
+dst.age1 &lt;- node_new(
+  "util",
+  type = "FIN",
+  rate = c(1, ratio.saving.consumption = 0.1),
+  "lab", "secy", # security, the financial instrument
+  p.lab.last = 1,
+  p.lab.ratio.predicted.last = 1,
+  ts.saving.rate = numeric(0)
+)
+
+dst.age2 &lt;- node_new(
+  "util",
+  type = "Leontief", a = 1,
+  "lab"
+)
+
+ge &lt;- sdm2(
+  A = list(
+    dst.age1, dst.age2
+  ),
+  B = matrix(0, 2, 2, TRUE),
+  S0Exg = matrix(c(
+    100, NA,
+    NA, 100
+  ), 2, 2, TRUE),
+  names.commodity = c("lab", "secy"),
+  names.agent = c("age1", "age2"),
+  numeraire = "secy",
+  policy = list(function(time, A, state) {
+    state$S[1, 1] &lt;- 100 * (1 + gr.lab)^time
+    p.lab.current &lt;- state$p[1] / state$p[2]
+
+    lambda &lt;- 0.6
+    p.lab.ratio.predicted &lt;- p.lab.current / A[[1]]$p.lab.last * lambda +
+      A[[1]]$p.lab.ratio.predicted.last * (1 - lambda)
+    A[[1]]$p.lab.last &lt;- p.lab.current
+    A[[1]]$p.lab.ratio.predicted.last &lt;- p.lab.ratio.predicted
+
+    ratio.saving.consumption &lt;- beta2 / beta1 * (p.lab.ratio.predicted)^(1 - es)
+    A[[1]]$rate &lt;- c(1, ratio.saving.consumption)
+    A[[1]]$ts.saving.rate &lt;- c(A[[1]]$ts.saving.rate, ratio.saving.consumption /
+                                 (1 + ratio.saving.consumption))
+
+    state
+  }, policyMarketClearingPrice),
+  maxIteration = 1,
+  numberOfPeriods = 50,
+  ts = TRUE
+)
+
+matplot(growth_rate(ge$ts.p), type = "o", pch = 20)
+matplot(growth_rate(ge$ts.z), type = "o", pch = 20)
+ge$p
+dst.age1$rate[2] # beta2 / beta1 * (1 + gr.lab)^(es - 1)
+dst.age1$p.lab.ratio.predicted.last
+
+plot(dst.age1$ts.saving.rate, type = "o", pch = 20)
+tail(dst.age1$ts.saving.rate,1) # beta2 / (beta2 + beta1 * (1 + gr.lab)^(1 - es))
+
+#### the basic overlapping generations (inefficient) exchange model.
+## Here the lab2 is regarded as a financial instrument (saving instrument).
+## See gemOLG_PureExchange.
+dst.age1 &lt;- node_new(
+  "util",
+  type = "FIN",
+  rate = c(1, ratio.totalSaving.consumption = 2),
+  "lab1", "lab2"
+)
+
+dst.age2 &lt;- node_new(
+  "util",
+  type = "FIN",
+  rate = c(1, ratio.saving.consumption = 1),
+  "lab1", "lab2"
+)
+
+ge &lt;- sdm2(
+  A = list(dst.age1, dst.age2),
+  B = matrix(0, 2, 2),
+  S0Exg = matrix(c(
+    50, 50,
+    50, 0
+  ), 2, 2, TRUE),
+  names.commodity = c("lab1", "lab2"),
+  names.agent = c("age1", "age2"),
+  numeraire = "lab1",
+  policy = function(time, state) {
+    pension &lt;- (state$last.A[, 2] * state$last.z[2])[2]
+    if (time &gt; 1) state$S[1, 2] &lt;- 1 - pension
+    state
+  }
+)
+
+ge$p
+ge$S
+ge$D
+ge$DV
+
+#### the basic financial overlapping generations exchange model (see Samuelson, 1958).
+## Suppose each consumer has a utility function log(c1) + log(c2) + log(c3).
+GRExg &lt;- 0.03 # the population growth rate
+rho &lt;- 1 / (1 + GRExg)
+
+dst.age1 &lt;- node_new(
+  "util",
+  type = "FIN",
+  rate = {
+    saving.rate &lt;- (2 - rho) / 3
+    c(1, ratio.saving.consumption = saving.rate / (1 - saving.rate))
+  },
+  "lab", "secy"
+)
+
+dst.age2 &lt;- node_new(
+  "util",
+  type = "FIN",
+  rate = c(1, ratio.saving.consumption = 1),
+  "lab", "secy"
+)
+
+dst.age3 &lt;- node_new(
+  "util",
+  type = "Leontief", a = 1,
+  "lab"
+)
+
+ge &lt;- sdm2(
+  A = list(dst.age1, dst.age2, dst.age3),
+  B = matrix(0, 2, 3),
+  S0Exg = matrix(c(
+    1 + GRExg, 1, 0,
+    0, 0.5, 0.5
+  ), 2, 3, TRUE),
+  names.commodity = c("lab", "secy"),
+  names.agent = c("age1", "age2", "age3"),
+  numeraire = "lab",
+  policy = function(time, state) {
+    # Assume that unsold security will be void.
+    last.Demand &lt;- state$last.A %*% dg(state$last.z)
+    secy.holding &lt;- prop.table(last.Demand[2, ])
+    if (time &gt; 1) {
+      state$S[2, 2:3] &lt;- secy.holding[1:2]
+    }
+    state
+  }
+)
+
+ge$p
+ge$S
+ge$D
+
+#### a pure exchange economy with three-period-lived consumers.
+## Suppose each consumer has a Leontief-type utility function min(c1, c2, c3).
+GRExg &lt;- 0.03 # the population growth rate
+igr &lt;- 1 + GRExg
+
+dst.age1 &lt;- node_new(
+  "util",
+  type = "FIN",
+  rate = {
+    saving.rate &lt;- 1 / (1 + igr + igr^2)
+    c(1, ratio.saving.consumption = saving.rate / (1 - saving.rate))
+  },
+  "lab", "secy"
+)
+
+dst.age2 &lt;- node_new(
+  "util",
+  type = "FIN",
+  rate = {
+    saving.rate &lt;- 1 / (1 + igr)
+    c(1, ratio.saving.consumption = saving.rate / (1 - saving.rate))
+  },
+  "lab", "secy"
+)
+
+dst.age3 &lt;- node_new(
+  "util",
+  type = "Leontief", a = 1,
+  "lab"
+)
+
+ge &lt;- sdm2(
+  A = list(dst.age1, dst.age2, dst.age3),
+  B = matrix(0, 2, 3),
+  S0Exg = matrix(c(
+    1 + GRExg, 1, 0,
+    0, 0.5, 0.5
+  ), 2, 3, TRUE),
+  names.commodity = c("lab", "secy"),
+  names.agent = c("age1", "age2", "age3"),
+  numeraire = "lab",
+  policy = function(time, state) {
+    # Assume that unsold security will be void.
+    last.Demand &lt;- state$last.A %*% dg(state$last.z)
+    secy.holding &lt;- prop.table(last.Demand[2, ])
+    if (time &gt; 1) {
+      state$S[2, 2:3] &lt;- secy.holding[1:2]
+    }
+    state
+  }
+)
+
+ge$p
+ge$S
+ge$D
+
+## Assume that the unsold security of age3 will be void.
+## The calculation results are the same as above.
+ge &lt;- sdm2(
+  A = list(dst.age1, dst.age2, dst.age3),
+  B = matrix(0, 2, 3),
+  S0Exg = matrix(c(
+    1 + GRExg, 1, 0,
+    0, 0.5, 0.5
+  ), 2, 3, TRUE),
+  names.commodity = c("lab", "secy"),
+  names.agent = c("age1", "age2", "age3"),
+  numeraire = "lab",
+  policy = function(time, state, state.history) {
+    secy.unsold &lt;- state.history$S[2, , time - 1] * (1 - state.history$q[time - 1, 2])
+    last.Demand &lt;- state$last.A %*% dg(state$last.z)
+    secy.purchased &lt;- last.Demand[2, ]
+
+    if (time &gt; 1) {
+      # Assume that the unsold security of age3 will be void.
+      state$S[2, 2:3] &lt;- prop.table(secy.purchased[1:2] + secy.unsold[1:2])
+    }
+    state
+  },
+  maxIteration = 1
+)
+
+ge$p
+ge$S
+ge$D
+
+
+</code></pre>
+
+
+</div>

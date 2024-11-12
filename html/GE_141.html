@@ -1,0 +1,131 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>makePolicyIncomeTax</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Make a Policy of Income Tax</h2>
+
+<h3>Description</h3>
+
+<p>This function returns a policy function that redistributes the supplies of economic agents,
+and the effect is equivalent to the collection of income tax.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">makePolicyIncomeTax(agent, tax.rate, redistribution, time.win = c(1, Inf))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>agent</code></td>
+<td>
+<p>a vector specifying the indices or names of taxed agents.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tax.rate</code></td>
+<td>
+<p>a vector specifying the income tax rates for agents, which has the same length with the argument agent.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>redistribution</code></td>
+<td>
+<p>a vector specifying the proportions of tax revenue received by agents, which has the same length with the argument agent.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time.win</code></td>
+<td>
+<p>the time window vector, i.e. a 2-vector specifying the start time and end time of policy implementation.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A policy function, which is often used as an argument of the function sdm2.
+</p>
+
+
+<h3>References</h3>
+
+<p>Manuel Alejandro Cardenete, Ana-Isabel Guerra, Ferran Sancho (2012, ISBN: 9783642247453) Applied General Equilibrium: An Introduction. Springer-Verlag Berlin Heidelberg.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gemTax_5_4</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## an exmaple of income tax (see Cardenete et al., 2012, Table 4.3)
+dst.consumer1 &lt;- node_new("utility",
+                          type = "CD",
+                          alpha = 1,
+                          beta = c(0.3, 0.7),
+                          "prod1", "prod2"
+)
+
+dst.consumer2 &lt;- Clone(dst.consumer1)
+dst.consumer2$beta &lt;- c(0.6, 0.4)
+
+dst.firm1 &lt;- node_new("output",
+                      type = "Leontief",
+                      a = c(0.5, 0.2, 0.3),
+                      "VA", "prod1", "prod2"
+)
+node_set(dst.firm1, "VA",
+         type = "CD",
+         alpha = 0.8^-0.8 * 0.2^-0.2,
+         beta = c(0.8, 0.2),
+         "lab", "cap"
+)
+
+dst.firm2 &lt;- Clone(dst.firm1)
+node_set(dst.firm2, "output",
+         a = c(0.25, 0.5, 0.25)
+)
+node_set(dst.firm2, "VA",
+         alpha = 0.4^-0.4 * 0.6^-0.6,
+         beta = c(0.4, 0.6)
+)
+dstl &lt;- list(dst.firm1, dst.firm2, dst.consumer1, dst.consumer2)
+ge &lt;- sdm2(dstl,
+  names.commodity = c("prod1", "prod2", "lab", "cap"),
+  names.agent = c("firm1", "firm2", "consumer1", "consumer2"),
+  numeraire = "lab",
+  B = {
+    tmp &lt;- matrix(0, 4, 4)
+    tmp[1, 1] &lt;- 1
+    tmp[2, 2] &lt;- 1
+    tmp
+  },
+  S0Exg = {
+    tmp &lt;- matrix(NA, 4, 4)
+    tmp[3:4, 3] &lt;- c(30, 20)
+    tmp[3:4, 4] &lt;- c(20, 5)
+    tmp
+  },
+  maxIteration = 1,
+  policy = makePolicyIncomeTax(
+    agent = c(3, 4),
+    tax.rate = c(0.2, 0.2),
+    redistribution = c(0.5, 0.5)
+  )
+)
+
+
+</code></pre>
+
+
+</div>

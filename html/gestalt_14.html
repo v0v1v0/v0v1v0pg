@@ -1,0 +1,117 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>constant</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Values as Functions</h2>
+
+<h3>Description</h3>
+
+<p>A <strong>constant</strong> is a fixed value that incorporates its very computation. This
+is none other than a <em>function</em> that computes a fixed value when called
+without arguments. <code>constant()</code> declares such a function as a bona fide
+constant by transforming it to a function that caches the value of its void
+call (i.e., <code>constant()</code>
+<a href="https://en.wikipedia.org/wiki/Memoization">memoizes</a> void functions).
+</p>
+<p>Combine <code>%&gt;&gt;&gt;%</code> with <code>constant()</code> for a <em>lazy</em>, <em>structured</em>
+alternative to the
+<a href="https://cran.r-project.org/package=magrittr"><span class="pkg">magrittr</span></a> <code>`%&gt;%`</code>
+operator (see ‘Examples’).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">constant(f)
+
+variable(f)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>f</code></td>
+<td>
+<p>Function, or symbol or name (string) thereof, that can be called
+without arguments. (NB: <code>constant()</code> itself does not check whether <code>f()</code> is
+indeed a valid call.)</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p><code>constant()</code> yields a function without formal arguments that returns
+the (cached, visibility-preserving) value of the void call <code>f()</code>.
+</p>
+<p><code>variable()</code> is the inverse transformation of <code>constant()</code>: it
+recovers the underlying (uncached) function of a constant function.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>%&gt;&gt;&gt;%</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Function with a constant return value
+val &lt;- {message("Computing from scratch"); mtcars} %&gt;&gt;&gt;%
+  split(.$cyl) %&gt;&gt;&gt;%
+  lapply(function(data) lm(mpg ~ wt, data)) %&gt;&gt;&gt;%
+  lapply(summary) %&gt;&gt;&gt;%
+  sapply(`[[`, "r.squared")
+
+# With every invocation, `val()` is computed anew:
+val()
+val()
+
+# Declaring `val` as a constant ensures that its value is computed only once.
+# On subsequent calls, the computed value is simply fetched:
+const &lt;- constant(val)
+const()
+const()
+
+# As values, `val()` and `const()` are identical. But `const()`, moreover,
+# has structure, namely the function `const`:
+const
+
+# For instance, you can inspect the intermediate summaries:
+head(const, -1)()
+
+# Which can itself be a constant:
+summ &lt;- constant(head(const, -1))
+summ()
+summ()
+
+## Not run: 
+# Think of `%&gt;&gt;&gt;%` combined with `constant()` as a lazy, structured
+# alternative to the magrittr `%&gt;%` operator.
+library(magrittr)
+
+val2 &lt;- mtcars %&gt;%
+  split(.$cyl) %&gt;%
+  lapply(function(data) lm(mpg ~ wt, data)) %&gt;%
+  lapply(summary) %&gt;%
+  sapply(`[[`, "r.squared")
+
+# `val2` and `const()` are identical values. But whereas `val2` is computed
+# immediately and carries no structure, `const` embodies the process that
+# produces its value, and allows you to defer its realization to the
+# invocation `const()`.
+stopifnot(identical(val2, const()))
+## End(Not run)
+
+# Use `variable()` to recover the original (\dQuote{variable}) function
+val_var &lt;- variable(const)
+stopifnot(identical(val_var, val))
+val_var()
+val_var()
+
+</code></pre>
+
+
+</div>

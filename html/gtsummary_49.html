@@ -1,0 +1,134 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>add_significance_stars</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Add significance stars</h2>
+
+<h3>Description</h3>
+
+<p>Add significance stars to estimates with small p-values
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">add_significance_stars(
+  x,
+  pattern = ifelse(inherits(x, c("tbl_regression", "tbl_uvregression")),
+    "{estimate}{stars}", "{p.value}{stars}"),
+  thresholds = c(0.001, 0.01, 0.05),
+  hide_ci = TRUE,
+  hide_p = inherits(x, c("tbl_regression", "tbl_uvregression")),
+  hide_se = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>(<code>gtsummary</code>)<br>
+A <code>'gtsummary'</code> object with a <code>'p.value'</code> column</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pattern</code></td>
+<td>
+<p>(<code>string</code>)<br>
+glue-syntax string indicating what to display in formatted column.
+Default is <code>"{estimate}{stars}"</code> for regression summaries and <code>"{p.value}{stars}"</code> otherwise.
+A footnote is placed on the first column listed in the pattern.
+Other common patterns are
+<code>"{estimate}{stars} ({conf.low}, {conf.high})"</code> and
+<code>"{estimate} ({conf.low} to {conf.high}){stars}"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thresholds</code></td>
+<td>
+<p>(<code>numeric</code>)<br>
+Thresholds for significance stars. Default is <code>c(0.001, 0.01, 0.05)</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hide_ci</code></td>
+<td>
+<p>(scalar <code>logical</code>)<br>
+logical whether to hide confidence interval. Default is <code>TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hide_p</code></td>
+<td>
+<p>(scalar <code>logical</code>)<br>
+logical whether to hide p-value. Default is <code>TRUE</code> for regression summaries, and <code>FALSE</code> otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hide_se</code></td>
+<td>
+<p>(scalar <code>logical</code>)<br>
+logical whether to hide standard error. Default is <code>FALSE</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a 'gtsummary' table
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+tbl &lt;-
+  lm(time ~ ph.ecog + sex, survival::lung) |&gt;
+  tbl_regression(label = list(ph.ecog = "ECOG Score", sex = "Sex"))
+
+# Example 1 ----------------------------------
+tbl |&gt;
+  add_significance_stars(hide_ci = FALSE, hide_p = FALSE)
+
+# Example 2 ----------------------------------
+tbl |&gt;
+  add_significance_stars(
+    pattern = "{estimate} ({conf.low}, {conf.high}){stars}",
+    hide_ci = TRUE, hide_se = TRUE
+  ) |&gt;
+  modify_header(estimate = "**Beta (95% CI)**") |&gt;
+  modify_footnote(estimate = "CI = Confidence Interval", abbreviation = TRUE)
+
+# Example 3 ----------------------------------
+# Use '  \n' to put a line break between beta and SE
+tbl |&gt;
+  add_significance_stars(
+    hide_se = TRUE,
+    pattern = "{estimate}{stars}  \n({std.error})"
+  ) |&gt;
+  modify_header(estimate = "**Beta  \n(SE)**") |&gt;
+  modify_footnote(estimate = "SE = Standard Error", abbreviation = TRUE) |&gt;
+  as_gt() |&gt;
+  gt::fmt_markdown(columns = everything()) |&gt;
+  gt::tab_style(
+    style = "vertical-align:top",
+    locations = gt::cells_body(columns = label)
+  )
+
+# Example 4 ----------------------------------
+lm(marker ~ stage + grade, data = trial) |&gt;
+  tbl_regression() |&gt;
+  add_global_p() |&gt;
+  add_significance_stars(
+    hide_p = FALSE,
+    pattern = "{p.value}{stars}"
+  )
+
+</code></pre>
+
+
+</div>

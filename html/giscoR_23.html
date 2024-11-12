@@ -1,0 +1,177 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gisco_get_airports</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get location of airports and ports from GISCO API</h2>
+
+<h3>Description</h3>
+
+<p>Loads a <code>sf</code> object from GISCO API or your local library.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gisco_get_airports(
+  year = "2013",
+  country = NULL,
+  cache_dir = NULL,
+  update_cache = FALSE,
+  verbose = FALSE
+)
+
+gisco_get_ports(
+  year = "2013",
+  country = NULL,
+  cache_dir = NULL,
+  update_cache = FALSE,
+  verbose = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>year</code></td>
+<td>
+<p>Year of reference. Only year available right now is <code>"2013"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>country</code></td>
+<td>
+<p>Optional. A character vector of country codes. It could be
+either a vector of country names, a vector of ISO3 country codes or a
+vector of Eurostat country codes. Mixed types (as <code>c("Italy","ES","FRA")</code>)
+would not work. See also <code>countrycode::countrycode()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cache_dir</code></td>
+<td>
+<p>A path to a cache directory. See <strong>About caching</strong>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>update_cache</code></td>
+<td>
+<p>A logical whether to update cache. Default is <code>FALSE</code>.
+When set to <code>TRUE</code> it would force a fresh download of the source
+<code>.geojson</code> file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical, displays information. Useful for debugging,
+default is <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>gisco_get_airports()</code> refer to Europe. All shapefiles provided in
+<a href="https://epsg.io/4326">EPSG:4326</a>.
+</p>
+<p><code>gisco_get_ports()</code> adds a new field <code>CNTR_ISO2</code> to the original data
+identifying the country of the port. Worldwide information available.
+The port codes are aligned with UN/LOCODE standard.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>POINT</code> object on EPSG:4326.
+</p>
+
+
+<h3>About caching</h3>
+
+<p>You can set your <code>cache_dir</code> with <code>gisco_set_cache_dir()</code>.
+</p>
+<p>Sometimes cached files may be corrupt. On that case, try re-downloading
+the data setting <code>update_cache = TRUE</code>.
+</p>
+<p>If you experience any problem on download, try to download the
+corresponding <code>.geojson</code> file by any other method and save it on your
+<code>cache_dir</code>. Use the option <code>verbose = TRUE</code> for debugging the API query.
+</p>
+<p>For a complete list of files available check gisco_db.
+</p>
+
+
+<h3>Source</h3>
+
+<p><a href="https://ec.europa.eu/eurostat/web/gisco/geodata/transport-networks">https://ec.europa.eu/eurostat/web/gisco/geodata/transport-networks</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other infrastructure: 
+<code>gisco_get_education()</code>,
+<code>gisco_get_healthcare()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+library(sf)
+
+greece &lt;- gisco_get_countries(country = "EL", resolution = 3)
+airp_gc &lt;- gisco_get_airports(country = "EL")
+
+library(ggplot2)
+
+if (inherits(airp_gc, "sf")) {
+  ggplot(greece) +
+    geom_sf(fill = "grey80") +
+    geom_sf(data = airp_gc, color = "blue") +
+    labs(
+      title = "Airports on Greece",
+      shape = NULL,
+      color = NULL,
+      caption = gisco_attributions()
+    )
+}
+##############################
+#         Plot ports         #
+##############################
+
+ports &lt;- gisco_get_ports()
+coast &lt;- giscoR::gisco_coastallines
+
+# To Robinson projection :)
+
+library(sf)
+coast &lt;- st_transform(coast, "ESRI:54030")
+ports &lt;- st_transform(ports, st_crs(coast))
+
+if (inherits(ports, "sf")) {
+  ggplot(coast) +
+    geom_sf(fill = "#F6E1B9", color = "#0978AB") +
+    geom_sf(data = ports, fill = "red", shape = 21) +
+    theme_void() +
+    theme(
+      panel.background = element_rect(fill = "#C6ECFF"),
+      panel.grid = element_blank(),
+      plot.title = element_text(face = "bold", hjust = 0.5),
+      plot.subtitle = element_text(face = "italic", hjust = 0.5)
+    ) +
+    labs(
+      title = "Ports Worldwide", subtitle = "Year 2013",
+      caption = "(c) European Union, 1995 - today"
+    )
+}
+
+
+</code></pre>
+
+
+</div>

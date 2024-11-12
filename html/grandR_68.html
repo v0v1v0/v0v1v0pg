@@ -1,0 +1,150 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>FitKinetics</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit kinetic models to all genes.</h2>
+
+<h3>Description</h3>
+
+<p>Fit the standard mass action kinetics model of gene expression by different methods. Some methods require steady state assumptions, for others
+data must be properly normalized. The parameters are fit per Condition.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">FitKinetics(
+  data,
+  name.prefix = "kinetics",
+  type = c("nlls", "ntr", "lm", "chase"),
+  slot = DefaultSlot(data),
+  time = Design$dur.4sU,
+  CI.size = 0.95,
+  return.fields = c("Synthesis", "Half-life"),
+  return.extra = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A grandR object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name.prefix</code></td>
+<td>
+<p>the prefix of the analysis name to be stored in the grandR object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Which method to use (either one of "full","ntr","lm", "chase")</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>slot</code></td>
+<td>
+<p>The data slot to take expression values from</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>The column in the column annotation table representing the labeling duration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CI.size</code></td>
+<td>
+<p>A number between 0 and 1 representing the size of the confidence interval</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return.fields</code></td>
+<td>
+<p>which statistics to return (see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return.extra</code></td>
+<td>
+<p>additional statistics to return (see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>forwarded to <code>FitKineticsGeneNtr</code>, <code>FitKineticsGeneLeastSquares</code> or <code>FitKineticsGeneLogSpaceLinear</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The start of labeling for all samples should be the same experimental time point. The fit gets more precise with multiple samples from multiple
+labeling durations.
+</p>
+<p>The standard mass action kinetics model of gene expression arises from the following differential equation:
+</p>
+<p style="text-align: center;"><code class="reqn">df/dt = s - d  f(t)</code>
+</p>
+
+<p>This model assumes constant synthesis and degradation rates. Based on this, there are different ways for fitting the parameters:
+</p>
+
+<ul>
+<li>
+<p>FitKineticsGeneLeastSquares: non-linear least squares fit on the full model; depends on proper normalization; can work without steady state; assumption of homoscedastic gaussian errors is theoretically not justified
+</p>
+</li>
+<li>
+<p>FitKineticsGeneLogSpaceLinear: linear model fit on the old RNA; depends on proper normalization; assumes steady state for estimating the synthesis rate; assumption of homoscedastic gaussian errors in log space is problematic and theoretically not justified
+</p>
+</li>
+<li>
+<p>FitKineticsGeneNtr: maximum a posteriori fit on the NTR posterior transformed to the degradation rate; as it is based on the NTR only, it is independent on proper normalization; assumes steady state; theoretically well justified
+</p>
+</li>
+</ul>
+<p>Pulse-chase designs are fit using FitKineticsGeneLeastSquares while only considering the drop of labeled RNA. Note that in this case the notion "new" / "old" RNA is misleading,
+since labeled RNA corresponds to pre-existing RNA!
+</p>
+<p>This function is flexible in what to put in the analysis table. You can specify the statistics using return.fields and return.extra (see <code>kinetics2vector</code>)
+</p>
+
+
+<h3>Value</h3>
+
+<p>A new grandR object with the fitted parameters as an analysis table
+</p>
+
+
+<h3>See Also</h3>
+
+<p>FitKineticsGeneNtr, FitKineticsGeneLeastSquares, FitKineticsGeneLogSpaceLinear
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">sars &lt;- ReadGRAND(system.file("extdata", "sars.tsv.gz", package = "grandR"),
+                  design=c("Cell",Design$dur.4sU,Design$Replicate))
+sars &lt;- FilterGenes(sars,use=1:10)
+sars&lt;-FitKinetics(sars,name="kinetics.ntr",type='ntr')
+sars&lt;-Normalize(sars)
+sars&lt;-FitKinetics(sars,name="kinetics.nlls",type='nlls')
+sars&lt;-FitKinetics(sars,name="kinetics.lm",type='lm')
+head(GetAnalysisTable(sars,columns="Half-life"))
+
+</code></pre>
+
+
+</div>

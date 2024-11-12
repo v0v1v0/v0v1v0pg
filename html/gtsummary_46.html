@@ -1,0 +1,146 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>add_p.tbl_survfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Add p-value</h2>
+
+<h3>Description</h3>
+
+<p>Calculate and add a p-value to stratified <code>tbl_survfit()</code> tables.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'tbl_survfit'
+add_p(
+  x,
+  test = "logrank",
+  test.args = NULL,
+  pvalue_fun = label_style_pvalue(digits = 1),
+  include = everything(),
+  quiet,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>(<code>tbl_survfit</code>)<br>
+Object of class <code>"tbl_survfit"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test</code></td>
+<td>
+<p>(<code>string</code>)<br>
+string indicating test to use. Must be one of <code>"logrank"</code>, <code>"tarone"</code>, <code>"survdiff"</code>,
+<code>"petopeto_gehanwilcoxon"</code>, <code>"coxph_lrt"</code>, <code>"coxph_wald"</code>, <code>"coxph_score"</code>.
+See details below</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test.args</code></td>
+<td>
+<p>(named <code>list</code>)<br>
+named list of arguments that will be passed to the method specified in the
+<code>test</code> argument.
+Default is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pvalue_fun</code></td>
+<td>
+<p>(<code>function</code>)<br>
+Function to round and format p-values. Default is <code>label_style_pvalue()</code>.
+The function must have a numeric vector input, and return a string that is
+the rounded/formatted p-value (e.g. <code>pvalue_fun = label_style_pvalue(digits = 2)</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include</code></td>
+<td>
+<p>(<code>tidy-select</code>)<br>
+Variables to include in output. Default is <code>everything()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated"><img src="../help/figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>These dots are for future extensions and must be empty.</p>
+</td>
+</tr>
+</table>
+<h3>test argument</h3>
+
+<p>The most common way to specify <code style="white-space: pre;">⁠test=⁠</code> is by using a single string indicating
+the test name. However, if you need to specify different tests within the same
+table, the input in flexible using the list notation common throughout the
+gtsummary package. For example, the following code would call the log-rank test,
+and a second test of the <em>G-rho</em> family.
+</p>
+<div class="sourceCode r"><pre>... |&gt;
+  add_p(test = list(trt ~ "logrank", grade ~ "survdiff"),
+        test.args = grade ~ list(rho = 0.5))
+</pre></div>
+
+
+<h3>Note</h3>
+
+<p>To calculate the p-values, the formula is re-constructed from the the call in the
+original <code>survfit()</code> object.
+When the <code>survfit()</code> object is created a for loop, <code>lapply()</code>, <code>purrr::map()</code>
+setting the call <em>may not</em> reflect the true formula which may result in an
+error or an incorrect calculation.
+</p>
+<p>To ensure correct results, the call formula in <code>survfit()</code> must represent the
+formula that will be used in <code>survival::survdiff()</code>.
+If you utilize the <code>tbl_survfit.data.frame()</code> S3 method, this is handled for you.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other tbl_survfit tools: 
+<code>add_nevent.tbl_survfit()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(survival)
+
+gts_survfit &lt;-
+  list(
+    survfit(Surv(ttdeath, death) ~ grade, trial),
+    survfit(Surv(ttdeath, death) ~ trt, trial)
+  ) |&gt;
+  tbl_survfit(times = c(12, 24))
+
+# Example 1 ----------------------------------
+gts_survfit |&gt;
+  add_p()
+
+# Example 2 ----------------------------------
+# Pass `rho=` argument to `survdiff()`
+gts_survfit |&gt;
+  add_p(test = "survdiff", test.args = list(rho = 0.5))
+
+</code></pre>
+
+
+</div>

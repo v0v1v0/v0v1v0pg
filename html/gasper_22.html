@@ -1,0 +1,108 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>localize_sgwt</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Localize a Kernel at a Specific Vertex using SGWT</h2>
+
+<h3>Description</h3>
+
+<p>This function localizes a kernel at a specific vertex using the Spectral Graph Wavelet Transform (SGWT).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">localize_sgwt(i, evalues, evectors, b = 2)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>i</code></td>
+<td>
+<p>Integer index of the node where to localize the kernel.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>evalues</code></td>
+<td>
+<p>Numeric vector of the eigenvalues of the Laplacian matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>evectors</code></td>
+<td>
+<p>Numeric matrix of the eigenvectors of the Laplacian matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b</code></td>
+<td>
+<p>Numeric scalar that controls the number of scales in the SGWT. It must be greater than 1.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The SGWT offers a comprehensive understanding of graph signals by providing insights into both vertex (spatial) and spectral (frequency) domains.
+</p>
+<p>The kernel is localized by transforming an impulse signal centered at vertex <code class="reqn">i</code> using the SGWT.
+The SGWT leverages a wavelet function <code class="reqn">\psi(\lambda)</code> to provide a multi-resolution analysis of the graph signal.
+The impulse signal at vertex <code class="reqn">i</code> is a vector <code class="reqn">f</code> with a one at the i-th position and zeros elsewhere.
+The SGWT is given by:
+</p>
+<p style="text-align: center;"><code class="reqn">W_f(\lambda) = f \ast \psi(\lambda) = U \psi(\Lambda) U^T f</code>
+</p>
+
+<p>where <code class="reqn">U</code> is the matrix of eigenvectors of the Laplacian and <code class="reqn">\Lambda</code> is the diagonal matrix of eigenvalues.
+The localized spatial view of the kernel's behavior around vertex <code class="reqn">i</code> is achieved by transforming this impulse signal using the above expression.
+</p>
+<p>To gain insights into the spectral localization of this localized kernel, one can analyze its GFT to understand how the energy of the kernel is distributed across various graph frequencies. As SGWT scales move from coarse to fine, energy concentration of the localized kernel shifts from lower to higher graph frequencies, indicating tighter spectral localization.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>f</code> Kernel localized at vertex <code>i</code> using SGWT.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>forward_sgwt</code>, <code>forward_gft</code>, <code>forward_gft</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# Compute the Laplacian matrix and its eigen-decomposition
+L &lt;- laplacian_mat(grid1$sA)
+decomp &lt;- eigensort(L)
+
+# Randomly select a vertex
+vertex_i &lt;- sample(1:nrow(L), 1)
+
+f_sgwt &lt;- localize_sgwt(vertex_i, evalues=decomp$evalues, evectors=decomp$evectors, b=2)
+
+# Select one scale j from f_sgwt.
+N &lt;- nrow(grid1$sA)
+j &lt;- 5 # change scale j to view other scales
+f &lt;- f_sgwt[ ((j-1)*N+1):(j*N)]
+
+# Plot the localized kernel (for the chosen scale) as a signal on the graph
+plot_signal(grid1, f)
+
+# Plot the magnitude of the GFT coefficients
+barplot(abs(f_gft), main="GFT of Localized Signal",
+        xlab="Eigenvalue Index", ylab="Magnitude")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

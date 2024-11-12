@@ -1,0 +1,188 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fit.full.GMCM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate GMCM parameters of the general model</h2>
+
+<h3>Description</h3>
+
+<p>Estimates the parameters of general Gaussian mixture copula models (GMCM).
+The function finds the maximum likelihood estimate of a general
+GMCM with various optimization procedures. Note, all but the PEM methods
+provides the maximum likelihood estimate.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fit.full.GMCM(u, m, theta = choose.theta(u, m), method = c("NM",
+  "SANN", "L-BFGS", "L-BFGS-B", "PEM"), max.ite = 1000, verbose = TRUE,
+  ...)
+
+fit.general.GMCM(u, m, theta = choose.theta(u, m), method = c("NM",
+  "SANN", "L-BFGS", "L-BFGS-B", "PEM"), max.ite = 1000, verbose = TRUE,
+  ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>u</code></td>
+<td>
+<p>An <code>n</code> by <code>d</code> matrix of marginally uniform observations.
+Rows corresponds to observations and columns to the dimensions of the
+variables. I.e. these are often ranked and scaled test statistics or other
+observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m</code></td>
+<td>
+<p>The number of components to be fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>A list of parameters as defined in <code>rtheta</code>. If
+<code>theta</code> is not provided, then heuristic starting values are chosen
+using the k-means algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>A character vector of length <code class="reqn">1</code>. The optimization
+method used. Should be either <code>"NM"</code>, <code>"SANN"</code>, <code>"L-BFGS"</code>,
+<code>"L-BFGS-B"</code>, or <code>"PEM"</code> which are the Nelder-Mead, Simulated
+Annealing, limited-memory quasi-Newton method, limited-memory quasi-Newton
+method with box constraints, and the pseudo EM algorithm, respectively.
+Default is <code>"NM"</code>. See <code>optim</code> for further details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.ite</code></td>
+<td>
+<p>The maximum number of iterations. If the <code>method</code> is
+<code>"SANN"</code> this is the number of iterations as there is no other
+stopping criterion. (See <code>optim</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical. If <code>TRUE</code>, a trace of the parameter estimates
+is made.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to the <code>control</code>-list in
+<code>optim</code> when <code>method</code> is not equal to <code>"PEM"</code>.
+If <code>method</code> equals <code>"PEM"</code>, the arguments are passed to
+<code>PseudoEMAlgorithm</code> if the <code>method</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>"L-BFGS-B"</code> method does not perform a transformation of
+the parameters and uses box constraints as implemented in <code>optim</code>. <br>
+Note that the many parameter configurations are poorly estimable or
+directly unidentifiable.
+</p>
+<p><code>fit.general.GMCM</code> is simply an alias of <code>fit.full.gmcm</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of parameters formatted as described in <code>rtheta</code>.
+</p>
+<p>When <code>method</code> equals <code>"PEM"</code>, a list of extra information
+(log-likelihood trace, the matrix of group probabilities, theta trace) is
+added as an attribute called "extra".
+</p>
+
+
+<h3>Note</h3>
+
+<p>All the optimization procedures are strongly dependent on the initial
+values and other parameters (such as the cooling scheme for method SANN).
+Therefore it is advisable to apply multiple
+different initial parameters (and optimization routines) and select the
+best fit.
+</p>
+<p>The <code>choose.theta</code> itself chooses random a initialization.
+Hence, the output when <code>theta</code> is not directly supplied can vary.
+</p>
+<p>See <code>optim</code> for further details.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Anders Ellern Bilgrau &lt;anders.ellern.bilgrau@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Li, Q., Brown, J. B. J. B., Huang, H., &amp; Bickel, P. J. (2011).
+Measuring reproducibility of high-throughput experiments. The Annals of
+Applied Statistics, 5(3), 1752-1779. doi:10.1214/11-AOAS466
+</p>
+<p>Tewari, A., Giering, M. J., &amp; Raghunathan, A. (2011). Parametric
+Characterization of Multimodal Distributions with Non-gaussian Modes. 2011
+IEEE 11th International Conference on Data Mining Workshops, 286-292.
+doi:10.1109/ICDMW.2011.135
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>optim</code>, <code>get.prob</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(17)
+sim &lt;- SimulateGMCMData(n = 1000, m = 3, d = 2)
+
+# Plotting simulated data
+par(mfrow = c(1,2))
+plot(sim$z, col = rainbow(3)[sim$K], main = "Latent process")
+plot(sim$u, col = rainbow(3)[sim$K], main = "GMCM process")
+
+# Observed data
+uhat &lt;- Uhat(sim$u)
+
+# The model should be fitted multiple times using different starting estimates
+start.theta &lt;- choose.theta(uhat, m = 3)  # Random starting estimate
+res &lt;- fit.full.GMCM(u = uhat, theta = start.theta,
+                     method = "NM", max.ite = 3000,
+                     reltol = 1e-2, trace = TRUE)  # Note, 1e-2 is too big
+
+# Confusion matrix
+Khat &lt;- apply(get.prob(uhat, theta = res), 1, which.max)
+table("Khat" = Khat, "K" = sim$K)  # Note, some components have been swapped
+
+# Simulation from GMCM with the fitted parameters
+simfit &lt;- SimulateGMCMData(n = 1000, theta = res)
+
+# As seen, the underlying latent process is hard to estimate.
+# The clustering, however, is very good.
+par(mfrow = c(2,2))
+plot(simfit$z, col = simfit$K, main = "Model check 1\nSimulated GMM")
+plot(simfit$u, col = simfit$K, main = "Model check 2\nSimulated GMCM")
+plot(sim$u, col = Khat, main = "MAP clustering")
+</code></pre>
+
+
+</div>

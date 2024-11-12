@@ -1,0 +1,209 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cr_deploy_docker</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Deploy a local Dockerfile to be built on ContainerRegistry</h2>
+
+<h3>Description</h3>
+
+<p>Build a local Dockerfile in the cloud. See googleCloudRunner website for help how to generate Dockerfiles.  If you want the docker to build on each commit, see also cr_deploy_docker_trigger
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cr_deploy_docker(
+  local,
+  image_name = remote,
+  dockerfile = NULL,
+  remote = basename(local),
+  tag = c("latest", "$BUILD_ID"),
+  timeout = 600L,
+  bucket = cr_bucket_get(),
+  projectId = cr_project_get(),
+  launch_browser = interactive(),
+  kaniko_cache = TRUE,
+  predefinedAcl = "bucketOwnerFullControl",
+  pre_steps = NULL,
+  post_steps = NULL,
+  ...
+)
+
+cr_deploy_docker_construct(
+  local,
+  image_name = remote,
+  dockerfile = NULL,
+  remote = basename(local),
+  tag = c("latest", "$BUILD_ID"),
+  timeout = 600L,
+  bucket = cr_bucket_get(),
+  projectId = cr_project_get(),
+  launch_browser = interactive(),
+  kaniko_cache = TRUE,
+  predefinedAcl = "bucketOwnerFullControl",
+  pre_steps = NULL,
+  post_steps = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>local</code></td>
+<td>
+<p>The folder containing the Dockerfile to build</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>image_name</code></td>
+<td>
+<p>The name of the docker image to be built either full name starting with gcr.io or constructed from the image_name and projectId via <code>gcr.io/{projectId}/{image_name}</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dockerfile</code></td>
+<td>
+<p>An optional Dockerfile built to support the script.  Not needed if "Dockerfile" exists in folder.  If supplied will be copied into deployment folder and called "Dockerfile"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remote</code></td>
+<td>
+<p>The folder on Google Cloud Storage</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tag</code></td>
+<td>
+<p>The tag or tags to be attached to the pushed image - can use <code>Build</code> macros</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timeout</code></td>
+<td>
+<p>Amount of time that this build should be allowed to run, to second</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bucket</code></td>
+<td>
+<p>The GCS bucket that will be used to deploy code source</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>projectId</code></td>
+<td>
+<p>The projectId</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>launch_browser</code></td>
+<td>
+<p>Whether to launch the logs URL in a browser once deployed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kaniko_cache</code></td>
+<td>
+<p>If TRUE will use kaniko cache for Docker builds.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predefinedAcl</code></td>
+<td>
+<p>Access setting for the bucket used in deployed.  Set to "bucketLevel" if using bucket level access</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pre_steps</code></td>
+<td>
+<p>Other cr_buildstep to run before the docker build</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>post_steps</code></td>
+<td>
+<p>Other cr_buildstep to run after the docker build</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Arguments passed on to <code>cr_buildstep_docker</code>
+</p>
+
+<dl>
+<dt><code>image</code></dt>
+<dd>
+<p>The image tag that will be pushed, starting with gcr.io or created by combining with <code>projectId</code> if not starting with gcr.io</p>
+</dd>
+<dt><code>location</code></dt>
+<dd>
+<p>Where the Dockerfile to build is in relation to <code>dir</code></p>
+</dd>
+<dt><code>build_args</code></dt>
+<dd>
+<p>additional arguments to pass to <code>docker build</code>,
+should be a character vector.</p>
+</dd>
+<dt><code>push_image</code></dt>
+<dd>
+<p>if <code>kaniko_cache = FALSE</code> and
+<code>push_image = FALSE</code>, then the docker image is simply built and not
+pushed</p>
+</dd>
+</dl>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This lets you deploy local folders with Dockerfiles, automating saving the source on Google Cloud Storage.
+</p>
+<p>To deploy builds on git triggers and sources such as GitHub, see the examples of cr_buildstep_docker or the use cases on the website
+</p>
+
+
+<h3>Note</h3>
+
+<p>'cr_deploy_docker_construct' is a helper function to construct the arguments
+needed to deploy the docker, which may be combined with
+<code>cr_deploy_r</code> to combine Docker and R
+</p>
+
+
+<h3>See Also</h3>
+
+<p>If you want the docker to build on each commit, see cr_deploy_docker_trigger
+</p>
+<p>Other Deployment functions: 
+<code>cr_deploy_docker_trigger()</code>,
+<code>cr_deploy_packagetests()</code>,
+<code>cr_deploy_pkgdown()</code>,
+<code>cr_deploy_run_website()</code>,
+<code>cr_deploy_run()</code>,
+<code>cr_deploy_r()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+cr_project_set("my-project")
+cr_region_set("europe-west1")
+cr_email_set("123456@projectid.iam.gserviceaccount.com")
+cr_bucket_set("my-bucket")
+
+b &lt;- cr_deploy_docker(system.file("example/", package = "googleCloudRunner"))
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,196 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brdg_summary</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Summary table bridge</h2>
+
+<h3>Description</h3>
+
+<p>Bridge function for converting <code>tbl_summary()</code> (and similar) cards to basic gtsummary objects.
+All bridge functions begin with prefix <code style="white-space: pre;">⁠brdg_*()⁠</code>.
+</p>
+<p>This file also contains helper functions for constructing the bridge,
+referred to as the piers (supports for a bridge) and begin with <code style="white-space: pre;">⁠pier_*()⁠</code>.
+</p>
+
+<ul>
+<li> <p><code>brdg_summary()</code>: The bridge function ingests an ARD data frame and returns
+a gtsummary table that includes <code>.$table_body</code> and a basic <code>.$table_styling</code>.
+The <code>.$table_styling$header</code> data frame includes the header statistics.
+Based on context, this function adds a column to the ARD data frame named
+<code>"gts_column"</code>. This column is used during the reshaping in the <code style="white-space: pre;">⁠pier_*()⁠</code>
+functions defining column names.
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠pier_*()⁠</code>: these functions accept a cards tibble and returns a tibble
+that is a piece of the <code>.$table_body</code>. Typically these will be stacked
+to construct the final table body data frame. The ARD object passed here
+will have two primary parts: the calculated summary statistics and the
+attributes ARD. The attributes ARD is used for labeling. The ARD data frame
+passed to this function must include a <code>"gts_column"</code> column, which is
+added in <code>brdg_summary()</code>.
+</p>
+</li>
+</ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R">brdg_summary(
+  cards,
+  variables,
+  type,
+  statistic,
+  by = NULL,
+  missing = "no",
+  missing_stat = "{N_miss}",
+  missing_text = "Unknown"
+)
+
+pier_summary_dichotomous(cards, variables, statistic)
+
+pier_summary_categorical(cards, variables, statistic)
+
+pier_summary_continuous2(cards, variables, statistic)
+
+pier_summary_continuous(cards, variables, statistic)
+
+pier_summary_missing_row(
+  cards,
+  variables,
+  missing = "no",
+  missing_stat = "{N_miss}",
+  missing_text = "Unknown"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>cards</code></td>
+<td>
+<p>(<code>card</code>)<br>
+An ARD object of class <code>"card"</code> typically created with <code style="white-space: pre;">⁠cards::ard_*()⁠</code> functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variables</code></td>
+<td>
+<p>(<code>character</code>)<br>
+character list of variables</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>(named <code>list</code>)<br>
+named list of summary types</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>statistic</code></td>
+<td>
+<p>(named <code>list</code>)<br>
+named list of summary statistic names</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by</code></td>
+<td>
+<p>(<code>string</code>)<br>
+string indicating the stratifying column</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>missing, missing_text, missing_stat</code></td>
+<td>
+<p>Arguments dictating how and if missing values are presented:
+</p>
+
+<ul>
+<li> <p><code>missing</code>: must be one of <code>c("ifany", "no", "always")</code>
+</p>
+</li>
+<li> <p><code>missing_text</code>: string indicating text shown on missing row. Default is <code>"Unknown"</code>
+</p>
+</li>
+<li> <p><code>missing_stat</code>: statistic to show on missing row. Default is <code>"{N_miss}"</code>.
+Possible values are <code>N_miss</code>, <code>N_obs</code>, <code>N_nonmiss</code>, <code>p_miss</code>, <code>p_nonmiss</code>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a gtsummary object
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(cards)
+
+# first build ARD data frame
+cards &lt;-
+  ard_stack(
+    mtcars,
+    ard_continuous(variables = c("mpg", "hp")),
+    ard_categorical(variables = "cyl"),
+    ard_dichotomous(variables = "am"),
+    .missing = TRUE,
+    .attributes = TRUE
+  ) |&gt;
+  # this column is used by the `pier_*()` functions
+  dplyr::mutate(gts_column = ifelse(context == "attributes", NA, "stat_0"))
+
+brdg_summary(
+  cards = cards,
+  variables = c("cyl", "am", "mpg", "hp"),
+  type =
+    list(
+      cyl = "categorical",
+      am = "dichotomous",
+      mpg = "continuous",
+      hp = "continuous2"
+    ),
+  statistic =
+    list(
+      cyl = "{n} / {N}",
+      am = "{n} / {N}",
+      mpg = "{mean} ({sd})",
+      hp = c("{median} ({p25}, {p75})", "{mean} ({sd})")
+    )
+) |&gt;
+  as_tibble()
+
+pier_summary_dichotomous(
+  cards = cards,
+  variables = "am",
+  statistic = list(am = "{n} ({p})")
+)
+
+pier_summary_categorical(
+  cards = cards,
+  variables = "cyl",
+  statistic = list(cyl = "{n} ({p})")
+)
+
+pier_summary_continuous2(
+  cards = cards,
+  variables = "hp",
+  statistic = list(hp = c("{median}", "{mean}"))
+)
+
+pier_summary_continuous(
+  cards = cards,
+  variables = "mpg",
+  statistic = list(mpg = "{median}")
+)
+</code></pre>
+
+
+</div>

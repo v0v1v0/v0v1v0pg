@@ -1,0 +1,162 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fit_tte_data_prior</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit Weibull survival curves to patient-level time-to-event data by including patient-level weighted prior data</h2>
+
+<h3>Description</h3>
+
+<p>This is a function to fit Weibull curves to patient-level Survival data integrating (weighted) prior data.<br>
+Where relevant prior data is available, this function can increase the precision of curve fitting, particularly in cases where there is low data maturity.<br></p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fit_tte_data_prior(
+  data,
+  Time = "Time",
+  Event = "Event",
+  censoringOne = FALSE,
+  type = c("Weibull"),
+  priordata,
+  priorTime = Time,
+  priorEvent = Event,
+  priorcensoringOne = censoringOne,
+  priorweight = 1,
+  init = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The dataframe object containing the patient-level survival data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Time</code></td>
+<td>
+<p>The column name for the times. Default is "Time"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Event</code></td>
+<td>
+<p>The column name for the events column (i.e. the binary variable denoting events vs censorings). Default is "Event"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>censoringOne</code></td>
+<td>
+<p>Specify whether censoring is denoted in the Event column by a one (TRUE) or zero (FALSE). Default=FALSE (censorings denoted by 0, events by 1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Type of event curve to fit. Default is "Weibull", the only type currently accepted</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>priordata</code></td>
+<td>
+<p>The dataframe object containing a patient-level prior dataset.
+Where a patient-level prior data set is not readily available, the function create_tte_prior can be used to create one from summary parameters.
+Naming and format of time and event columns should match that of 'data'. Default=NULL (no prior data)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>priorTime</code></td>
+<td>
+<p>The column name for the prior times. Default is the same value as Time</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>priorEvent</code></td>
+<td>
+<p>The column name for the prior events (i.e. the binary variable denoting events vs censorings). Default is the same value as Event</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>priorcensoringOne</code></td>
+<td>
+<p>Specify whether censoring is denoted in the prior Event column by a one (TRUE) or zero (FALSE). Default is the same as censoringOne</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>priorweight</code></td>
+<td>
+<p>The weight to assign the prior data; a non-negative number, where 0 corresponds to no weight, i.e. ignore prior data, and 1 corresponds to equal
+weighting of prior and observed data.
+The prior weight should typically not be greater than 1. Default=1 (prior patients weighted equivalently to observed data)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p>Vector of starting values for parameter values; useful if survreg experiences convergence issues. Default=NULL (no values specified)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function is primarily used by the event_prediction_prior function, but also useful for Weibull curve fitting across two patient-level data sets.<br>
+If a patient-level prior data set is not available, use the create_tte_prior function to create an artificial one from a distribution.
+Note that this may cause a small amount of over-precision; this may be minimised by deriving the prior data using a different distribution or specifying down-weighting.<br></p>
+
+
+<h3>Value</h3>
+
+<p>Returns a 3-item list providing information needed to define a Curve object:
+</p>
+
+<ul>
+<li>
+<p>"Item 1"The type of Curve object fitted.
+</p>
+</li>
+<li>
+<p>"Item 2"A list of fitted parameters for the curve type.
+</p>
+</li>
+<li>
+<p>"Item 3"A vector containing the covariance-matrix parameters for the curve type.
+</p>
+</li>
+<li>
+<p>"Item 4"A data frame containing the goodness of fit metrics for each curve type.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>James Bell
+</p>
+
+
+<h3>References</h3>
+
+<p>Bell J, unpublished work.
+D Fink, A Compendium of Conjugate Priors, 1997
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">recruit &lt;- PieceR(matrix(c(rep(1,12),10,15,25,30,45,60,55,50,65,60,55,30),ncol=2),1)
+example_data &lt;- simulate_trials(active_ecurve=Weibull(50,0.8),control_ecurve=Weibull(50,0.8),
+rcurve=recruit, assess=10,iterations=1,seed=12345,detailed_output=TRUE,Event="Event",
+censoringOne=FALSE)
+example_prior &lt;- create_tte_prior(curve=Weibull(alpha=100,beta=0.8),duration=20,events=50)
+
+fit_tte_data_prior(data=example_data,priordata=example_prior,priorweight=0.5)
+</code></pre>
+
+
+</div>

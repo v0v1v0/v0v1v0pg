@@ -1,0 +1,258 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getspres</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Exploring Heterogeneity in Meta-Analysis with <em>SPRE</em> Statistics.</h2>
+
+<h3>Description</h3>
+
+<p><code>getspres</code> computes <em>SPRE</em> (standardised predicted random-effects)
+statistics to identify outlier studies in genetic association meta-analyses
+which might have undue influence on the average genetic effect leading to 
+inflated genetic signals.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getspres(beta_in, se_in, study_names_in, variant_names_in, ...)
+
+## Default S3 method:
+getspres(
+  beta_in,
+  se_in,
+  study_names_in,
+  variant_names_in,
+  tau2_method = "DL",
+  verbose_output = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>beta_in</code></td>
+<td>
+<p>A numeric vector of study effect-sizes e.g. log odds-ratios.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se_in</code></td>
+<td>
+<p>A numeric vector of standard errors, genomically corrected at study-level.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>study_names_in</code></td>
+<td>
+<p>A character vector of study names.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variant_names_in</code></td>
+<td>
+<p>A character vector of variant names e.g. rsIDs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>other arguments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau2_method</code></td>
+<td>
+<p>A character scalar, specifying the method that should be used to estimate heterogeneity either through DerSimonian and Laird's moment-based estimate "DL" or restricted maximum likelihood "REML". Note: The REML method uses the iterative Fisher scoring algorithm (step length = 0.5, maximum iterations = 10000) to estimate tau2. Default is "DL".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose_output</code></td>
+<td>
+<p>An optional boolean to display intermediate output. (Default is <code>FALSE</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><em>SPRE</em> statistics are precision-weighted residuals that summarise the 
+direction and extent with which observed study effects in a meta-analysis
+differ from the summary (or average genetic) effect. See the getspres 
+website for more information, documentation and examples.
+</p>
+<p><code>getspres</code> takes as input study effect-size estimates and their 
+corresponding standard errors (i.e. summary data). Study effect estimates 
+could be in the form of linear regression coefficients or log-transformed
+regression coefficients (per-allele log odds ratios) from logistic 
+regression. 
+</p>
+<p><code>getspres</code> uses inverse-variance weighted meta-analysis models in the
+<code>metafor</code> R package to calculate <em>SPRE</em> statistics.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list containing:
+</p>
+
+<ul>
+<li>
+<p> number_variants A numeric scalar for the number of variants 
+</p>
+</li>
+<li>
+<p> number_studies  A numeric scalar for the number of studies
+</p>
+</li>
+<li>
+<p> spre_dataset    A dataframe that is a dataset of computed SPRE statistics and contains the following fields:
+</p>
+
+<ul>
+<li>
+<p> beta          , study effect-size estimates
+</p>
+</li>
+<li>
+<p> se            , corresponding standard errors of the study effect-size estimates
+</p>
+</li>
+<li>
+<p> variant_names , variant names
+</p>
+</li>
+<li>
+<p> study_names   , study names
+</p>
+</li>
+<li>
+<p> study         , study numbers
+</p>
+</li>
+<li>
+<p> snp           , snp numbers
+</p>
+</li>
+<li>
+<p> tau2          , tau_squared, estimate of amount of between-study variance
+</p>
+</li>
+<li>
+<p> I2            , I_squared, heterogeneity index (Higgins inconsistency metric)
+representing proportion of total observed variation due to 
+between-study variance
+</p>
+</li>
+<li>
+<p> Q             , Q-statistic (Cochran's Q)
+</p>
+</li>
+<li>
+<p> xb            , prediction excluding random effects
+</p>
+</li>
+<li>
+<p> xbse          , standard error of prediction excluding random effects
+</p>
+</li>
+<li>
+<p> xbu           , predictions including random effects
+</p>
+</li>
+<li>
+<p> stdxbu        , standard error of prediction (fitted values) 
+including random effects
+</p>
+</li>
+<li>
+<p> hat           , leverage a.k.a diagonal elements of the projection hat matrix
+</p>
+</li>
+<li>
+<p> rawresid      , raw residuals
+</p>
+</li>
+<li>
+<p> uncondse      , unconditional standard errors
+</p>
+</li>
+<li>
+<p> spre          , <em>SPRE</em> statistics (standardised predicted random effects) i.e. 
+raw residuals divided by the unconditional standard errors
+</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3>Methods (by class)</h3>
+
+
+<ul><li> <p><code>default</code>: Computes <em>SPRE</em> statistics in genetic association meta-analyses
+</p>
+</li></ul>
+<h3>See Also</h3>
+
+<p><a href="https://magosil86.github.io/getspres/">https://magosil86.github.io/getspres/</a> to the visit <code>getspres</code> website.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(getspres)
+
+
+# Calculate SPRE statistics for a subset of variants in the heartgenes214 dataset.
+# heartgenes214 is a case-control GWAS meta-analysis of coronary artery disease.
+# To learn more about the heartgenes214 dataset ?heartgenes214
+
+# Calculating SPRE statistics for 3 variants in heartgenes214
+
+heartgenes3 &lt;- subset(heartgenes214, 
+    variants %in% c("rs10139550", "rs10168194", "rs11191416")) 
+
+getspres_results &lt;- getspres(beta_in = heartgenes3$beta_flipped, 
+                               se_in = heartgenes3$gcse, 
+                      study_names_in = heartgenes3$studies, 
+                    variant_names_in = heartgenes3$variants)
+
+
+# Explore results generated by the getspres function
+str(getspres_results)
+
+# Retrieve number of studies and variants
+getspres_results$number_variants
+getspres_results$number_studies
+
+# Retrieve SPRE dataset
+df_spres &lt;- getspres_results$spre_dataset
+head(df_spres)
+
+# Extract SPREs from SPRE dataset
+head(spres &lt;- df_spres[, "spre"])
+
+
+
+# Exploring available options in the getspres function:
+#     1. Estimate heterogeneity using "REML", default is "DL"
+#     2. Calculate SPRE statistics verbosely
+getspres_results &lt;- getspres(beta_in = heartgenes3$beta_flipped, 
+                               se_in = heartgenes3$gcse, 
+                      study_names_in = heartgenes3$studies, 
+                    variant_names_in = heartgenes3$variants,
+                         tau2_method = "REML",
+                      verbose_output = TRUE)
+
+str(getspres_results)
+
+
+
+</code></pre>
+
+
+</div>

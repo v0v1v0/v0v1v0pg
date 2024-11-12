@@ -1,0 +1,214 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>MCmodel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Multiple-choice models</h2>
+
+<h3>Description</h3>
+
+<p>This function estimates the multiple-choice DINA model (de la Torre, 2009).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">MCmodel(
+  dat,
+  Qc,
+  model = "MCDINA",
+  key = NULL,
+  conv.crit = 0.001,
+  maxitr = 2000,
+  conv.type = "pr",
+  SE = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dat</code></td>
+<td>
+<p>A required <code class="reqn">N \times J</code> data matrix of N examinees to J items. Values must be 1, 2,... representing nominal categories.
+Missing values are currently not allowed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Qc</code></td>
+<td>
+<p>A required category and attribute association matrix.
+The first column gives the item number, which must
+be numeric (i.e., 1,2,...) and match the number of column in the data.
+The second column indicates the coded category of each item. The number in the second column must match
+with the number in the data, but if a category is not coded, it should not be included in the Q-matrix.
+Entry 1 indicates that the attribute is measured by the category, and 0 otherwise.
+Note that the MC-DINA model assumes that the category with the largest number of 1s is the key and that the coded distractors should
+allow to assign examinees uniquely.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p><code>MCDINA</code> only currently. Other MC models may be incorporated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>key</code></td>
+<td>
+<p>a numeric vector giving the key of each item. See <code>Examples</code>.
+<code>NULL</code> by default indicating the coded category requiring the largest number of 1s is the key.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conv.crit</code></td>
+<td>
+<p>The convergence criterion for max absolute change in <code>conv.type</code> for two consecutive iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxitr</code></td>
+<td>
+<p>The maximum iterations allowed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conv.type</code></td>
+<td>
+<p>convergence criteria; Can be <code>pr</code> or <code>LL</code>,
+indicating category response function, or -2 times log-likelihood,respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SE</code></td>
+<td>
+<p>logical; estimating standard error of item parameters? Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>an object of class <code>MCmodel</code> with the following components:
+</p>
+
+<dl>
+<dt>prob.parm</dt>
+<dd>
+<p>A list of success probabilities for each reduced latent class on each item (IRF)</p>
+</dd>
+<dt>prob.se</dt>
+<dd>
+<p>A list of standard errors of item parameters</p>
+</dd>
+<dt>attribute</dt>
+<dd>
+<p>A list of estimated attribute profiles including EAP, MLE and MAP estimates.</p>
+</dd>
+<dt>testfit</dt>
+<dd>
+<p>A list of test fit statistics including deviance, number of parameters, AIC and BIC</p>
+</dd>
+<dt>R</dt>
+<dd>
+<p>expected # of individuals in each latent group choosing each option</p>
+</dd>
+<dt>lik</dt>
+<dd>
+<p>posterior probability</p>
+</dd>
+<dt>itr</dt>
+<dd>
+<p>Total # of iterations</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Wenchao Ma, The University of Alabama, <a href="mailto:wenchao.ma@ua.edu">wenchao.ma@ua.edu</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>De La Torre, J. (2009). A cognitive diagnosis model for cognitively based multiple-choice options. <em>Applied Psychological Measurement, 33</em>, 163–183.
+</p>
+<p>Ma, W., &amp; de la Torre, J. (2020). GDINA: An R Package for Cognitive Diagnosis Modeling. <em>Journal of Statistical Software, 93(14)</em>, 1-26.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GDINA</code> for G-DINA model
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+ # check the format of the data
+ # Entry 0 is not allowed
+ head(sim10MCDINA$simdat)
+
+ #---------------------------------
+ # check the format of the Q-matrix
+ #---------------------------------
+ # Take item 1 as an example:
+ # category 2 has a q-vector (1,0,0)
+ # category 1 has a q-vector (0,1,0)
+ # category 4 has a q-vector (1,1,0)
+ # category 3 is not included in the Q-matrix because it is not coded
+ # the order of the coded categories in the Q-matrix doesn't matter
+
+ sim10MCDINA$simQ
+  #     Item coded cat A1 A2 A3
+  #        1         2  1  0  0
+  #        1         1  0  1  0
+  #        1         4  1  1  0
+  #...
+ est &lt;- MCmodel(sim10MCDINA$simdat,sim10MCDINA$simQ)
+ est
+ est$testfit
+
+ #--------------------------------------
+ # Distractors involving more attributes
+ #--------------------------------------
+ # some distractors may involve attributes that are not invovled by the key option
+ # this is not allowed by the "original" MC-DINA (de la Torre, 2009) but is allowed
+ # in the current implementation
+
+ # Users need to specify the key for each item to appropriate handle such an issue
+ # Note item 1 below: category 1 is the key (as indicated in the key argument below)
+ # The distractor (category 4) involves an attribute not included by the key option
+
+ Qc &lt;- matrix(c(1,	1,	1,	1,	0,
+                1,	2,	0,	1,	0,
+                1,	3,	1,	0,	0,
+                1,	4,	1,	0,	1,
+                2,	1,	1,	0,	0,
+                2,	3,	1,	1,	0,
+                2,	2,	1,	1,	1,
+                3,	4,	1,	1,	1,
+                3,	2,	1,	1,	0,
+                3,	3,	0,	1,	1,
+                4,	1,	0,	1,	1,
+                4,	2,	0,	0,	1,
+                5,	1,	1,	0,	0,
+                6,	3,	0,	1,	0,
+                7,	2,	0,	0,	1,
+                8,	4,	1,	0,	0,
+                9,	1,	0,	1,	0,
+                10, 4,	0,	0,	1),ncol = 5,byrow = TRUE)
+
+ est2 &lt;- MCmodel(sim10MCDINA2$simdat,Qc, key = c(1,2,4,1,1,3,2,4,1,4))
+ est2
+ est2$prob.parm
+ est2$testfit
+ est2$attribute
+
+## End(Not run)
+</code></pre>
+
+
+</div>

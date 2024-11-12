@@ -1,0 +1,379 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>grpsurv</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit an group penalized survival model</h2>
+
+<h3>Description</h3>
+
+<p>Fit regularization paths for Cox models with grouped penalties over a grid
+of values for the regularization parameter lambda.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">grpsurv(
+  X,
+  y,
+  group = 1:ncol(X),
+  penalty = c("grLasso", "grMCP", "grSCAD", "gel", "cMCP"),
+  gamma = ifelse(penalty == "grSCAD", 4, 3),
+  alpha = 1,
+  nlambda = 100,
+  lambda,
+  lambda.min = {
+     if (nrow(X) &gt; ncol(X)) 
+         0.001
+     else 0.05
+ },
+  eps = 0.001,
+  max.iter = 10000,
+  dfmax = p,
+  gmax = length(unique(group)),
+  tau = 1/3,
+  group.multiplier,
+  warn = TRUE,
+  returnX = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>The design matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The time-to-event outcome, as a two-column matrix or
+<code>Surv</code> object.  The first column should be time on
+study (follow up time); the second column should be a binary variable with 1
+indicating that the event has occurred and 0 indicating (right) censoring.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>A vector describing the grouping of the coefficients.  For
+greatest efficiency and least ambiguity (see details), it is best if
+<code>group</code> is a factor or vector of consecutive integers, although
+unordered groups and character vectors are also allowed.  If there are
+coefficients to be included in the model without being penalized, assign
+them to group 0 (or <code>"0"</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalty</code></td>
+<td>
+<p>The penalty to be applied to the model.  For group selection,
+one of <code>grLasso</code>, <code>grMCP</code>, or <code>grSCAD</code>.  For bi-level
+selection, one of <code>gel</code> or <code>cMCP</code>.  See below for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>Tuning parameter of the group or composite MCP/SCAD penalty
+(see details).  Default is 3 for MCP and 4 for SCAD.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p><code>grpsurv</code> allows for both a group penalty and an L2
+(ridge) penalty; <code>alpha</code> controls the proportional weight of the
+regularization parameters of these two penalties.  The group penalties'
+regularization parameter is <code>lambda*alpha</code>, while the regularization
+parameter of the ridge penalty is <code>lambda*(1-alpha)</code>.  Default is 1: no
+ridge penalty.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nlambda</code></td>
+<td>
+<p>The number of lambda values.  Default is 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>A user-specified sequence of lambda values.  By default, a
+sequence of values of length <code>nlambda</code> is computed automatically,
+equally spaced on the log scale.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.min</code></td>
+<td>
+<p>The smallest value for lambda, as a fraction of
+lambda.max.  Default is .001 if the number of observations is larger than
+the number of covariates and .05 otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>Convergence threshhold.  The algorithm iterates until the RMSD
+for the change in linear predictors for each coefficient is less than
+<code>eps</code>.  Default is <code>0.001</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.iter</code></td>
+<td>
+<p>Maximum number of iterations (total across entire path).
+Default is 10000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dfmax</code></td>
+<td>
+<p>Limit on the number of parameters allowed to be nonzero.  If
+this limit is exceeded, the algorithm will exit early from the
+regularization path.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gmax</code></td>
+<td>
+<p>Limit on the number of groups allowed to have nonzero elements.
+If this limit is exceeded, the algorithm will exit early from the
+regularization path.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p>Tuning parameter for the group exponential lasso; defaults to
+1/3.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group.multiplier</code></td>
+<td>
+<p>A vector of values representing multiplicative
+factors by which each group's penalty is to be multiplied.  Often, this is a
+function (such as the square root) of the number of predictors in each
+group.  The default is to use the square root of group size for the group
+selection methods, and a vector of 1's (i.e., no adjustment for group size)
+for bi-level selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warn</code></td>
+<td>
+<p>Return warning messages for failures to converge and model
+saturation?  Default is TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>returnX</code></td>
+<td>
+<p>Return the standardized design matrix?  Default is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Not used.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The sequence of models indexed by the regularization parameter <code>lambda</code>
+is fit using a coordinate descent algorithm.  In order to accomplish this,
+the second derivative (Hessian) of the Cox partial log-likelihood is
+diagonalized (see references for details).  The objective function is
+defined to be </p>
+<p style="text-align: center;"><code class="reqn">Q(\beta|X, y) = \frac{1}{n} L(\beta|X, y) + </code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+P_\lambda(\beta)</code>
+</p>
+
+<p>where the loss function L is the negative partial log-likelihood (half the
+deviance) from the Cox regression model.
+<a href="https://pbreheny.github.io/grpreg/articles/models.html">See here for more details</a>.
+</p>
+<p>Presently, ties are not handled by <code>grpsurv</code> in a particularly
+sophisticated manner.  This will be improved upon in a future release of
+<code>grpreg</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object with S3 class <code>"grpsurv"</code> containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>The fitted matrix of coefficients. The number of rows is equal to
+the number of coefficients, and the number of columns is equal to <code>nlambda</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>Same as above.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>The sequence of <code>lambda</code> values in the path.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalty</code></td>
+<td>
+<p>Same as above.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>Same as above.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Same as above.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deviance</code></td>
+<td>
+<p>The deviance of the fitted model at each value of <code>lambda</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The number of observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>A vector of length <code>nlambda</code> containing estimates of effective
+number of model parameters all the points along the regularization path. For
+details on how this is calculated, see Breheny and Huang (2009).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>A vector of length <code>nlambda</code> containing the number of iterations
+until convergence at each value of <code>lambda</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group.multiplier</code></td>
+<td>
+<p>A named vector containing the multiplicative constant
+applied to each group's penalty.</p>
+</td>
+</tr>
+</table>
+<p>For Cox models, the following objects are also returned (and are necessary
+to estimate baseline survival conditional on the estimated regression
+coefficients), all of which are ordered by time on study (i.e., the ith row
+of <code>W</code> does not correspond to the ith row of <code>X</code>):
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>W</code></td>
+<td>
+<p>Matrix of <code>exp(beta)</code> values for each subject over all <code>lambda</code>
+values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>Times on study.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fail</code></td>
+<td>
+<p>Failure event indicator.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Patrick Breheny
+</p>
+
+
+<h3>References</h3>
+
+
+<ul>
+<li>
+<p> Breheny P and Huang J. (2009) Penalized methods for bi-level variable
+selection. <em>Statistics and its interface</em>, <strong>2</strong>: 369-380.
+<a href="https://doi.org/10.4310/sii.2009.v2.n3.a10">doi:10.4310/sii.2009.v2.n3.a10</a>
+</p>
+</li>
+<li>
+<p> Huang J, Breheny P, and Ma S. (2012). A selective review of group
+selection in high dimensional models. <em>Statistical Science</em>, <strong>27</strong>: 481-499.
+<a href="https://doi.org/10.1214/12-sts392">doi:10.1214/12-sts392</a>
+</p>
+</li>
+<li>
+<p> Breheny P and Huang J. (2015) Group descent algorithms for nonconvex
+penalized linear and logistic regression models with grouped predictors.
+<em>Statistics and Computing</em>, <strong>25</strong>: 173-187. <a href="https://doi.org/10.1007/s11222-013-9424-2">doi:10.1007/s11222-013-9424-2</a>
+</p>
+</li>
+<li>
+<p> Breheny P. (2015) The group exponential lasso for bi-level variable
+selection. <em>Biometrics</em>, <strong>71</strong>: 731-740. <a href="https://doi.org/10.1111/biom.12300">doi:10.1111/biom.12300</a>
+</p>
+</li>
+<li>
+<p> Simon N, Friedman JH, Hastie T, and Tibshirani R. (2011)
+Regularization Paths for Cox's Proportional Hazards Model via Coordinate
+Descent. <em>Journal of Statistical Software</em>, <strong>39</strong>: 1-13.
+<a href="https://doi.org/10.18637/jss.v039.i05">doi:10.18637/jss.v039.i05</a>
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>plot.grpreg()</code>, <code>predict.grpsurv()</code>, <code>cv.grpsurv()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(Lung)
+X &lt;- Lung$X
+y &lt;- Lung$y
+group &lt;- Lung$group
+
+fit &lt;- grpsurv(X, y, group)
+plot(fit)
+
+S &lt;- predict(fit, X, type='survival', lambda=0.05)
+plot(S, xlim=c(0,200))
+</code></pre>
+
+
+</div>

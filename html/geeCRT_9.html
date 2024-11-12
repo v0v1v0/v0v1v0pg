@@ -1,0 +1,168 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simbinCLF</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generating Correlated Binary Data using the Conditional Linear Family Method.</h2>
+
+<h3>Description</h3>
+
+<p>simbinCLF generates correlated binary data using the conditional linear family method (Qaqish, 2003).
+It simulates a vector of binary outcomes according the specified marginal mean vector and correlation structure.
+Natural constraints and compatibility between the marginal mean and correlation matrix are checked.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">simbinCLF(mu, Sigma, n = 1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mu</code></td>
+<td>
+<p>a mean vector when <code>n = 1</code> or is <code>NULL</code>, otherwise a list of mean vectors for the <code>n</code> clusters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sigma</code></td>
+<td>
+<p>a correlation matrix when <code>n = 1</code> or is <code>NULL</code>, otherwise a list of correlation matrices for the <code>n</code> clusters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>number of clusters. The default is <code>1</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>y</code> a vector of simulated binary outcomes for <code>n</code> clusters.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Hengshi Yu &lt;hengshi@umich.edu&gt;, Fan Li &lt;fan.f.li@yale.edu&gt;, Paul Rathouz &lt;paul.rathouz@austin.utexas.edu&gt;, Elizabeth L. Turner &lt;liz.turner@duke.edu&gt;, John Preisser &lt;jpreisse@bios.unc.edu&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Qaqish, B. F. (2003). A family of multivariate binary distributions for simulating correlated binary variables with
+specified marginal means and correlations. Biometrika, 90(2), 455-463.
+</p>
+<p>Preisser, J. S., Qaqish, B. F. (2014). A comparison of methods for simulating correlated binary variables with specified marginal means
+and correlations. Journal of Statistical Computation and Simulation, 84(11), 2441-2452.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#####################################################################
+# Simulate 2 clusters, 3 periods and cluster-period size of 5 #######
+#####################################################################
+
+t &lt;- 3
+n &lt;- 2
+m &lt;- 5
+
+# means of cluster 1
+u_c1 &lt;- c(0.4, 0.3, 0.2)
+u1 &lt;- rep(u_c1, c(rep(m, t)))
+# means of cluster 2
+u_c2 &lt;- c(0.35, 0.25, 0.2)
+u2 &lt;- rep(u_c2, c(rep(m, t)))
+
+# List of mean vectors
+mu &lt;- list()
+mu[[1]] &lt;- u1
+mu[[2]] &lt;- u2
+# List of correlation matrices
+
+## correlation parameters
+alpha0 &lt;- 0.03
+alpha1 &lt;- 0.015
+rho &lt;- 0.8
+
+## (1) exchangeable
+Sigma &lt;- list()
+Sigma[[1]] &lt;- diag(m * t) * (1 - alpha1) + matrix(alpha1, m * t, m * t)
+Sigma[[2]] &lt;- diag(m * t) * (1 - alpha1) + matrix(alpha1, m * t, m * t)
+
+y_exc &lt;- simbinCLF(mu = mu, Sigma = Sigma, n = n)
+
+## (2) nested exchangeable
+Sigma &lt;- list()
+cor_matrix &lt;- matrix(alpha1, m * t, m * t)
+loc1 &lt;- 0
+loc2 &lt;- 0
+for (t in 1:t) {
+    loc1 &lt;- loc2 + 1
+    loc2 &lt;- loc1 + m - 1
+    for (i in loc1:loc2) {
+        for (j in loc1:loc2) {
+            if (i != j) {
+                cor_matrix[i, j] &lt;- alpha0
+            } else {
+                cor_matrix[i, j] &lt;- 1
+            }
+        }
+    }
+}
+
+Sigma[[1]] &lt;- cor_matrix
+Sigma[[2]] &lt;- cor_matrix
+
+y_nex &lt;- simbinCLF(mu = mu, Sigma = Sigma, n = n)
+
+## (3) exponential decay
+
+Sigma &lt;- list()
+
+### function to find the period of the ith index
+region_ij &lt;- function(points, i) {
+    diff &lt;- i - points
+    for (h in 1:(length(diff) - 1)) {
+        if (diff[h] &gt; 0 &amp; diff[h + 1] &lt;= 0) {
+            find &lt;- h
+        }
+    }
+    return(find)
+}
+
+cor_matrix &lt;- matrix(0, m * t, m * t)
+useage_m &lt;- cumsum(m * t)
+useage_m &lt;- c(0, useage_m)
+
+for (i in 1:(m * t)) {
+    i_reg &lt;- region_ij(useage_m, i)
+    for (j in 1:(m * t)) {
+        j_reg &lt;- region_ij(useage_m, j)
+        if (i_reg == j_reg &amp; i != j) {
+            cor_matrix[i, j] &lt;- alpha0
+        } else if (i == j) {
+            cor_matrix[i, j] &lt;- 1
+        } else if (i_reg != j_reg) {
+            cor_matrix[i, j] &lt;- alpha0 * (rho^(abs(i_reg - j_reg)))
+        }
+    }
+}
+
+Sigma[[1]] &lt;- cor_matrix
+Sigma[[2]] &lt;- cor_matrix
+
+y_ed &lt;- simbinCLF(mu = mu, Sigma = Sigma, n = n)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,245 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Functions to Fit Principal Component Regression in GAMLSS</h2>
+
+<h3>Description</h3>
+
+<p>The functions <code>pcr()</code> and <code>pc()</code> can be use to fit  principal component regression (PCR) within a GAMLSS model. They  can be used as an extra additive term (together with other additive terms for example <code>pb()</code>) but the idea is mainly to be used on their own as a way of reducing the dimensionality of the the (scaled) x-variables. The functions can be used even when the number of the explanatory variables say <code>p</code> is greater than the number of observations <code>n</code>. 
+</p>
+<p>The two functions differ on the way PCR is implemented within the GAMLSS algorithm see for example Stasinopoulos et.al (2021).
+In the function <code>pc()</code> the singular value decomposition of the scaled x's is done in the beginning and different re-weighted linear models are fitted on the PC scores see  algorithm  1 in Stasinopoulos et al. (2021). In the function <code>pcr()</code> at each iteration a new weighted PCR is performed using the function <code>fitPCR()</code> see algorithm  2 in Stasinopoulos et al. (2021). 
+</p>
+<p>The functions <code>gamlss.pcr()</code> and <code>gamlss.pc()</code> are supporting functions. The  are not intended to be called directly by users. The function <code>gamlss.pc()</code> is using the linear model function <code>lm()</code> to fit the first principal components while the function codegamlss.pcr() uses <code>fitPCR()</code>.
+</p>
+<p>The function <code>getSVD()</code> creates a singular value decomposition of a design matrix <code>X</code> using the <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> function <code>La.svd()</code>. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pc(x.vars = NULL, x = NULL, x.svd = NULL, df = NULL, 
+   center = TRUE, scale = TRUE, tol = NULL, 
+   max.number = min(p, n), k = log(n), 
+   method = c( "t-values","GAIC","k-fold"))
+
+pcr(x.vars = NULL, x = NULL, df = NULL, 
+    M = min(p, n), k = log(n), 
+    r = 0.2, method = c("GAIC", "t-values", "SPCR"))
+
+gamlss.pc(x, y, w, xeval = NULL, ...)
+
+gamlss.pcr(x, y, w, xeval = NULL, ...)
+
+getSVD(x = NULL, nu = min(n, p), nv = min(n, p))
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x.vars</code></td>
+<td>
+<p>A character vector showing the names of the x-variables. The variables should exist in the original <code>data</code> argument declared in the <code>gamlss()</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>For the function <code>pc()</code> and <code>getSVD()</code> <code>x</code> is a design matrix of dimensions <code>n x p</code> contain all the explanatory variables terms. 
+</p>
+<p>For the function <code>gamlss.pc()</code>, <code>x</code> is a vector of zeros which curries all in information needed for the principal components fits in its attributes
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x.svd</code></td>
+<td>
+<p>A list created by the function <code>getSVD()</code>. This will speed up the time of fitting, (especial for large data sets), since all  the principal components calculation are done in advance. Also if all the parameters of the distribution are modelled by principal components the calculation needed to be done only once.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>(if is not <code>NULL</code>) the number of principal components to be fitted. If it is <code>NULL</code> the number of principal components is automatically calculated  using a GAIC criterion.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>center</code></td>
+<td>
+<p>whether to center the explanatory variables with default <code>TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>whether to scale the explanatory variables with default <code>TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>the cut point for correlation coefficient to be use <code>SPCR</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>CHECK THIS?????</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.number, M</code></td>
+<td>
+<p>The maximum number of principal component to be used in the fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>method used for choosing the number of components</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>the penalty for GAIC</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>the iterative response variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>the iterative weights </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xeval</code></td>
+<td>
+<p>used in prediction</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>for extra arguments</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu</code></td>
+<td>
+<p>the number of left singular vectors to be computed. This must between 0 and n = nrow(x).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nv</code></td>
+<td>
+	
+<p>the number of right singular vectors to be computed. This must be between 0 and p = ncol(x).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>There are three different ways of declaring the list of x-variables (two for the function <code>pcr()</code>):
+</p>
+<p><em>x.vars</em>: this should be a character vector having the names of the explanatory variables. The names  should be  contained in the names  of variables of the <code>data</code> argument of the function <code>gamlss()</code>, see example below.
+</p>
+<p><em>x</em>: This should be a design matrix (preferable unscaled since this could create problems when try to predict), see examples.
+</p>
+<p><em>x.svd</em>: This should be a list created by the function <code>getSVD()</code> which is used as an argument a design matrix, see examples.
+</p>
+
+
+<h3>Value</h3>
+
+<p>For the function <code>pc()</code> returns an object <code>pc</code> with elements <code>"coef"</code>, <code>"beta"</code>, <code>"pc"</code>,   <code>"edf"</code>,  <code>"AIC"</code>. The object <code>pc</code> has methods <code>plot()</code>,  <code>coef()</code> and <code>print()</code>. 
+</p>
+<p>For the function <code>pcr()</code> returns an object <code>PCR</code> see for the help for function <code>fitPCR</code>.  
+</p>
+
+
+<h3>Note</h3>
+
+<p> Do not forget to use <code>registerDoParallel(cores = NUMBER)</code> or
+<code>cl &lt;- makeCluster(NUMBER)</code> and 
+<code>registerDoParallel(cl)</code>
+before calling the function <code>pc()</code> without specifying the degrees of freedom.  Use <code>closeAllConnections()</code> after the fits to close the connections. The <code>NUMBER</code> depends on the machine used. 
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Mikis Stasinopoulos <a href="mailto:d.stasinopoulos@londonmet.ac.uk">d.stasinopoulos@londonmet.ac.uk</a>, Bob Rigby 
+</p>
+
+
+<h3>References</h3>
+
+<p>Bjorn-Helge Mevik, Ron Wehrens and Kristian Hovde Liland
+(2019). pls: Partial Least Squares and Principal Component
+Regression. R package version 2.7-2.
+https://CRAN.R-project.org/package=pls
+</p>
+<p>Rigby, R. A. and  Stasinopoulos D. M. (2005). Generalized additive models for location, scale and shape, (with discussion), 
+<em>Appl. Statist.</em>, <b>54</b>, part 3, pp 507-554.
+</p>
+<p>Rigby, R. A., Stasinopoulos, D. M.,  Heller, G. Z.,  and De Bastiani, F. (2019)
+<em>Distributions for modeling location, scale, and shape: Using GAMLSS in R</em>, Chapman and Hall/CRC, <a href="https://doi.org/10.1201/9780429298547">doi:10.1201/9780429298547</a>. An older version can be found in <a href="https://www.gamlss.com/">https://www.gamlss.com/</a>.
+</p>
+<p>Stasinopoulos D. M. Rigby R.A. (2007) Generalized additive models for location scale and shape (GAMLSS) in R.
+<em>Journal of Statistical Software</em>, Vol. <b>23</b>, Issue 7, Dec 2007, <a href="https://doi.org/10.18637/jss.v023.i07">doi:10.18637/jss.v023.i07</a>.
+</p>
+<p>Stasinopoulos D. M., Rigby R.A., Heller G., Voudouris V., and De Bastiani F., (2017)
+<em>Flexible Regression and Smoothing: Using GAMLSS in R</em>,  Chapman and Hall/CRC.  <a href="https://doi.org/10.1201/b21973">doi:10.1201/b21973</a>
+</p>
+<p>Stasinopoulos, M. D., Rigby, R. A., and De Bastiani F., (2018) GAMLSS: a distributional regression approach, <em>Statistical Modelling</em>, Vol. <b>18</b>, 
+pp, 248-273, SAGE Publications Sage India: New Delhi, India. <a href="https://doi.org/10.1177/1471082X18759144">doi:10.1177/1471082X18759144</a>
+</p>
+<p>Stasinopoulos, M. D., Rigby, R. A., Georgikopoulos N., and De Bastiani F., (2021) Principal  component regression in GAMLSS  applied to Greek-German government bond yield spreads, <em>Statistical Modelling</em> 
+<a href="https://doi.org/10.1177/1471082X211022980">doi:10.1177/1471082X211022980</a>.  
+</p>
+<p>(see also <a href="https://www.gamlss.com/">https://www.gamlss.com/</a>).  
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>centiles.boot</code>, <code>fitRolling</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># the pc() function
+# fitting the same model using different arguments
+# using x.vars
+p1 &lt;- gamlss(y~pc(x.vars=c("x1","x2","x3","x4","x5","x6")), data=usair)
+registerDoParallel(cores = 2)
+t1 &lt;- gamlss(y~pcr(x.vars=c("x1","x2","x3","x4","x5","x6")), data=usair)
+# using x
+X &lt;- model.matrix(~x1+x2+x3+x4+x5+x6, data=usair)[,-1]
+p2 &lt;- gamlss(y~pc(x=X), data=usair)
+t2 &lt;- gamlss(y~pcr(x=X), data=usair)
+# using x.svd
+svdX &lt;- getSVD(X)
+p3 &lt;- gamlss(y~pc(x.svd=svdX), data=usair)
+# selecting the componets 
+p3 &lt;- gamlss(y~pc(x.svd=svdX, df=3), data=usair)
+stopImplicitCluster()
+plot(getSmo(t2))
+plot(getSmo(t2), "gaic")
+</code></pre>
+
+
+</div>

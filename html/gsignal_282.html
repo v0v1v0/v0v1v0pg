@@ -1,0 +1,198 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>xcorr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Cross-correlation</h2>
+
+<h3>Description</h3>
+
+<p>Estimate the cross-correlation between two sequences or the autocorrelation
+of a single sequence
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">xcorr(
+  x,
+  y = NULL,
+  maxlag = if (is.matrix(x)) nrow(x) - 1 else max(length(x), length(y)) - 1,
+  scale = c("none", "biased", "unbiased", "coeff")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Input, numeric or complex vector or matrix. Must not be missing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Input, numeric or complex vector data.  If <code>x</code> is a matrix (not
+a vector), <code>y</code> must be omitted. <code>y</code> may be omitted if <code>x</code> is
+a vector; in this case <code>xcorr</code> estimates the autocorrelation of
+<code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxlag</code></td>
+<td>
+<p>Integer scalar. Maximum correlation lag. If omitted, the
+default value is <code>N-1</code>, where <code>N</code> is the greater of the lengths
+of <code>x</code> and <code>y</code> or, if <code>x</code> is a matrix, the number of rows in
+<code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>Character string. Specifies the type of scaling applied to the
+correlation vector (or matrix). matched to one of:
+</p>
+
+<dl>
+<dt>"none"</dt>
+<dd>
+<p>return the unscaled correlation, R</p>
+</dd>
+<dt>"biased"</dt>
+<dd>
+<p>return the biased average, R / N</p>
+</dd>
+<dt>"unbiased"</dt>
+<dd>
+<p>return the unbiased average, R(k) / (N - |k|)</p>
+</dd>
+<dt>"coeff"</dt>
+<dd>
+<p>return the correlation coefficient, R / (rms(x) .
+rms(y))</p>
+</dd>
+</dl>
+<p>, where <code>k</code> is the lag, and <code>N</code> is the length of
+<code>x</code>
+
+If omitted, the default value is <code>"none"</code>. If <code>y</code> is supplied but
+does not have the same length as <code>x</code>, scale must be <code>"none"</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Estimate the cross correlation R_xy(k) of vector arguments <code>x</code> and
+<code>y</code> or, if <code>y</code> is omitted, estimate autocorrelation R_xx(k) of
+vector <code>x</code>, for a range of lags <code>k</code> specified by the argument
+<code>maxlag</code>. If <code>x</code> is a matrix, each column of <code>x</code> is correlated
+with itself and every other column.
+</p>
+<p>The cross-correlation estimate between vectors <code>x</code> and <code>y</code> (of
+length <code>N</code>) for lag <code>k</code> is given by
+
+</p>
+<pre>
+            N
+     Rxy = SUM x(i+k) . Conj(y(i))
+           i=1
+</pre>
+<p>where data not provided (for example <code>x[-1], y[N+1]</code>) is zero. Note the
+definition of cross-correlation given above. To compute a cross-correlation
+consistent with the field of statistics, see xcov.
+</p>
+<p>The cross-correlation estimate is calculated by a "spectral" method
+in which the FFT of the first vector is multiplied element-by-element
+with the FFT of second vector.  The computational effort depends on
+the length N of the vectors and is independent of the number of lags
+requested.  If you only need a few lags, the "direct sum" method may
+be faster.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list containing the following variables:
+</p>
+
+<dl>
+<dt>R</dt>
+<dd>
+<p>array of correlation estimates</p>
+</dd>
+<dt>lags</dt>
+<dd>
+<p>vector of correlation lags <code>[-maxlag:maxlag]</code></p>
+</dd>
+</dl>
+<p>The array of correlation estimates has one of the following forms:
+</p>
+
+<ol>
+<li>
+<p> Cross-correlation estimate if X and Y are vectors.
+</p>
+</li>
+<li>
+<p> Autocorrelation estimate if is a vector and Y is omitted.
+</p>
+</li>
+<li>
+<p> If <code>x</code> is a matrix, <code>R</code> is a matrix containing the
+cross-correlation estimate of each column with every other column. Lag
+varies with the first index so that <code>R</code> has <code>2 * maxlag + 1</code> rows
+and <code class="reqn">P^2</code> columns where <code>P</code> is the number of columns in <code>x</code>.
+</p>
+</li>
+</ol>
+<h3>Author(s)</h3>
+
+<p>Paul Kienzle, <a href="mailto:pkienzle@users.sf.net">pkienzle@users.sf.net</a>,<br>
+Asbjorn Sabo, <a href="mailto:asbjorn.sabo@broadpark.no">asbjorn.sabo@broadpark.no</a>,<br>
+Peter Lanspeary. <a href="mailto:peter.lanspeary@adelaide.edu.au">peter.lanspeary@adelaide.edu.au</a>.<br>
+Conversion to R by Geert van Boxtel, <a href="mailto:G.J.M.vanBoxtel@gmail.com">G.J.M.vanBoxtel@gmail.com</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>xcov</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Create a vector x and a vector y that is equal to x shifted by 5
+## elements to the right. Compute and plot the estimated cross-correlation
+## of x and y. The largest spike occurs at the lag value when the elements
+## of x and y match exactly (-5).
+n &lt;- 0:15
+x &lt;- 0.84^n
+y &lt;- pracma::circshift(x, 5)
+rl &lt;- xcorr(x, y)
+plot(rl$lag, rl$R, type="h")
+
+## Compute and plot the estimated autocorrelation of a vector x.
+## The largest spike occurs at zero lag, when x matches itself exactly.
+n &lt;- 0:15
+x &lt;- 0.84^n
+rl &lt;- xcorr(x)
+plot(rl$lag, rl$R, type="h")
+
+## Compute and plot the normalized cross-correlation of vectors
+## x and y with unity peak, and specify a maximum lag of 10.
+n &lt;- 0:15
+x &lt;- 0.84^n
+y &lt;- pracma::circshift(x, 5)
+rl &lt;- xcorr(x, y, 10, 'coeff')
+plot(rl$lag, rl$R, type="h")
+
+</code></pre>
+
+
+</div>

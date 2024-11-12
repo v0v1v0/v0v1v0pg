@@ -1,0 +1,307 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GMcw</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Multithreaded component-wise Gaussian mixture trainer
+</h2>
+
+<h3>Description</h3>
+
+<p>The component-wise variant of <code>GM()</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GMcw(
+  X,
+  Xw = rep(1, ncol(X)),
+  alpha = numeric(0),
+  mu = matrix(ncol = 0, nrow = 0),
+  sigma = matrix(ncol = 0, nrow = 0),
+  G = 5L,
+  convergenceEPS = 1e-05,
+  alphaEPS = 0,
+  eigenRatioLim = Inf,
+  maxIter = 1000L,
+  maxCore = 7L,
+  tlimit = 3600,
+  verbose = TRUE
+  )
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>A <code>d x N</code> numeric matrix where <code>N</code> is the number of observations — each column is an observation, and <code>d</code> is the dimensionality. Column-observation representation promotes cache locality.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Xw</code></td>
+<td>
+
+<p>A numeric vector of size <code>N</code>. <code>Xw[i]</code> is the weight on observation <code>X[, i]</code>. Users should normalize <code>Xw</code> such that the elements sum up to <code>N</code>. Default uniform weights for all observations.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+
+<p>A numeric vector of size <code>K</code>, the number of Gaussian kernels in the mixture model. <code>alpha</code> are the initial mixture weights and should sum up to 1. Default empty.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu</code></td>
+<td>
+
+<p>A <code>d x K</code> numeric matrix. <code>mu[, i]</code> is the initial mean for the <code>i</code>th Gaussian kernel. Default empty matrix.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+
+<p>A <code>d^2 x K</code> numeric matrix. Each column represents a flattened <code>d x d</code> initial covariance matrix of the <code>i</code>th Gaussian kernel. In R, <code>as.numeric(aMatrix)</code> gives the flattened version of <code>aMatrix</code>. Covariance matrix of each Gaussian kernel MUST be positive-definite. Default empty.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+
+<p>An integer. If at least one of the parameters <code>alpha</code>, <code>mu</code>, <code>sigma</code> are empty, the program will initialize <code>G</code> Gaussian kernels via K-means++ deterministic initialization. See <code>KMppIni()</code>. Otherwise <code>G</code> is ignored. Default 5.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convergenceEPS</code></td>
+<td>
+
+<p>A numeric value. If the average change of all parameters in the mixture model is below <code>convergenceEPS</code> relative to those in the pervious iteration, the program ends. Checking convergence this way is faster than recomputing the log-likelihood every iteration. Default 1e-5.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alphaEPS</code></td>
+<td>
+
+<p>A numeric value. During training, if any Gaussian kernel's weight is no greater than <code>alphaEPS</code>, the kernel is deleted. Default 0.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eigenRatioLim</code></td>
+<td>
+
+<p>A numeric value. During training, if any Gaussian kernel's max:min eigen value ratio exceeds <code>eigenRatioLim</code>, the kernel is treated as degenerate and deleted. Thresholding eigen ratios is in the interest of minimizing the effect of degenerate kernels in an early stage. Default <code>Inf</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxIter</code></td>
+<td>
+
+<p>An integer, the maximal number of iterations.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxCore</code></td>
+<td>
+
+<p>An integer. The maximal number of threads to invoke. Should be no more than the total number of logical processors on machine. Default 7.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tlimit</code></td>
+<td>
+
+<p>A numeric value. The program exits with the current model in <code>tlimit</code> seconds.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>A boolean value. <code>TRUE</code> prints progress.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Relevant details can be found in <code>GM()</code>. In <code>GMcw()</code>, an update of any Gaussian kernel triggers the update of the underlying weighing matrix that directs the update of all Gaussian kernels. Only after that the next Gaussian kernel is updated. See references.
+</p>
+<p>In the actual implementation, the <code>N x K</code> weighing matrix <code>WEI</code> does not exist in memory. An <code>N x K</code> density matrix <code>DEN</code> instead stores each Gaussian kernel's probability density at every observation in <code>X</code>. Mathematically, the <code>i</code>th column of <code>WEI</code> equals <code>DEN</code>'s <code>i</code>th column divided by the row sum <code>RS</code>. <code>RS</code> is a vector of size <code>N</code> and is memorized and updated responding to the update of each Gaussian kernel: before updating the <code>i</code>th kernel, the algorithm subtracts the <code>i</code>th column of <code>DEN</code> from <code>RS</code>; after the kernel is updated and the probability densities are recomputed, the algorithm adds back the <code>i</code>th column of <code>DEN</code> to <code>RS</code>. Now, to update the <code>i+1</code>th Gaussian kernel, we can divide the <code>i+1</code>th column of <code>DEN</code> by <code>RS</code> to get the weighing coefficients.
+</p>
+<p>The above implementation makes the component-wise trainer comparable to the classic one in terms of speed. The component-wise trainer is a key component in Figuredo &amp; jain's MML (minimum message length) mixture model trainer to avoid premature deaths of the Gaussian kernels.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of size 5:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>alpha </code></td>
+<td>
+<p>a numeric vector of size <code>K</code>. The mixture weights.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu </code></td>
+<td>
+<p>a <code>d x K</code> numeric matrix. Each column is the mean of a Gaussian kernel.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma </code></td>
+<td>
+<p>a <code>d^2 x K</code> numeric matrix. Each column is the flattened covariance matrix of a Gaussian kernel. Do <code>matrix(sigma[, i], nrow = d)</code> to recover the covariance matrix of the <code>i</code>th kernel.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitted </code></td>
+<td>
+<p>a numeric vector of size <code>N</code>. <code>fitted[i]</code> is the probability density of the <code>i</code>th observation given by the mixture model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clusterMember </code></td>
+<td>
+<p>a list of <code>K</code> integer vectors, the hard clustering inferred from the mixture model. Each integer vector contains the indexes of observations in <code>X</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Warning </h3>
+
+<p>For one-dimensional data, <code>X</code> should still follow the data structure requirements: a matrix where each column is an observation.
+</p>
+
+
+<h3>References</h3>
+
+<p>Celeux, Gilles, et al. "A Component-Wise EM Algorithm for Mixtures." Journal of Computational and Graphical Statistics, vol. 10, no. 4, 2001, pp. 697-712. JSTOR, www.jstor.org/stable/1390967.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># =============================================================================
+# Examples below use 1 thread to pass CRAN check. Speed advantage of multiple
+# threads will be more pronounced for larger data.
+# =============================================================================
+
+
+# =============================================================================
+# Parameterize the iris data. Let the function initialize Gaussian kernels.
+# =============================================================================
+X = t(iris[1:4])
+# CRAN check only allows 2 threads at most. Increase `maxCore` for
+# acceleration.
+gmmRst = GMKMcharlie::GMcw(X, G = 3L, maxCore = 1L)
+str(gmmRst)
+
+
+
+
+# =============================================================================
+# Parameterize the iris data given Gaussian kernels.
+# =============================================================================
+G = 3L
+d = nrow(X) # Dimensionality.
+alpha = rep(1, G) / G
+mu = X[, sample(ncol(X), G)] # Sample observations as initial means.
+# Take the average variance and create initial covariance matrices.
+meanVarOfEachDim = sum(diag(var(t(X)))) / d
+covar = diag(meanVarOfEachDim / G, d)
+covars = matrix(rep(as.numeric(covar), G), nrow = d * d)
+
+
+# Models could be different given a different initialization.
+gmmRst2 = GMKMcharlie::GMcw(
+  X, alpha = alpha, mu = mu, sigma = covars, maxCore = 1L)
+str(gmmRst2)
+
+
+
+
+# =============================================================================
+# For fun, fit Rosenbrock function with a Gaussian mixture.
+# =============================================================================
+set.seed(123)
+rosenbrock &lt;- function(x, y) {(1 - x) ^ 2 + 100 * (y - x ^ 2) ^ 2}
+N = 2000L
+x = runif(N, -2, 2)
+y = runif(N, -1, 3)
+z = rosenbrock(x, y)
+
+
+X = rbind(x, y)
+Xw = z * (N / sum(z)) # Weights on observations should sum up to N.
+gmmFit = GMKMcharlie::GMcw(X, Xw = Xw, G = 5L, maxCore = 1L, verbose = FALSE)
+
+
+oldpar = par()$mfrow
+par(mfrow = c(1, 2))
+plot3D::points3D(x, y, z, pch = 20)
+plot3D::points3D(x, y, gmmFit$fitted, pch = 20)
+par(mfrow = oldpar)
+
+
+
+
+# =============================================================================
+# For fun, fit a 3D spiral distribution.
+# =============================================================================
+N = 2000
+t = runif(N) ^ 2 * 15
+x = cos(t) + rnorm(N) * 0.1
+y = sin(t) + rnorm(N) * 0.1
+z = t + rnorm(N) * 0.1
+
+
+X = rbind(x, y, z)
+d = 3L
+G = 10L
+gmmFit = GMKMcharlie::GMcw(X, G = G, maxCore = 1L, verbose = FALSE)
+# Sample N points from the Gaussian mixture.
+ns = as.integer(round(N * gmmFit$alpha))
+sampledPoints = list()
+for(i in 1L : G)
+{
+  sampledPoints[[i]] = MASS::mvrnorm(
+    ns[i], mu = gmmFit$mu[, i], Sigma = matrix(gmmFit$sigma[, i], nrow = d))
+}
+sampledPoints =
+  matrix(unlist(lapply(sampledPoints, function(x) t(x))), nrow = d)
+
+
+# Plot the original data and the samples from the mixture model.
+oldpar = par()$mfrow
+par(mfrow = c(1, 2))
+plot3D::points3D(x, y, z, pch = 20)
+plot3D::points3D(x = sampledPoints[1, ],
+                 y = sampledPoints[2, ],
+                 z = sampledPoints[3, ],
+                 pch = 20)
+par(mfrow = oldpar)
+</code></pre>
+
+
+</div>

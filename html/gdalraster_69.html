@@ -1,0 +1,132 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ogr2ogr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Convert vector data between different formats</h2>
+
+<h3>Description</h3>
+
+<p><code>ogr2ogr()</code> is a wrapper of the <code>ogr2ogr</code> command-line
+utility (see <a href="https://gdal.org/programs/ogr2ogr.html">https://gdal.org/programs/ogr2ogr.html</a>).
+This function can be used to convert simple features data between file
+formats. It can also perform various operations during the process, such
+as spatial or attribute selection, reducing the set of attributes, setting
+the output coordinate system or even reprojecting the features during
+translation.
+Refer to the GDAL documentation at the URL above for a description of
+command-line arguments that can be passed in <code>cl_arg</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ogr2ogr(
+  src_dsn,
+  dst_dsn,
+  src_layers = NULL,
+  cl_arg = NULL,
+  open_options = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>src_dsn</code></td>
+<td>
+<p>Character string. Data source name of the source vector
+dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dst_dsn</code></td>
+<td>
+<p>Character string. Data source name of the destination vector
+dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>src_layers</code></td>
+<td>
+<p>Optional character vector of layer names in the source
+dataset. Defaults to all layers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl_arg</code></td>
+<td>
+<p>Optional character vector of command-line arguments for
+the GDAL <code>ogr2ogr</code> command-line utility (see URL above).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>open_options</code></td>
+<td>
+<p>Optional character vector of dataset open options.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Logical indicating success (invisible <code>TRUE</code>).
+An error is raised if the operation fails.
+</p>
+
+
+<h3>Note</h3>
+
+<p>For progress reporting, see command-line argument <code>-progress</code>: Display
+progress on terminal. Only works if input layers have the "fast feature
+count" capability.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>ogrinfo()</code>, the ogr_manage utilities
+</p>
+<p><code>translate()</code> for raster data
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">src &lt;- system.file("extdata/ynp_fires_1984_2022.gpkg", package="gdalraster")
+
+# Convert GeoPackage to Shapefile
+shp_file &lt;- file.path(tempdir(), "ynp_fires.shp")
+ogr2ogr(src, shp_file, src_layers = "mtbs_perims")
+
+# Reproject to WGS84
+ynp_wgs84 &lt;- file.path(tempdir(), "ynp_fires_wgs84.gpkg")
+args &lt;- c("-t_srs", "EPSG:4326")
+ogr2ogr(src, ynp_wgs84, cl_arg = args)
+
+# Clip to a bounding box (xmin, ymin, xmax, ymax in the source SRS)
+# This will select features whose geometry intersects the bounding box.
+# The geometries themselves will not be clipped unless "-clipsrc" is
+# specified.
+# The source SRS can be overridden with "-spat_srs" "&lt;srs_def&gt;"
+ynp_clip &lt;- file.path(tempdir(), "ynp_fires_aoi_clip.gpkg")
+bb &lt;- c(469685.97, 11442.45, 544069.63, 85508.15)
+args &lt;- c("-spat", bb)
+ogr2ogr(src, ynp_clip, cl_arg = args)
+
+# Filter features by a -where clause
+ynp_filtered &lt;- file.path(tempdir(), "ynp_fires_2000_2022.gpkg")
+sql &lt;- "ig_year &gt;= 2000 ORDER BY ig_year"
+args &lt;- c("-where", sql)
+ogr2ogr(src, ynp_filtered, src_layers = "mtbs_perims", cl_arg = args)
+
+deleteDataset(shp_file)
+deleteDataset(ynp_wgs84)
+deleteDataset(ynp_clip)
+deleteDataset(ynp_filtered)
+</code></pre>
+
+
+</div>

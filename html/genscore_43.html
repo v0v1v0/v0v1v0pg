@@ -1,0 +1,135 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>in_bound</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Returns whether a vector or each row of a matrix falls inside a domain.</h2>
+
+<h3>Description</h3>
+
+<p>Returns whether a vector or each row of a matrix falls inside a domain.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">in_bound(x, domain)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A vector of length or a matrix of number of columns equal to <code>domain$p</code> if <code>domain$type != "simplex"</code>, or either <code>domain$p</code> or <code>domain$p-1</code> otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>domain</code></td>
+<td>
+<p>A list returned from <code>make_domain()</code> that represents the domain.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Returns whether a vector or each row of a matrix falls inside a domain.
+If <code>domain$type == "simplex"</code>, if the length/number of columns is <code>domain$p</code>, returns <code>all(x &gt; 0) &amp;&amp; abs(sum(x) - 1) &lt; domain$simplex_tol</code>; if the dimension is <code>domain$p-1</code>, returns <code>all(x &gt; 0) &amp;&amp; sum(x) &lt; 1</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A logical vector of length equal to the number of rows in <code>x</code> (<code>1</code> if <code>x</code> is a vector).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">p &lt;- 30
+n &lt;- 10
+
+# The 30-dimensional real space R^30, assuming probability of
+domain &lt;- make_domain("R", p=p)
+in_bound(1:p, domain)
+in_bound(matrix(1:(p*n), ncol=p), domain)
+
+# The non-negative orthant of the 30-dimensional real space, R+^30
+domain &lt;- make_domain("R+", p=p)
+in_bound(matrix(1:(p*n), ncol=p), domain)
+in_bound(matrix(1:(p*n) * (2*rbinom(p*n, 1, 0.98)-1), ncol=p), domain)
+
+# x such that sum(x^2) &gt; 10 &amp;&amp; sum(x^(1/3)) &gt; 10 with x allowed to be negative
+domain &lt;- make_domain("polynomial", p=p, rule="1 &amp;&amp; 2",
+       ineqs=list(list("expression"="sum(x^2)&gt;10", abs=FALSE, nonnegative=FALSE),
+                      list("expression"="sum(x^(1/3))&gt;10", abs=FALSE, nonnegative=FALSE)))
+in_bound(rep((5/p)^3, p), domain)
+in_bound(rep((10/p)^3, p), domain)
+in_bound(rep((15/p)^3, p), domain)
+in_bound(rep((5/p)^(1/2), p), domain)
+in_bound(rep((10/p)^(1/2), p), domain)
+in_bound(rep((15/p)^(1/2), p), domain)
+
+# ([0, 1] v [2,3]) ^ p
+domain &lt;- make_domain("uniform", p=p, lefts=c(0,2), rights=c(1,3))
+in_bound(c(0.5, 2.5)[rbinom(p, 1, 0.5)+1], domain)
+in_bound(c(rep(0.5, p/2), rep(2.5, p/2)), domain)
+in_bound(c(rep(0.5, p/2), rep(2.5, p/2-1), 4), domain)
+
+# x such that {x1 &gt; 1 &amp;&amp; log(1.3) &lt; x2 &lt; 1 &amp;&amp; x3 &gt; log(1.3) &amp;&amp; ... &amp;&amp; xp &gt; log(1.3)}
+domain &lt;- make_domain("polynomial", p=p, rule="1 &amp;&amp; 2 &amp;&amp; 3",
+       ineqs=list(list("expression"="x1&gt;1", abs=FALSE, nonnegative=TRUE),
+                      list("expression"="x2&lt;1", abs=FALSE, nonnegative=TRUE),
+                      list("expression"="exp(x)&gt;1.3", abs=FALSE, nonnegative=FALSE)))
+in_bound(c(1.5, (log(1.3)+1)/2, rep(log(1.3)*2, p-2)), domain)
+in_bound(c(0.5, (log(1.3)+1)/2, rep(log(1.3)*2, p-2)), domain)
+in_bound(c(1.5, log(1.3)/2, rep(log(1.3)*2, p-2)), domain)
+in_bound(c(1.5, (log(1.3)+1)/2, rep(log(1.3)/2, p-2)), domain)
+
+# x in R_+^p such that {sum(log(x))&lt;2 || (x1^(2/3)-1.3x2^(-3)&lt;1 &amp;&amp; exp(x1)+2.3*x2&gt;2)}
+domain &lt;- make_domain("polynomial", p=p, rule="1 || (2 &amp;&amp; 3)",
+       ineqs=list(list("expression"="sum(log(x))&lt;2", abs=FALSE, nonnegative=TRUE),
+                      list("expression"="x1^(2/3)-1.3x2^(-3)&lt;1", abs=FALSE, nonnegative=TRUE),
+                      list("expression"="exp(x1)+2.3*x2^2&gt;2", abs=FALSE, nonnegative=TRUE)))
+in_bound(rep(exp(1/p), p), domain)
+in_bound(c(1, 1, rep(1e5, p-2)), domain)
+
+# x in R_+^p such that {x in R_+^p: sum_j j * xj &lt;= 1}
+domain &lt;- make_domain("polynomial", p=p,
+       ineqs=list(list("expression"=paste(paste(sapply(1:p,
+                           function(j){paste(j, "x", j, sep="")}), collapse="+"), "&lt;1"),
+                     abs=FALSE, nonnegative=TRUE)))
+in_bound(0.5/p/1:p, domain)
+in_bound(2/p/1:p, domain)
+in_bound(rep(1/p, p), domain)
+in_bound(rep(1/p^2, p), domain)
+
+# The (p-1)-simplex
+domain &lt;- make_domain("simplex", p=p)
+x &lt;- abs(matrix(rnorm(p*n), ncol=p))
+x &lt;- x / rowSums(x)
+in_bound(x, domain) # TRUE
+in_bound(x[,1:(p-1)], domain) # TRUE
+x2 &lt;- x
+x2[,1] &lt;- -x2[,1]
+in_bound(x2, domain) # FALSE since the first component is now negative
+in_bound(x2[,1:(p-1)], domain) # FALSE since the first component is now negative
+x3 &lt;- x
+x3[,1] &lt;- x3[,1] + domain$simplex_tol * 10
+in_bound(x3, domain) # FALSE since the rows do not sum to 1
+in_bound(x3[,1:(p-1)], domain) # TRUE since the first (p-1) elts in each row still sum to &lt; 1
+x3[,1] &lt;- x3[,1] + x3[,p]
+in_bound(x3[,1:(p-1)], domain) # FALSE since the first (p-1) elts in each row now sum to &gt; 1
+
+# The l-1 ball {sum(|x|) &lt; 1}
+domain &lt;- make_domain("polynomial", p=p,
+       ineqs=list(list("expression"="sum(x)&lt;1", abs=TRUE, nonnegative=FALSE)))
+in_bound(rep(0.5/p, p)*(2*rbinom(p, 1, 0.5)-1), domain)
+in_bound(rep(1.5/p, p)*(2*rbinom(p, 1, 0.5)-1), domain)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,91 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemIntertemporal_1_2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>An Example of a 1-by-2 Intertemporal Equilibrium Model</h2>
+
+<h3>Description</h3>
+
+<p>An example of an intertemporal equilibrium model with one type of commodity (i.e., product) and
+two types of agents (i.e., a firm with an AK production function and a consumer).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemIntertemporal_1_2(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+eis &lt;- 0.5 # the elasticity of intertemporal substitution of the consumer
+Gamma.beta &lt;- 0.97 # the subjective discount factor of the consumer
+alphaK &lt;- 1.1 # the parameter of the AK production function
+
+np &lt;- 5 # the number of economic periods
+
+n &lt;- np # the number of commodity kinds
+m &lt;- np # the number of agent kinds
+
+names.commodity &lt;- paste0("prod", 1:np)
+names.agent &lt;- c(paste0("firm", 1:(np - 1)), "consumer")
+
+# the exogenous supply matrix.
+S0Exg &lt;- matrix(NA, n, m, dimnames = list(names.commodity, names.agent))
+S0Exg[paste0("prod", 1:np), "consumer"] &lt;- 100
+
+# the output coefficient matrix.
+B &lt;- matrix(0, n, m, dimnames = list(names.commodity, names.agent))
+for (k in 1:(np - 1)) {
+  B[paste0("prod", k + 1), paste0("firm", k)] &lt;- 1
+}
+
+dstl.firm &lt;- list()
+for (k in 1:(np - 1)) {
+  dstl.firm[[k]] &lt;- node_new(
+    "prod",
+    type = "Leontief",
+    a = 1 / alphaK,
+    paste0("prod", k)
+  )
+}
+
+dst.consumer &lt;- node_new(
+  "util",
+  type = "CES", es = eis,
+  alpha = 1, beta = prop.table(Gamma.beta^(1:np)),
+  paste0("prod", 1:np)
+)
+
+ge &lt;- sdm2(
+  A = c(dstl.firm, dst.consumer),
+  B = B,
+  S0Exg = S0Exg,
+  names.commodity = names.commodity,
+  names.agent = names.agent,
+  numeraire = "prod1"
+)
+
+ge$p
+ge$z
+ge$D
+ge$S
+growth_rate(ge$D[, m])
+(Gamma.beta * alphaK)^eis - 1
+
+</code></pre>
+
+
+</div>

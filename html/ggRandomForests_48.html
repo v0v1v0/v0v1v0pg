@@ -1,0 +1,195 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plot.gg_partial</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Partial variable dependence plot, operates on a <code>gg_partial</code>
+object.</h2>
+
+<h3>Description</h3>
+
+<p>Generate a risk adjusted (partial) variable dependence plot.
+The function plots the <code>rfsrc</code> response variable
+(y-axis) against the covariate of interest (specified when creating the
+<code>gg_partial</code> object).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'gg_partial'
+plot(x, points = TRUE, error = c("none", "shade", "bars", "lines"), ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p><code>gg_partial</code> object created from a
+<code>rfsrc</code> forest object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>points</code></td>
+<td>
+<p>plot points (boolean) or a smooth line.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>error</code></td>
+<td>
+<p>"shade", "bars", "lines" or "none"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>extra arguments passed to <code>ggplot2</code> functions.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>ggplot</code> object
+</p>
+
+
+<h3>References</h3>
+
+<p>Breiman L. (2001). Random forests, Machine Learning, 45:5-32.
+</p>
+<p>Ishwaran H. and Kogalur U.B. (2007). Random survival forests for R,
+Rnews, 7(2):25-31.
+</p>
+<p>Ishwaran H. and Kogalur U.B. (2013). Random Forests for Survival,
+Regression and Classification (RF-SRC), R package version 1.4.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plot.variable</code>
+<code>gg_partial</code>
+<code>plot.gg_partial_list</code> <code>gg_variable</code>
+<code>plot.gg_variable</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## ------------------------------------------------------------
+## classification
+## ------------------------------------------------------------
+## -------- iris data
+
+## iris "Petal.Width" partial dependence plot
+##
+# rfsrc_iris &lt;- rfsrc(Species ~., data = iris)
+# partial_iris &lt;- plot.variable(rfsrc_iris, xvar.names = "Petal.Width",
+#                            partial=TRUE)
+data(partial_iris, package="ggRandomForests")
+
+gg_dta &lt;- gg_partial(partial_iris)
+plot(gg_dta)
+
+## ------------------------------------------------------------
+## regression
+## ------------------------------------------------------------
+## -------- air quality data
+## airquality "Wind" partial dependence plot
+##
+# rfsrc_airq &lt;- rfsrc(Ozone ~ ., data = airquality)
+# partial_airq &lt;- plot.variable(rfsrc_airq, xvar.names = "Wind",
+#                            partial=TRUE, show.plot=FALSE)
+data(partial_airq, package="ggRandomForests")
+
+gg_dta &lt;- gg_partial(partial_airq)
+plot(gg_dta)
+
+gg_dta.m &lt;- gg_dta[["Month"]]
+plot(gg_dta.m, notch=TRUE)
+
+gg_dta[["Month"]] &lt;- NULL
+plot(gg_dta, panel=TRUE)
+
+## -------- Boston data
+data(partial_boston, package="ggRandomForests")
+
+gg_dta &lt;- gg_partial(partial_boston)
+plot(gg_dta)
+plot(gg_dta, panel=TRUE)
+
+## -------- mtcars data
+data(partial_mtcars, package="ggRandomForests")
+
+gg_dta &lt;- gg_partial(partial_mtcars)
+
+plot(gg_dta)
+
+gg_dta.cat &lt;- gg_dta
+gg_dta.cat[["disp"]] &lt;- gg_dta.cat[["wt"]] &lt;- gg_dta.cat[["hp"]] &lt;- NULL
+gg_dta.cat[["drat"]] &lt;- gg_dta.cat[["carb"]] &lt;-
+   gg_dta.cat[["qsec"]] &lt;- NULL
+
+plot(gg_dta.cat, panel=TRUE)
+
+gg_dta[["cyl"]] &lt;- gg_dta[["vs"]] &lt;- gg_dta[["am"]] &lt;- NULL
+gg_dta[["gear"]] &lt;- NULL
+plot(gg_dta, panel=TRUE)
+
+## ------------------------------------------------------------
+## survival examples
+## ------------------------------------------------------------
+## -------- veteran data
+## survival "age" partial variable dependence plot
+##
+# data(veteran, package = "randomForestSRC")
+# rfsrc_veteran &lt;- rfsrc(Surv(time,status)~., veteran, nsplit = 10,
+#                        ntree = 100)
+#
+## 30 day partial plot for age
+# partial_veteran &lt;- plot.variable(rfsrc_veteran, surv.type = "surv",
+#                               partial = TRUE, time=30,
+#                               xvar.names = "age",
+#                               show.plots=FALSE)
+data(partial_veteran, package="ggRandomForests")
+
+gg_dta &lt;- gg_partial(partial_veteran[[1]])
+plot(gg_dta)
+
+gg_dta.cat &lt;- gg_dta
+gg_dta[["celltype"]] &lt;- gg_dta[["trt"]] &lt;- gg_dta[["prior"]] &lt;- NULL
+plot(gg_dta, panel=TRUE)
+
+gg_dta.cat[["karno"]] &lt;- gg_dta.cat[["diagtime"]] &lt;-
+     gg_dta.cat[["age"]] &lt;- NULL
+plot(gg_dta.cat, panel=TRUE, notch=TRUE)
+
+gg_dta &lt;- lapply(partial_veteran, gg_partial)
+length(gg_dta)
+gg_dta &lt;- combine.gg_partial(gg_dta[[1]], gg_dta[[2]] )
+
+plot(gg_dta[["karno"]])
+plot(gg_dta[["celltype"]])
+
+gg_dta.cat &lt;- gg_dta
+gg_dta[["celltype"]] &lt;- gg_dta[["trt"]] &lt;- gg_dta[["prior"]] &lt;- NULL
+plot(gg_dta, panel=TRUE)
+
+gg_dta.cat[["karno"]] &lt;- gg_dta.cat[["diagtime"]] &lt;-
+     gg_dta.cat[["age"]] &lt;- NULL
+plot(gg_dta.cat, panel=TRUE, notch=TRUE)
+
+## -------- pbc data
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

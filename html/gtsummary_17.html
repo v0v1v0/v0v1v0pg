@@ -1,0 +1,153 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>add_glance</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Add model statistics</h2>
+
+<h3>Description</h3>
+
+<p>Add model statistics returned from <code>broom::glance()</code>. Statistics can either
+be appended to the table (<code>add_glance_table()</code>), or added as a
+table source note (<code>add_glance_source_note()</code>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">add_glance_table(
+  x,
+  include = everything(),
+  label = NULL,
+  fmt_fun = list(everything() ~ label_style_sigfig(digits = 3), any_of("p.value") ~
+    label_style_pvalue(digits = 1), c(where(is.integer), starts_with("df")) ~
+    label_style_number()),
+  glance_fun = glance_fun_s3(x$inputs$x)
+)
+
+add_glance_source_note(
+  x,
+  include = everything(),
+  label = NULL,
+  fmt_fun = list(everything() ~ label_style_sigfig(digits = 3), any_of("p.value") ~
+    label_style_pvalue(digits = 1), c(where(is.integer), starts_with("df")) ~
+    label_style_number()),
+  glance_fun = glance_fun_s3(x$inputs$x),
+  text_interpret = c("md", "html"),
+  sep1 = " = ",
+  sep2 = "; "
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>(<code>tbl_regression</code>)<br>
+a <code>'tbl_regression'</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include</code></td>
+<td>
+<p>(<code>tidy-select</code>)<br>
+names of statistics to include in output. Must be column
+names of the tibble returned by <code>broom::glance()</code> or from the <code>glance_fun</code>
+argument. The include argument
+can also be used to specify the order the statistics appear in the table.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>label</code></td>
+<td>
+<p>(<code>formula-list-selector</code>)<br>
+specifies statistic labels, e.g. <code>list(r.squared = "R2", p.value = "P")</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fmt_fun</code></td>
+<td>
+<p>(<code>formula-list-selector</code>)<br>
+Specifies the the functions used to format/round the glance statistics.
+The default is to round
+the number of observations and degrees of freedom to the nearest integer,
+p-values are styled with <code>style_pvalue()</code> and the remaining statistics
+are styled with <code>style_sigfig(x, digits = 3)</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>glance_fun</code></td>
+<td>
+<p>(<code>function</code>)<br>
+function that returns model statistics. Default is
+<code>glance_fun()</code> (which is <code>broom::glance()</code> for most model objects).
+Custom functions must return a single row tibble.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>text_interpret</code></td>
+<td>
+<p>(<code>string</code>)<br>
+String indicates whether source note text
+will be interpreted with
+<code>gt::md()</code> or <code>gt::html()</code>. Must be <code>"md"</code> (default) or <code>"html"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sep1</code></td>
+<td>
+<p>(<code>string</code>)<br>
+Separator between statistic name and statistic.
+Default is <code>" = "</code>, e.g. <code>"R2 = 0.456"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sep2</code></td>
+<td>
+<p>(<code>string</code>)<br>
+Separator between statistics. Default is <code>"; "</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>gtsummary table
+</p>
+
+
+<h3>Tips</h3>
+
+<p>When combining <code>add_glance_table()</code> with <code>tbl_merge()</code>, the
+ordering of the model terms and the glance statistics may become jumbled.
+To re-order the rows with glance statistics on bottom, use the script below:
+</p>
+<div class="sourceCode r"><pre>tbl_merge(list(tbl1, tbl2)) %&gt;%
+  modify_table_body(~.x %&gt;% arrange(row_type == "glance_statistic"))
+</pre></div>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">mod &lt;- lm(age ~ marker + grade, trial) |&gt; tbl_regression()
+
+# Example 1 ----------------------------------
+mod |&gt;
+  add_glance_table(
+    label = list(sigma = "\U03C3"),
+    include = c(r.squared, AIC, sigma)
+  )
+
+# Example 2 ----------------------------------
+mod |&gt;
+  add_glance_source_note(
+    label = list(sigma = "\U03C3"),
+    include = c(r.squared, AIC, sigma)
+  )
+</code></pre>
+
+
+</div>

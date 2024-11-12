@@ -1,0 +1,517 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>stat_interval</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Multiple-interval plot (shortcut stat)</h2>
+
+<h3>Description</h3>
+
+<p>Shortcut version of <code>stat_slabinterval()</code> with <code>geom_interval()</code> for
+creating multiple-interval plots.
+</p>
+<p><strong>Roughly equivalent to:</strong>
+</p>
+<pre>stat_slabinterval(
+  aes(
+    colour = after_stat(level),
+    size = NULL
+  ),
+  geom = "interval",
+  show_point = FALSE,
+  .width = c(0.5, 0.8, 0.95),
+  show_slab = FALSE,
+  show.legend = NA
+)</pre>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">stat_interval(
+  mapping = NULL,
+  data = NULL,
+  geom = "interval",
+  position = "identity",
+  ...,
+  .width = c(0.5, 0.8, 0.95),
+  point_interval = "median_qi",
+  orientation = NA,
+  na.rm = FALSE,
+  show.legend = NA,
+  inherit.aes = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mapping</code></td>
+<td>
+<p>Set of aesthetic mappings created by <code>aes()</code>. If specified and
+<code>inherit.aes = TRUE</code> (the default), it is combined with the default mapping
+at the top level of the plot. You must supply <code>mapping</code> if there is no plot
+mapping.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The data to be displayed in this layer. There are three
+options:
+</p>
+<p>If <code>NULL</code>, the default, the data is inherited from the plot
+data as specified in the call to <code>ggplot()</code>.
+</p>
+<p>A <code>data.frame</code>, or other object, will override the plot
+data. All objects will be fortified to produce a data frame. See
+<code>fortify()</code> for which variables will be created.
+</p>
+<p>A <code>function</code> will be called with a single argument,
+the plot data. The return value must be a <code>data.frame</code>, and
+will be used as the layer data. A <code>function</code> can be created
+from a <code>formula</code> (e.g. <code>~ head(.x, 10)</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>geom</code></td>
+<td>
+<p>Use to override the default connection between
+<code>stat_interval()</code> and <code>geom_interval()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>position</code></td>
+<td>
+<p>Position adjustment, either as a string, or the result of a call to a position adjustment function.
+Setting this equal to <code>"dodge"</code> (<code>position_dodge()</code>) or <code>"dodgejust"</code> (<code>position_dodgejust()</code>) can be useful if
+you have overlapping geometries.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed to <code>layer()</code>. These are often aesthetics, used to set an aesthetic
+to a fixed value, like <code>colour = "red"</code> or <code>linewidth = 3</code> (see <strong>Aesthetics</strong>, below). They may also be
+parameters to the paired geom/stat. When paired with the default geom, <code>geom_interval()</code>,
+these include:
+</p>
+
+<dl>
+<dt><code>interval_size_range</code></dt>
+<dd>
+<p>A length-2 numeric vector. This geom scales the raw size aesthetic values when drawing interval and point
+sizes, as they tend to be too thick when using the default settings of <code>scale_size_continuous()</code>, which give
+sizes with a range of <code>c(1, 6)</code>. The <code>interval_size_domain</code> value indicates the input domain of raw size
+values (typically this should be equal to the value of the <code>range</code> argument of the <code>scale_size_continuous()</code>
+function), and <code>interval_size_range</code> indicates the desired output range of the size values (the min and max of
+the actual sizes used to draw intervals). Most of the time it is not recommended to change the value of this
+argument, as it may result in strange scaling of legends; this argument is a holdover from earlier versions
+that did not have size aesthetics targeting the point and interval separately. If you want to adjust the
+size of the interval or points separately, you can also use the <code>linewidth</code> or <code>point_size</code>
+aesthetics; see sub-geometry-scales.</p>
+</dd>
+<dt><code>interval_size_domain</code></dt>
+<dd>
+<p>A length-2 numeric vector giving the minimum and maximum of the values of the <code>size</code> and <code>linewidth</code> aesthetics
+that will be translated into actual sizes for intervals drawn according to <code>interval_size_range</code> (see the
+documentation for that argument.)</p>
+</dd>
+<dt><code>arrow</code></dt>
+<dd>
+<p><code>grid::arrow()</code> giving the arrow heads to use on the interval, or <code>NULL</code> for no arrows.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.width</code></td>
+<td>
+<p>The <code>.width</code> argument passed to <code>point_interval</code>: a vector of probabilities to use
+that determine the widths of the resulting intervals. If multiple probabilities are provided,
+multiple intervals per group are generated, each with a different probability interval (and
+value of the corresponding <code>.width</code> and <code>level</code> generated variables).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>point_interval</code></td>
+<td>
+<p>A function from the <code>point_interval()</code> family (e.g., <code>median_qi</code>,
+<code>mean_qi</code>, <code>mode_hdi</code>, etc), or a string giving the name of a function from that family
+(e.g., <code>"median_qi"</code>, <code>"mean_qi"</code>, <code>"mode_hdi"</code>, etc; if a string, the caller's environment is searched
+for the function, followed by the <span class="pkg">ggdist</span> environment). This function determines the point summary
+(typically mean, median, or mode) and interval type (quantile interval, <code>qi</code>;
+highest-density interval, <code>hdi</code>; or highest-density continuous interval, <code>hdci</code>). Output will
+be converted to the appropriate <code>x</code>- or <code>y</code>-based aesthetics depending on the value of <code>orientation</code>.
+See the <code>point_interval()</code> family of functions for more information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>orientation</code></td>
+<td>
+<p>Whether this geom is drawn horizontally or vertically. One of:
+</p>
+
+<ul>
+<li> <p><code>NA</code> (default): automatically detect the orientation based on how the aesthetics
+are assigned. Automatic detection works most of the time.
+</p>
+</li>
+<li> <p><code>"horizontal"</code> (or <code>"y"</code>): draw horizontally, using the <code>y</code> aesthetic to identify different
+groups. For each group, uses the <code>x</code>, <code>xmin</code>, <code>xmax</code>, and <code>thickness</code> aesthetics to
+draw points, intervals, and slabs.
+</p>
+</li>
+<li> <p><code>"vertical"</code> (or <code>"x"</code>): draw vertically, using the <code>x</code> aesthetic to identify different
+groups. For each group, uses the <code>y</code>, <code>ymin</code>, <code>ymax</code>, and <code>thickness</code> aesthetics to
+draw points, intervals, and slabs.
+</p>
+</li>
+</ul>
+<p>For compatibility with the base ggplot naming scheme for <code>orientation</code>, <code>"x"</code> can be used as an alias
+for <code>"vertical"</code> and <code>"y"</code> as an alias for <code>"horizontal"</code> (<span class="pkg">ggdist</span> had an <code>orientation</code> parameter
+before base ggplot did, hence the discrepancy).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.rm</code></td>
+<td>
+<p>If <code>FALSE</code>, the default, missing values are removed with a warning. If <code>TRUE</code>, missing
+values are silently removed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show.legend</code></td>
+<td>
+<p>Should this layer be included in the legends? Default is <code>c(size = FALSE)</code>, unlike most geoms,
+to match its common use cases. <code>FALSE</code> hides all legends, <code>TRUE</code> shows all legends, and <code>NA</code> shows only
+those that are mapped (the default for most geoms).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inherit.aes</code></td>
+<td>
+<p>If <code>FALSE</code>, overrides the default aesthetics,
+rather than combining with them. This is most useful for helper functions
+that define both data and aesthetics and shouldn't inherit behaviour from
+the default plot specification, e.g. <code>borders()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><strong>To visualize sample data</strong>, such as a data distribution, samples from a
+bootstrap distribution, or a Bayesian posterior, you can supply samples to
+the <code>x</code> or <code>y</code> aesthetic.
+</p>
+<p><strong>To visualize analytical distributions</strong>, you can use the <code>xdist</code> or <code>ydist</code>
+aesthetic. For historical reasons, you can also use <code>dist</code> to specify the distribution, though
+this is not recommended as it does not work as well with orientation detection.
+These aesthetics can be used as follows:
+</p>
+
+<ul>
+<li> <p><code>xdist</code>, <code>ydist</code>, and <code>dist</code> can be any distribution object from the <a href="https://pkg.mitchelloharawild.com/distributional/">distributional</a>
+package (<code>dist_normal()</code>, <code>dist_beta()</code>, etc) or can be a <code>posterior::rvar()</code> object.
+Since these functions are vectorized,
+other columns can be passed directly to them in an <code>aes()</code> specification; e.g.
+<code>aes(dist = dist_normal(mu, sigma))</code> will work if <code>mu</code> and <code>sigma</code> are columns in the
+input data frame.
+</p>
+</li>
+<li> <p><code>dist</code> can be a character vector giving the distribution name. Then the  <code>arg1</code>, ... <code>arg9</code>
+aesthetics (or <code>args</code> as a list column) specify distribution arguments. Distribution names
+should correspond to R functions that have <code>"p"</code>, <code>"q"</code>, and <code>"d"</code> functions; e.g. <code>"norm"</code>
+is a valid distribution name because R defines the <code>pnorm()</code>, <code>qnorm()</code>, and <code>dnorm()</code>
+functions for Normal distributions.
+</p>
+<p>See the <code>parse_dist()</code> function for a useful way to generate <code>dist</code> and <code>args</code>
+values from human-readable distribution specs (like <code>"normal(0,1)"</code>). Such specs are also
+produced by other packages (like the <code>brms::get_prior</code> function in brms); thus,
+<code>parse_dist()</code> combined with the stats described here can help you visualize the output
+of those functions.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>A ggplot2::Stat representing a multiple-interval geometry which can
+be added to a <code>ggplot()</code> object.
+</p>
+
+
+<h3>Computed Variables</h3>
+
+<p>The following variables are computed by this stat and made available for
+use in aesthetic specifications (<code>aes()</code>) using the <code>after_stat()</code>
+function or the <code>after_stat</code> argument of <code>stage()</code>:
+</p>
+
+<ul>
+<li> <p><code>x</code> or <code>y</code>: For slabs, the input values to the slab function.
+For intervals, the point summary from the interval function. Whether it is <code>x</code> or <code>y</code> depends on <code>orientation</code>
+</p>
+</li>
+<li> <p><code>xmin</code> or <code>ymin</code>: For intervals, the lower end of the interval from the interval function.
+</p>
+</li>
+<li> <p><code>xmax</code> or <code>ymax</code>: For intervals, the upper end of the interval from the interval function.
+</p>
+</li>
+<li> <p><code>.width</code>: For intervals, the interval width as a numeric value in <code style="white-space: pre;">⁠[0, 1]⁠</code>.
+For slabs, the width of the smallest interval containing that value of the slab.
+</p>
+</li>
+<li> <p><code>level</code>: For intervals, the interval width as an ordered factor.
+For slabs, the level of the smallest interval containing that value of the slab.
+</p>
+</li>
+<li> <p><code>pdf</code>: For slabs, the probability density function (PDF).
+If <code>options("ggdist.experimental.slab_data_in_intervals")</code> is <code>TRUE</code>:
+For intervals, the PDF at the point summary; intervals also have <code>pdf_min</code> and <code>pdf_max</code>
+for the PDF at the lower and upper ends of the interval.
+</p>
+</li>
+<li> <p><code>cdf</code>: For slabs, the cumulative distribution function.
+If <code>options("ggdist.experimental.slab_data_in_intervals")</code> is <code>TRUE</code>:
+For intervals, the CDF at the point summary; intervals also have <code>cdf_min</code> and <code>cdf_max</code>
+for the CDF at the lower and upper ends of the interval.
+</p>
+</li>
+</ul>
+<h3>Aesthetics</h3>
+
+<p>The slab+interval <code>stat</code>s and <code>geom</code>s have a wide variety of aesthetics that control
+the appearance of their three sub-geometries: the <strong>slab</strong>, the <strong>point</strong>, and
+the <strong>interval</strong>.
+</p>
+<p>These <code>stat</code>s support the following aesthetics:
+</p>
+
+<ul>
+<li>
+<p><code>x</code>: x position of the geometry (when orientation = <code>"vertical"</code>); or sample data to be summarized
+(when <code>orientation = "horizontal"</code> with sample data).
+</p>
+</li>
+<li>
+<p><code>y</code>: y position of the geometry (when orientation = <code>"horizontal"</code>); or sample data to be summarized
+(when <code>orientation = "vertical"</code> with sample data).
+</p>
+</li>
+<li>
+<p><code>weight</code>: When using samples (i.e. the <code>x</code> and <code>y</code> aesthetics, not <code>xdist</code> or <code>ydist</code>), optional
+weights to be applied to each draw.
+</p>
+</li>
+<li>
+<p><code>xdist</code>: When using analytical distributions, distribution to map on the x axis: a <span class="pkg">distributional</span>
+object (e.g. <code>dist_normal()</code>) or a <code>posterior::rvar()</code> object.
+</p>
+</li>
+<li>
+<p><code>ydist</code>: When using analytical distributions, distribution to map on the y axis: a <span class="pkg">distributional</span>
+object (e.g. <code>dist_normal()</code>) or a <code>posterior::rvar()</code> object.
+</p>
+</li>
+<li>
+<p><code>dist</code>: When using analytical distributions, a name of a distribution (e.g. <code>"norm"</code>), a
+<span class="pkg">distributional</span> object (e.g. <code>dist_normal()</code>), or a <code>posterior::rvar()</code> object. See <strong>Details</strong>.
+</p>
+</li>
+<li>
+<p><code>args</code>: Distribution arguments (<code>args</code> or <code>arg1</code>, ... <code>arg9</code>). See <strong>Details</strong>.
+</p>
+</li>
+</ul>
+<p>In addition, in their default configuration (paired with <code>geom_interval()</code>)
+the following aesthetics are supported by the underlying geom:
+</p>
+<p><strong>Interval-specific aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>xmin</code>: Left end of the interval sub-geometry (if <code>orientation = "horizontal"</code>).
+</p>
+</li>
+<li>
+<p><code>xmax</code>: Right end of the interval sub-geometry (if <code>orientation = "horizontal"</code>).
+</p>
+</li>
+<li>
+<p><code>ymin</code>: Lower end of the interval sub-geometry (if <code>orientation = "vertical"</code>).
+</p>
+</li>
+<li>
+<p><code>ymax</code>: Upper end of the interval sub-geometry (if <code>orientation = "vertical"</code>).
+</p>
+</li>
+</ul>
+<p><strong>Color aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>colour</code>: (or <code>color</code>) The color of the <strong>interval</strong> and <strong>point</strong> sub-geometries.
+Use the <code>slab_color</code>, <code>interval_color</code>, or <code>point_color</code> aesthetics (below) to
+set sub-geometry colors separately.
+</p>
+</li>
+<li>
+<p><code>fill</code>: The fill color of the <strong>slab</strong> and <strong>point</strong> sub-geometries. Use the <code>slab_fill</code>
+or <code>point_fill</code> aesthetics (below) to set sub-geometry colors separately.
+</p>
+</li>
+<li>
+<p><code>alpha</code>: The opacity of the <strong>slab</strong>, <strong>interval</strong>, and <strong>point</strong> sub-geometries. Use the <code>slab_alpha</code>,
+<code>interval_alpha</code>, or <code>point_alpha</code> aesthetics (below) to set sub-geometry colors separately.
+</p>
+</li>
+<li>
+<p><code>colour_ramp</code>: (or <code>color_ramp</code>) A secondary scale that modifies the <code>color</code>
+scale to "ramp" to another color. See <code>scale_colour_ramp()</code> for examples.
+</p>
+</li>
+<li>
+<p><code>fill_ramp</code>: A secondary scale that modifies the <code>fill</code>
+scale to "ramp" to another color. See <code>scale_fill_ramp()</code> for examples.
+</p>
+</li>
+</ul>
+<p><strong>Line aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>linewidth</code>: Width of the line used to draw the <strong>interval</strong> (except with <code>geom_slab()</code>: then
+it is the width of the <strong>slab</strong>). With composite geometries including an interval and slab,
+use <code>slab_linewidth</code> to set the line width of the <strong>slab</strong> (see below). For <strong>interval</strong>, raw
+<code>linewidth</code> values are transformed according to the <code>interval_size_domain</code> and <code>interval_size_range</code>
+parameters of the <code>geom</code> (see above).
+</p>
+</li>
+<li>
+<p><code>size</code>: Determines the size of the <strong>point</strong>. If <code>linewidth</code> is not provided, <code>size</code> will
+also determines the width of the line used to draw the <strong>interval</strong> (this allows line width and
+point size to be modified together by setting only <code>size</code> and not <code>linewidth</code>). Raw
+<code>size</code> values are transformed according to the <code>interval_size_domain</code>, <code>interval_size_range</code>,
+and <code>fatten_point</code> parameters of the <code>geom</code> (see above). Use the <code>point_size</code> aesthetic
+(below) to set sub-geometry size directly without applying the effects of
+<code>interval_size_domain</code>, <code>interval_size_range</code>, and <code>fatten_point</code>.
+</p>
+</li>
+<li>
+<p><code>stroke</code>: Width of the outline around the <strong>point</strong> sub-geometry.
+</p>
+</li>
+<li>
+<p><code>linetype</code>: Type of line (e.g., <code>"solid"</code>, <code>"dashed"</code>, etc) used to draw the <strong>interval</strong>
+and the outline of the <strong>slab</strong> (if it is visible). Use the <code>slab_linetype</code> or
+<code>interval_linetype</code> aesthetics (below) to set sub-geometry line types separately.
+</p>
+</li>
+</ul>
+<p><strong>Interval-specific color and line override aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>interval_colour</code>: (or <code>interval_color</code>) Override for <code>colour</code>/<code>color</code>: the color of the interval.
+</p>
+</li>
+<li>
+<p><code>interval_alpha</code>: Override for <code>alpha</code>: the opacity of the interval.
+</p>
+</li>
+<li>
+<p><code>interval_linetype</code>: Override for <code>linetype</code>: the line type of the interval.
+</p>
+</li>
+</ul>
+<p><strong>Deprecated aesthetics</strong>
+</p>
+
+<ul><li>
+<p><code>interval_size</code>: Use <code>interval_linewidth</code>.
+</p>
+</li></ul>
+<p><strong>Other aesthetics</strong> (these work as in standard <code>geom</code>s)
+</p>
+
+<ul>
+<li>
+<p><code>width</code>
+</p>
+</li>
+<li>
+<p><code>height</code>
+</p>
+</li>
+<li>
+<p><code>group</code>
+</p>
+</li>
+</ul>
+<p>See examples of some of these aesthetics in action in <code>vignette("slabinterval")</code>.
+Learn more about the sub-geom override aesthetics (like <code>interval_color</code>) in the
+scales documentation. Learn more about basic ggplot aesthetics in
+<code>vignette("ggplot2-specs")</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>See <code>geom_interval()</code> for the geom underlying this stat.
+See <code>stat_slabinterval()</code> for the stat this shortcut is based on.
+</p>
+<p>Other slabinterval stats: 
+<code>stat_ccdfinterval()</code>,
+<code>stat_cdfinterval()</code>,
+<code>stat_eye()</code>,
+<code>stat_gradientinterval()</code>,
+<code>stat_halfeye()</code>,
+<code>stat_histinterval()</code>,
+<code>stat_pointinterval()</code>,
+<code>stat_slab()</code>,
+<code>stat_spike()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(dplyr)
+library(ggplot2)
+library(distributional)
+
+theme_set(theme_ggdist())
+
+# ON SAMPLE DATA
+set.seed(1234)
+df = data.frame(
+  group = c("a", "b", "c"),
+  value = rnorm(1500, mean = c(5, 7, 9), sd = c(1, 1.5, 1))
+)
+df %&gt;%
+  ggplot(aes(x = value, y = group)) +
+  stat_interval() +
+  scale_color_brewer()
+
+# ON ANALYTICAL DISTRIBUTIONS
+dist_df = data.frame(
+  group = c("a", "b", "c"),
+  mean =  c(  5,   7,   8),
+  sd =    c(  1, 1.5,   1)
+)
+# Vectorized distribution types, like distributional::dist_normal()
+# and posterior::rvar(), can be used with the `xdist` / `ydist` aesthetics
+dist_df %&gt;%
+  ggplot(aes(y = group, xdist = dist_normal(mean, sd))) +
+  stat_interval() +
+  scale_color_brewer()
+</code></pre>
+
+
+</div>

@@ -1,0 +1,123 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>print.power_report</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>S3 print method for the class <code>power_report</code>
+</h2>
+
+<h3>Description</h3>
+
+<p>A printed <code>power_report</code> displays the initial graph, testing and simulation
+options, power outputs, and optional detailed simulations and test results.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'power_report'
+print(x, ..., precision = 4, indent = 2, rows = 10)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of the class <code>power_report</code> to print</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other values passed on to other methods (currently unused)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>precision</code></td>
+<td>
+<p>An integer scalar indicating the number of decimal places
+to to display.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>indent</code></td>
+<td>
+<p>An integer scalar indicating how many spaces to indent results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rows</code></td>
+<td>
+<p>An integer scalar indicating how many rows of detailed test
+results to print.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object x of the class <code>power_report</code>, after printing the report of
+conducting power simulations based on a graphical multiple comparison
+procedure.
+</p>
+
+
+<h3>References</h3>
+
+<p>Bretz, F., Posch, M., Glimm, E., Klinglmueller, F., Maurer, W., and
+Rohmeyer, K. (2011a). Graphical approaches for multiple comparison
+procedures using weighted Bonferroni, Simes, or parametric tests.
+<em>Biometrical Journal</em>, 53(6), 894-913.
+</p>
+<p>Bretz, F., Maurer, W., and Hommel, G. (2011b). Test and power
+considerations for multiple endpoint analyses using sequentially rejective
+graphical procedures. <em>Statistics in Medicine</em>, 30(13), 1489-1501.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># A graphical multiple comparison procedure with two primary hypotheses (H1
+# and H2) and two secondary hypotheses (H3 and H4)
+# See Figure 4 in Bretz et al. (2011).
+alpha &lt;- 0.025
+hypotheses &lt;- c(0.5, 0.5, 0, 0)
+delta &lt;- 0.5
+transitions &lt;- rbind(
+  c(0, delta, 1 - delta, 0),
+  c(delta, 0, 0, 1 - delta),
+  c(0, 1, 0, 0),
+  c(1, 0, 0, 0)
+)
+g &lt;- graph_create(hypotheses, transitions)
+
+marginal_power &lt;- c(0.8, 0.8, 0.7, 0.9)
+corr1 &lt;- matrix(0.5, nrow = 2, ncol = 2)
+diag(corr1) &lt;- 1
+corr &lt;- rbind(
+  cbind(corr1, 0.5 * corr1),
+  cbind(0.5 * corr1, corr1)
+)
+success_fns &lt;- list(
+  # Probability to reject both H1 and H2
+  `H1andH2` = function(x) x[1] &amp; x[2],
+  # Probability to reject both (H1 and H3) or (H2 and H4)
+  `(H1andH3)or(H2andH4)` = function(x) (x[1] &amp; x[3]) | (x[2] &amp; x[4])
+)
+set.seed(1234)
+# Bonferroni tests
+power_output &lt;- graph_calculate_power(
+  g,
+  alpha,
+  sim_corr = corr,
+  sim_n = 1e5,
+  power_marginal = marginal_power,
+  sim_success = success_fns
+)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,314 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>glmtrans</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a transfer learning generalized linear model (GLM) with elasticnet regularization.</h2>
+
+<h3>Description</h3>
+
+<p>Fit a transfer learning generalized linear model through elastic net regularization with target data set and multiple source data sets. It also implements a transferable source detection algorithm, which helps avoid negative transfer in practice. Currently can deal with Gaussian, logistic and Poisson models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">glmtrans(
+  target,
+  source = NULL,
+  family = c("gaussian", "binomial", "poisson"),
+  transfer.source.id = "auto",
+  alpha = 1,
+  standardize = TRUE,
+  intercept = TRUE,
+  nfolds = 10,
+  cores = 1,
+  valid.proportion = NULL,
+  valid.nfolds = 3,
+  lambda = c(transfer = "lambda.1se", debias = "lambda.min", detection = "lambda.1se"),
+  detection.info = TRUE,
+  target.weights = NULL,
+  source.weights = NULL,
+  C0 = 2,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>target</code></td>
+<td>
+<p>target data. Should be a list with elements x and y, where x indicates a predictor matrix with each row/column as a(n) observation/variable, and y indicates the response vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>source</code></td>
+<td>
+<p>source data. Should be a list with some sublists, where each of the sublist is a source data set, having elements x and y with the same meaning as in target data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>response type. Can be "gaussian", "binomial" or "poisson". Default = "gaussian".
+</p>
+
+<ul>
+<li>
+<p> "gaussian": Gaussian distribution.
+</p>
+</li>
+<li>
+<p> "binomial": logistic distribution. When <code>family = "binomial"</code>, the input response in both <code>target</code> and <code>source</code> should be 0/1.
+</p>
+</li>
+<li>
+<p> "poisson": poisson distribution. When <code>family = "poisson"</code>, the input response in both <code>target</code> and <code>source</code> should be non-negative.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transfer.source.id</code></td>
+<td>
+<p>transferable source indices. Can be either a subset of <code>{1, ..., length(source)}</code>, "all" or "auto". Default = <code>"auto"</code>.
+</p>
+
+<ul>
+<li>
+<p> a subset of <code>{1, ..., length(source)}</code>: only transfer sources with the specific indices.
+</p>
+</li>
+<li>
+<p> "all": transfer all sources.
+</p>
+</li>
+<li>
+<p> "auto": run transferable source detection algorithm to automatically detect which sources to transfer. For the algorithm, refer to the documentation of function <code>source_detection</code>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>the elasticnet mixing parameter, with <code class="reqn">0 \leq \alpha \leq 1</code>. The penality is defined as </p>
+<p style="text-align: center;"><code class="reqn">(1-\alpha)/2||\beta||_2^2+\alpha ||\beta||_1</code>
+</p>
+<p>. <code>alpha = 1</code> encodes the lasso penalty while <code>alpha = 0</code> encodes the ridge penalty. Default = 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standardize</code></td>
+<td>
+<p>the logical flag for x variable standardization, prior to fitting the model sequence. The coefficients are always returned on the original scale. Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>the logical indicator of whether the intercept should be fitted or not. Default = <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nfolds</code></td>
+<td>
+<p>the number of folds. Used in the cross-validation for GLM elastic net fitting procedure. Default = 10. Smallest value allowable is <code>nfolds = 3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>the number of cores used for parallel computing. Default = 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>valid.proportion</code></td>
+<td>
+<p>the proportion of target data to be used as validation data when detecting transferable sources. Useful only when <code>transfer.source.id = "auto"</code>. Default = <code>NULL</code>, meaning that the cross-validation will be applied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>valid.nfolds</code></td>
+<td>
+<p>the number of folds used in cross-validation procedure when detecting transferable sources. Useful only when <code>transfer.source.id = "auto"</code> and <code>valid.proportion = NULL</code>. Default = 3.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>a vector indicating the choice of lambdas in transferring, debiasing and detection steps. Should be a vector with names "transfer", "debias", and "detection", each component of which can be either "lambda.min" or "lambda.1se". Component <code>transfer</code> is the lambda (the penalty parameter) used in transferrring step. Component <code>debias</code> is the lambda used in debiasing step. Component <code>detection</code> is the lambda used in the transferable source detection algorithm. Default choice of <code>lambda.transfer</code> and <code>lambda.detection</code> are "lambda.1se", while default <code>lambda.debias</code> = "lambda.min". If the user wants to change the default setting, input a vector with corresponding <code>lambda.transfer</code>/<code>lambda.debias</code>/<code>lambda.detection</code> names and corresponding values. Examples: lambda = list(transfer = "lambda.min", debias = "lambda.1se"); lambda = list(transfer = "lambda.min", detection = "lambda.min").
+</p>
+
+<ul>
+<li>
+<p> "lambda.min": value of lambda that gives minimum mean cross-validated error in the sequence of lambda.
+</p>
+</li>
+<li>
+<p> "lambda.1se": largest value of lambda such that error is within 1 standard error of the minimum.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>detection.info</code></td>
+<td>
+<p>the logistic flag indicating whether to print detection information or not. Useful only when <code>transfer.source.id = "auto"</code>. Default = <code>TURE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>target.weights</code></td>
+<td>
+<p>weight vector for each target instance. Should be a vector with the same length of target response. Default = <code>NULL</code>, which makes all instances equal-weighted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>source.weights</code></td>
+<td>
+<p>a list of weight vectors for the instances from each source. Should be a list with the same length of the number of sources. Default = <code>NULL</code>, which makes all instances equal-weighted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>C0</code></td>
+<td>
+<p>the constant used in the transferable source detection algorithm. See Algorithm 2 in Tian, Y. and Feng, Y., 2021. Default = 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object with S3 class <code>"glmtrans"</code>.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>the estimated coefficient vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>the response type.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transfer.source.id</code></td>
+<td>
+<p>the transferable souce index. If in the input, <code>transfer.source.id = 1:length(source)</code> or <code>transfer.source.id = "all"</code>, then the outputed <code>transfer.source.id = 1:length(source)</code>. If the inputed <code>transfer.source.id = "auto"</code>, only transferable source detected by the algorithm will be outputed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitting.list</code></td>
+<td>
+<p>a list of other parameters of the fitted model.</p>
+</td>
+</tr>
+</table>
+<ul>
+<li>
+<p>w_athe estimator obtained from the transferring step.
+</p>
+</li>
+<li>
+<p>delta_athe estimator obtained from the debiasing step.
+</p>
+</li>
+<li>
+<p>target.valid.lossthe validation (or cross-validation) loss on target data. Only available when <code>transfer.source.id = "auto"</code>.
+</p>
+</li>
+<li>
+<p>source.lossthe loss on each source data. Only available when <code>transfer.source.id = "auto"</code>.
+</p>
+</li>
+<li>
+<p>thresholdthe threshold to determine transferability. Only available when <code>transfer.source.id = "auto"</code>.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Tian, Y. and Feng, Y., 2021. <em>Transfer Learning under High-dimensional Generalized Linear Models. arXiv preprint arXiv:2105.14328.</em>
+</p>
+<p>Li, S., Cai, T.T. and Li, H., 2020. <em>Transfer learning for high-dimensional linear regression: Prediction, estimation, and minimax optimality. arXiv preprint arXiv:2006.10593.</em>
+</p>
+<p>Friedman, J., Hastie, T. and Tibshirani, R., 2010. <em>Regularization paths for generalized linear models via coordinate descent. Journal of statistical software, 33(1), p.1.</em>
+</p>
+<p>Zou, H. and Hastie, T., 2005. <em>Regularization and variable selection via the elastic net. Journal of the royal statistical society: series B (statistical methodology), 67(2), pp.301-320.</em>
+</p>
+<p>Tibshirani, R., 1996. <em>Regression shrinkage and selection via the lasso. Journal of the Royal Statistical Society: Series B (Methodological), 58(1), pp.267-288.</em>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>predict.glmtrans</code>, <code>source_detection</code>, <code>models</code>, <code>plot.glmtrans</code>, <code>cv.glmnet</code>, <code>glmnet</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(0, kind = "L'Ecuyer-CMRG")
+
+# fit a linear regression model
+D.training &lt;- models("gaussian", type = "all", n.target = 100, K = 2, p = 500)
+D.test &lt;- models("gaussian", type = "target", n.target = 100, p = 500)
+fit.gaussian &lt;- glmtrans(D.training$target, D.training$source)
+y.pred.glmtrans &lt;- predict(fit.gaussian, D.test$target$x)
+
+# compare the test MSE with classical Lasso fitted on target data
+library(glmnet)
+fit.lasso &lt;- cv.glmnet(x = D.training$target$x, y = D.training$target$y)
+y.pred.lasso &lt;- predict(fit.lasso, D.test$target$x)
+
+mean((y.pred.glmtrans - D.test$target$y)^2)
+mean((y.pred.lasso - D.test$target$y)^2)
+
+
+# fit a logistic regression model
+D.training &lt;- models("binomial", type = "all", n.target = 100, K = 2, p = 500)
+D.test &lt;- models("binomial", type = "target", n.target = 100, p = 500)
+fit.binomial &lt;- glmtrans(D.training$target, D.training$source, family = "binomial")
+y.pred.glmtrans &lt;- predict(fit.binomial, D.test$target$x, type = "class")
+
+# compare the test error with classical Lasso fitted on target data
+library(glmnet)
+fit.lasso &lt;- cv.glmnet(x = D.training$target$x, y = D.training$target$y, family = "binomial")
+y.pred.lasso &lt;- as.numeric(predict(fit.lasso, D.test$target$x, type = "class"))
+
+mean(y.pred.glmtrans != D.test$target$y)
+mean(y.pred.lasso != D.test$target$y)
+
+
+# fit a Poisson regression model
+D.training &lt;- models("poisson", type = "all", n.target = 100, K = 2, p = 500)
+D.test &lt;- models("poisson", type = "target", n.target = 100, p = 500)
+fit.poisson &lt;- glmtrans(D.training$target, D.training$source, family = "poisson")
+y.pred.glmtrans &lt;- predict(fit.poisson, D.test$target$x, type = "response")
+
+# compare the test MSE with classical Lasso fitted on target data
+fit.lasso &lt;- cv.glmnet(x = D.training$target$x, y = D.training$target$y, family = "poisson")
+y.pred.lasso &lt;- as.numeric(predict(fit.lasso, D.test$target$x, type = "response"))
+
+mean((y.pred.glmtrans - D.test$target$y)^2)
+mean((y.pred.lasso - D.test$target$y)^2)
+
+</code></pre>
+
+
+</div>

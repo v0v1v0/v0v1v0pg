@@ -1,0 +1,190 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gamRF</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Random forest fit to residuals from GAM model
+</h2>
+
+<h3>Description</h3>
+
+<p>Fit model using <code>gam()</code> from mgcv, then use random forest
+regression with residuals.  Check perfomance of this hybrid model
+for predictions to <code>newdata</code>, if supplied.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gamRF(formlist, yvar, data, newdata = NULL, rfVars, method = "GCV.Cp", 
+    printit = TRUE, seed = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formlist</code></td>
+<td>
+
+<p>List of rght hand sides of formulae for GAM models.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yvar</code></td>
+<td>
+
+<p>Character string holding y-variable name.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>Data
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+
+<p>Optionally, supply test data.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rfVars</code></td>
+<td>
+
+<p>Names of explanatory variables for the <code>randomForest</code> model.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+
+<p>Smoothing parameter estimation method for use of <code>gam()</code>. See
+<code>gam</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>printit</code></td>
+<td>
+
+<p>Should a summary of results (error rates) be printed?
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+
+<p>Set a seed to make result repeatable.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A vector of test data accuracies for the hybrid models (one for each
+element of <code>formlist</code>), plus test error mean square and OOB error
+mean square for the use of <code>randomForest()</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The best results are typically obtained when a relatively low
+degree of freedom GAM model is used.  It seems advisable to
+use those variables for the GAM fit that seem likely to be
+similar in their effect irrespective of geographic location.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>John Maindonald &lt;john.maindonald@anu.edu.au&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>J. Li, A. D. Heap, A. Potter and J. J. Daniell. 2011. Application
+of Machine Learning Methods to Spatial Interpolation of Environmental
+Variables. Environmental Modelling and Software 26: 1647-1656.
+DOI: 10.1016/j.envsoft.2011.07.004.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>CVgam</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(length(find.package("sp", quiet=TRUE))&gt;0){
+data("meuse", package="sp")
+meuse &lt;- within(meuse, {levels(soil) &lt;- c("1","2","2")
+                        ffreq &lt;- as.numeric(ffreq)
+                        loglead &lt;- log(lead)}
+)
+form &lt;- ~ dist + elev + ffreq + soil
+rfVars &lt;- c("dist", "elev", "soil", "ffreq", "x", "y")
+## Select 90 out of 155 rows
+sub &lt;- sample(1:nrow(meuse), 90)
+meuseOut &lt;- meuse[-sub,]
+meuseIn &lt;- meuse[sub,]
+gamRF(formlist=list("lm"=form), yvar="loglead", rfVars=rfVars,
+                    data=meuseIn, newdata=meuseOut)
+}
+
+## The function is currently defined as
+function (formlist, yvar, data, newdata = NULL, rfVars, method = "GCV.Cp", 
+    printit = TRUE, seed = NULL) 
+{   if(!is.null(seed))set.seed(seed)
+    errRate &lt;- numeric(length(formlist)+2)
+    names(errRate) &lt;- c(names(formlist), "rfTest", "rfOOB")
+    ytrain &lt;- data[, yvar]
+    xtrain &lt;- data[, rfVars]
+    xtest &lt;- newdata[, rfVars]
+    ytest = newdata[, yvar]
+    res.rf &lt;- randomForest(x = xtrain, y = ytrain, 
+                           xtest=xtest, 
+                           ytest=ytest)
+    errRate["rfOOB"] &lt;- mean(res.rf$mse)
+    errRate["rfTest"] &lt;- mean(res.rf$test$mse)    
+    GAMhat &lt;- numeric(nrow(data))
+    for(nam in names(formlist)){
+      form &lt;- as.formula(paste(c(yvar, paste(formlist[[nam]])), collapse=" "))
+      train.gam &lt;- gam(form, data = data, method = method)
+      res &lt;- resid(train.gam)
+      cvGAMms &lt;- sum(res^2)/length(res)
+      if (!all(rfVars %in% names(newdata))) {
+        missNam &lt;- rfVars[!(rfVars %in% names(newdata))]
+        stop(paste("The following were not found in 'newdata':", 
+                   paste(missNam, collapse = ", ")))
+      }
+      GAMtesthat &lt;- predict(train.gam, newdata = newdata)
+      GAMtestres &lt;- ytest - GAMtesthat
+      Gres.rf &lt;- randomForest(x = xtrain, y = res, xtest = xtest, 
+                              ytest = GAMtestres)
+      errRate[nam] &lt;- mean(Gres.rf$test$mse)
+    }
+    if (printit) 
+        print(round(errRate, 4))
+    invisible(errRate)
+}
+</code></pre>
+
+
+</div>

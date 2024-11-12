@@ -1,0 +1,95 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get_pixel_line</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Raster pixel/line from geospatial x,y coordinates</h2>
+
+<h3>Description</h3>
+
+<p><code>get_pixel_line()</code> converts geospatial coordinates to pixel/line (raster
+column, row numbers).
+The upper left corner pixel is the raster origin (0,0) with column, row
+increasing left to right, top to bottom.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get_pixel_line(xy, gt)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>xy</code></td>
+<td>
+<p>Numeric matrix of geospatial x,y coordinates in the same spatial
+reference system as <code>gt</code> (or two-column data frame that will be coerced
+to numeric matrix).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gt</code></td>
+<td>
+<p>Either a numeric vector of length six containing the affine
+geotransform for the raster, or an object of class <code>GDALRaster</code> from
+which the geotransform will be obtained (see Note).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Integer matrix of raster pixel/line.
+</p>
+
+
+<h3>Note</h3>
+
+<p>This function applies the inverse geotransform to the input points. If <code>gt</code>
+is given as the numeric vector, no bounds checking is done (i.e., min
+pixel/line could be less than zero and max pixel/line could be greater than
+the raster x/y size). If <code>gt</code> is obtained from an object of class
+<code>GDALRaster</code>, then <code>NA</code> is returned for points that fall outside the
+raster extent and a warning emitted giving the number points that were
+outside. This latter case is equivalent to calling the <code style="white-space: pre;">⁠$get_pixel_line()⁠</code>
+class method on the <code>GDALRaster</code> object (see Examples).
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GDALRaster$getGeoTransform()</code>, <code>inv_geotransform()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">pt_file &lt;- system.file("extdata/storml_pts.csv", package="gdalraster")
+# id, x, y in NAD83 / UTM zone 12N
+pts &lt;- read.csv(pt_file)
+print(pts)
+
+raster_file &lt;- system.file("extdata/storm_lake.lcp", package="gdalraster")
+ds &lt;- new(GDALRaster, raster_file)
+gt &lt;- ds$getGeoTransform()
+get_pixel_line(pts[, -1], gt)
+
+# or, using the class method
+ds$get_pixel_line(pts[, -1])
+
+# add a point outside the raster extent
+pts[11, ] &lt;- c(11, 323318, 5105104)
+get_pixel_line(pts[, -1], gt)
+
+# with bounds checking on the raster extent
+ds$get_pixel_line(pts[, -1])
+
+ds$close()
+</code></pre>
+
+
+</div>

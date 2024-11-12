@@ -1,0 +1,324 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GFEVD</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate generalized forecast error variance decomposition for structural
+(and reduced form) GMVAR, StMVAR, and G-StMVAR models.</h2>
+
+<h3>Description</h3>
+
+<p><code>GFEVD</code> estimates generalized forecast error variance decomposition for structural
+(and reduced form) GMVAR, StMVAR, and G-StMVAR models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GFEVD(
+  gsmvar,
+  shock_size = 1,
+  N = 30,
+  initval_type = c("data", "random", "fixed"),
+  R1 = 250,
+  R2 = 250,
+  init_regimes = NULL,
+  init_values = NULL,
+  which_cumulative = numeric(0),
+  include_mixweights = FALSE,
+  ncores = 2,
+  seeds = NULL
+)
+
+## S3 method for class 'gfevd'
+plot(x, ...)
+
+## S3 method for class 'gfevd'
+print(x, ..., digits = 2, N_to_print)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>gsmvar</code></td>
+<td>
+<p>an object of class <code>'gsmvar'</code>, typically created with <code>fitGSMVAR</code> or <code>GSMVAR</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shock_size</code></td>
+<td>
+<p>What shocks size should be used for all shocks? By the definition of the SGMVAR,
+SStMVAR, and SG-StMVAR model, the conditional covariance matrix of the structural shock is identity matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>a positive integer specifying the horizon how far ahead should the GFEVD be calculated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initval_type</code></td>
+<td>
+<p>What type initial values are used for estimating the GIRFs that the GFEVD is based on?
+</p>
+
+<dl>
+<dt>
+<code>"data"</code>:</dt>
+<dd>
+<p>Estimate the GIRF for all the possible length <code class="reqn">p</code> histories in the data.</p>
+</dd>
+<dt>
+<code>"random"</code>:</dt>
+<dd>
+<p>Estimate the GIRF for several random initial values generated from the stationary
+distribution of the process or from the stationary distribution of specific regime(s) chosen with the
+argument <code>init_regimes</code>. The number of initial values is set with the argument <code>R2</code>.</p>
+</dd>
+<dt>
+<code>"fixed"</code>:</dt>
+<dd>
+<p>Estimate the GIRF for a fixed initial value only, which is specified with the argument
+<code>init_values</code>.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R1</code></td>
+<td>
+<p>the number of repetitions used to estimate GIRF for each initial
+value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R2</code></td>
+<td>
+<p>the number of initial values to be drawn if <code>initval_type="random"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init_regimes</code></td>
+<td>
+<p>a numeric vector of length at most <code class="reqn">M</code> and elements
+in <code class="reqn">1,...,M</code> specifying the regimes from which the initial values
+should be generated from. The initial values will be generated from a
+mixture distribution with the mixture components being the stationary
+distributions of the specific regimes and the (proportional) mixing weights
+given by the mixing weight parameters of those regimes. Note that if
+<code>init_regimes=1:M</code>, the initial values are generated from the
+stationary distribution of the process and if <code>init_regimes=m</code>, the
+initial value are generated from the stationary distribution of the
+<code class="reqn">m</code>th regime. Ignored if the argument <code>init_values</code> is specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init_values</code></td>
+<td>
+<p>a size <code class="reqn">(pxd)</code> matrix specifying the initial values, where d is the number
+of time series in the system. The <strong>last</strong> row will be used as initial values for the first lag,
+the second last row for second lag etc. If not specified, initial values will be drawn according to
+mixture distribution specifed by the argument <code>init_regimes</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>which_cumulative</code></td>
+<td>
+<p>a numeric vector with values in <code class="reqn">1,...,d</code>
+(<code>d=ncol(data)</code>) specifying which the variables for which the impulse
+responses should be cumulative. Default is none.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include_mixweights</code></td>
+<td>
+<p>should the GFEVD be estimated for the mixing weights as well? Note that this is
+ignored if <code>M=1</code> and if <code>M=2</code> the GFEVD will be the same for both regime's mixing weights.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>the number CPU cores to be used in parallel computing. Only
+single core computing is supported if an initial value is specified (and
+the GIRF won't thus be estimated multiple times).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seeds</code></td>
+<td>
+<p>a numeric vector containing the random number generator seed for estimation
+of each GIRF. Should have the length...
+</p>
+
+<ul>
+<li>
+<p> ...<code>nrow(data) - p + 1</code> if <code>initval_type="data"</code>.
+</p>
+</li>
+<li>
+<p> ...<code>R2</code> if <code>initval_type="random"</code>.
+</p>
+</li>
+<li>
+<p> ...<code>1</code> if <code>initval_type="fixed."</code>.
+</p>
+</li>
+</ul>
+<p>Set to <code>NULL</code> for not initializing the seed. Exists for creating reproducible results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>object of class <code>'gfevd'</code> generated by the function <code>GFEVD</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>currently not used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>the number of decimals to print</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N_to_print</code></td>
+<td>
+<p>an integer specifying the horizon how far to print the estimates.
+The default is that all the values are printed.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The model DOES NOT need to be structural in order for this function to be
+applicable. When an identified structural GMVAR, StMVAR, or G-StMVAR model is
+provided in the argument <code>gsmvar</code>, the identification imposed by the model
+is used. When a reduced form model is provided in the argument <code>gsmvar</code>,
+lower triangular Cholesky identification is used to identify the shocks.
+</p>
+<p>The GFEVD is a forecast error variance decomposition calculated with the generalized impulse response function (GIRF).
+Lanne and Nyberg (2016) for details. Note, however, that the related GIRFs are calculated using the algorithm given in
+Virolainen (2022).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns and object of class 'gfevd' containing the GFEVD for all the variables and if
+<code>include_mixweights=TRUE</code> also to the mixing weights. Note that the decomposition does not
+exist at horizon zero for mixing weights because the related GIRFs are always zero at impact.
+</p>
+
+
+<h3>Functions</h3>
+
+
+<ul>
+<li> <p><code>plot(gfevd)</code>: plot method
+</p>
+</li>
+<li> <p><code>print(gfevd)</code>: print method
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+
+<ul>
+<li>
+<p> Lanne M. and Nyberg H. 2016. Generalized Forecast Error Variance Decomposition for Linear
+and Nonlineae Multivariate Models. <em>Oxford Bulletin of Economics and Statistics</em>, <strong>78</strong>, 4, 595-603.
+</p>
+</li>
+<li>
+<p> Kalliovirta L., Meitz M. and Saikkonen P. 2016. Gaussian mixture vector autoregression.
+<em>Journal of Econometrics</em>, <strong>192</strong>, 485-498.
+</p>
+</li>
+<li>
+<p> Virolainen S. (forthcoming). A statistically identified structural vector autoregression with endogenously
+switching volatility regime. <em>Journal of Business &amp; Economic Statistics</em>.
+</p>
+</li>
+<li>
+<p> Virolainen S. 2022. Gaussian and Student's t mixture vector autoregressive model with application to the
+asymmetric effects of monetary policy shocks in the Euro area. Unpublished working paper, available as arXiv:2109.13648.
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>GIRF</code>, <code>linear_IRF</code>, <code>fitGSMVAR</code>, <code>GSMVAR</code>,
+<code>gsmvar_to_sgsmvar</code>, <code>reorder_W_columns</code>, <code>swap_W_signs</code>, <code>simulate.gsmvar</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> 
+ # These are long-running examples that use parallel computing.
+ # It takes approximately 30 seconds to run all the below examples.
+
+ ## StMVAR(1, 2), d=2 model identified recursively by lower-triangular
+ ## Cholesky decomposition (i.e., reduced form model is specified):
+ params12t &lt;- c(0.55, 0.11, 0.34, 0.05, -0.01, 0.72, 0.58, 0.01, 0.06, 0.17,
+   0.25, 0.34, 0.05, -0.01, 0.72, 0.50, -0.01, 0.20, 0.60, 3.00, 12.00)
+ mod12t &lt;- GSMVAR(gdpdef, p=1, M=2, params=params12t, model="StMVAR")
+
+ # Estimating the GFEVD using all possible histories in the data as the
+ # initial values:
+ gfevd0 &lt;- GFEVD(mod12t, N=24, R1=10, initval_type="data")
+ gfevd0
+ plot(gfevd0)
+ ## NOTE: Use larger R1 is empirical applications! Small R1 is used
+ ## here only to fasten the execution time of the examples.
+
+ ## Structural GMVAR(2, 2), d=2 model identified with sign-constraints:
+ params22s &lt;- c(0.36, 0.121, 0.484, 0.072, 0.223, 0.059, -0.151, 0.395,
+  0.406, -0.005, 0.083, 0.299, 0.218, 0.02, -0.119, 0.722, 0.093, 0.032,
+  0.044, 0.191, 0.057, 0.172, -0.46, 0.016, 3.518, 5.154, 0.58)
+ W_22 &lt;- matrix(c(1, 1, -1, 1), nrow=2, byrow=FALSE)
+ mod22s &lt;- GSMVAR(gdpdef, p=2, M=2, params=params22s,
+  structural_pars=list(W=W_22))
+ mod22s
+ # Alternatively, use:
+ #fit22s &lt;- fitGSMVAR(gdpdef, p=2, M=2, structural_pars=list(W=W_22),
+ #                   ncalls=20, seeds=1:20)
+ # To obtain an estimated version of the same model.
+
+ # Estimating the GFEVD using all possible histories in the data as the
+ # initial values:
+ gfevd1 &lt;- GFEVD(mod22s, N=24, R1=10, initval_type="data")
+ gfevd1
+ plot(gfevd1)
+
+ # Estimate GFEVD with the initial values generated from the stationary
+ # distribution of the process:
+ gfevd2 &lt;- GFEVD(mod22s, N=24, R1=10, R2=100, initval_type="random")
+ gfevd2
+ plot(gfevd2)
+
+ # Estimate GFEVD with fixed hand specified initial values. We use the
+ # unconditional mean of the process:
+ myvals &lt;- rbind(mod22s$uncond_moments$uncond_mean,
+                 mod22s$uncond_moments$uncond_mean)
+ gfevd3 &lt;- GFEVD(mod22s, N=36, R1=50, initval_type="fixed",
+  init_values=myvals, include_mixweights=TRUE)
+ gfevd3
+ plot(gfevd3)
+ 
+</code></pre>
+
+
+</div>

@@ -1,0 +1,246 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemResearchDevelopmentIntensity</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some Examples of Spot Market Clearing Paths Illustrating Research and Development Intensity</h2>
+
+<h3>Description</h3>
+
+<p>Some examples of spot market clearing paths (alias instantaneous equilibrium paths) illustrating R&amp;D intensity.
+R&amp;D intensity of a firm is the ratio of expenditures by the firm on R&amp;D to the firm's sales.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemResearchDevelopmentIntensity(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Details</h3>
+
+<p>The first example contains two kinds of commodities (namely product and labor) and three economic agents
+(namely a firm, a R&amp;D center of the firm and a laborer).
+Since the R&amp;D center does not produce products, the R&amp;D center is regarded as a consumer-type agent in the model.
+The utility level of the R&amp;D center (that is, the R&amp;D level) will affect the technological progress rate of the firm.
+In the model, the firm allocates part of its output to the R&amp;D centers for sale according to a given R&amp;D intensity,
+which is equivalent to allocating part of the firm's sales revenue to the R&amp;D center.
+At first, the economy is set in steady-state equilibrium without R&amp;D activity. R&amp;D activities begin in the fifth period.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A spot market clearing path.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### a 2-by-3 example.
+RDIntensity &lt;- 0.3
+RDEffectivenessCoefficient &lt;- 0.001
+
+dst.firm &lt;- node_new(
+  "prod",
+  type = "CD",
+  alpha = 2, beta = c(0.5, 0.5),
+  "prod", "cc1"
+)
+node_set(dst.firm, "cc1",
+  type = "Leontief", a = 1,
+  "lab"
+)
+
+dst.RDCenter &lt;- node_new(
+  "util",
+  type = "CD",
+  alpha = 1, beta = c(0.5, 0.5),
+  "prod", "lab"
+)
+
+dst.laborer &lt;- node_new(
+  "util",
+  type = "Leontief",
+  a = 1,
+  "prod"
+)
+
+# a function calculating the rate of technological progress according to the level of R&amp;D.
+f.TPR &lt;- function(RDLevel) RDEffectivenessCoefficient * RDLevel
+
+f &lt;- function() {
+  sdm2(
+    A = list(dst.firm, dst.RDCenter, dst.laborer),
+    B = matrix(c(
+      1, 0, 0,
+      0, 0, 0
+    ), 2, 3, TRUE),
+    S0Exg = matrix(c(
+      NA, NA, NA,
+      NA, NA, 100
+    ), 2, 3, TRUE),
+    names.commodity = c("prod", "lab"),
+    names.agent = c("firm", "RDCenter", "laborer"),
+    numeraire = "prod",
+    z0 = c(200, 0, 100),
+    policy = list(
+      function(time, A, state) {
+        if (time &gt;= 5) {
+          state$S[1, 2] &lt;- state$S[1, 1] * RDIntensity
+          state$S[1, 1] &lt;- state$S[1, 1] * (1 - RDIntensity)
+          last.a &lt;- node_set(A[[1]], "cc1")$a
+          last.RDLevel &lt;- state$last.z[2]
+          technology.progress.rate &lt;- f.TPR(last.RDLevel)
+          node_set(A[[1]], "cc1", a = last.a / (1 + technology.progress.rate))
+        }
+
+        state
+      },
+      policyMarketClearingPrice
+    ),
+    maxIteration = 1,
+    numberOfPeriods = 50,
+    ts = TRUE
+  )
+}
+
+ge &lt;- f()
+matplot((ge$ts.z), type = "o", pch = 20)
+ge$z
+
+## change the R&amp;D intensity.
+node_set(dst.firm, "cc1", a = 1)
+RDIntensity &lt;- 0.8
+ge &lt;- f()
+matplot((ge$ts.z), type = "o", pch = 20)
+ge$z
+
+## random rate of technological progress.
+set.seed(1)
+RDIntensity &lt;- 0.3
+node_set(dst.firm, "cc1", a = 1)
+f.TPR &lt;- function(RDLevel) max(0, rnorm(1, RDEffectivenessCoefficient * RDLevel,
+  sqrt(RDEffectivenessCoefficient * RDLevel)))
+ge &lt;- f()
+matplot((ge$ts.z), type = "o", pch = 20)
+ge$z
+
+## two firms with different R&amp;D intensity.
+node_set(dst.firm, "cc1", a = 1)
+RDIntensity1 &lt;- 0.1
+RDIntensity2 &lt;- 0.05
+RDEffectivenessCoefficient &lt;- 0.002
+
+dst.firm2 &lt;- Clone(dst.firm)
+dst.RDCenter2 &lt;- Clone(dst.RDCenter)
+ge &lt;- sdm2(
+  A = list(dst.firm, dst.RDCenter, dst.laborer, dst.firm2, dst.RDCenter2),
+  B = matrix(c(
+    1, 0, 0, 1, 0,
+    0, 0, 0, 0, 0
+  ), 2, 5, TRUE),
+  S0Exg = matrix(c(
+    NA, NA, NA, NA, NA,
+    NA, NA, 200, NA, NA
+  ), 2, 5, TRUE),
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm1", "RDCenter1", "laborer", "firm2", "RDCenter2"),
+  numeraire = "prod",
+  z0 = c(200, 0, 200, 200, 0),
+  policy = list(
+    function(time, A, state) {
+      if (time &gt;= 5) {
+        state$S[1, 2] &lt;- state$S[1, 1] * RDIntensity1
+        state$S[1, 1] &lt;- state$S[1, 1] * (1 - RDIntensity1)
+        last.a1 &lt;- node_set(A[[1]], "cc1")$a
+        last.RDLevel1 &lt;- state$last.z[2]
+        technology.progress.rate1 &lt;- RDEffectivenessCoefficient * last.RDLevel1
+        node_set(A[[1]], "cc1", a = last.a1 / (1 + technology.progress.rate1))
+
+        state$S[1, 5] &lt;- state$S[1, 4] * RDIntensity2
+        state$S[1, 4] &lt;- state$S[1, 4] * (1 - RDIntensity2)
+        last.a2 &lt;- node_set(A[[4]], "cc1")$a
+        last.RDLevel2 &lt;- state$last.z[5]
+        technology.progress.rate2 &lt;- RDEffectivenessCoefficient * last.RDLevel2
+        node_set(A[[4]], "cc1", a = last.a2 / (1 + technology.progress.rate2))
+      }
+
+      state
+    },
+    policyMarketClearingPrice
+  ),
+  maxIteration = 1,
+  numberOfPeriods = 50,
+  ts = TRUE
+)
+
+matplot((ge$ts.z), type = "o", pch = 20)
+ge$z
+
+## Assume that the R&amp;D center is owned by the government and
+## receives revenue through taxation on firms.
+## The technologies developed by the R&amp;D center are public goods.
+node_set(dst.firm, "cc1", a = 1)
+RDIntensity &lt;- 0.1
+RDEffectivenessCoefficient &lt;- 0.002
+
+dst.firm2 &lt;- Clone(dst.firm)
+
+ge &lt;- sdm2(
+  A = list(dst.firm, dst.RDCenter, dst.laborer, dst.firm2),
+  B = matrix(c(
+    1, 0, 0, 1,
+    0, 0, 0, 0
+  ), 2, 4, TRUE),
+  S0Exg = matrix(c(
+    NA, NA, NA, NA,
+    NA, NA, 200, NA
+  ), 2, 4, TRUE),
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm1", "RDCenter", "laborer", "firm2"),
+  numeraire = "prod",
+  z0 = c(200, 0, 200, 200),
+  policy = list(
+    function(time, A, state) {
+      if (time &gt;= 5) {
+        last.RDLevel &lt;- state$last.z[2]
+        technology.progress.rate &lt;- RDEffectivenessCoefficient * last.RDLevel
+
+        state$S[1, 2] &lt;- (state$S[1, 1] + state$S[1, 4]) * RDIntensity
+        state$S[1, 1] &lt;- state$S[1, 1] * (1 - RDIntensity)
+        state$S[1, 4] &lt;- state$S[1, 4] * (1 - RDIntensity)
+        last.a1 &lt;- node_set(A[[1]], "cc1")$a
+        node_set(A[[1]], "cc1", a = last.a1 / (1 + technology.progress.rate))
+
+        last.a2 &lt;- node_set(A[[4]], "cc1")$a
+        node_set(A[[4]], "cc1", a = last.a2 / (1 + technology.progress.rate))
+      }
+
+      state
+    },
+    policyMarketClearingPrice
+  ),
+  maxIteration = 1,
+  numberOfPeriods = 30,
+  ts = TRUE
+)
+
+matplot((ge$ts.z), type = "o", pch = 20)
+ge$z
+
+</code></pre>
+
+
+</div>

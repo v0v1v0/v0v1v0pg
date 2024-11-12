@@ -1,0 +1,125 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>grab_psiFUN</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Grab estimating functions from a model object</h2>
+
+<h3>Description</h3>
+
+<p>Grab estimating functions from a model object
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">grab_psiFUN(object, ...)
+
+## S3 method for class 'glm'
+grab_psiFUN(object, data, ...)
+
+## S3 method for class 'geeglm'
+grab_psiFUN(object, data, ...)
+
+## S3 method for class 'merMod'
+grab_psiFUN(object, data, numderiv_opts = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>the object from which to extrace <code>psiFUN</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additonal arguments passed to other methods</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>the data to use for the estimating function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numderiv_opts</code></td>
+<td>
+<p>a list of arguments passed to <code>numDeriv::grad</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a function corresponding to the estimating equations of a model
+</p>
+
+
+<h3>Methods (by class)</h3>
+
+
+<ul>
+<li> <p><code>grab_psiFUN(glm)</code>: Create estimating equation function from a <code>glm</code> object
+</p>
+</li>
+<li> <p><code>grab_psiFUN(geeglm)</code>: Create estimating equation function from a <code>geeglm</code> object
+</p>
+</li>
+<li> <p><code>grab_psiFUN(merMod)</code>: Create estimating equation function from a <code>merMod</code> object
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+library(geepack)
+library(lme4)
+data('ohio')
+
+glmfit  &lt;- glm(resp ~ age, data = ohio,
+               family = binomial(link = "logit"))
+geefit  &lt;- geeglm(resp ~ age, data = ohio, id = id,
+                  family = binomial(link = "logit"))
+glmmfit &lt;- glmer(resp ~ age + (1|id), data = ohio,
+                 family = binomial(link = "logit"))
+example_ee &lt;- function(data, model){
+ f &lt;- grab_psiFUN(model, data)
+ function(theta){
+  f(theta)
+ }
+}
+
+m_estimate(
+  estFUN = example_ee,
+  data = ohio,
+  compute_roots = FALSE,
+  units = 'id',
+  roots = coef(glmfit),
+  outer_args = list(model = glmfit))
+m_estimate(
+  estFUN = example_ee,
+  data = ohio,
+  compute_roots = FALSE,
+  units = 'id',
+  roots = coef(geefit),
+  outer_args = list(model = geefit))
+m_estimate(
+  estFUN = example_ee,
+  data = ohio,
+  compute_roots = FALSE,
+  units = 'id',
+  roots = unlist(getME(glmmfit, c('beta', 'theta'))),
+  outer_args = list(model = glmmfit))
+ 
+## End(Not run)
+</code></pre>
+
+
+</div>

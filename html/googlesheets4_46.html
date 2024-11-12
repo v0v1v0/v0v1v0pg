@@ -1,0 +1,133 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sheet_append</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Append rows to a sheet</h2>
+
+<h3>Description</h3>
+
+<p>Adds one or more new rows after the last row with data in a (work)sheet,
+increasing the row dimension of the sheet if necessary.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sheet_append(ss, data, sheet = 1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ss</code></td>
+<td>
+<p>Something that identifies a Google Sheet:
+</p>
+
+<ul>
+<li>
+<p> its file id as a string or <code>drive_id</code>
+</p>
+</li>
+<li>
+<p> a URL from which we can recover the id
+</p>
+</li>
+<li>
+<p> a one-row <code>dribble</code>, which is how googledrive
+represents Drive files
+</p>
+</li>
+<li>
+<p> an instance of <code>googlesheets4_spreadsheet</code>, which is what <code>gs4_get()</code>
+returns
+</p>
+</li>
+</ul>
+<p>Processed through <code>as_sheets_id()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data frame.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sheet</code></td>
+<td>
+<p>Sheet to append to, in the sense of "worksheet" or "tab". You can identify a sheet by name, with a string, or by position, with a number.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The input <code>ss</code>, as an instance of <code>sheets_id</code>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Makes an <code>AppendCellsRequest</code>:
+</p>
+
+<ul><li> <p><a href="https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/request#AppendCellsRequest">https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/request#AppendCellsRequest</a>
+</p>
+</li></ul>
+<p>Other write functions: 
+<code>gs4_create()</code>,
+<code>gs4_formula()</code>,
+<code>range_delete()</code>,
+<code>range_flood()</code>,
+<code>range_write()</code>,
+<code>sheet_write()</code>
+</p>
+<p>Other worksheet functions: 
+<code>sheet_add()</code>,
+<code>sheet_copy()</code>,
+<code>sheet_delete()</code>,
+<code>sheet_properties()</code>,
+<code>sheet_relocate()</code>,
+<code>sheet_rename()</code>,
+<code>sheet_resize()</code>,
+<code>sheet_write()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# we will recreate the table of "other" deaths from this example Sheet
+(deaths &lt;- gs4_example("deaths") %&gt;%
+  range_read(range = "other_data", col_types = "????DD"))
+
+# split the data into 3 pieces, which we will send separately
+deaths_one &lt;- deaths[1:5, ]
+deaths_two &lt;- deaths[6, ]
+deaths_three &lt;- deaths[7:10, ]
+
+# create a Sheet and send the first chunk of data
+ss &lt;- gs4_create("sheet-append-demo", sheets = list(deaths = deaths_one))
+
+# append a single row
+ss %&gt;% sheet_append(deaths_two)
+
+# append remaining rows
+ss %&gt;% sheet_append(deaths_three)
+
+# read and check against the original
+deaths_replica &lt;- range_read(ss, col_types = "????DD")
+identical(deaths, deaths_replica)
+
+# clean up
+gs4_find("sheet-append-demo") %&gt;%
+  googledrive::drive_trash()
+
+</code></pre>
+
+
+</div>

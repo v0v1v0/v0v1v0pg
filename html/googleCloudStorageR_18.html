@@ -1,0 +1,159 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gcs_get_object</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get an object in a bucket directly</h2>
+
+<h3>Description</h3>
+
+<p>This retrieves an object directly.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gcs_get_object(
+  object_name,
+  bucket = gcs_get_global_bucket(),
+  meta = FALSE,
+  saveToDisk = NULL,
+  overwrite = FALSE,
+  parseObject = TRUE,
+  parseFunction = gcs_parse_download,
+  generation = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object_name</code></td>
+<td>
+<p>name of object in the bucket that will be URL encoded, or a <code>gs://</code> URL</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bucket</code></td>
+<td>
+<p>bucket containing the objects. Not needed if using a <code>gs://</code> URL</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>meta</code></td>
+<td>
+<p>If TRUE then get info about the object, not the object itself</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>saveToDisk</code></td>
+<td>
+<p>Specify a filename to save directly to disk</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>overwrite</code></td>
+<td>
+<p>If saving to a file, whether to overwrite it</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parseObject</code></td>
+<td>
+<p>If saveToDisk is NULL, whether to parse with <code>parseFunction</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parseFunction</code></td>
+<td>
+<p>If saveToDisk is NULL, the function that will parse the download.  Defaults to gcs_parse_download</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>generation</code></td>
+<td>
+<p>The generation number for the noncurrent version, if you have object versioning enabled in your bucket e.g. <code>"1560468815691234"</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This differs from providing downloads via a download link as you can
+do via gcs_download_url
+</p>
+<p><code>object_name</code> can use a <code>gs://</code> URI instead,
+in which case it will take the bucket name from that URI and <code>bucket</code> argument
+will be overridden.  The URLs should be in the form <code>gs://bucket/object/name</code>
+</p>
+<p>By default if you want to get the object straight into an R session the parseFunction is gcs_parse_download which wraps <code>httr</code>'s content.
+</p>
+<p>If you want to use your own function (say to unzip the object) then supply it here.  The first argument should take the downloaded object.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The object, or TRUE if successfully saved to disk.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other object functions: 
+<code>gcs_compose_objects()</code>,
+<code>gcs_copy_object()</code>,
+<code>gcs_delete_object()</code>,
+<code>gcs_list_objects()</code>,
+<code>gcs_metadata_object()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+
+## something to download
+## data.frame that defaults to be called "mtcars.csv"
+gcs_upload(mtcars)
+
+## get the mtcars csv from GCS, convert it to an R obj
+gcs_get_object("mtcars.csv")
+
+## get the mtcars csv from GCS, save it to disk
+gcs_get_object("mtcars.csv", saveToDisk = "mtcars.csv")
+
+
+## default gives a warning about missing column name.
+## custom parse function to suppress warning
+f &lt;- function(object){
+  suppressWarnings(httr::content(object, encoding = "UTF-8"))
+}
+
+## get mtcars csv with custom parse function.
+gcs_get_object("mtcars.csv", parseFunction = f)
+
+## download an RDS file using helper gcs_parse_rds()
+
+gcs_get_object("obj.rds", parseFunction = gcs_parse_rds)
+
+## to download from a folder in your bucket
+my_folder &lt;- "your_folder/"
+objs &lt;- gcs_list_objects(prefix = my_folder)
+
+dir.create(my_folder)
+
+# download all the objects to that folder
+dls &lt;- lapply(objs$name, function(x) gcs_get_object(x, saveToDisk = x))
+
+
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

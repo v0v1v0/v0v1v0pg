@@ -1,0 +1,276 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gsstda</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gene Structure Survival using Topological Data Analysis (GSSTDA).</h2>
+
+<h3>Description</h3>
+
+<p>Gene Structure Survival using Topological Data Analysis.
+This function implements an analysis for expression array data
+based on the <em>Progression Analysis of Disease</em> developed by Nicolau
+<em>et al.</em> (doi: 10.1073/pnas.1102826108) that allows the information
+contained in an expression matrix to be condensed into a combinatory graph.
+The novelty is that information on survival is integrated into the analysis.
+</p>
+<p>The analysis consists of 3 parts: a preprocessing of the data, the gene
+selection and the filter function, and the mapper algorithm. The
+preprocessing is specifically the Disease Specific Genomic Analysis (proposed
+by Nicolau <em>et al.</em>) that consists of, through linear models, eliminating the
+part of the data that is considered "healthy" and keeping only the component
+that is due to the disease. The genes are then selected according to their
+variability and whether they are related to survival and the values of the
+filtering function for each patient are calculated taking into account the
+survival associated with each gene. Finally, the mapper algorithm is applied
+from the disease component matrix and the values of the filter function
+obtaining a combinatory graph.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gsstda(
+  full_data,
+  survival_time,
+  survival_event,
+  case_tag,
+  control_tag = NA,
+  gamma = NA,
+  gen_select_type = "Top_Bot",
+  percent_gen_select = 10,
+  num_intervals = 5,
+  percent_overlap = 40,
+  distance_type = "correlation",
+  clustering_type = "hierarchical",
+  num_bins_when_clustering = 10,
+  linkage_type = "single",
+  optimal_clustering_mode = NA,
+  silhouette_threshold = 0.25,
+  na.rm = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>full_data</code></td>
+<td>
+<p>Input matrix whose columns correspond to the patients and
+rows to the genes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>survival_time</code></td>
+<td>
+<p>Numerical vector of the same length as the number of
+columns of <code>full_data</code>. In addition, the patients must be in the same
+order as in <code>full_data</code>. For the patients whose sample is pathological
+should be indicated the time between the disease diagnosis and event
+(death, relapse or other). If the event has not occurred, it should be
+indicated the time until the end of follow-up. Patients whose sample is
+from healthy tissue must have an NA value</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>survival_event</code></td>
+<td>
+<p>Numerical vector of the same length as the number of
+columns of <code>full_data</code>. Patients must be in the same order as in
+<code>full_data</code>. For the the patients with pathological sample should
+be indicated whether the event has occurred (1) or not (0). Only these
+values are valid and healthy patients must have an NA value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>case_tag</code></td>
+<td>
+<p>Character vector of the same length as the number of
+columns of <code>full_data</code>. Patients must be in the same order as in
+<code>full_data</code>. It must be indicated for each patient whether its
+sample is from pathological or healthy tissue. One value should be used to
+indicate whether the patient's sample is healthy and another value should
+be used to indicate whether the patient's sample is pathological.
+The user will then be asked which one indicates whether the patient is
+healthy. Only two values are valid in the vector in total.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control_tag</code></td>
+<td>
+<p>Tag of the healthy sample.E.g. "T"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>A parameter that indicates the magnitude of the noise assumed in
+the flat data matrix for the generation of the Healthy State Model. If it
+takes the value <code>NA</code> the magnitude of the noise is assumed to be unknown.
+By default gamma is unknown.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gen_select_type</code></td>
+<td>
+<p>Option. Options on how to select the genes to be
+used in the mapper. Select the "Abs" option, which means that the
+genes with the highest absolute value are chosen, or the
+"Top_Bot" option, which means that half of the selected
+genes are those with the highest value (positive value, i.e.
+worst survival prognosis) and the other half are those with the
+lowest value (negative value, i.e. best prognosis). "Top_Bot" default option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>percent_gen_select</code></td>
+<td>
+<p>Percentage (from zero to one hundred) of genes
+to be selected to be used in mapper. 10 default option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_intervals</code></td>
+<td>
+<p>Parameter for the mapper algorithm. Number of
+intervals used to create the first sample partition based on
+filtering values. 5 default option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>percent_overlap</code></td>
+<td>
+<p>Parameter for the mapper algorithm. Percentage
+of overlap between intervals. Expressed as a percentage. 40 default option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distance_type</code></td>
+<td>
+<p>Parameter for the mapper algorithm.
+Type of distance to be used for clustering. Choose between correlation
+("correlation") and euclidean ("euclidean"). "correlation" default option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clustering_type</code></td>
+<td>
+<p>Parameter for the mapper algorithm. Type of
+clustering method. Choose between "hierarchical" and "PAM"
+(“partition around medoids”) options. "hierarchical" default option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_bins_when_clustering</code></td>
+<td>
+<p>Parameter for the mapper algorithm.
+Number of bins to generate the histogram employed by the standard
+optimal number of cluster finder method. Parameter not necessary if the
+"optimal_clust_mode" option is "silhouette" or the "clust_type" is "PAM".
+10 default option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linkage_type</code></td>
+<td>
+<p>Parameter for the mapper algorithm. Linkage criteria
+used in hierarchical clustering. Choose between "single" for single-linkage
+clustering, "complete" for complete-linkage clustering or "average" for
+average linkage clustering (or UPGMA). Only necessary for hierarchical
+clustering. "single" default option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimal_clustering_mode</code></td>
+<td>
+<p>Method for selection optimal number of
+clusters. It is only necessary if the chosen type of algorithm is
+hierarchical. In this case, choose between "standard" (the method used
+in the original mapper article) or "silhouette". In the case of the PAM
+algorithm, the method will always be "silhouette".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>silhouette_threshold</code></td>
+<td>
+<p>Minimum value of <code class="reqn">\overline{s}</code> that a set of
+clusters must have to be chosen as optimal. Within each interval of the
+filter function, the average silhouette values <code class="reqn">\overline{s}</code> are computed
+for all possible partitions from $2$ to $n-1$, where $n$ is the number of
+samples within a specific interval. The $n$ that produces the highest value
+of <code class="reqn">\overline{s}</code> and that exceeds a specific threshold is selected as the
+optimum number of clusters. If no partition produces an <code class="reqn">\overline{s}</code>
+exceeding the chosen threshold, all samples are then assigned to a unique
+cluster. The default value is $0.25$. The threshold of $0.25$ for
+<code class="reqn">\overline{s}</code> has been chosen based on standard practice, recognizing it
+as a moderate value that reflects adequate separation and cohesion within
+clusters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.rm</code></td>
+<td>
+<p><code>logical</code>. If <code>TRUE</code>, <code>NA</code> rows are omitted.
+If <code>FALSE</code>, an error occurs in case of <code>NA</code> rows. TRUE default
+option.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>gsstda</code> object. It contains:
+</p>
+
+<ul>
+<li>
+<p> the matrix with the normal space <code>normal_space</code>,
+</p>
+</li>
+<li>
+<p> the matrix of the disease components normal_space <code>matrix_disease_component</code>,
+</p>
+</li>
+<li>
+<p> a matrix with the results of the application of proportional hazard models
+for each gene (<code>cox_all_matrix)</code>,
+</p>
+</li>
+<li>
+<p> the genes selected for mapper <code>genes_disease_componen</code>,
+</p>
+</li>
+<li>
+<p> the matrix of the disease components with information from these genes only
+<code>genes_disease_component</code>
+</p>
+</li>
+<li>
+<p> and a <code>mapper_obj</code> object. This <code>mapper_obj</code> object contains the
+values of the intervals (interval_data), the samples included in each
+interval (sample_in_level), information about the cluster to which the
+individuals in each interval belong (clustering_all_levels), a list including
+the individuals contained in each detected node (node_samples), their size
+(node_sizes), the average of the filter function values of the individuals
+of each node (node_average_filt) and the adjacency matrix linking the nodes
+(adj_matrix). Moreover, information is provided on the number of nodes,
+the average node size, the standard deviation of the node size, the number
+of connections between nodes, the proportion of connections to all possible
+connections and the number of ramifications.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+gsstda_object &lt;- gsstda(full_data,  survival_time, survival_event, case_tag, gamma=NA,
+                 gen_select_type="Top_Bot", percent_gen_select=10,
+                 num_intervals = 4, percent_overlap = 50,
+                 distance_type = "euclidean", num_bins_when_clustering = 8,
+                 clustering_type = "hierarchical", linkage_type = "single")
+</code></pre>
+
+
+</div>

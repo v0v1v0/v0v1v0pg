@@ -1,0 +1,85 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GenericML_combine</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Combine several GenericML objects</h2>
+
+<h3>Description</h3>
+
+<p>This function combines multiple <code>"GenericML"</code> objects into one  <code>"GenericML"</code> object. Combining several  <code>"GenericML"</code> objects can be useful when you cannot run <code>GenericML()</code> for sufficiently many splits due to memory constraints. In this case, you may run <code>GenericML()</code> multiple times with only a small number of sample splits each and combine the returned <code>"GenericML"</code> objects into one <code>GenericML</code> object with this function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GenericML_combine(x)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A list of <code>"GenericML"</code> objects, as returned by the function <code>GenericML()</code>.</p>
+</td>
+</tr></table>
+<h3>Details</h3>
+
+<p>To ensure consistency of the estimates, all <code>"GenericML"</code> objects in the list <code>x</code> must have the exact same parameter specifications in their original call to <code>GenericML()</code>, except for the parameters <code>num_splits</code>, <code>parallel</code>, <code>num_cores</code>, <code>seed</code>, and <code>store_learners</code> (i.e. these arguments may vary between the <code>"GenericML"</code> objects in the list <code>x</code>). An error will be thrown if this is not satisfied.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A<code>"GenericML"</code> object as returned by <code>GenericML()</code>. In the <code>arguments</code> component of this object, the objects <code>parallel</code>, <code>num_cores</code>, <code>seed</code>, and <code>store_learners</code> are set to <code>NULL</code> as these might differ between the individual <code>GenericML</code> objects in <code>x</code>. Moreover, the <code>propensity_scores</code> component of the returned object is taken from the first <code>"GenericML"</code> object in <code>x</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GenericML()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if (require("glmnet") &amp;&amp; require("ranger")) {
+
+## generate data
+set.seed(1)
+n  &lt;- 150                                  # number of observations
+p  &lt;- 5                                    # number of covariates
+D  &lt;- rbinom(n, 1, 0.5)                    # random treatment assignment
+Z  &lt;- matrix(runif(n*p), n, p)             # design matrix
+Y0 &lt;- as.numeric(Z %*% rexp(p) + rnorm(n)) # potential outcome without treatment
+Y1 &lt;- 2 + Y0                               # potential outcome under treatment
+Y  &lt;- ifelse(D == 1, Y1, Y0)               # observed outcome
+
+## column names of Z
+colnames(Z) &lt;- paste0("V", 1:p)
+
+## specify learners
+learners &lt;- c("lasso", "mlr3::lrn('ranger', num.trees = 10)")
+
+## glmnet v4.1.3 isn't supported on Solaris, so skip Lasso in this case
+if(Sys.info()["sysname"] == "SunOS") learners &lt;- learners[-1]
+
+## call GenericML three times and store the returned objects in a list x
+x &lt;- lapply(1:3, function(...) GenericML(Z, D, Y,
+                               learners, num_splits = 2,
+                               parallel = FALSE))
+
+## combine the objects in x into one GenericML object
+genML &lt;- GenericML_combine(x)
+
+## you can use all methods of GenericML objects on the combined object, for instance accessors:
+get_BLP(genML, plot = TRUE)
+}
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,160 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cmorwavf</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Complex Morlet Wavelet</h2>
+
+<h3>Description</h3>
+
+<p>Compute the complex Morlet wavelet on a grid.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cmorwavf(lb = -8, ub = 8, n = 1000, fb = 5, fc = 1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>lb, ub</code></td>
+<td>
+<p>Lower and upper bounds of the interval to evaluate the complex
+Morlet waveform on. Default: -8 to 8.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Number of points on the grid between <code>lb</code> and <code>ub</code> (length
+of the wavelet). Default: 1000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fb</code></td>
+<td>
+<p>Time-decay parameter of the wavelet (bandwidth in the frequency
+domain). Must be a positive scalar. Default: 5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fc</code></td>
+<td>
+<p>Center frequency of the wavelet. Must be a positive scalar.
+Default: 1.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The Morlet (or Gabor) wavelet is a wavelet composed of a complex exponential
+(carrier) multiplied by a Gaussian window (envelope). The wavelet exists as a
+complex version or a purely real-valued version. Some distinguish between the
+"real Morlet" versus the "complex Morlet". Others consider the complex
+version to be the "Gabor wavelet", while the real-valued version is the
+"Morlet wavelet". This function returns the complex Morlet wavelet, with
+time-decay parameter <code>fb</code>, and center frequency <code>fc</code>. The general
+expression for the complex Morlet wavelet is
+
+</p>
+<pre>
+ Psi(x) = ((pi * fb)^-0.5) *  exp(2 * pi * i * fc * x) * exp(-(x^2) / fb)
+</pre>
+<p><code>x</code> is evaluated on an <code>n</code>-point regular grid in the interval (lb,
+ub).
+</p>
+<p><code>fb</code> controls the decay in the time domain and the corresponding energy
+spread (bandwidth) in the frequency domain.
+<code>fb</code> is the inverse of the variance in the frequency domain. Increasing
+<code>fb</code> makes the wavelet energy more concentrated around the center
+frequency and results in slower decay of the wavelet in the time domain.
+Decreasing <code>fb</code> results in faster decay of the wavelet in the time
+domain and less energy spread in the frequency domain. The value of <code>fb</code>
+does not affect the center frequency. When converting from scale to
+frequency, only the center frequency affects the frequency values. The energy
+spread or bandwidth parameter affects how localized the wavelet is in the
+frequency domain. See the examples.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list containing 2 variables; <code>x</code>, the grid on which the
+complex Morlet wavelet was evaluated, and <code>psi</code> (<code class="reqn">\Psi</code>), the
+evaluated wavelet on the grid <code>x</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Sylvain Pelissier, <a href="mailto:sylvain.pelissier@gmail.com">sylvain.pelissier@gmail.com</a>.<br>
+Conversion to R by Geert van Boxtel, <a href="mailto:G.J.M.vanBoxtel@gmail.com">G.J.M.vanBoxtel@gmail.com</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Construct a complex-valued Morlet wavelet with a bandwidth parameter
+##  of 1.5 and a center frequency of 1. Set the effective support to [-8,8]
+## and the length of the wavelet to 1000.
+cmw &lt;- cmorwavf(-8, 8, 1000, 1.5, 1)
+
+# Plot the real and imaginary parts of the wavelet.
+op &lt;- par(mfrow = c(2, 1))
+plot(cmw$x, Re(cmw$psi), type = "l", main = "Real Part")
+plot(cmw$x, Im(cmw$psi), type = "l", main = "Imaginary Part")
+par(op)
+
+## This example shows how the complex Morlet wavelet shape in the frequency
+## domain is affected by the value of the bandwidth parameter (fb). Both
+## wavelets have a center frequency of 1. One wavelet has an fb value of
+## 0.5 and the other wavelet has a value of 8.
+
+op &lt;- par(mfrow = c(2,1))
+cmw1 &lt;- cmorwavf(fb = 0.5)
+cmw2 &lt;- cmorwavf(fb = 8)
+
+# time domain plot
+plot(cmw1$x, Re(cmw1$psi), type = "l", xlab = "Time", ylab = "",
+     main = "Time domain, Real part")
+lines(cmw2$x, Re(cmw2$psi), col = "red")
+legend("topright", legend = c("fb = 0.5", "fb = 8"), lty= 1, col = c(1,2))
+
+# frequency domain plot
+f &lt;- seq(-5, 5, .01)
+Fc &lt;- 1
+Fb1 &lt;- 0.5
+Fb2 &lt;- 8
+PSI1 &lt;- exp(-pi^2 * Fb1 * (f-Fc)^2)
+PSI2 &lt;- exp(-pi^2 * Fb2 * (f-Fc)^2)
+plot(f, PSI1, type="l", xlab = "Frequency", ylab = "",
+     main = "Frequency domain")
+lines(f, PSI2, col = "red")
+legend("topright", legend = c("fb = 0.5", "fb = 8"),
+       lty= 1, col = c(1,2))
+par(op)
+
+## The fb bandwidth parameter for the complex Morlet wavelet is the
+## inverse of the variance in frequency. Therefore, increasing Fb results
+## in a narrower concentration of energy around the center frequency.
+
+## alternative to the above frequency plot:
+fs &lt;- length(cmw1$x) / sum(abs(range(cmw1$x)))
+hz  &lt;- seq(0, fs/2, len=floor(length(cmw1$psi)/2)+1)
+PSI1 &lt;- fft(cmw1$psi) / length(cmw1$psi)
+PSI2 &lt;- fft(cmw2$psi) / length(cmw2$psi)
+plot(hz, 2 * abs(PSI1)[1:length(hz)], type="l", xlab = "Frequency",
+     ylab = "", main = "Frequency domain", xlim=c(0,5))
+lines(hz, 2 * abs(PSI2)[1:length(hz)], col = 2)
+legend("topright", legend = c("fb = 0.5", "fb = 8"), lty= 1, col = c(1,2))
+
+</code></pre>
+
+
+</div>

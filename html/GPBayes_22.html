@@ -1,0 +1,218 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>loglik</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A wraper to compute the natural logarithm of the integrated likelihood function</h2>
+
+<h3>Description</h3>
+
+<p>This function wraps existing built-in routines to construct  
+the natural logarithm of the integrated likelihood function. The constructed 
+loglikelihood can be directly used for numerical optimization
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">loglik(par, output, H, d, covmodel, smooth, smoothness_est)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>par</code></td>
+<td>
+<p>a numerical vector, with which numerical optimization routine such as <code>optim</code> can be
+carried out directly. When the confluent Hypergeometric class is used, it is used to hold values 
+for <strong>range</strong>, <strong>tail</strong>, <strong>nugget</strong>, and <strong>nu</strong> if the smoothness parameter is estimated.
+When the Matérn class or powered-exponential class is used, it is used to hold values
+for <strong>range</strong>, <strong>nugget</strong>, and <strong>nu</strong> if the smoothness parameter is estimated.
+The order of the parameter values in <code>par</code> cannot be changed. For tensor or ARD form correlation
+functions, <strong>range</strong> and <strong>tail</strong> becomes a vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output</code></td>
+<td>
+<p>a matrix of outputs</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>H</code></td>
+<td>
+<p>a matrix of regressors in the mean function of a GaSP model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>an R object holding the distances. It should be a distance matrix for constructing isotropic correlation matrix,
+or a list of distance matrices along each input dimension for constructing tensor or ARD types of correlation matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covmodel</code></td>
+<td>
+<p>a list of two strings: <strong>family</strong>, <strong>form</strong>, where <strong>family</strong> indicates the family of covariance functions 
+including the Confluent Hypergeometric class, the Matérn class, the Cauchy class, the powered-exponential class. <strong>form</strong> indicates the 
+specific form of covariance structures including the isotropic form, tensor form, automatic relevance determination form. 
+</p>
+
+<dl>
+<dt><strong>family</strong></dt>
+<dd>
+
+<dl>
+<dt>CH</dt>
+<dd>
+<p>The Confluent Hypergeometric correlation function is given by 
+</p>
+<p style="text-align: center;"><code class="reqn">C(h) = \frac{\Gamma(\nu+\alpha)}{\Gamma(\nu)} 
+\mathcal{U}\left(\alpha, 1-\nu, \left(\frac{h}{\beta}\right)^2\right),</code>
+</p>
+
+<p>where <code class="reqn">\alpha</code> is the tail decay parameter. <code class="reqn">\beta</code> is the range parameter.
+<code class="reqn">\nu</code> is the smoothness parameter. <code class="reqn">\mathcal{U}(\cdot)</code> is the confluent hypergeometric
+function of the second kind. For details about this covariance, 
+see Ma and Bhadra (2023; <a href="https://doi.org/10.1080/01621459.2022.2027775">doi:10.1080/01621459.2022.2027775</a>).  
+</p>
+</dd>
+<dt>cauchy</dt>
+<dd>
+<p>The generalized Cauchy covariance is given by
+</p>
+<p style="text-align: center;"><code class="reqn">C(h) = \left\{ 1 + \left( \frac{h}{\phi} \right)^{\nu}  
+            \right\}^{-\alpha/\nu},</code>
+</p>
+
+<p>where <code class="reqn">\phi</code> is the range parameter. <code class="reqn">\alpha</code> is the tail decay parameter.
+<code class="reqn">\nu</code> is the smoothness parameter with default value at 2.
+</p>
+</dd>
+<dt>matern</dt>
+<dd>
+<p>The Matérn correlation function is given by
+</p>
+<p style="text-align: center;"><code class="reqn">C(h)=\frac{2^{1-\nu}}{\Gamma(\nu)} \left( \frac{h}{\phi} \right)^{\nu} 
+\mathcal{K}_{\nu}\left( \frac{h}{\phi} \right),</code>
+</p>
+
+<p>where <code class="reqn">\phi</code> is the range parameter. <code class="reqn">\nu</code> is the smoothness parameter. 
+<code class="reqn">\mathcal{K}_{\nu}(\cdot)</code> is the modified Bessel function of the second kind of order <code class="reqn">\nu</code>.
+</p>
+</dd>
+</dl>
+<dl>
+<dt>exp</dt>
+<dd>
+<p>This is the Matérn correlation with <code class="reqn">\nu=0.5</code>. This covariance should be specified as <strong>matern</strong> with smoothness parameter <code class="reqn">\nu=0.5</code>.
+</p>
+</dd>
+<dt>matern_3_2</dt>
+<dd>
+<p>This is the Matérn correlation with <code class="reqn">\nu=1.5</code>.
+This covariance should be specified as <strong>matern</strong> with smoothness parameter <code class="reqn">\nu=1.5</code>.</p>
+</dd>
+<dt>matern_5_2</dt>
+<dd>
+<p>This is the Matérn correlation with <code class="reqn">\nu=2.5</code>. 
+This covariance should be specified as <strong>matern</strong> with smoothness parameter <code class="reqn">\nu=2.5</code>.</p>
+</dd>
+</dl>
+<dl>
+<dt>powexp</dt>
+<dd>
+<p>The powered-exponential correlation function is given by
+</p>
+<p style="text-align: center;"><code class="reqn">C(h)=\exp\left\{-\left(\frac{h}{\phi}\right)^{\nu}\right\},</code>
+</p>
+
+<p>where <code class="reqn">\phi</code> is the range parameter. <code class="reqn">\nu</code> is the smoothness parameter.
+</p>
+</dd>
+<dt>gauss</dt>
+<dd>
+<p>The Gaussian correlation function is given by 
+</p>
+<p style="text-align: center;"><code class="reqn">C(h)=\exp\left(-\frac{h^2}{\phi^2}\right),</code>
+</p>
+
+<p>where <code class="reqn">\phi</code> is the range parameter.
+</p>
+</dd>
+</dl>
+</dd>
+<dt><strong>form</strong></dt>
+<dd>
+
+<dl>
+<dt>isotropic</dt>
+<dd>
+<p>This indicates the isotropic form of covariance functions. That is,
+</p>
+<p style="text-align: center;"><code class="reqn">C(\mathbf{h}) = C^0(\|\mathbf{h}\|; \boldsymbol \theta),</code>
+</p>
+<p> where <code class="reqn">\| \mathbf{h}\|</code> denotes the 
+Euclidean distance or the great circle distance for data on sphere. <code class="reqn">C^0(\cdot)</code> denotes 
+any isotropic covariance family specified in <strong>family</strong>.</p>
+</dd>
+<dt>tensor</dt>
+<dd>
+<p>This indicates the tensor product of correlation functions. That is, 
+</p>
+<p style="text-align: center;"><code class="reqn"> C(\mathbf{h}) = \prod_{i=1}^d C^0(|h_i|; \boldsymbol \theta_i),</code>
+</p>
+
+<p>where <code class="reqn">d</code> is the dimension of input space. <code class="reqn">h_i</code> is the distance along the <code class="reqn">i</code>th input dimension. This type of covariance structure has been often used in Gaussian process emulation for computer experiments.
+</p>
+</dd>
+<dt>ARD</dt>
+<dd>
+<p>This indicates the automatic relevance determination form. That is, 
+</p>
+<p style="text-align: center;"><code class="reqn">C(\mathbf{h}) = C^0\left(\sqrt{\sum_{i=1}^d\frac{h_i^2}{\phi^2_i}}; \boldsymbol \theta \right),</code>
+</p>
+
+<p>where <code class="reqn">\phi_i</code> denotes the range parameter along the <code class="reqn">i</code>th input dimension.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smooth</code></td>
+<td>
+<p>The smoothness parameter <code class="reqn">\nu</code> in a correlation function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smoothness_est</code></td>
+<td>
+<p>a logical value indicating whether the smoothness parameter is estimated.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The natural logarithm of marginal or integrated likelihood
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Pulong Ma <a href="mailto:mpulong@gmail.com">mpulong@gmail.com</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>CH</code>, <code>matern</code>, <code>gp.optim</code>, GPBayes-package, <code>GaSP</code>
+</p>
+
+
+</div>

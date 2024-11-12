@@ -1,0 +1,190 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>accuracy</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute accuracy and precision</h2>
+
+<h3>Description</h3>
+
+<p>Computes goodness-of-fit measures (accuracy, precision and joint goodness) adapted or extended from the
+definition of Deutsch (1997).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">accuracy(object, ...)
+
+## S3 method for class 'data.frame'
+accuracy(
+  object,
+  observed = object$observed,
+  prob = seq(from = 0, to = 1, by = 0.05),
+  method = "kriging",
+  outMahalanobis = FALSE,
+  ivar,
+  ...
+)
+
+## S3 method for class 'DataFrameStack'
+accuracy(
+  object,
+  observed,
+  ivars = intersect(colnames(observed), dimnames(object)[[noStackDim(object)]]),
+  prob = seq(from = 0, to = 1, by = 0.05),
+  method = ifelse(length(ivars) == 1, "simulation", "Mahalanobis"),
+  outMahalanobis = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>data container for the predictions (plus cokriging error variances/covariance) or simulations (and eventually for the true values in univariate problems)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>generic functionality, currently ignored</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>observed</code></td>
+<td>
+<p>either a vector- or matrix-like object of the true values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob</code></td>
+<td>
+<p>sequence of cutoff probabilities to use for the calculations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>which method was used for generating the predictions/simulations?
+one of c("kriging", "cokriging", "simulation") for <code>object</code> of class "data.frame", or of
+c("simulation", "mahalanobis", "flow") for <code>object</code> of class <code>DataFrameStack()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outMahalanobis</code></td>
+<td>
+<p>if TRUE, do not do the final accuracy calculations and return the Mahalanobis
+norms of the residuals; if FALSE do the accuracy calculations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ivar</code></td>
+<td>
+<p>if <code>method</code>="kriging" or "cokriging" you can also specify here one single variable name
+to consider for univariate accuracy; this variable name must exist both in <code>object</code>
+(including "pred" and "var" prefixes or suffixes in the column names) and in <code>observed</code>;
+this might require renaming the columns of these files!</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ivars</code></td>
+<td>
+<p>in multivariate cases, a vector of names of the variables to analyse (or one single variable name)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For method "kriging", <code>object</code> must contain columns with names including the string "pred" for predictions
+and "var" for the kriging variance; the observed values can also be included as an extra column with name "observed",
+or else additionally provided in argument <code>observed</code>. For method "cokriging", the columns of <code>object</code> must contain
+predictions, cokriging variances and cokriging covariances in columns including the strings "pred", "var" resp. "cov",
+and observed values can only be provided via <code>observed</code> argument. Note that these are the natural formats when
+using <code>gstat::predict.gstat()</code> and other (co)kriging functions of that package.
+</p>
+<p>For univariate and multivariate cokriging results (methods "kriging" and "cokriging"), the coverage values are computed based on the
+Mahalanobis square error, the (square) distance between prediction and true value, using as the positive definite bilinear form
+of the distance the variance-covariance cokriging matrix. The rationale is that, under the assumption
+that the random field is Gaussian, the distribution of this Mahalanobis square error should
+follow a <code class="reqn">\chi^2(\nu)</code> with degrees of freedom <code class="reqn">\nu</code> equal to the number of variables. Having this
+reference distribution allows us to compute confidence intervals for that Mahalanobis square error, and then
+count how many of the actually observed errors are included on each one of the intervals (the <em>coverage</em>).
+For a perfect adjustment to the distribution, the plot of coverage vs. nominal confidence (see plot.accuracy)
+should fall on the <code class="reqn">y=x</code> line. NOTE: the original definition of Deutsch (1997) for univariate case
+did not make use of the <code class="reqn">\chi^2(1)</code> distribution, but instead derived the desired intervals (symmetric!)
+from the standard normal distribution appearing by normalizing the residual with the kriging variance; the result is the
+same.
+</p>
+<p>For method "simulation" and object <code>object</code> is a data.frame, the variable names containing the realisations must
+contain the string "sim", and <code>observed</code> must be a vector with as many elements as rows has <code>object</code>. If
+<code>object</code> is a <code>DataFrameStack()</code>, then it is assumed that the stacking dimension is running through the realisations;
+the true values must still be given in <code>observed</code>.
+In both cases, the method is based on ranks:
+with them we can calculate which is the frequency of simulations being more extreme than the observed value.
+This calculation is done considering bilateral intervals around the median of (realisations, observed value)
+for each location separately.
+</p>
+<p>Method "mahalanobis" ("Mahalanobis" also works) is the analogous for multivariate simulations. It
+only works for <code>object</code> of class <code>DataFrameStack()</code>, and requires the stacking dimension to run through
+the realisations and the other two dimensions to coincide with the dimensions of <code>observed</code>, i.e.
+giving locations by rows and variables by columns. In this case, a covariance matrix will be computed
+and this will be used to compute the Mahalanobis square error defined above in method "cokriging":
+this Mahalanobis square error will be computed for each simulation and for the true value.
+The simulated Mahalanobis square errors will then be used to generate the reference distribution
+with which to derive confidence intervals.
+</p>
+<p>Finally, highly experimental "flow" method requires the input to be in the same shape as method
+"mahalanobis". The method is mostly the same, just that before the Mahalanobis square errors
+are computed a location-wise flow anamorphosis (<code>ana()</code>) is applied to transform the realisations (including
+the true value as one of them) to joint normality. The rest of the calculations are done as if with
+method "mahalanobis".
+</p>
+
+
+<h3>Value</h3>
+
+<p>If <code>outMahalanobis=TRUE</code> (the primary use), this function returns a two-column dataset of class
+c("accuracy", "data.frame"), which first column gives the nominal probability cutoffs used, and the second column
+the actual coverage of the intervals of each of these probabilities. If <code>outMahalanobis=FALSE</code>, the output
+is a vector (for prediction) or matrix (for simulation) of Mahalanobis error norms.
+</p>
+
+
+<h3>Methods (by class)</h3>
+
+
+<ul>
+<li> <p><code>data.frame</code>: Compute accuracy and precision
+</p>
+</li>
+<li> <p><code>DataFrameStack</code>: Compute accuracy and precision
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Mueller, Selia and Tolosana-Delgado (2023) Multivariate cross-validation
+and measures of accuracy and precision.
+Mathematical Geosciences (under review).
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other accuracy functions: 
+<code>mean.accuracy()</code>,
+<code>plot.accuracy()</code>,
+<code>precision()</code>,
+<code>validate()</code>,
+<code>xvErrorMeasures.default()</code>,
+<code>xvErrorMeasures()</code>
+</p>
+
+
+</div>

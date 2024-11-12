@@ -1,0 +1,197 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cols_label_with</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Relabel columns with a function</h2>
+
+<h3>Description</h3>
+
+<p>Column labels can be modified from their default values (the names of the
+columns from the input table data). When you create a <strong>gt</strong> table object
+using <code>gt()</code>, column names effectively become the column labels. While this
+serves as a good first approximation, you may want to make adjustments so
+that the columns names present better in the <strong>gt</strong> output table. The
+<code>cols_label_with()</code> function allows for modification of column labels through
+a supplied function. By default, the function will be invoked on all column
+labels but this can be limited to a subset via the <code>columns</code> argument. With
+the <code>fn</code> argument, we provide either a bare function name, a RHS formula
+(with <code>.</code> representing the vector of column labels), or, an anonymous
+function (e.g., <code>function(x) tools::toTitleCase(x)</code>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cols_label_with(data, columns = everything(), fn)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p><em>The gt table data object</em>
+</p>
+<p><code style="white-space: pre;">⁠obj:&lt;gt_tbl&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>This is the <strong>gt</strong> table object that is commonly created through use of the
+<code>gt()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>columns</code></td>
+<td>
+<p><em>Columns to target</em>
+</p>
+<p><code style="white-space: pre;">⁠&lt;column-targeting expression&gt;⁠</code> // <em>default:</em> <code>everything()</code>
+</p>
+<p>The columns for which the column-labeling operations should be applied. Can
+either be a series of column names provided in <code>c()</code>, a vector of column
+indices, or a select helper function (e.g. <code>starts_with()</code>, <code>ends_with()</code>,
+<code>contains()</code>, <code>matches()</code>, <code>num_range()</code>, and <code>everything()</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fn</code></td>
+<td>
+<p><em>Function to apply</em>
+</p>
+<p><code style="white-space: pre;">⁠function|formula⁠</code> // <strong>required</strong>
+</p>
+<p>The function or function call to be applied to the column labels. This can
+take the form of a bare function (e.g., <code>tools::toTitleCase</code>), a function
+call as a RHS formula (e.g., <code>~ tools::toTitleCase(.)</code>), or an anonymous
+function as in <code>function(x) tools::toTitleCase(x)</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>gt_tbl</code>.
+</p>
+
+
+<h3>A note on column names and column labels</h3>
+
+<p>It's important to note that while columns can be freely relabeled, we
+continue to refer to columns by their original column names. Column names in
+a tibble or data frame must be unique whereas column labels in <strong>gt</strong> have no
+requirement for uniqueness (which is useful for labeling columns as, say,
+measurement units that may be repeated several times—usually under
+different spanner labels). Thus, we can still easily distinguish between
+columns in other <strong>gt</strong> function calls (e.g., in all of the <code style="white-space: pre;">⁠fmt*()⁠</code>
+functions) even though we may lose distinguishability in column labels once
+they have been relabeled.
+</p>
+
+
+<h3>Examples</h3>
+
+<p>Use a subset of the <code>sp500</code> dataset to create a <strong>gt</strong> table. We want all
+the column labels to be entirely capitalized versions of the default labels
+but, instead of using <code>cols_label()</code> and rewriting each label manually in
+capital letters we can use <code>cols_label_with()</code> and instruct it to apply the
+<code>toupper()</code> function to all column labels.
+</p>
+<div class="sourceCode r"><pre>sp500 |&gt;
+  dplyr::filter(
+    date &gt;= "2015-12-01" &amp;
+      date &lt;= "2015-12-15"
+  ) |&gt;
+  dplyr::select(-c(adj_close, volume)) |&gt;
+  gt() |&gt;
+  cols_label_with(fn = toupper)
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_cols_label_with_1.png" alt="This image of a table was generated from the first code example in the `cols_label_with()` help file." style="width:100%;"><p>Use the <code>countrypops</code> dataset to create a <strong>gt</strong> table. To improve the
+presentation of the table, we are again going to change the default column
+labels via function calls supplied within <code>cols_label_with()</code>. We can, if we
+prefer, apply multiple types of column label changes in sequence with
+multiple calls of <code>cols_label_with()</code>. Here, we use the <code>make_clean_names()</code>
+functions from the <strong>janitor</strong> package and follow up with the removal of a
+numeral with <code>gsub()</code>.
+</p>
+<div class="sourceCode r"><pre>countrypops |&gt;
+  dplyr::filter(year == 2021) |&gt;
+  dplyr::filter(grepl("^C", country_code_3)) |&gt;
+  dplyr::select(-country_code_2, -year) |&gt;
+  head(8) |&gt;
+  gt() |&gt;
+  cols_move_to_start(columns = country_code_3) |&gt;
+  fmt_integer(columns = population) |&gt;
+  cols_label_with(
+    fn = ~ janitor::make_clean_names(., case = "title")
+  ) |&gt;
+  cols_label_with(
+    fn = ~ gsub("[0-9]", "", .)
+  )
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_cols_label_with_2.png" alt="This image of a table was generated from the second code example in the `cols_label_with()` help file." style="width:100%;"><p>We can make a svelte <strong>gt</strong> table with the <code>pizzaplace</code> dataset. There are
+ways to use one instance of <code>cols_label_with()</code> with multiple functions
+called on the column labels. In the example, we use an anonymous function
+call (with the <code>function(x) { ... }</code> construction) to perform multiple
+mutations of <code>x</code> (the vector of column labels). We can even use the <code>md()</code>
+helper function with that to signal to <strong>gt</strong> that the column label should be
+interpreted as Markdown text.
+</p>
+<div class="sourceCode r"><pre>pizzaplace |&gt;
+  dplyr::mutate(month = substr(date, 6, 7)) |&gt;
+  dplyr::count(month, name = "pizze_vendute") |&gt;
+  dplyr::mutate(frazione_della_quota = pizze_vendute / 4000) |&gt;
+  dplyr::mutate(date = paste0("2015/", month, "/01")) |&gt;
+  dplyr::select(-month) |&gt;
+  gt(rowname_col = "date") |&gt;
+  fmt_date(date, date_style = "month", locale = "it") |&gt;
+  fmt_percent(columns = frazione_della_quota) |&gt;
+  fmt_integer(columns = pizze_vendute) |&gt;
+  cols_width(everything() ~ px(100)) |&gt;
+  cols_label_with(
+    fn = function(x) {
+      janitor::make_clean_names(x, case = "title") |&gt;
+        toupper() |&gt;
+        stringr::str_replace_all("^|$", "**") |&gt;
+        md()
+    }
+  )
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_cols_label_with_3.png" alt="This image of a table was generated from the third code example in the `cols_label_with()` help file." style="width:100%;"><h3>Function ID</h3>
+
+<p>5-5
+</p>
+
+
+<h3>Function Introduced</h3>
+
+<p><code>v0.9.0</code> (March 31, 2023)
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other column modification functions: 
+<code>cols_add()</code>,
+<code>cols_align()</code>,
+<code>cols_align_decimal()</code>,
+<code>cols_hide()</code>,
+<code>cols_label()</code>,
+<code>cols_merge()</code>,
+<code>cols_merge_n_pct()</code>,
+<code>cols_merge_range()</code>,
+<code>cols_merge_uncert()</code>,
+<code>cols_move()</code>,
+<code>cols_move_to_end()</code>,
+<code>cols_move_to_start()</code>,
+<code>cols_nanoplot()</code>,
+<code>cols_unhide()</code>,
+<code>cols_units()</code>,
+<code>cols_width()</code>
+</p>
+
+
+</div>

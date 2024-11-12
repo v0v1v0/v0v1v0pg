@@ -1,0 +1,95 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>request_make</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Make a Google Sheets API request</h2>
+
+<h3>Description</h3>
+
+<p>Low-level function to execute a Sheets API request. Most users should,
+instead, use higher-level wrappers that facilitate common tasks, such as
+reading or writing worksheets or cell ranges. The functions here are intended
+for internal use and for programming around the Sheets API.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">request_make(x, ..., encode = "json")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>List. Holds the components for an HTTP request, presumably created
+with <code>request_generate()</code> or <code>gargle::request_build()</code>. Must contain a
+<code>method</code> and <code>url</code>. If present, <code>body</code> and <code>token</code> are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Optional arguments passed through to the HTTP method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>encode</code></td>
+<td>
+<p>If the body is a named list, how should it be encoded? This has
+the same meaning as <code>encode</code> in all the <code>httr::VERB()</code>s, such as
+<code>httr::POST()</code>. Note, however, that we default to <code>encode = "json"</code>, which
+is what you want most of the time when calling the Sheets API. The httr
+default is <code>"multipart"</code>. Other acceptable values are <code>"form"</code> and <code>"raw"</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>make_request()</code> is a very thin wrapper around <code>gargle::request_retry()</code>,
+only adding the googlesheets4 user agent. Typically the input has been
+created with <code>request_generate()</code> or <code>gargle::request_build()</code> and the output
+is processed with <code>process_response()</code>.
+</p>
+<p><code>gargle::request_retry()</code> retries requests that error with <code style="white-space: pre;">⁠429 RESOURCE_EXHAUSTED⁠</code>. Its basic scheme is exponential backoff, with one tweak
+that is very specific to the Sheets API, which has documented <a href="https://developers.google.com/sheets/api/limits">usage limits</a>:
+</p>
+<p>"a limit of 500 requests per 100 seconds per project and 100 requests per 100
+seconds per user"
+</p>
+<p>Note that the "project" here means everyone using googlesheets4 who hasn't
+configured their own OAuth client. This is potentially a lot of users, all
+acting independently.
+</p>
+<p>If you hit the "100 requests per 100 seconds per <strong>user</strong>" limit (which
+really does mean YOU), the first wait time is a bit more than 100 seconds,
+then we revert to exponential backoff.
+</p>
+<p>If you experience lots of retries, especially with 100 second delays, it
+means your use of googlesheets4 is more than casual and <strong>it's time for you
+to get your own OAuth client or use a service account token</strong>. This is explained
+in the gargle vignette <code>vignette("get-api-credentials", package = "gargle")</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Object of class <code>response</code> from httr.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other low-level API functions: 
+<code>gs4_has_token()</code>,
+<code>gs4_token()</code>,
+<code>request_generate()</code>
+</p>
+
+
+</div>

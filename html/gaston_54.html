@@ -1,0 +1,207 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>logistic.mm.aireml</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Logistic mixed model fitting with Penalized Quasi-Likelihood / AIREML </h2>
+
+<h3>Description</h3>
+
+<p>Estimate the parameters of a logistic linear mixed model using the Penalized
+Quasi-Likelihood with an AIREML step for the linear model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">logistic.mm.aireml(Y, X = matrix(1, nrow = length(Y)), K, 
+                   min_tau, tau, beta, constraint = TRUE, max.iter = 50L, eps = 1e-5,
+                   verbose = getOption("gaston.verbose",TRUE), get.P = FALSE, EM = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p> Binary phenotype vector </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p> Covariable matrix. By default, a column of ones to include an intercept in the model </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p> A positive definite matrix or a <code>list</code> of such matrices </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_tau</code></td>
+<td>
+<p> Minimal value for model parameter <code class="reqn">\tau</code> (if missing, will be set to <code class="reqn">10^{-6}</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p> (Optional) Optimization starting point for variance component(s) <code>tau</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p> (Optional) Optimization starting point for fixed effect(s) <code>beta</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constraint</code></td>
+<td>
+<p> If <code>TRUE</code>, the model parameters respect the contraints given by <code>min_tau</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.iter</code></td>
+<td>
+<p> Maximum number of iterations </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p> The algorithm stops when the gradient norm is lower than this parameter </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p> If <code>TRUE</code>, display information on the algorithm progress </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>get.P</code></td>
+<td>
+<p>If <code>TRUE</code>, the function sends back the last matrix <code class="reqn">P</code> computed in the optimization process</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>EM</code></td>
+<td>
+<p>If <code>TRUE</code>, the AIREML step is replaced by an EM step</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Estimate the parameters of the following logistic mixed model:
+</p>
+<p style="text-align: center;"><code class="reqn"> \mbox{logit}(P[Y=1|X,\omega_1,\ldots,\omega_k])  = X\beta + \omega_1 + \ldots + \omega_k</code>
+</p>
+
+<p>with <code class="reqn"> \omega_i \sim N(0,\tau_i K_i) </code> for <code class="reqn"> i \in 1, \dots,k </code>.
+</p>
+<p>The estimation is based on the Penalized Quasi-Likelihood with an AIREML step for the linear model
+(the algorithm is similar to the algorithm described in Chen et al 2016). If <code>EM = TRUE</code>
+the AIREML step is replaced by an EM step. In this case the convergence will be much slower, 
+you're advised to use a large value of <code>max.iter</code>.
+</p>
+<p>The variance matrices <code class="reqn">K_1</code>, ..., <code class="reqn">K_k</code>, are specified through the parameter <code>K</code>.
+</p>
+<p>After convergence, the function also compute Best Linear Unbiased Predictors (BLUPs) for 
+<code class="reqn">\beta</code> and <code class="reqn">\omega</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A named list with members:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p> Estimate(s) of the model parameter(s) <code class="reqn">\tau_1, \dots, \tau_k</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>niter</code></td>
+<td>
+<p> Number of iterations done </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>P</code></td>
+<td>
+<p> Last computed value of matrix P (see reference) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BLUP_omega</code></td>
+<td>
+<p> BLUPs of random effects </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BLUP_beta</code></td>
+<td>
+<p> BLUPs of fixed effects <code class="reqn">\beta</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varbeta</code></td>
+<td>
+<p> Variance matrix for <code class="reqn">\beta</code> estimates </p>
+</td>
+</tr>
+</table>
+<p>If <code>get.P = TRUE</code>, there is an additional member:
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>P</code></td>
+<td>
+<p>The last matrix <code class="reqn">P</code> computed in the AIREML step</p>
+</td>
+</tr></table>
+<h3>References</h3>
+
+<p>Gilmour, A. R., Thompson, R., &amp; Cullis, B. R. (1995), <em>Average information REML: an efficient algorithm for variance
+parameter estimation in linear mixed models</em>, Biometrics, <b>1440-1450</b>
+</p>
+<p>Chen, Han et al. (2016), <em>Control for Population Structure and Relatedness for Binary Traits in Genetic Association Studies via
+Logistic Mixed Models</em>, The American Journal of Human Genetics, <b>653–666</b></p>
+
+
+<h3>See Also</h3>
+
+ <p><code>lmm.aireml</code>, <code>lmm.diago</code>, <code>lmm.simu</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Load data
+data(AGT)
+x &lt;- as.bed.matrix(AGT.gen, AGT.fam, AGT.bim)
+
+# Compute Genetic Relationship Matrix
+standardize(x) &lt;- "p"
+K &lt;- GRM(x)
+
+# Simulate a quantitative genotype under the LMM
+set.seed(1)
+mu &lt;- 1 + x %*% rnorm(ncol(x), sd = 2)/sqrt(ncol(x))
+pi &lt;- 1/(1+exp(-mu))
+y &lt;- 1*( runif(length(pi))&lt;pi )
+
+# Estimates
+estimates &lt;- logistic.mm.aireml(y, K = K, verbose = FALSE)
+str(estimates)
+</code></pre>
+
+
+</div>

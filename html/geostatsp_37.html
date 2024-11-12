@@ -1,0 +1,235 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>matern</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Evaluate the Matern correlation function</h2>
+
+<h3>Description</h3>
+
+<p>Returns the Matern covariance for the distances supplied.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">	matern( x, param=c(range=1, variance=1, shape=1),
+	type=c('variance','cholesky','precision', 'inverseCholesky'),
+	y=NULL)
+	## S3 method for class 'SpatVector'
+matern(x,  param,
+	type=c('variance','cholesky','precision', 'inverseCholesky'),
+	y=NULL)
+	## Default S3 method:
+matern( x, param,
+	type=c('variance','cholesky','precision', 'inverseCholesky'),
+	y=NULL)
+	## S3 method for class 'dist'
+matern( x, param,
+	type=c('variance','cholesky','precision', 'inverseCholesky'),
+	y=NULL)
+	## S3 method for class 'SpatRaster'
+matern( x,  param,
+	type=c('variance','cholesky','precision', 'inverseCholesky'),
+	y=NULL)
+	fillParam(param)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A vector or matrix of distances, or <code>SpatRaster</code> or
+<code>SpatVector</code> of locations, see Details below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>A vector of named model parameters with, at a minimum names
+<code>range</code> and  <code>shape</code> (see Details), and optionally <code>variance</code> (defaults to 1) and
+<code>nugget</code> (defaults to zero).  
+For Geometric Anisotropy add 
+<code>anisoRatio</code> and either <code>anisoAngleDegrees</code> or  
+<code>anisoAngleRadians</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>specifies if the variance matrix, 
+the Cholesky decomposition of the variance matrix, 
+the precision matrix, or the inverse
+of the Cholesky L matrix is returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Covariance is calculated for the distance between locations in 
+<code>x</code> and <code>y</code>. If <code>y=NULL</code>, covariance 
+of <code>x</code> with itself is produced. 
+However, if <code>x</code> is a matrix or vector it is assumed to 
+be a set of distances and <code>y</code> is ignored.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+		
+<p>The formula for the Matern correlation function is
+</p>
+<p style="text-align: center;"><code class="reqn">
+	M(x) =  \frac{variance}{\Gamma(shape)} 
+	2^{1-shape} 
+	\left(
+		\frac{ x \sqrt{8 shape} }{range}
+	\right)^{shape}  
+	besselK(x \sqrt{8 shape}/ range, shape) 
+</code>
+</p>
+
+<p>The <code>range</code> argument is sqrt(8*shape)*phi.geoR, sqrt(8*shape)*scale.whittle.RandomFields, and
+2*scale.matern.RandomFields.
+</p>
+<p>Geometric anisotropy is only available when 
+<code>x</code> is a <code>SpatRaster</code> or <code>SpatVector</code>.  The parameter 'anisoAngle' refers to 
+rotation of the coordinates anti-clockwise by the specified amount prior to 
+calculating distances, which has the effect that the contours of the correlation function
+are rotated clockwise by this amount. <code>anisoRatio</code> is the amount the Y coordinates are 
+divided by
+by post rotation prior to calculating distances.  A large value of <code>anisoRatio</code>
+makes the Y coordinates smaller and increases the correlation in the
+Y direction.
+</p>
+<p>When <code>x</code> or <code>y</code> are rasters, cells are indexed row-wise 
+starting at the top left.
+</p>
+
+
+<h3>Value</h3>
+
+<p>When <code>x</code> is a vector or matrix or object of class <code>dist</code>, a vector or matrix
+of covariances is returned.  
+With <code>x</code> being <code>SpatVector</code> ,  <code>y</code> must also be <code>SpatVector</code>  and 
+a matrix of correlations between <code>x</code> and <code>y</code>
+is returned.	
+When <code>x</code> is a Raster, and <code>y</code> is a single location 
+a Raster of covariances between each pixel centre of <code>x</code> and <code>y</code> is returned.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">param=c(shape=2.5,range=1,variance=1)
+u=seq(0,4,len=200)
+uscale = sqrt(8*param['shape'])* u / param['range']
+
+theMaterns = cbind(
+	dist=u, 
+	manual=	param['variance']* 2^(1- param['shape']) * 
+			( 1/gamma(param['shape'])  )  * 
+			uscale^param['shape'] * besselK(uscale , param['shape']),
+	geostatsp=geostatsp::matern(u, param=param)
+)
+head(theMaterns)
+matplot(theMaterns[,'dist'], 
+	theMaterns[,c('manual','geostatsp')],
+	col=c('red','blue'), type='l', 
+	xlab='dist', ylab='var')
+legend('topright', fill=c('red','blue'),
+	legend=c('manual','geostatsp'))
+
+
+
+# example with raster
+myraster = rast(nrows=40,ncols=60,extent=ext(-3, 3,-2,2))
+param = c(range=2, shape=2,	anisoRatio=2, 
+	anisoAngleDegrees=-25,variance=20)
+
+# plot correlation of each cell with the origin
+myMatern = matern(myraster, y=c(0,0), param=param)
+
+
+plot(myMatern, main="anisortopic matern")
+
+
+# correlation matrix for all cells with each other
+myraster = rast(nrows=4,ncols=6,extent = ext(-3, 3, -2, 2))
+myMatern = matern(myraster, param=c(range=2, shape=2))
+dim(myMatern)
+
+# plot the cell ID's
+values(myraster) = seq(1, ncell(myraster))
+mydf = as.data.frame(myraster, xy=TRUE)
+plot(mydf$x, mydf$y, type='n', main="cell ID's")
+text(mydf$x, mydf$y, mydf$lyr.1)
+# correlation between bottom-right cell and top right cell is
+myMatern[6,24]
+
+# example with points
+mypoints = vect(
+	cbind(runif(8), runif(8))
+	)
+# variance matrix from points
+m1=matern(mypoints, param=c(range=2,shape=1.4,variance=4,nugget=1))
+# cholesky of variance from distances
+c2=matern(dist(crds(mypoints)), param=c(range=2,shape=1.4,variance=4,nugget=1),type='cholesky')
+
+# check it's correct
+quantile(as.vector(m1- tcrossprod(c2)))
+
+# example with vector of distances
+range=3
+distVec = seq(0, 2*range, len=100)
+shapeSeq = c(0.5, 1, 2,20)
+theCov = NULL
+for(D in shapeSeq) {
+	theCov = cbind(theCov, matern(distVec, param=c(range=range, shape=D)))
+}
+matplot(distVec, theCov, type='l', lty=1, xlab='distance', ylab='correlation',
+	main="matern correlations")
+legend("right", fill=1:length(shapeSeq), legend=shapeSeq,title='shape')
+# exponential
+
+distVec2 = seq(0, max(distVec), len=20)
+points(distVec2, exp(-2*(distVec2/range)),cex=1.5, pch=5)
+# gaussian
+points(distVec2, exp(-2*(distVec2/range)^2), col='blue',cex=1.5, pch=5)
+legend("bottomleft", pch=5, col=c('black','blue'), legend=c('exp','gau'))
+
+# comparing to geoR and RandomFields
+
+if (requireNamespace("RandomFields", quietly = TRUE) &amp;
+requireNamespace("geoR", quietly = TRUE) 
+) { 
+
+covGeoR = covRandomFields = NULL
+
+for(D in shapeSeq) {
+	covGeoR = cbind(covGeoR, 
+		geoR::matern(distVec, phi=range/sqrt(8*D), kappa=D))
+	covRandomFields = cbind(covRandomFields,
+		RandomFields::RFcov(x=distVec, 
+		model=RandomFields::RMmatern(nu=D, var=1,
+				scale=range/2) ))
+}
+
+
+
+matpoints(distVec, covGeoR, cex=0.5, pch=1)
+matpoints(distVec, covRandomFields, cex=0.5, pch=2)
+
+legend("topright", lty=c(1,NA,NA), pch=c(NA, 1, 2), 
+	legend=c("geostatsp","geoR","RandomFields"))
+}
+ 
+</code></pre>
+
+
+</div>

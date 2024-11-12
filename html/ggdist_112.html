@@ -1,0 +1,142 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>position_dodgejust</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Dodge overlapping objects side-to-side, preserving justification</h2>
+
+<h3>Description</h3>
+
+<p>A justification-preserving variant of <code>ggplot2::position_dodge()</code> which preserves the
+vertical position of a geom while adjusting the horizontal position (or vice
+versa when in a horizontal orientation). Unlike <code>ggplot2::position_dodge()</code>,
+<code>position_dodgejust()</code> attempts to preserve the "justification" of <code>x</code>
+positions relative to the bounds containing them (<code>xmin</code>/<code>xmax</code>) (or <code>y</code>
+positions relative to <code>ymin</code>/<code>ymax</code> when in a horizontal orientation). This
+makes it useful for dodging annotations to geoms and stats from the
+<code>geom_slabinterval()</code> family, which also preserve the justification of their
+intervals relative to their slabs when dodging.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">position_dodgejust(
+  width = NULL,
+  preserve = c("total", "single"),
+  justification = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>width</code></td>
+<td>
+<p>Dodging width, when different to the width of the individual
+elements. This is useful when you want to align narrow geoms with wider
+geoms. See the examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>preserve</code></td>
+<td>
+<p>Should dodging preserve the <code>"total"</code> width of all elements
+at a position, or the width of a <code>"single"</code> element?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>justification</code></td>
+<td>
+<p>Justification of the point position (<code>x</code>/<code>y</code>) relative
+to its bounds (<code>xmin</code>/<code>xmax</code> or <code>ymin</code>/<code>ymax</code>), where <code>0</code> indicates
+bottom/left justification and <code>1</code> indicates top/right justification
+(depending on <code>orientation</code>). This is only used if <code>xmin</code>/<code>xmax</code>/<code>ymin</code>/<code>ymax</code>
+are not supplied; in that case, <code>justification</code> will be used along with
+<code>width</code> to determine the bounds of the object prior to dodging.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(dplyr)
+library(ggplot2)
+library(distributional)
+
+dist_df = tribble(
+  ~group, ~subgroup, ~mean, ~sd,
+  1,          "h",     5,   1,
+  2,          "h",     7,   1.5,
+  3,          "h",     8,   1,
+  3,          "i",     9,   1,
+  3,          "j",     7,   1
+)
+
+# An example with normal "dodge" positioning
+# Notice how dodge points are placed in the center of their bounding boxes,
+# which can cause slabs to be positioned outside their bounds.
+dist_df %&gt;%
+  ggplot(aes(
+    x = factor(group), ydist = dist_normal(mean, sd),
+    fill = subgroup
+  )) +
+  stat_halfeye(
+    position = "dodge"
+  ) +
+  geom_rect(
+    aes(xmin = group, xmax = group + 1, ymin = 2, ymax = 13, color = subgroup),
+    position = "dodge",
+    data = . %&gt;% filter(group == 3),
+    alpha = 0.1
+  ) +
+  geom_point(
+    aes(x = group, y = 7.5, color = subgroup),
+    position = position_dodge(width = 1),
+    data = . %&gt;% filter(group == 3),
+    shape = 1,
+    size = 4,
+    stroke = 1.5
+  ) +
+  scale_fill_brewer(palette = "Set2") +
+  scale_color_brewer(palette = "Dark2")
+
+# This same example with "dodgejust" positioning. For the points we
+# supply a justification parameter to position_dodgejust which mimics the
+# justification parameter of stat_halfeye, ensuring that they are
+# placed appropriately. On slabinterval family geoms, position_dodgejust()
+# will automatically detect the appropriate justification.
+dist_df %&gt;%
+  ggplot(aes(
+    x = factor(group), ydist = dist_normal(mean, sd),
+    fill = subgroup
+  )) +
+  stat_halfeye(
+    position = "dodgejust"
+  ) +
+  geom_rect(
+    aes(xmin = group, xmax = group + 1, ymin = 2, ymax = 13, color = subgroup),
+    position = "dodgejust",
+    data = . %&gt;% filter(group == 3),
+    alpha = 0.1
+  ) +
+  geom_point(
+    aes(x = group, y = 7.5, color = subgroup),
+    position = position_dodgejust(width = 1, justification = 0),
+    data = . %&gt;% filter(group == 3),
+    shape = 1,
+    size = 4,
+    stroke = 1.5
+  ) +
+  scale_fill_brewer(palette = "Set2") +
+  scale_color_brewer(palette = "Dark2")
+
+
+
+</code></pre>
+
+
+</div>

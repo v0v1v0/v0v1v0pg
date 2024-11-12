@@ -1,0 +1,255 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GatherPreprocessing</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gather preprocess data from a formula</h2>
+
+<h3>Description</h3>
+
+<p>Gather the preprocess data from a formula and a model,
+where the output corresponds to the data structure used by the engine
+<code>gather_compute</code>; see <code>estimate()</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GatherPreprocessing(
+  formula,
+  model = c("DyNAM", "REM"),
+  subModel = c("choice", "choice_coordination", "rate"),
+  preprocessArgs = NULL,
+  progress = getOption("progress"),
+  envir = new.env()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>a formula object that defines at the
+left-hand side the dependent
+network (see <code>defineDependentEvents()</code>) and at the right-hand side the
+effects and the variables for which the effects are expected to occur
+(see <code>vignette("goldfishEffects")</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>a character string defining the model type.
+Current options include <code>"DyNAM"</code>, <code>"DyNAMi"</code> or <code>"REM"</code>
+</p>
+
+<dl>
+<dt>DyNAM</dt>
+<dd>
+<p>Dynamic Network Actor Models
+(Stadtfeld, Hollway and Block, 2017 and Stadtfeld and Block, 2017)</p>
+</dd>
+<dt>DyNAMi</dt>
+<dd>
+<p>Dynamic Network Actor Models for interactions
+(Hoffman et al., 2020)</p>
+</dd>
+<dt>REM</dt>
+<dd>
+<p>Relational Event Model (Butts, 2008)</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subModel</code></td>
+<td>
+<p>a character string defining the submodel type.
+Current options include <code>"choice"</code>, <code>"rate"</code> or
+<code>"choice_coordination"</code>
+</p>
+
+<dl>
+<dt>choice</dt>
+<dd>
+<p>a multinomial receiver choice model <code>model = "DyNAM"</code>
+(Stadtfeld and Block, 2017), or the general Relational event model
+<code>model = "REM"</code> (Butts, 2008).
+A multinomial group choice model <code>model = "DyNAMi"</code> (Hoffman et al., 2020)</p>
+</dd>
+<dt>choice_coordination</dt>
+<dd>
+<p>a multinomial-multinomial model for coordination
+ties <code>model = "DyNAM"</code> (Stadtfeld, Hollway and Block, 2017)</p>
+</dd>
+<dt>rate</dt>
+<dd>
+<p>A individual activity rates model <code>model = "DyNAM"</code>
+(Stadtfeld and Block, 2017).
+Two rate models, one for individuals joining groups and one for individuals
+leaving groups, jointly estimated <code>model = "DyNAMi"</code>(Hoffman et al., 2020)</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>preprocessArgs</code></td>
+<td>
+<p>a list containing additional parameters
+for preprocessing. It may contain:
+</p>
+
+<dl>
+<dt>startTime</dt>
+<dd>
+<p>a numerical value or a date-time character with the same
+time-zone formatting as the times in event that indicates the starting time
+to be considered during estimation.
+<em>Note:</em> it is only use during preprocessing</p>
+</dd>
+<dt>endTime</dt>
+<dd>
+<p>a numerical value or a date-time character with the same
+time-zone formatting as the times in event that indicates the end time
+to be considered during estimation.
+<em>Note:</em> it is only use during preprocessing</p>
+</dd>
+<dt>opportunitiesList</dt>
+<dd>
+<p>a list containing for each dependent event
+the list of available nodes for the choice model, this list should be
+the same length as the dependent events list (ONLY for choice models).</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress</code></td>
+<td>
+<p>logical indicating whether should print a minimal output
+to the console of the progress of the preprocessing and estimation processes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>envir</code></td>
+<td>
+<p>an <code>environment</code> where <code>formula</code> objects and their linked
+objects are available.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>It differs from the <code>estimate()</code> output when the argument <code>preprocessingOnly</code>
+is set to <code>TRUE</code> regarding the memory space requirement.
+The <code>gatherPreprocessing()</code> produces a list where the first element
+is a matrix that could have up to the number of events times
+the number of actors rows and the number of effects columns.
+For medium to large datasets with thousands of events and
+thousands of actors, the memory RAM requirements are large and,
+therefore, errors are produced due to a lack of space.
+The advantage of the data structure is that it can be adapted
+to estimate the models (or extensions of them) using standard packages
+for generalized linear models (or any other model)
+that use tabular data as input.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a list object including:
+</p>
+
+<dl>
+<dt>stat_all_events</dt>
+<dd>
+<p>a matrix. The number of rows can be up to the number
+of events times the number of actors
+(square number of actors for the REM).
+Rigth-censored events are included when the model has an intercept.
+The number of columns is the number of effects in the model.
+Every row is the effect statistics at the time of the event for each actor
+in the choice set or the sender set.</p>
+</dd>
+<dt>n_candidates</dt>
+<dd>
+<p>a numeric vector with the number of rows related with an event.
+The length correspond to the number of events
+plus right censored events if any.</p>
+</dd>
+<dt>selected</dt>
+<dd>
+<p>a numeric vector with the position of the
+selected actor (choice model), sender actor (rate model), or
+active dyad (choice-coordination model, REM model).
+Indexing start at 1 for each event.</p>
+</dd>
+<dt>sender, receiver</dt>
+<dd>
+<p>a character vector with the label of the sender/receiver actor.
+For right-censored events the receiver values is not meaningful.</p>
+</dd>
+<dt>hasIntercept</dt>
+<dd>
+<p>a logical value indicating if the model has an intercept.</p>
+</dd>
+<dt>namesEffects</dt>
+<dd>
+<p>a character vector with a short name of the effect.
+It includes the name of the object used to calculate the effects and
+modifiers of the effect, e.g., the type of effect, weighted effect.</p>
+</dd>
+<dt>effectDescription</dt>
+<dd>
+<p>a character matrix with the description of the effects.
+It includes the name of the object used to calculate the effects and
+additional information of the effect, e.g., the type of effect,
+weighted effect, transformation function, window length.</p>
+</dd>
+</dl>
+<p>If the model has an intercept and the subModel is <code>rate</code> or model is <code>REM</code>,
+additional elements are included:
+</p>
+
+<dl>
+<dt>timespan</dt>
+<dd>
+<p>a numeric vector with the time span between events,
+including right-censored events.</p>
+</dd>
+<dt>isDependent</dt>
+<dd>
+<p>a logical vector indicating if the event is dependent or right-censored.</p>
+</dd>
+</dl>
+<h3>Examples</h3>
+
+<pre><code class="language-R">data("Fisheries_Treaties_6070")
+states &lt;- defineNodes(states)
+states &lt;- linkEvents(states, sovchanges, attribute = "present")
+states &lt;- linkEvents(states, regchanges, attribute = "regime")
+states &lt;- linkEvents(states, gdpchanges, attribute = "gdp")
+
+bilatnet &lt;- defineNetwork(bilatnet, nodes = states, directed = FALSE)
+bilatnet &lt;- linkEvents(bilatnet, bilatchanges, nodes = states)
+
+createBilat &lt;- defineDependentEvents(
+  events = bilatchanges[bilatchanges$increment == 1, ],
+  nodes = states, defaultNetwork = bilatnet
+)
+
+contignet &lt;- defineNetwork(contignet, nodes = states, directed = FALSE)
+contignet &lt;- linkEvents(contignet, contigchanges, nodes = states)
+
+gatheredData &lt;- GatherPreprocessing(
+  createBilat ~ inertia(bilatnet) + trans(bilatnet) + tie(contignet)
+)
+
+</code></pre>
+
+
+</div>

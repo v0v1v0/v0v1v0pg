@@ -1,0 +1,382 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cvrisk.mboostLSS</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Cross-Validation </h2>
+
+<h3>Description</h3>
+
+<p>Multidimensional cross-validated estimation of the empirical risk for
+hyper-parameter selection.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'mboostLSS'
+cvrisk(object, folds = cv(model.weights(object)),
+       grid = make.grid(mstop(object)), papply = mclapply,
+       trace = TRUE, mc.preschedule = FALSE, fun = NULL, ...)
+
+make.grid(max, length.out = 10, min = NULL, log = TRUE,
+          dense_mu_grid = TRUE)
+          
+## S3 method for class 'nc_mboostLSS'
+cvrisk(object, folds = cv(model.weights(object)),
+       grid = 1:sum(mstop(object)), papply = mclapply,
+       trace = TRUE, mc.preschedule = FALSE, fun = NULL, ...)          
+
+## S3 method for class 'cvriskLSS'
+plot(x, type = c("heatmap", "lines"),
+     xlab = NULL, ylab = NULL, ylim = range(x),
+     main = attr(x, "type"), ...)
+     
+## S3 method for class 'nc_cvriskLSS'
+plot(x, xlab = "Number of boosting iterations", ylab = NULL,
+     ylim = range(x), main = attr(x, "type"), ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+
+<p>an object of class <code>mboostLSS</code> (i.e., a boosted GAMLSS model with 
+<code>method = "cyclic"</code>) or class <code>nc_mboostLSS</code> (i.e., a boosted
+GAMLSS model with <code>method = "noncyclic"</code>)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>folds</code></td>
+<td>
+
+<p>a weight matrix with number of rows equal to the number of
+observations. The number of columns corresponds to the number of
+cross-validation runs. Can be computed using function
+<code>cv</code> from package <span class="pkg">mboost</span> and defaults to 25
+bootstrap samples.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+
+<p>If the model was fitted with <code>method = "cyclic"</code>, grid is
+a matrix of stopping parameters the empirical risk is to be evaluated for. 
+Each row represents a parameter combination. The number of columns must be 
+equal to the number of parameters of the GAMLSS family. Per default, 
+<code>make.grid(mstop(object))</code> is used.
+</p>
+<p>Otherwise (i.e., for <code>method = "noncyclic"</code>) grid
+is a vector of mstop values. Per default all steps up to the intial stopping 
+iteration, i.e., <code>1:mstop(object)</code> are used.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>papply</code></td>
+<td>
+
+<p>(parallel) apply function, defaults to  <code>mclapply</code>.
+Alternatively, <code>parLapply</code> can be used. In the
+latter case, usually more setup is needed. To run <code>cvrisk</code>
+sequentially (i.e. not in parallel), one can use <code>lapply</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+
+<p>should status information beein printed during cross-validation?
+Default: <code>TRUE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.preschedule</code></td>
+<td>
+
+<p>preschedule tasks if are parallelized using <code>mclapply</code>
+(default: <code>FALSE</code>)? For details see <code>mclapply</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fun</code></td>
+<td>
+
+<p>if <code>fun</code> is NULL, the out-of-sample risk is returned. <code>fun</code>,
+as a function of <code>object</code>, may extract any other characteristic
+of the cross-validated models. These are returned as is.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>additional arguments passed to <code>mclapply</code> or
+the <code>plot</code> function depending on the context.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max</code></td>
+<td>
+
+<p>a named vector of length equal to the number of parameters of the GAMLSS
+family (and names equal to the names of <code>families</code>) that
+determines the maximal values of the grid.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>length.out</code></td>
+<td>
+
+<p>the number of grid points (default: 10). This can be either a vector
+of the same length as <code>max</code> (with different values) or a scalar
+(which is then used as length for all grids).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min</code></td>
+<td>
+
+<p>minimal value of the grid. Per default the grid starts at 1 but
+other values (smaller <code>max</code>) are possible. This can be either a
+vector of the same length as <code>max</code> (with different values) or a
+scalar (which is then used as <code>min</code> for all grids).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log</code></td>
+<td>
+
+<p>should the grid be on a logarithmic scale? Default: <code>TRUE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dense_mu_grid</code></td>
+<td>
+
+<p>should the grid in the <code>mu</code> component be extended for all
+values of the <code>mstop</code> values corresponding to <code>mu</code> that
+are greater or equal to all other parameters in this combination.
+These values can be computed without or with very little additional
+computational costs. For details see examples.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+
+<p>an object of class <code>cvriskLSS</code> (cyclic fitting) or <code>nc_cvriskLSS</code>
+(non-cyclic fitting), which results from running <code>cvrisk</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+
+<p>should <code>"lines"</code> or a <code>"heatmap"</code> (default) be plotted?
+See details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlab, ylab</code></td>
+<td>
+
+<p>user-specified labels for the x-axis and y-axis of the plot (which
+are usually not needed). The defaults depend on the plot <code>type</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ylim</code></td>
+<td>
+
+<p>limits of the y-axis. Only applicable for the line plot.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>main</code></td>
+<td>
+
+<p>a title for the plots.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The number of boosting iterations is a hyper-parameter of the
+boosting algorithms implemented in this package. Honest,
+i.e., cross-validated, estimates of the empirical risk
+for different stopping parameters <code>mstop</code> are computed by
+this function which can be utilized to choose an appropriate
+number of boosting iterations to be applied. For details see
+<code>cvrisk.mboost</code>.
+</p>
+<p><code>make.grid</code> eases the creation of an equidistand, integer-valued
+grids, which can be used with <code>cvrisk</code>. Per default, the grid is
+equidistant on a logarithmic scale.
+</p>
+<p>The line plot depicts the avarage risk for each grid point and
+additionally shows information on the variability of the risk from
+fold to fold. The heatmap shows only the average risk but in a nicer
+fashion.
+</p>
+<p>For the <code>method = "noncyclic"</code> only the line plot exists.
+</p>
+<p>Hofner et al. (2016) provide a detailed description of
+cross-validation for <code>gamboostLSS</code> models and show a
+worked example. Thomas et al. (2018) compare cross-validation for the
+the cyclic and non-cyclic boosting approach and provide worked examples.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>cvriskLSS</code> or <code>nc_cvriskLSS</code> for cyclic and
+non-cyclic fitting, respectively, (when <code>fun</code> wasn't specified); 
+Basically a matrix containing estimates of the empirical
+risk for a varying number of bootstrap iterations. <code>plot</code> and
+<code>print</code> methods are available as well as an <code>mstop</code> method.
+</p>
+
+
+<h3>References</h3>
+
+<p>B. Hofner, A. Mayr, M. Schmid (2016). gamboostLSS: An R Package for
+Model Building and Variable Selection in the GAMLSS Framework.
+Journal of Statistical Software, 74(1), 1-31.
+</p>
+<p>Available as <code>vignette("gamboostLSS_Tutorial")</code>.
+</p>
+<p>Thomas, J., Mayr, A., Bischl, B., Schmid, M., Smith, A., and Hofner, B. (2018), 
+Gradient boosting for distributional regression - faster tuning and improved 
+variable selection via noncyclical updates. 
+<em>Statistics and Computing</em>. 28: 673-687. 
+<a href="https://doi.org/10.1007/s11222-017-9754-6">doi:10.1007/s11222-017-9754-6</a><br>
+(Preliminary version: <a href="https://arxiv.org/abs/1611.10171">https://arxiv.org/abs/1611.10171</a>).
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cvrisk.mboost</code> and <code>cv</code> (both in package
+<span class="pkg">mboost</span>)
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Data generating process:
+set.seed(1907)
+x1 &lt;- rnorm(1000)
+x2 &lt;- rnorm(1000)
+x3 &lt;- rnorm(1000)
+x4 &lt;- rnorm(1000)
+x5 &lt;- rnorm(1000)
+x6 &lt;- rnorm(1000)
+mu    &lt;- exp(1.5 +1 * x1 +0.5 * x2 -0.5 * x3 -1 * x4)
+sigma &lt;- exp(-0.4 * x3 -0.2 * x4 +0.2 * x5 +0.4 * x6)
+y &lt;- numeric(1000)
+for( i in 1:1000)
+    y[i] &lt;- rnbinom(1, size = sigma[i], mu = mu[i])
+dat &lt;- data.frame(x1, x2, x3, x4, x5, x6, y)
+
+## linear model with y ~ . for both components: 100 boosting iterations
+model &lt;- glmboostLSS(y ~ ., families = NBinomialLSS(), data = dat,
+                     control = boost_control(mstop = 100),
+                     center = TRUE)
+
+## set up a grid
+grid &lt;-  make.grid(mstop(model), length.out = 5, dense_mu_grid = FALSE)
+plot(grid)
+
+### Do not test the following code per default on CRAN as it takes some time to run:
+### a tiny toy example (5-fold bootsrap with maximum stopping value 100)
+## (to run it on multiple cores of a Linux or Mac OS computer remove
+##  set papply = mclapply (default) and set mc.nodes to the
+##  appropriate number of nodes)
+cvr &lt;- cvrisk(model, folds = cv(model.weights(model), B = 5),
+              papply = lapply, grid = grid)
+cvr
+## plot the results
+par(mfrow = c(1, 2))
+plot(cvr)
+plot(cvr, type = "lines")
+## extract optimal mstop (here: grid to small)
+mstop(cvr)
+### END (don't test automatically)
+
+
+### Do not test the following code per default on CRAN as it takes some time to run:
+### a more realistic example
+grid &lt;- make.grid(c(mu = 400, sigma = 400), dense_mu_grid = FALSE)
+plot(grid)
+cvr &lt;- cvrisk(model, grid = grid)
+mstop(cvr)
+## set model to optimal values:
+mstop(model) &lt;- mstop(cvr)
+### END (don't test automatically)
+
+
+### Other grids:
+plot(make.grid(mstop(model), length.out = 3, dense_mu_grid = FALSE))
+plot(make.grid(c(mu = 400, sigma = 400), log = FALSE, dense_mu_grid = FALSE))
+plot(make.grid(c(mu = 400, sigma = 400), length.out = 4,
+               min = 100, log = FALSE, dense_mu_grid = FALSE))
+
+
+### Now use dense mu grids
+# standard grid
+plot(make.grid(c(mu = 100, sigma = 100), dense = FALSE),
+     pch = 20, col = "red")
+# dense grid for all mstop_mu values greater than mstop_sigma
+grid &lt;- make.grid(c(mu = 100, sigma = 100))
+points(grid, pch = 20, cex = 0.2)
+abline(0,1)
+
+# now with three parameters
+grid &lt;- make.grid(c(mu = 100, sigma = 100, df = 30),
+                  length.out = c(5, 5, 2), dense = FALSE)
+densegrid &lt;- make.grid(c(mu = 100, sigma = 100, df = 30),
+                       length.out = c(5, 5, 2))
+par(mfrow = c(1,2))
+# first for df = 1
+plot(grid[grid$df == 1, 1:2], main = "df = 1", pch = 20, col = "red")
+abline(0,1)
+abline(v = 1)
+# now expand grid for all mu values greater the corresponding sigma
+# value (i.e. below the bisecting line) and above df (i.e. 1)
+points(densegrid[densegrid$df == 1, 1:2], pch = 20, cex = 0.2)
+
+# now for df = 30
+plot(grid[grid$df == 30, 1:2], main = "df = 30", pch = 20, col = "red")
+abline(0,1)
+abline(v = 30)
+# now expand grid for all mu values greater the corresponding sigma
+# value (i.e. below the bisecting line) and above df (i.e. 30)
+points(densegrid[densegrid$df == 30, 1:2], pch = 20, cex = 0.2)
+</code></pre>
+
+
+</div>

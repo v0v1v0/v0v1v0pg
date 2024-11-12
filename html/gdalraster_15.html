@@ -1,0 +1,173 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>combine</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Raster overlay for unique combinations</h2>
+
+<h3>Description</h3>
+
+<p><code>combine()</code> overlays multiple rasters so that a unique ID is assigned to
+each unique combination of input values. The input raster layers
+typically have integer data types (floating point will be coerced to
+integer by truncation), and must have the same projection, extent and cell
+size. Pixel counts for each unique combination are obtained, and
+combination IDs are optionally written to an output raster.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">combine(
+  rasterfiles,
+  var.names = NULL,
+  bands = NULL,
+  dstfile = NULL,
+  fmt = NULL,
+  dtName = "UInt32",
+  options = NULL,
+  quiet = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>rasterfiles</code></td>
+<td>
+<p>Character vector of raster filenames to combine.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var.names</code></td>
+<td>
+<p>Character vector of <code>length(rasterfiles)</code> containing
+variable names for each raster layer. Defaults will be assigned if
+<code>var.names</code> are omitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bands</code></td>
+<td>
+<p>Numeric vector of <code>length(rasterfiles)</code> containing the band
+number to use for each raster in <code>rasterfiles</code>. Band 1 will be used for
+each input raster if <code>bands</code> are not specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dstfile</code></td>
+<td>
+<p>Character. Optional output raster filename for writing the
+per-pixel combination IDs. The output raster will be created (and
+overwritten if it already exists).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fmt</code></td>
+<td>
+<p>Character. Output raster format name (e.g., "GTiff" or "HFA").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dtName</code></td>
+<td>
+<p>Character. Output raster data type name. Combination IDs are
+sequential integers starting at 1. The data type for the output raster
+should be large enough to accommodate the potential number of unique
+combinations of the input values
+(e.g., "UInt16" or the default "UInt32").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>options</code></td>
+<td>
+<p>Optional list of format-specific creation options in a
+vector of "NAME=VALUE" pairs
+(e.g., <code>options = c("COMPRESS=LZW")</code> to set LZW compression
+during creation of a GTiff file).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>Logical scalar. If <code>TRUE</code>, progress bar and messages will be
+suppressed. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>To specify input raster layers that are bands of a multi-band
+raster file, repeat the filename in <code>rasterfiles</code> and provide the
+corresponding band numbers in <code>bands</code>. For example:
+</p>
+<pre>
+rasterfiles &lt;- c("multi-band.tif", "multi-band.tif", "other.tif")
+bands &lt;- c(4, 5, 1)
+var.names &lt;- c("multi_b4", "multi_b5", "other")
+</pre>
+<p><code>rasterToVRT()</code> provides options for virtual clipping, resampling and pixel
+alignment, which may be helpful here if the input rasters are not already
+aligned on a common extent and cell size.
+</p>
+<p>If an output raster of combination IDs is written, the user should verify
+that the number of combinations obtained did not exceed the range of the
+output data type. Combination IDs are sequential integers starting at 1.
+Typical output data types are the unsigned types:
+Byte (0 to 255), UInt16 (0 to 65,535) and UInt32 (the default, 0 to
+4,294,967,295).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data frame with column <code>cmbid</code> containing the combination IDs,
+column <code>count</code> containing the pixel counts for each combination,
+and <code>length(rasterfiles)</code> columns named <code>var.names</code> containing the integer
+values comprising each unique combination.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>CmbTable-class</code>, <code>GDALRaster-class</code>, <code>calc()</code>,
+<code>rasterToVRT()</code>
+</p>
+<p><code>buildRAT()</code> to compute a table of the unique pixel values and their counts
+for a single raster layer
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">evt_file &lt;- system.file("extdata/storml_evt.tif", package="gdalraster")
+evc_file &lt;- system.file("extdata/storml_evc.tif", package="gdalraster")
+evh_file &lt;- system.file("extdata/storml_evh.tif", package="gdalraster")
+rasterfiles &lt;- c(evt_file, evc_file, evh_file)
+var.names &lt;- c("veg_type", "veg_cov", "veg_ht")
+tbl &lt;- combine(rasterfiles, var.names)
+nrow(tbl)
+tbl &lt;- tbl[order(-tbl$count),]
+head(tbl, n = 20)
+
+# combine two bands from a multi-band file and write the combination IDs
+# to an output raster
+lcp_file &lt;- system.file("extdata/storm_lake.lcp", package="gdalraster")
+rasterfiles &lt;- c(lcp_file, lcp_file)
+bands &lt;- c(4, 5)
+var.names &lt;- c("fbfm", "tree_cov")
+cmb_file &lt;- file.path(tempdir(), "fbfm_cov_cmbid.tif")
+opt &lt;- c("COMPRESS=LZW")
+tbl &lt;- combine(rasterfiles, var.names, bands, cmb_file, options = opt)
+head(tbl)
+ds &lt;- new(GDALRaster, cmb_file)
+ds$info()
+ds$close()
+deleteDataset(cmb_file)
+</code></pre>
+
+
+</div>

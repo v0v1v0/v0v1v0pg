@@ -1,0 +1,117 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemIntertemporal_3_4</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>An Intertemporal Model with Two Consumers and Two Types of Firms</h2>
+
+<h3>Description</h3>
+
+<p>An intertemporal (timeline) model with two consumers and two types of firms.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemIntertemporal_3_4(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### an example with Cobb-Douglas production functions and intertemporal utility functions.
+np &lt;- 5 # the number of economic periods
+
+n &lt;- 3 * np - 1 # the number of commodity kinds
+m &lt;- 2 * (np - 1) + 2 # the number of agent kinds
+
+names.commodity &lt;- c(
+  paste0("corn", 1:np),
+  paste0("iron", 1:np),
+  paste0("lab", 1:(np - 1))
+)
+names.agent &lt;- c(
+  paste0("firm.corn", 1:(np - 1)),
+  paste0("firm.iron", 1:(np - 1)),
+  "consumer1", "consumer2"
+)
+
+# the exogenous supply matrix.
+S0Exg &lt;- matrix(NA, n, m, dimnames = list(names.commodity, names.agent))
+S0Exg[paste0("lab", 1:(np - 1)), c("consumer1", "consumer2")] &lt;- 100
+S0Exg["corn1", c("consumer1", "consumer2")] &lt;- 25
+S0Exg["iron1", c("consumer1", "consumer2")] &lt;- 100
+
+# the output coefficient matrix.
+B &lt;- matrix(0, n, m, dimnames = list(names.commodity, names.agent))
+for (k in 1:(np - 1)) {
+  B[paste0("corn", k + 1), paste0("firm.corn", k)] &lt;-
+    B[paste0("iron", k + 1), paste0("firm.iron", k)] &lt;- 1
+}
+
+dstl.firm.corn &lt;- dstl.firm.iron &lt;- list()
+for (k in 1:(np - 1)) {
+  dstl.firm.corn[[k]] &lt;- node_new(
+    "prod",
+    type = "CD", alpha = 1, beta = c(0.5, 0.5),
+    paste0("iron", k), paste0("lab", k)
+  )
+
+  dstl.firm.iron[[k]] &lt;- node_new(
+    "prod",
+    type = "CD", alpha = 2, beta = c(0.5, 0.5),
+    paste0("iron", k), paste0("lab", k)
+  )
+}
+
+dst.consumer1 &lt;- node_new(
+  "util",
+  type = "CD", alpha = 1, beta = prop.table(rep(1, np)),
+  paste0("corn", 1:np)
+)
+
+dst.consumer2 &lt;- node_new(
+  "util",
+  type = "CD", alpha = 1, beta = prop.table(rep(1, np)),
+  paste0("cc", 1:np)
+)
+for (k in 1:np) {
+  node_set(
+    dst.consumer2,
+    paste0("cc", k),
+    type = "CD", alpha = 1, beta = c(0.5, 0.5),
+    paste0("corn", k), paste0("iron", k)
+  )
+}
+
+ge &lt;- sdm2(
+  A = c(dstl.firm.corn, dstl.firm.iron, dst.consumer1, dst.consumer2),
+  B = B,
+  S0Exg = S0Exg,
+  names.commodity = names.commodity,
+  names.agent = names.agent,
+  numeraire = "lab1",
+  ts = TRUE
+)
+
+ge$p
+ge$z
+ge$D
+ge$S
+ge$DV
+ge$SV
+
+</code></pre>
+
+
+</div>

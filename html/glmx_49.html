@@ -1,0 +1,142 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>WECO</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Productivity and Quit Behavior of Western Electric Workers</h2>
+
+<h3>Description</h3>
+
+<p>Partially artificial data about quit behavior of Western Electric workers.
+(Western Electric was the manufacturing arm of the AT&amp;T corporation during
+its glory days as a monopolist in the U.S. telephone industry.)
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">data("WECO")</code></pre>
+
+
+<h3>Format</h3>
+
+<p>A data frame containing 683 observations on 7 variables.
+</p>
+
+<dl>
+<dt>output</dt>
+<dd>
+<p>productivity in first six months.</p>
+</dd>
+<dt>sex</dt>
+<dd>
+<p>factor indicating gender.</p>
+</dd>
+<dt>dex</dt>
+<dd>
+<p>score on a preemployment dexterity exam.</p>
+</dd>
+<dt>lex</dt>
+<dd>
+<p>years of education.</p>
+</dd>
+<dt>kwit</dt>
+<dd>
+<p>factor indicating whether the worker quit in the first six months.</p>
+</dd>
+<dt>tenure</dt>
+<dd>
+<p>duration of employment (see details).</p>
+</dd>
+<dt>censored</dt>
+<dd>
+<p>logical. Is the duration censored?</p>
+</dd>
+</dl>
+<h3>Details</h3>
+
+<p>The explanatory variables in this example are taken from the study of Klein et
+al. (1991), but the response variable was altered long ago to improve the
+didactic impact of the model as a class exercise. To this end, quit dates for
+each individual were generated according to a log Weibull proportional hazard
+model.
+</p>
+
+
+<h3>Source</h3>
+
+<p>Online supplements to Koenker (2006) and Koenker and Yoon (2009).
+</p>
+<p><a href="http://www.econ.uiuc.edu/~roger/research/links/links.html">http://www.econ.uiuc.edu/~roger/research/links/links.html</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Klein R, Spady R, Weiss A (1991). “Factors Affecting the Output and Quit Propensities of Production Workers.”
+<em>The Review of Economic Studies</em>, <b>58</b>(5), 929–953.
+</p>
+<p>Koenker R (2006). “Parametric Links for Binary Response.”
+<em>R News</em>, <b>6</b>(4), 32–34.
+</p>
+<p>Koenker R, Yoon J (2009). “Parametric Links for Binary Choice Models: A Fisherian-Bayesian Colloquy.”
+<em>Journal of Econometrics</em>, <b>152</b>, 120–130.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plinks</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## WECO data
+data("WECO", package = "glmx")
+f &lt;- kwit ~ sex + dex + poly(lex, 2, raw = TRUE)
+## (raw = FALSE would be numerically more stable)
+
+## Gosset model
+gossbin &lt;- function(nu) binomial(link = gosset(nu))
+m1 &lt;- glmx(f, data = WECO,
+  family = gossbin, xstart = 0, xlink = "log")
+
+## Pregibon model
+pregibin &lt;- function(shape) binomial(link = pregibon(shape[1], shape[2]))
+m2 &lt;- glmx(f, data = WECO,
+  family = pregibin, xstart = c(0, 0), xlink = "identity")
+
+## Probit/logit/cauchit models
+m3 &lt;- lapply(c("probit", "logit", "cauchit"), function(nam)
+  glm(f, data = WECO, family = binomial(link = nam)))
+
+## Probit/cauchit vs. Gosset
+if(require("lmtest")) {
+lrtest(m3[[1]], m1)
+lrtest(m3[[3]], m1)
+
+## Logit vs. Pregibon
+lrtest(m3[[2]], m2)
+}
+
+## Table 1
+tab1 &lt;- sapply(c(m3, list(m1)), function(obj)
+  c(head(coef(obj), 5), AIC(obj)))
+colnames(tab1) &lt;- c("Probit", "Logit", "Cauchit", "Gosset")
+rownames(tab1)[4:6] &lt;- c("lex", "lex^2", "AIC")
+tab1 &lt;- round(t(tab1), digits = 3)
+tab1
+
+## Figure 4
+plot(fitted(m3[[1]]), fitted(m1),
+  xlim = c(0, 1), ylim = c(0, 1),
+  xlab = "Estimated Probit Probabilities",
+  ylab = "Estimated Gosset Probabilities")
+abline(0, 1)
+
+</code></pre>
+
+
+</div>

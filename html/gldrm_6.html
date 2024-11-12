@@ -1,0 +1,288 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gldrm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fits a generalized linear density ratio model (GLDRM)</h2>
+
+<h3>Description</h3>
+
+<p>A GLDRM is a semiparametric generalized linear model.
+In contrast to a GLM, which assumes a particular exponential family distribution,
+the GLDRM uses a semiparametric likelihood to estimate the reference distribution.
+The reference distribution may be any discrete, continuous, or mixed exponential
+family distribution. The model parameters, which include both the regression
+coefficients and the cdf of the unspecified reference distribution, are estimated
+by maximizing a semiparametric likelihood. Regression coefficients are estimated
+with no loss of efficiency, i.e. the asymptotic variance is the same as if the
+true exponential family distribution were known.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gldrm(
+  formula,
+  data = NULL,
+  link = "identity",
+  mu0 = NULL,
+  offset = NULL,
+  gldrmControl = gldrm.control(),
+  thetaControl = theta.control(),
+  betaControl = beta.control(),
+  f0Control = f0.control()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>An object of class "formula".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>An optional data frame containing the variables in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+<p>Link function. Can be a character string to be passed to the
+<code>make.link</code> function in the <code>stats</code> package (e.g. "identity",
+"logit", or "log").
+Alternatively, <code>link</code> can be a list containing three functions named
+<code>linkfun</code>, <code>linkinv</code>, and <code>mu.eta</code>. The first is the link
+function. The second is the inverse link function. The third is the derivative
+of the inverse link function. All three functions must be vectorized.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu0</code></td>
+<td>
+<p>Mean of the reference distribution. The reference distribution is
+not unique unless its mean is restricted to a specific value. This value can
+be any number within the range of observed values, but values near the boundary
+may cause numerical instability. This is an optional argument with <code>mean(y)</code>
+being the default value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>Known component of the linear term. Offset must be passed through
+this argument - offset terms in the formula will be ignored.
+value and covariate values. If sampling weights are a function of both the
+response value and covariates, then <code>sampprobs</code> must be a <code class="reqn">n \times q</code>
+matrix, where <code class="reqn">n</code> is the number of observations and <code class="reqn">q</code> is the number
+of unique observed values in the response vector. If sampling weights do not
+depend on the covariate values, then <code>sampprobs</code> may alternatively be passed
+as a vector of length <code class="reqn">n</code>. All values must be nonnegative and are assumed to
+correspond to the sorted response values in increasing order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gldrmControl</code></td>
+<td>
+<p>Optional control arguments.
+Passed as an object of class "gldrmControl", which is constructed by the
+<code>gldrm.control</code> function.
+See <code>gldrm.control</code> documentation for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thetaControl</code></td>
+<td>
+<p>Optional control arguments for the theta update procedure.
+Passed as an object of class "thetaControl", which is constructed by the
+<code>theta.control</code> function.
+See <code>theta.control</code> documentation for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>betaControl</code></td>
+<td>
+<p>Optional control arguments for the beta update procedure.
+Passed as an object of class "betaControl", which is constructed by the
+<code>beta.control</code> function.
+See <code>beta.control</code> documentation for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>f0Control</code></td>
+<td>
+<p>Optional control arguments for the <code>f0</code> update procedure.
+Passed as an object of class "f0Control", which is constructed by the
+<code>f0.control</code> function.
+See <code>f0.control</code> documentation for details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The arguments <code>linkfun</code>, <code>linkinv</code>, and <code>mu.eta</code>
+mirror the "link-glm" class. Objects of this class can be created with the
+<code>stats::make.link</code> function.
+</p>
+<p>The "gldrm" class is a list of the following items.
+</p>
+
+<ul>
+<li> <p><code>conv</code> Logical indicator for whether the gldrm algorithm
+converged within the iteration limit.
+</p>
+</li>
+<li> <p><code>iter</code> Number of iterations used. A single iteration is a <code>beta</code>
+update, followed by an <code>f0</code> update.
+</p>
+</li>
+<li> <p><code>llik</code> Semiparametric log-likelihood of the fitted model.
+</p>
+</li>
+<li> <p><code>beta</code> Vector containing the regression coefficient estimates.
+</p>
+</li>
+<li> <p><code>mu</code> Vector containing the estimated mean response value for each
+observation in the training data.
+</p>
+</li>
+<li> <p><code>eta</code> Vector containing the estimated linear combination of
+covariates for each observation.
+</p>
+</li>
+<li> <p><code>f0</code> Vector containing the semiparametric estimate of the reference
+distribution, evaluated at the observed response values. The values of correspond
+to the support values, sorted in increasing order.
+</p>
+</li>
+<li> <p><code>spt</code> Vector containing the unique observed response values, sorted in
+increasing order.
+</p>
+</li>
+<li> <p><code>mu0</code> Mean of the estimated semiparametric reference distribution.
+The mean of the reference distribution must be fixed at a value in order for
+the model to be identifiable. It can be fixed at any value within the range
+of observed response values, but the <code>gldrm</code> function assigns <code>mu0</code>
+to be the mean of the observed response values.
+</p>
+</li>
+<li> <p><code>varbeta</code> Estimated variance matrix of the regression coefficients.
+</p>
+</li>
+<li> <p><code>seBeta</code> Standard errors for <code class="reqn">\hat{\beta}</code>. Equal to
+<code>sqrt(diag(varbeta))</code>.
+</p>
+</li>
+<li> <p><code>seMu</code> Standard errors for <code class="reqn">\hat{\mu}</code> computed from <code>varbeta</code>.
+</p>
+</li>
+<li> <p><code>seEta</code> Standard errors for <code class="reqn">\hat{\eta}</code> computed from <code>varbeta</code>.
+</p>
+</li>
+<li> <p><code>theta</code> Vector containing the estimated tilt parameter for each observation.
+The tilted density function of the response variable is given by
+</p>
+<p style="text-align: center;"><code class="reqn">f(y|x_i) = f_0(y) \exp(\theta_i y) / \int f_0(u) \exp(\theta_i u) du.</code>
+</p>
+
+</li>
+<li> <p><code>bPrime</code> is a vector containing the mean of the tilted distribution,
+<code class="reqn">b'(\theta_i)</code>, for each observation. <code>bPrime</code> should match <code>mu</code>,
+except in cases where <code>theta</code> is capped for numerical stability.
+</p>
+<p style="text-align: center;"><code class="reqn">b'(\theta_i) = \int u f(u|x_i) du</code>
+</p>
+
+</li>
+<li> <p><code>bPrime2</code> is a vector containing the variance of the tilted
+distribution, <code class="reqn">b''(\theta_i)</code>, for each observation.
+</p>
+<p style="text-align: center;"><code class="reqn">b''(\theta_i) = \int (u - b'(\theta_i))^2 f(u|x_i) du</code>
+</p>
+
+</li>
+<li> <p><code>fTilt</code> is a vector containing the semiparametric fitted probability,
+<code class="reqn">\hat{f}(y_i | x_i)</code>, for each observation. The semiparametric
+log-likelihood is equal to
+</p>
+<p style="text-align: center;"><code class="reqn">\sum_{i=1}^n \log \hat{f}(y_i | x_i).</code>
+</p>
+
+</li>
+<li> <p><code>sampprobs</code> If sampling probabilities were passed through the
+<code>sampprobs</code> argument, then they are returned here in matrix form.
+Each row corresponds to an observation.
+</p>
+</li>
+<li> <p><code>llikNull</code> Log-likelihood of the null model with no covariates.
+</p>
+</li>
+<li> <p><code>lr.stat</code> Likelihood ratio test statistic comparing fitted model to
+the null model. It is calculated as <code class="reqn">2 \times (llik - llik_0) / (p-1)</code>.
+The asymptotic distribution is F(p-1, n-p) under the null hypothesis.
+</p>
+</li>
+<li> <p><code>lr.pval</code> P-value of the likelihood ratio statistic.
+</p>
+</li>
+<li> <p><code>fTiltMatrix</code> is a matrix containing the semiparametric density for
+each observation, i.e. <code class="reqn">\hat{f}(y | x_i)</code> for each unique <code>y</code> value.
+This is a matrix with nrow equal to the number of observations and ncol equal
+to the number of unique response values observed.
+Only returned if <code>returnfTilt = TRUE</code> in the gldrmControl arguments.
+</p>
+</li>
+<li> <p><code>score.logf0</code> Score function for <code>log(f0)</code>.
+Only returned if <code>returnf0ScoreInfo = TRUE</code> in the gldrmControl arguments.
+</p>
+</li>
+<li> <p><code>info.logf0</code> Information matrix for <code>log(f0)</code>.
+Only returned if <code>returnf0ScoreInfo = TRUE</code> in the gldrmControl arguments.
+</p>
+</li>
+<li> <p><code>formula</code> Model formula.
+</p>
+</li>
+<li> <p><code>data</code> Model data frame.
+</p>
+</li>
+<li> <p><code>link</code> Link function. If a character string was passed to the
+<code>link</code> argument, then this will be an object of class "link-glm".
+Otherwise, it will be the list of three functions passed to the <code>link</code> argument.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>An S3 object of class "gldrm". See details.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(iris, package="datasets")
+
+# Fit a gldrm with log link
+fit &lt;- gldrm(Sepal.Length ~ Sepal.Width + Petal.Length + Petal.Width + Species,
+             data=iris, link="log")
+fit
+
+# Fit a gldrm with custom link function
+link &lt;- list()
+link$linkfun &lt;- function(mu) log(mu)^3
+link$linkinv &lt;- function(eta) exp(eta^(1/3))
+link$mu.eta &lt;- function(eta) exp(eta^(1/3)) * 1/3 * eta^(-2/3)
+fit2 &lt;- gldrm(Sepal.Length ~ Sepal.Width + Petal.Length + Petal.Width + Species,
+              data=iris, link=link)
+fit2
+
+</code></pre>
+
+
+</div>

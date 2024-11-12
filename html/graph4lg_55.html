@@ -1,0 +1,239 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mat_cost_dist</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute cost distances between points on a raster</h2>
+
+<h3>Description</h3>
+
+<p>The function computes cost-distances associated to least cost
+paths between point pairs on a raster with specified cost values.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mat_cost_dist(
+  raster,
+  pts,
+  cost,
+  method = "gdistance",
+  return = "mat",
+  direction = 8,
+  parallel.java = 1,
+  alloc_ram = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>raster</code></td>
+<td>
+<p>A parameter indicating the raster file on which cost distances
+are computed. It can be:</p>
+
+<ul>
+<li>
+<p>A character string indicating the path to a raster file in format
+.tif or .asc.
+</p>
+</li>
+<li>
+<p>A <code>RasterLayer</code> object already loaded in R environment
+</p>
+</li>
+</ul>
+<p>All the raster cell values must be present in the column 'code' from
+<code>cost</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pts</code></td>
+<td>
+<p>A parameter indicating the points between which cost distances
+are computed. It can be either: </p>
+
+<ul>
+<li>
+<p>A character string indicating the path to a .csv file. It must have
+three columns:</p>
+
+<ul>
+<li>
+<p>ID: The ID of the points.
+</p>
+</li>
+<li>
+<p>x: A numeric or integer indicating the longitude of the points.
+</p>
+</li>
+<li>
+<p>y: A numeric or integer indicating the latitude of the points.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p>A <code>data.frame</code> with the spatial coordinates of the points.
+It must have three columns:</p>
+
+<ul>
+<li>
+<p>ID: The ID of the points.
+</p>
+</li>
+<li>
+<p>x: A numeric or integer indicating the longitude of the points.
+</p>
+</li>
+<li>
+<p>y: A numeric or integer indicating the latitude of the points.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p>A <code>SpatialPointsDataFrame</code> with at least an attribute column
+named "ID" with the point IDs.
+</p>
+</li>
+</ul>
+<p>The point coordinates must be in the same spatial coordinate reference system
+as the raster file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cost</code></td>
+<td>
+<p>A <code>data.frame</code> indicating the cost values associated to each
+raster value. It must have two columns:</p>
+
+<ul>
+<li>
+<p>'code': raster cell values
+</p>
+</li>
+<li>
+<p>'cost': corresponding cost values
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>A character string indicating the method used to compute the
+cost distances. It must be:</p>
+
+<ul>
+<li>
+<p>'gdistance': uses the functions from the package <span class="pkg">gdistance</span>
+assuming that movement is possible in 8 directions from each cell, that
+a geo-correction is applied to correct for diagonal movement lengths and that
+raster cell values correspond to resistance (and not conductance).
+</p>
+</li>
+<li>
+<p>'java': uses a .jar file which is downloaded on the user's machine if
+necessary and if java is installed. This option substantially reduces
+computation times and makes possible the parallelisation.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return</code></td>
+<td>
+<p>A character string indicating whether the returned object is a
+<code>data.frame</code> (<code>return="df"</code>) or a pairwise
+<code>matrix</code> (<code>return="mat"</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>direction</code></td>
+<td>
+<p>An integer (4, 8, 16) indicating the directions in which
+movement can take place from a cell. Only used when <code>method="gdistance"</code>.
+By default, <code>direction=8</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel.java</code></td>
+<td>
+<p>An integer indicating how many computer cores are used
+to run the .jar file. By default, <code>parallel.java=1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alloc_ram</code></td>
+<td>
+<p>(optional, default = NULL) Integer or numeric value
+indicating RAM gigabytes allocated to the java process when used. Increasing
+this value can speed up the computations. Too large values may not be
+compatible with your machine settings.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The function returns:</p>
+
+<ul>
+<li>
+<p>If <code>return="mat"</code>, a pairwise <code>matrix</code> with cost-distance
+values between points.
+</p>
+</li>
+<li>
+<p>If <code>return="df"</code>, an object of type <code>data.frame</code> with three columns:
+</p>
+
+<ul>
+<li>
+<p>from: A character string indicating the ID of the point of origin.
+</p>
+</li>
+<li>
+<p>to: A character string indicating the ID of the point of destination.
+</p>
+</li>
+<li>
+<p>cost_dist: A numeric indicating the accumulated cost-distance along
+the least-cost path between point ID1 and point ID2.
+</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>P. Savary
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+x &lt;- raster::raster(ncol=10, nrow=10, xmn=0, xmx=100, ymn=0, ymx=100)
+raster::values(x) &lt;- sample(c(1,2,3,4), size = 100, replace = TRUE)
+pts &lt;- data.frame(ID = 1:4,
+                  x = c(10, 90, 10, 90),
+                  y = c(90, 10, 10, 90))
+cost &lt;- data.frame(code = 1:4,
+                   cost = c(1, 10, 100, 1000))
+mat_cost_dist(raster = x,
+              pts = pts, cost = cost,
+              method = "gdistance")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

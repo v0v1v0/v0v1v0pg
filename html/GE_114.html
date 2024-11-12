@@ -1,0 +1,271 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemstStructuralMultipleEquilibria_2_2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Structural Multiple Equilibria and Structural Transition Policy</h2>
+
+<h3>Description</h3>
+
+<p>Some examples of structural multiple equilibria and structural transition policy.
+In these examples it is assumed that the firm has a structural production function (see Li, Fu, 2020), e.g.
+</p>
+<p>structural_function(last.output, c(0.3, 0.4), 1, 2) * x1^0.35 * x2^0.65
+</p>
+<p>wherein last.output is the output of the firm in the previous period.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemstStructuralMultipleEquilibria_2_2(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>References</h3>
+
+<p>Li Wu, Fu Caihui (2020) A Simulation Study on the Economic Structure Transition Policy. Journal of Shanghai University (Social Sciences). 37(2), pp: 33-45. (In Chinese)
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+dst.firm &lt;- node_new("output",
+  type = "CD", alpha = 1,
+  beta = c(0.35, 0.65),
+  "prod", "lab"
+)
+
+dst.consumer &lt;- node_new("utility",
+  type = "CD", alpha = 1,
+  beta = c(0.4, 0.6),
+  "prod", "lab"
+)
+
+policy.technology &lt;- function(time, state, A) {
+  # state$last.z[1] is the previous output.
+  A[[1]]$alpha &lt;- structural_function(state$last.z[1], c(0.3, 0.4), 1, 2)
+}
+
+policy.tax &lt;- function(time, state) {
+  if ((time &gt;= 15) &amp;&amp; state$last.z[1] &lt; 0.4) {
+    state$S[2, 2] &lt;- 0.8
+    state$S[2, 1] &lt;- 0.2
+  } else {
+    state$S[2, 2] &lt;- 1
+    state$S[2, 1] &lt;- 0
+  }
+
+  state
+}
+
+f &lt;- function(z0 = c(0.1, 1),
+              policy = list(
+                policy.technology,
+                policyMarketClearingPrice
+              )) {
+  ge &lt;- sdm2(
+    A = list(dst.firm, dst.consumer),
+    B = matrix(c(
+      1, 0,
+      0, 0
+    ), 2, 2, TRUE),
+    S0Exg = matrix(c(
+      NA, NA,
+      NA, 1
+    ), 2, 2, TRUE),
+    names.commodity = c("prod", "lab"),
+    names.agent = c("firm", "consumer"),
+    numeraire = "lab",
+    z0 = z0,
+    p0 = c(1, 1),
+    maxIteration = 1,
+    numberOfPeriods = 30,
+    policy = policy,
+    ts = TRUE
+  )
+
+  matplot(ge$ts.z, type = "o", pch = 20)
+  invisible(ge)
+}
+
+geLow &lt;- f()
+geLow$z
+
+geHigh &lt;- f(z0 = c(0.5, 1))
+geHigh$z
+
+f(policy = list(
+  policy.technology,
+  policy.tax,
+  policyMarketClearingPrice
+))
+
+#### structural transition: disequilibrium path and
+## a spot market clearing path (alias instantaneous equilibrium path)
+dst.firm &lt;- node_new("output",
+  type = "CD", alpha = 5,
+  beta = c(0.5, 0.5),
+  "prod", "lab"
+)
+
+dst.consumer &lt;- node_new("utility",
+  type = "Leontief", a = 1,
+  "prod"
+)
+
+policy.technology &lt;- function(time, state, A) {
+  # state$last.z[1] is last output.
+  A[[1]]$alpha &lt;- structural_function(state$last.z[1], c(15, 20), 5, 15)
+  return(NULL)
+}
+
+policy.tax &lt;- function(time, state) {
+  if ((time &gt;= 100) &amp;&amp; (time &lt;= 109)) {
+    state$S[2, 2] &lt;- 0.6
+    state$S[2, 1] &lt;- 0.4
+  } else {
+    state$S[2, 2] &lt;- 1
+    state$S[2, 1] &lt;- 0
+  }
+
+  state
+}
+
+f &lt;- function(z0 = c(1, 1),
+              p0 = c(1, 1),
+              policy = policy.technology) {
+  ge &lt;- sdm2(
+    A = list(dst.firm, dst.consumer),
+    B = matrix(c(
+      1, 0,
+      0, 1
+    ), 2, 2, TRUE),
+    S0Exg = matrix(c(
+      NA, NA,
+      NA, 1
+    ), 2, 2, TRUE),
+    names.commodity = c("prod", "lab"),
+    names.agent = c("firm", "consumer"),
+    numeraire = "lab",
+    z0 = z0,
+    p0 = p0,
+    maxIteration = 1,
+    numberOfPeriods = 200,
+    policy = policy,
+    priceAdjustmentVelocity = 0.4,
+    ts = TRUE
+  )
+
+  matplot(ge$ts.z, type = "l", pch = 20)
+  invisible(ge)
+}
+
+geLow &lt;- f()
+geLow$z
+
+geHigh &lt;- f(z0 = c(18, 1), p0 = c(1, 9))
+geHigh$z
+
+## structural transition: a disequilibrium path
+f(policy = list(
+  policy.technology,
+  policy.tax
+))$z
+
+
+## structural transition: a spot market clearing path
+f(policy = list(
+  policy.technology,
+  policy.tax,
+  policyMarketClearingPrice
+))$z
+
+## structural transition through foreign aid
+policy.foreign_aid &lt;- function(time, state) {
+  if ((time &gt;= 100) &amp;&amp; (time &lt;= 109)) {
+    state$S[2, 2] &lt;- 3
+  } else {
+    state$S[2, 2] &lt;- 1
+  }
+
+  state
+}
+
+f(policy = list(
+  function(time, state, A) { # technology policy
+    # state$last.z[1] is last output.
+    A[[1]]$alpha &lt;- structural_function(state$last.z[1], c(30, 35), 5, 15)
+  },
+  policy.foreign_aid
+))
+
+#### another example
+dst.firm &lt;- node_new("prod",
+  type = "CD", alpha = 2,
+  beta = c(0.5, 0.5),
+  "prod", "lab"
+)
+
+dst.consumer &lt;- node_new("util",
+  type = "Leontief", a = 1,
+  "prod"
+)
+
+policy.technology &lt;- function(time, state, A) {
+  # state$last.z[1] is the previous output.
+  A[[1]]$alpha &lt;- structural_function(state$last.z[1], c(220, 250), 2, 4)
+}
+
+policy.tax &lt;- function(time, state) {
+  if ((time &gt;= 15) &amp;&amp; state$last.z[1] &lt; 240) {
+    state$S[2, 2] &lt;- 80
+    state$S[2, 1] &lt;- 20
+  } else {
+    state$S[2, 2] &lt;- 100
+    state$S[2, 1] &lt;- 0
+  }
+
+  state
+}
+
+ge &lt;- sdm2(
+  A = list(dst.firm, dst.consumer),
+  B = matrix(c(
+    1, 0,
+    0, 0
+  ), 2, 2, TRUE),
+  S0Exg = matrix(c(
+    NA, NA,
+    NA, 100
+  ), 2, 2, TRUE),
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm", "consumer"),
+  numeraire = "lab",
+  z0 = c(100, 100),
+  maxIteration = 1,
+  numberOfPeriods = 30,
+  policy = list(
+    policy.technology,
+    policy.tax,
+    policyMarketClearingPrice
+  ),
+  ts = TRUE
+)
+
+matplot(ge$ts.z, type = "b", pch = 20)
+
+</code></pre>
+
+
+</div>

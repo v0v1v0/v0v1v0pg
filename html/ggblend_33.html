@@ -1,0 +1,210 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>blend</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Blend ggplot2 layers (Layer operation)</h2>
+
+<h3>Description</h3>
+
+<p>Blend objects within a single layer (geom) or across multiple layers (geoms)
+using graphical blending modes, such as <code>"multiply"</code>, <code>"overlay"</code>, etc. Uses
+the built-in compositing support in graphical devices added in R 4.2.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">blend(object, blend = "over", alpha = 1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>One of:
+</p>
+
+<ul>
+<li>
+<p> A layer-like object: applies this operation to the layer.
+</p>
+</li>
+<li>
+<p> A missing argument: creates an operation
+</p>
+</li>
+<li>
+<p> A string (character vector of length 1) giving the name of a blend,
+which takes the place of the <code>blend</code> argument.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>blend</code></td>
+<td>
+<p>The blend mode to use. The default mode, <code>"over"</code>, corresponds to
+the "usual" blend mode of drawing objects on top of each other.
+The list of supported blend modes depends on your graphical device
+(see Murrell 2021), and are listed in <code>dev.capabilities()$compositing</code>.
+Blend modes can include: <code>"clear"</code>,
+<code>"source"</code>, <code>"over"</code>, <code>"in"</code>, <code>"out"</code>, <code>"atop"</code>, <code>"dest"</code>, <code>"dest.over"</code>,
+<code>"dest.in"</code>, <code>"dest.out"</code>, <code>"dest.atop"</code>, <code>"xor"</code>, <code>"add"</code>, <code>"saturate"</code>,
+<code>"multiply"</code>, <code>"screen"</code>, <code>"overlay"</code>, <code>"darken"</code>, <code>"lighten"</code>,
+<code>"color.dodge"</code>, <code>"color.burn"</code>, <code>"hard.light"</code>, <code>"soft.light"</code>,
+<code>"difference"</code>, and <code>"exclusion"</code>
+</p>
+<p>Blend modes like <code>"multiply"</code>, <code>"darken"</code>, and <code>"lighten"</code> are particularly useful as they
+are <em>commutative</em>: the result is the same whichever order they are applied in.
+</p>
+<p>A warning is issued if the current graphics device does not appear to support
+the requested blend mode. In some cases this warning may be spurious, so
+it can be disabled by setting <code>options(ggblend.check_blend = FALSE)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>A numeric between <code>0</code> and <code>1</code> (inclusive). The opacity of a
+transparency mask applied to objects prior to blending.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If <code>object</code> is a single layer / geometry and the <code>partition</code> aesthetic <em>is not</em> set, every
+graphical object (<code>grob()</code>) output by the geometry will be blended together
+using the <code>blend</code> blend mode. If <code>alpha != 1</code>, a transparency mask with the
+provided alpha level will be applied to each grob before blending.
+</p>
+<p>If <code>object</code> is a single layer / geometry and the <code>partition</code> aesthetic <em>is</em> set,
+the geometry will be rendered for each subset of the data defined by the
+<code>partition</code> aesthetic, a transparency mask with the provided <code>alpha</code> level
+will be applied to each resulting group as a whole (if <code>alpha != 1</code>), then these groups
+will be blended together using the <code>blend</code> blend mode.
+</p>
+<p>If <code>object</code> is a list of layers / geometries, those layers will be rendered
+separately, a transparency mask with the provided <code>alpha</code> level
+will be applied to each layer as a whole (if <code>alpha != 1</code>), then these layers
+will be blended together using the <code>blend</code> blend mode.
+</p>
+<p>If a <code>blend()</code> is multiplied by a list of layers using <code>*</code>, it acts on each
+layer individually (as if each layer were passed to <code>blend()</code>).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A layer-like object (if <code>object</code> is layer-like) or an operation (if not).
+</p>
+
+
+<h3>Supported devices</h3>
+
+<p>Blending is not currently supported by all graphics devices. As of this writing,
+at least <code>png(type = "cairo")</code>, <code>svg()</code>, and <code>cairo_pdf()</code> are known to support
+blending.
+</p>
+<p><code>blend()</code> attempts to auto-detect support for blending using <code>dev.capabilities()</code>.
+You may receive a warning when using <code>blend()</code> if it appears blending is not
+supported by the current graphics device. This warning <strong>either</strong> means (1)
+your graphics device does not support blending (in which case you should
+switch to one that does) or (2) your graphics device
+supports blending but incorrectly reports that it does not. Unfortunately,
+not all graphics devices that support blending appear to correctly <em>report</em>
+that they support blending, so even if auto-detection fails, <code>blend()</code> will
+still attempt to apply the blend, just in case.
+</p>
+<p>If the warning is issued and the output is still correctly blended, this is
+likely a bug in the graphics device. You can report the bug to the authors of
+the graphics device if you wish; in the mean time, you can use
+<code>options(ggblend.check_blend = FALSE)</code> to disable the check.
+</p>
+
+
+<h3>References</h3>
+
+<p>Murrell, Paul (2021):
+<a href="https://www.stat.auckland.ac.nz/~paul/Reports/GraphicsEngine/groups/groups.html">Groups, Compositing Operators, and Affine Transformations in R Graphics</a>.
+The University of Auckland. Report.
+<a href="https://doi.org/10.17608/k6.auckland.17009120.v1">doi:10.17608/k6.auckland.17009120.v1</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>operation for a description of layer operations.
+</p>
+<p>Other layer operations: 
+<code>adjust</code>,
+<code>affine_transform</code>,
+<code>copy</code>,
+<code>nop</code>,
+<code>partition()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(ggplot2)
+
+# create two versions of a dataset, where draw order can affect output
+set.seed(1234)
+df_a = data.frame(x = rnorm(500, 0), y = rnorm(500, 1), set = "a")
+df_b = data.frame(x = rnorm(500, 1), y = rnorm(500, 2), set = "b")
+df_ab = rbind(df_a, df_b) |&gt;
+  transform(order = "draw a then b")
+df_ba = rbind(df_b, df_a) |&gt;
+  transform(order = "draw b then a")
+df = rbind(df_ab, df_ba)
+
+# Using the "darken" blend mode, draw order does not matter:
+df |&gt;
+  ggplot(aes(x, y, color = set)) +
+  geom_point(size = 3) |&gt; blend("darken") +
+  scale_color_brewer(palette = "Set2") +
+  facet_grid(~ order)
+
+# Using the "multiply" blend mode, we can see density within groups:
+df |&gt;
+  ggplot(aes(x, y, color = set)) +
+  geom_point(size = 3) |&gt; blend("multiply") +
+  scale_color_brewer(palette = "Set2") +
+  facet_grid(~ order)
+
+# blend() on a single geom by default blends all grobs in that geom together
+# using the requested blend mode. If we wish to blend within specific data
+# subsets using normal blending ("over") but between subsets using the
+# requested blend mode, we can set the partition aesthetic. This will
+# make "multiply" behave more like "darken":
+df |&gt;
+  ggplot(aes(x, y, color = set, partition = set)) +
+  geom_point(size = 3) |&gt; blend("multiply") +
+  scale_color_brewer(palette = "Set2") +
+  facet_grid(~ order)
+
+# We can also blend lists of geoms together; these geoms are rendered using
+# normal ("over") blending (unless a blend() call is applied to a specific
+# sub-layer, as in the first layer below) and then blended together using
+# the requested blend mode.
+df |&gt;
+  ggplot(aes(x, y, color = set)) +
+  list(
+    geom_point(size = 3) |&gt; blend("darken"),
+    geom_vline(xintercept = 0, color = "gray75", linewidth = 1.5),
+    geom_hline(yintercept = 0, color = "gray75", linewidth = 1.5)
+  ) |&gt; blend("hard.light") +
+  scale_color_brewer(palette = "Set2") +
+  facet_grid(~ order)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,146 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>addNonlinearity</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Add a nonlinear function to the model</h2>
+
+<h3>Description</h3>
+
+<p>This function takes a model and adds a non-linear function if
+the likelihood-ratio supports this (via the
+<code>anova(..., test = "chisq")</code> test for <span class="pkg">stats</span>
+while for <span class="pkg">rms</span> you need to use the <code>rcs()</code> spline
+that is automatically evaluated for non-linearity).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">addNonlinearity(
+  model,
+  variable,
+  spline_fn,
+  flex_param = 2:7,
+  min_fn = AIC,
+  sig_level = 0.05,
+  verbal = FALSE,
+  workers,
+  ...
+)
+
+## S3 method for class 'negbin'
+addNonlinearity(model, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>The model that is to be evaluated and adapted for non-linearity</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variable</code></td>
+<td>
+<p>The name of the parameter that is to be tested for non-linearity.
+<em>Note</em> that the variable should be included plain (i.e. as a linear variable)
+form in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spline_fn</code></td>
+<td>
+<p>Either a string or a function that is to be used
+for testing alternative non-linearity models</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>flex_param</code></td>
+<td>
+<p>A <code>vector</code> with values that are to be tested as the
+default second parameter for the non-linearity function that you want to
+evaluate. This defaults to 2:7, for the <code>ns()</code> it tests
+the degrees of freedom ranging between 2 and 7.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_fn</code></td>
+<td>
+<p>This is the function that we want to minimized if the variable supports
+the non-linearity assumption. E.g. <code>BIC()</code> or
+<code>AIC</code>, note that the <code>BIC()</code> will in the majority of cases
+support a lower complexity than the <code>AIC()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sig_level</code></td>
+<td>
+<p>The significance level for which the non-linearity is deemed
+as significant, defaults to 0.05.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbal</code></td>
+<td>
+<p>Set this to <code>TRUE</code> if you want print statements with the
+anova test and the chosen knots.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>workers</code></td>
+<td>
+<p>The function tries to run everything in parallel. Under some
+circumstances you may want to restrict the number of parallel threads to less
+than the default <code>detectCores() - 1</code>, e.g. you may run out of memory
+then you can provide this parameter. If you do not want to use parallel then
+simply set workers to <code>FALSE</code>. The cluster created using <code>makeCluster()</code>
+function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Passed onto internal <code>prNlChooseDf()</code> function.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(Greg)
+data("melanoma", package = "boot", envir = environment())
+
+library(dplyr)
+melanoma &lt;- mutate(melanoma, 
+                   status = factor(status,
+                                   levels = 1:3,
+                                   labels = c("Died from melanoma", 
+                                              "Alive", 
+                                              "Died from other causes")),
+                   ulcer = factor(ulcer,
+                                  levels = 0:1,
+                                  labels = c("Absent", "Present")),
+                   time = time/365.25, # All variables should be in the same time unit
+                   sex = factor(sex,
+                                levels = 0:1,
+                                labels = c("Female", "Male")))
+
+library(survival)
+model &lt;- coxph(Surv(time, status == "Died from melanoma") ~ sex + age,
+  data = melanoma
+)
+
+nl_model &lt;- addNonlinearity(model, "age",
+  spline_fn = "pspline",
+  verbal = TRUE,
+  workers = FALSE
+)
+# Note that there is no support for nonlinearity in this case
+</code></pre>
+
+
+</div>

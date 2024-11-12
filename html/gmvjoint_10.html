@@ -1,0 +1,419 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>joint</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a joint model to time-to-event and multivariate longitudinal data</h2>
+
+<h3>Description</h3>
+
+<p>Fit a joint model to time-to-event and multivariate longitudinal data
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">joint(
+  long.formulas,
+  surv.formula,
+  data,
+  family,
+  disp.formulas = NULL,
+  control = list()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>long.formulas</code></td>
+<td>
+<p>A list of formula objects specifying the <code class="reqn">K</code> responses. Each must be 
+usable by <code>glmmTMB</code>. A restriction is that unique identifiers must 
+be named <code>id</code>, and increment in intervals of at exactly one. The variable for time
+must be named <code>time</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>surv.formula</code></td>
+<td>
+<p>A formula specifying the time-to-event sub-model. Must be usable by 
+<code>coxph</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A <code>data.frame</code> containing all covariates and responses.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A list of length <code class="reqn">K</code> containing strings denoting the exponential families 
+for each longitudinal sub-model, corresponding in order to <code>long.formulas</code>. For choices 
+of <code>family</code>, see <strong>details</strong>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>disp.formulas</code></td>
+<td>
+<p>An optional list of length <code class="reqn">K</code> specifying the dispersion models
+wanted for each longitudinal sub-model, corresponding in order to <code>long.formulas</code>. Defaults
+to <code>disp.formulas = NULL</code>. See <strong>details</strong> for more information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>A list of control values: </p>
+
+<dl>
+<dt><code>verbose</code></dt>
+<dd>
+<p>Logical: If <code>TRUE</code>, at each iteration parameter information will 
+be printed to console. Default is <code>verbose=FALSE</code>.</p>
+</dd>
+<dt><code>conv</code></dt>
+<dd>
+<p>Character: Convergence criterion, see <strong>details</strong>.</p>
+</dd>
+<dt><code>tol.abs</code></dt>
+<dd>
+<p>Numeric: Tolerance value used to assess convergence, see 
+<strong>details</strong>. Default is <code>tol.abs=1e-3</code>.</p>
+</dd>
+<dt><code>tol.rel</code></dt>
+<dd>
+<p>Numeric: Tolerance value used to assess convergence, see 
+<strong>details</strong>. Default is <code>tol.rel=1e-2</code>.</p>
+</dd>
+<dt><code>tol.den</code></dt>
+<dd>
+<p>Numeric: Tolerance value used to assess convergence, see 
+<strong>details</strong>. Default is <code>tol.den=1e-3</code>.</p>
+</dd>
+<dt><code>tol.thr</code></dt>
+<dd>
+<p>Numeric: Threshold used when <code>conv = 'sas'</code>, see 
+<strong>details</strong>. Default is <code>tol.thr=1e-1</code>.</p>
+</dd>
+<dt><code>grad.eps</code></dt>
+<dd>
+<p>Numeric: Step size for numerical differentiation routines used to
+calculate the gradient in updates to dispersion parameters. This defaults to the cube root 
+of machine tolerance. If a different step size is wanted for each response, a list can also 
+be provided, with each of its elements corresponding to each longitudinal response (even if
+not fitted with a dispersion model).</p>
+</dd>
+<dt><code>hess.eps</code></dt>
+<dd>
+<p>Numeric: Step size for numerical differentiation routines used to
+calculate the hessian in updates to dispersion parameters. This defaults to the fourth root 
+of machine tolerance. Behaves in same way as <code>grad.eps</code> for more information.</p>
+</dd>
+<dt><code>inits</code></dt>
+<dd>
+<p>List: list of initial conditions, any/all of the following can be 
+specified (largely for bootstrapping purposes). Accepts elements named: <code>D</code>, which
+should be an appropriately-dimensioned variance-covariance matrix; <code>beta</code>, a vector
+containing all fixed effects; <code>sigma</code> a list containing all dispersion parameters,
+with non-applicable elements set to zero; <code>gamma</code> a vector containing all association
+parameters; <code>zeta</code> a vector containing the time-invariant survival coefficients.</p>
+</dd>
+<dt><code>maxit</code></dt>
+<dd>
+<p>Integer: Maximum number of EM iterations to carry out before
+exiting the algorithm. Defaults to <code>maxit=200L</code>, which is usually sufficient.</p>
+</dd>
+<dt><code>correlated</code></dt>
+<dd>
+<p>Logical: Should covariance parameters <strong>between</strong> responses 
+be estimated and used in determination of model convergence? Default is 
+<code>correlated=TRUE</code>. A choice of <code>correlated=FALSE</code> is equivalent to imposing the 
+belief that deviations in longitudinal trajectories are not correlated across responses, but
+can decrease computation time, particularly for large <code class="reqn">K</code>.</p>
+</dd>
+<dt><code>gh.nodes</code></dt>
+<dd>
+<p>Integer: Number of weights and abscissae to use in gauss-hermite 
+quadrature. Defaults to <code>gh.nodes=3</code>, which is usually sufficient.</p>
+</dd>
+<dt><code>gh.sigma</code></dt>
+<dd>
+<p>Numeric: Standard deviation for gauss-hermite approximation of normal
+distribution. Defaults to <code>gh.sigma=1</code>. This should rarely (if ever) need altering.</p>
+</dd>
+<dt><code>return.dmats</code></dt>
+<dd>
+<p>Logical: Should data matrices be returned? Defaults to 
+<code>return.dmats=TRUE</code>. Note that some S3 methods for <code>joint.object</code>s
+require the returned object to include these data matrices.</p>
+</dd>
+<dt><code>return.inits</code></dt>
+<dd>
+<p>Logical: Should a list of inital conditons be returned? 
+Defaults to <code>return.inits=FALSE</code>.</p>
+</dd>
+<dt><code>center.ph</code></dt>
+<dd>
+<p>Logical: Should the survival covariates be mean-centered? Defaults
+to <code>center.ph=TRUE</code>.</p>
+</dd>
+<dt><code>post.process</code></dt>
+<dd>
+<p>Logical: Should model post-processing be carried out (assumes
+that the model has converged). Defaults to <code>post.process = TRUE</code> which then returns
+posterior modes and their variance for the random effects, as well as approximated standard
+error. This is largely for internal use (i.e. if bootstrapping to obtain SEs instead).</p>
+</dd>
+</dl>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Function <code>joint</code> fits a joint model to time-to-event data and multivariate 
+longitudinal data. The longitudinal data can be specified by numerous models encompassing
+a fairly wide range of data. This joint model fit is achieved by the use of an approximate
+EM algorithm first proposed in Bernhardt et al. (2015), and later used in the 'classic' 
+multivariate joint model in Murray and Philipson (2022). Each longitudinal response is 
+modelled by 
+</p>
+<p style="text-align: center;"><code class="reqn">h_k(E[Y_{ik}|b_{ik};\Omega]) = X_{ik}\beta_k + Z_{ik}b_{ik}</code>
+</p>
+ 
+<p>where <code class="reqn">h_k</code> is a known, monotonic link function. An association is induced between the 
+<code class="reqn">K</code>th response and the hazard <code class="reqn">\lambda_i(t)</code> by: 
+</p>
+<p style="text-align: center;"><code class="reqn">\lambda_i(t)=\lambda_0(t)\exp\{S_i^T\zeta + \sum_{k=1}^K\gamma_kW_k(t)^Tb_{ik}\}</code>
+</p>
+ 
+<p>where <code class="reqn">\gamma_k</code> is the association parameter and <code class="reqn">W_k(t)</code> is the vector function of 
+time imposed on the <code class="reqn">K</code>th random effects structure (i.e. intercept-and-slope; spline).
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object with class <code>joint</code>. See <code>joint.object</code> for information.
+</p>
+
+
+<h3>Family specification</h3>
+
+<p>Currently, five families are available for implementation, spanning continuous, binary and 
+count data types: </p>
+
+<dl>
+<dt><code>'gaussian'</code></dt>
+<dd>
+<p>Normally distributed. The identity link is used. A term 
+<code class="reqn">\sigma_k</code> will be estimated, denoting the <em>variance</em> of this response</p>
+</dd>
+<dt><code>'binomial'</code></dt>
+<dd>
+<p>For binary data types, a logit link is used.</p>
+</dd>
+<dt><code>'poisson'</code></dt>
+<dd>
+<p>For count data types where dispersion is either non-consequential 
+or ignored. A log link is used.</p>
+</dd>
+<dt><code>'genpois'</code></dt>
+<dd>
+<p>For count data types where dispersion is at least of some
+secondary interest. A log link is used. A term <code class="reqn">\sigma_k</code> is estimated, denoting
+the dispersion, <code class="reqn">\varphi</code> of the response. This follows interpretation of Zamani &amp; 
+Ismail (2012): <code class="reqn">\varphi&gt;0</code>: Over-dispersion; <code class="reqn">\varphi&lt;0</code>: Under-dispersion.
+<code class="reqn">Var[Y]=(1+\varphi)^2\mu</code>.</p>
+</dd>
+<dt><code>'Gamma'</code></dt>
+<dd>
+<p>For continuous data where a Gamma distribution might be sensible.
+The log link is used. A term <code class="reqn">\sigma_k</code> is be estimated, denoting the (log) shape of 
+the distribution, which is then reported as <code class="reqn">\varphi_k=\exp\{\sigma_k\}</code>.</p>
+</dd>
+<dt><code>"negbin"</code></dt>
+<dd>
+<p>For count data types where overdispersion is modelled. A log link
+is used. A term <code class="reqn">\sigma_k</code> is estimated, which is then reported as 
+<code class="reqn">\varphi_k=\exp\{\sigma_k\}</code> which is the overdispersion. The variance of the response
+is <code class="reqn">Var[Y]=\mu+\mu^2/\varphi</code>.</p>
+</dd>
+</dl>
+<p>For families <code>"negbin"</code>, <code>"Gamma"</code>, <code>"genpois"</code>, the user can define the 
+dispersion model desired in <code>disp.formulas</code>. For the <code>"negbin"</code> and <code>"Gamma"</code>
+cases, we define <code class="reqn">\varphi_i=\exp\{W_i\sigma_i\}</code> (i.e. the exponent of the linear 
+predictor of the dispersion model; and for <code>"genpois"</code> the identity of the linear
+is used.
+</p>
+
+
+<h3>Dispersion models</h3>
+
+<p>The <code>disp.formulas</code> in the function call allows the user to model the dispersion for
+a given sub-model if wanted. The default value <code>disp.formulas = NULL</code> simply imposes
+an 'intercept only' model. If the <code class="reqn">k</code>th item in <code>disp.formulas</code> corresponds to 
+a longitudinal sub-model with no dispersion term, then it is simply ignored. With this in 
+mind then, if a dispersion model is only required for, say, one sub-model, then the 
+corresponding item in this list of models should be specified as such, with the others set to
+<code>~1</code>.
+</p>
+
+
+<h3>Standard error estimation</h3>
+
+<p>We follow the approximation of the observed empirical information matrix detailed by 
+Mclachlan and Krishnan (2008), and later used in <code>joineRML</code> (Hickey et al., 2018).
+These are only calculated if <code>post.process=TRUE</code>. Generally, these SEs are well-behaved,
+but their reliability will depend on multiple factors: Sample size; number of events; 
+collinearity of REs of responses; number of observed times, and so on. Some more discussion/
+references are given in <code>vcov.joint</code>.
+</p>
+
+
+<h3>Convergence of the algorithm</h3>
+
+<p>A few convergence criteria (specified by <code>control$conv</code>) are available: </p>
+
+<dl>
+<dt><code>abs</code></dt>
+<dd>
+<p>Convergence reached when maximum absolute change in parameter estimates
+is <code>&lt;tol.abs</code>.</p>
+</dd>
+<dt><code>rel</code></dt>
+<dd>
+<p>Convergence reached when maximum absolute relative change in parameter
+estimates is <code>&lt;tol.rel</code>. A small amount (<code>tol.den</code>) is added to the denominator 
+to eschew numerical issues if parameters are nearly zero.</p>
+</dd>
+<dt><code>either</code></dt>
+<dd>
+<p>Convergence is reached when either <code>abs</code> or <code>rel</code> are met.</p>
+</dd>
+<dt><code>sas</code></dt>
+<dd>
+<p>Assess convergence for parameters <code class="reqn">|\Omega_a|</code><code>&lt;tol.thr</code> by the
+<code>abs</code> criterion, else <code>rel</code>. This is the default.</p>
+</dd>
+</dl>
+<p>Note that the baseline hazard is updated at each EM iteration, but is not monitored for 
+convergence.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>James Murray (<a href="mailto:j.murray7@ncl.ac.uk">j.murray7@ncl.ac.uk</a>).
+</p>
+
+
+<h3>References</h3>
+
+<p>Bernhardt PW, Zhang D and Wang HJ. A fast EM Algorithm for Fitting Joint Models of a Binary 
+Response to Multiple Longitudinal Covariates Subject to Detection Limits. 
+<em>Computational Statistics and Data Analysis</em> 2015; <strong>85</strong>; 37–53
+</p>
+<p>Hickey GL, Philipson P, Jorgensen A, Kolamunnage-Dona R. <code>joineRML</code>: a joint model and
+software package for time-to-event and multivariate longitudinal outcomes.
+<em>BMC Med. Res. Methodol.</em> 2018; <strong>50</strong>
+</p>
+<p>McLachlan GJ, Krishnan T. <em>The EM Algorithm and Extensions.</em> Second Edition. 
+Wiley-Interscience; 2008.
+</p>
+<p>Murray, J and Philipson P. A fast approximate EM algorithm for joint models of survival and
+multivariate longitudinal data.<em>Computational Statistics and Data Analysis</em> 2022; 
+<strong>170</strong>; 107438
+</p>
+<p>Zamani H and Ismail N. Functional Form for the Generalized Poisson Regression Model, 
+<em>Communications in Statistics - Theory and Methods</em> 2012; <strong>41(20)</strong>; 3666-3675.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>summary.joint</code>, <code>logLik.joint</code>, <code>boot.joint</code>,
+<code>extractAIC.joint</code>, <code>fixef.joint</code>, <code>ranef.joint</code>,
+<code>vcov.joint</code>, <code>joint.object</code> and <code>xtable.joint</code>. For
+data simulation see <code>simData</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# 1) Fit on simulated bivariate data, (1x gaussian, 1x poisson) --------
+beta &lt;- do.call(rbind, replicate(2, c(2, -0.1, 0.1, -0.2), simplify = FALSE))
+gamma &lt;- c(0.3, -0.3)
+D &lt;- diag(c(0.25, 0.09, 0.25, 0.05))
+family &lt;- list('gaussian', 'poisson')
+data &lt;- simData(ntms = 10, beta = beta, D = D, n = 100,
+                family = family, zeta = c(0, -0.2),
+                sigma = list(0.16, 0), gamma = gamma)$data
+
+# Specify formulae and target families
+long.formulas &lt;- list(
+  Y.1 ~ time + cont + bin + (1 + time|id),  # Gaussian
+  Y.2 ~ time + cont + bin + (1 + time|id)   # Poisson
+)
+surv.formula &lt;- Surv(survtime, status) ~ bin
+
+fit &lt;- joint(long.formulas, surv.formula, data, family)
+
+
+# 2) Fit on PBC data -----------------------------------------------------
+data(PBC)
+# Subset data and remove NAs
+PBC &lt;- subset(PBC, select = c('id', 'survtime', 'status', 'drug', 'time',
+                              'serBilir', 'albumin', 'spiders', 'platelets'))
+PBC &lt;- na.omit(PBC) 
+
+# Specify GLMM sub-models, including interaction and quadratic time terms
+long.formulas &lt;- list(
+  log(serBilir) ~ drug * (time + I(time^2)) + (1 + time + I(time^2)|id),
+  albumin ~ drug * time + (1 + time|id),
+  platelets ~ drug * time + (1 + time|id),
+  spiders ~ drug * time + (1|id)
+)
+surv.formula &lt;- Surv(survtime, status) ~ drug
+
+fit &lt;-  joint(long.formulas, surv.formula, PBC, 
+              family = list("gaussian", "gaussian", "poisson", "binomial"),
+              control = list(verbose = TRUE))
+fit
+
+
+# 3) Fit with dispersion models ----------------------------------------
+beta &lt;- do.call(rbind, replicate(2, c(2, -0.1, 0.1, -0.2), simplify = FALSE))
+gamma &lt;- c(0.3, -0.3)
+D &lt;- diag(c(0.25, 0.09, 0.25, 0.05))
+family &lt;- list('negbin', 'poisson')   # As an example; only requires one dispersion model.
+sigma &lt;- list(c(1, 0.2), 0)           # Need to specify the model in simData call too.
+disp.formulas = list(~time, ~1)       # Even though poisson doesn't model dispersion, need to
+                                      # populate this element in disp.formulas!
+# Simulate some data
+data &lt;- simData(ntms = 10, beta = beta, D = D, n = 500,
+                family = family, zeta = c(0, -0.2), sigma = sigma,
+                disp.formulas = disp.formulas, gamma = gamma)$data
+
+# Now fit using joint
+long.formulas &lt;- list(
+  Y.1 ~ time + cont + bin + (1+time|id),
+  Y.2 ~ time + cont + bin + (1+time|id)
+)
+fit &lt;- joint(
+  long.formulas, Surv(survtime, status) ~ bin,
+  data, family, disp.formulas = disp.formulas
+)
+fit
+summary(fit)
+
+</code></pre>
+
+
+</div>

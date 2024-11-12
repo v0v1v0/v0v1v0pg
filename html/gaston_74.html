@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>score.variance.linear/score.variance.logistic</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Variance Component Test in Linear or Logistic Mixed Model</h2>
+
+<h3>Description</h3>
+
+<p> Test if a variance component is significaly different from 0 using score test in a Linear or Logistic Mixed Model. </p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R"> 
+score.variance.linear(K0, Y, X = matrix(1, length(Y)), K, acc_davies=1e-10, ...)
+score.variance.logistic(K0, Y, X = matrix(1, length(Y)), K, acc_davies=1e-10, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>K0</code></td>
+<td>
+<p> A positive definite matrix </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p> The phenotype vector </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p> A covariate matrix. The default is a column vector of ones, to include an intercept in the model </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p> A positive definite matrix or a <code>list</code> of such matrices </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>acc_davies</code></td>
+<td>
+<p> Accuracy in Davies method used to compute p-value </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> Optional arguments used to fit null model with <code>lmm.aireml</code> of <code>logistic.mm.aireml</code> function. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In <code>score.variance.linear</code>, we consider the linear mixed model
+</p>
+<p style="text-align: center;"><code class="reqn"> Y = X\alpha + \gamma + \omega_1 + \ldots + \omega_k + \varepsilon </code>
+</p>
+
+<p>or, in <code>score.variance.logistic</code>, we consider the following logistic model
+</p>
+<p style="text-align: center;"><code class="reqn"> \mbox{logit}(P[Y=1|X,x,\omega_1,\ldots,\omega_k]) = X\alpha + \gamma + \omega_1 + \ldots + \omega_k</code>
+</p>
+
+<p>with <code class="reqn"> \gamma\sim N(0,\kappa K_0)\gamma</code>, <code class="reqn"> \omega_j \sim N(0,\tau_j K_j) </code>,
+<code class="reqn"> \varepsilon \sim N(0,\sigma^2 I_n) </code>.
+<code class="reqn">K_0</code> and <code class="reqn">K_j</code> are Genetic Relationship Matrix (GRM).  
+</p>
+<p><code>score.variance.linear </code> and <code>score.variance.logistic</code> functions permit to test
+</p>
+<p style="text-align: center;"><code class="reqn">H_0 : \kappa=0 \mbox{ vs } H_1 : \kappa&gt;0</code>
+</p>
+
+<p>with, for linear mixed model, the score
+</p>
+<p style="text-align: center;"><code class="reqn"> Q = Y'P_OK_0P_0Y/2 </code>
+</p>
+
+<p>or, for logistic mixed model, the score
+</p>
+<p style="text-align: center;"><code class="reqn"> Q = (Y-\pi_0)'K_0(Y-\pi_0)/2 </code>
+</p>
+
+<p>where <code class="reqn">P_0</code> is the last matrix <code class="reqn">P</code> computed in the optimization process for null model and <code class="reqn">\pi_0</code> the vector of fitted values under null logistic model.
+</p>
+<p>The associated p-value is computed with Davies method.
+</p>
+<p>In this aim, all parameters under null model are estimated with <code>lmm.aireml</code> or <code>logistic.mm.aireml</code>.
+The p-value corresponding to the estimated score is computed using Davies method implemented in 'CompQuadForm' R package.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A named list of values:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>score</code></td>
+<td>
+<p> Estimated score </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p> The corresponding p-value </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p> Hervé Perdry and Claire Dandine-Roulland </p>
+
+
+<h3>References</h3>
+
+<p>Davies R.B. (1980) <em>Algorithm AS 155: The Distribution of a Linear Combination of chi-2 Random Variables</em>,
+Journal of the Royal Statistical Society. Series C (Applied Statistics), <b>323-333</b></p>
+
+
+<h3>See Also</h3>
+
+ <p><code>lmm.aireml</code>, <code>logistic.mm.aireml</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Load data
+data(AGT)
+x &lt;- as.bed.matrix(AGT.gen, AGT.fam, AGT.bim)
+standardize(x) &lt;- "p"
+
+# Calculate GRM et its eigen decomposition
+K0 &lt;- GRM(x)
+eig &lt;- eigen(K0)
+eig$values &lt;- round(eig$values, 5)
+
+# generate an other positive matrix (to play the role of the second GRM)
+set.seed(1)
+R &lt;- random.pm(nrow(x))
+
+
+# simulate quantitative phenotype with two polygenic components
+y &lt;- lmm.simu(0.1,1,eigenK=eig)$y + lmm.simu(0.2,0,eigenK=R$eigen)$y
+
+t &lt;- score.variance.linear(K0, y, K=R$K, verbose=FALSE)
+str(t)
+
+
+# simulate binary phenotype with two polygenic components
+mu &lt;- lmm.simu(0.1,0.5,eigenK=eig)$y + lmm.simu(0.2,0,eigenK=R$eigen)$y
+pi &lt;- 1/(1+exp(-mu))
+y &lt;- 1*(runif(length(pi))&lt;pi)
+
+tt &lt;- score.variance.logistic(K0, y, K=R$K, verbose=FALSE)
+str(tt)
+</code></pre>
+
+
+</div>

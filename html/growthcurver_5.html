@@ -1,0 +1,135 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>SummarizeGrowth</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Summarize Growth Curves</h2>
+
+<h3>Description</h3>
+
+<p>This function finds the parameters that describe the input data's growth.
+It does so by fitting the logistic curve to your growth curve measurements.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">SummarizeGrowth(data_t, data_n, t_trim = 0, bg_correct = "min", blank = NA)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data_t</code></td>
+<td>
+<p>A vector of timepoints (data_n must also
+be provided and be the same length).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data_n</code></td>
+<td>
+<p>A vector of cell counts or absorbance readings.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t_trim</code></td>
+<td>
+<p>Measurements taken after this time should not be included
+in fitting the curve. If stationary phase is variable,
+this may give you a better fit. A value of 0 means no
+trimming. Defaults to no trimming (0).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bg_correct</code></td>
+<td>
+<p>The background correction method to use. No background
+correction is performed for the default "none". Specifying
+"min" subtracts the smallest value in a column from all the
+rows in that column, and specifying "blank" subtracts
+the values from the blank vector from the data_n vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>blank</code></td>
+<td>
+<p>A vector of absorbance readings from a blank well
+(typically contains only media) used for background
+correction. The corresponding blank value is subtracted
+from the data_n vector for each timepoint. Defaults to NA.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The logistic curve equation is
+</p>
+<p style="text-align: center;"><code class="reqn">N_t = \frac{N_0 K} {N_0 + (K-N_0)e^{-rt}}</code>
+</p>
+
+<p>where <code class="reqn">N_t</code> is the number
+of cells (or the absorbance reading) at time t, <code class="reqn">N_0</code> is the initial
+cell count (or absorbance reading), K is the carrying capacity, and r is the
+growth rate.
+</p>
+<p>The fitness proxies returned are the parameters of the logistic equation
+and the area under the curve (a measure that integrates the effects
+of <code class="reqn">N_0</code>, K, and r). See <code>gcfit</code> for more documentation on these.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of type gcfit containing the "fitness" proxies,
+as well as the input data and the fitted model.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>See the accompanying Vignette for an example of how to use and interpret
+SummarizeGrowth. <a href="https://CRAN.R-project.org/package=growthcurver/vignettes/Growthcurver-vignette.html">https://CRAN.R-project.org/package=growthcurver/vignettes/Growthcurver-vignette.html</a>.
+</p>
+<p>See also <code>gcfit</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># We can check that the parameters that are found are the same
+# as we use to generate fake experimental data. To do so, let's first
+# generate the "experimental" data using the logistic equation,
+# e.g., absorbance readings from a single well in a plate reader over time.
+
+k_in &lt;- 0.5   # the initial carrying capacity
+n0_in &lt;- 1e-5 # the initial absorbance reading
+r_in &lt;- 1.2   # the initial growth rate
+N &lt;- 50       # the number of "measurements" collected during the growth
+              # curve experiment
+
+data_t &lt;- 0:N * 24 / N   # the times the measurements were made (in hours)
+data_n &lt;- NAtT(k = k_in, n0 = n0_in, r = r_in, t = data_t) # the measurements
+
+# Now summarize the "experimental" growth data that we just generated
+gc &lt;- SummarizeGrowth(data_t, data_n)
+
+# Get the possible metrics for fitness proxies
+gc$vals$r           # growth rate is a common choice for fitness
+gc$vals$t_gen       # doubling time, or generation time, is also common
+gc$vals$k
+gc$vals$n0
+gc$vals$auc_l
+gc$vals$auc_e
+gc$vals$t_mid
+
+# Compare the data with the fit visually by plotting it
+plot(gc)
+
+</code></pre>
+
+
+</div>

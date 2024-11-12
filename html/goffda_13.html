@@ -1,0 +1,207 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fpc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Computation of functional principal components</h2>
+
+<h3>Description</h3>
+
+<p>Computation of Functional Principal Components (FPC) for
+equispaced and non equispaced functional data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fpc(X_fdata, n_fpc = 3, centered = FALSE, int_rule = "trapezoid",
+  equispaced = FALSE, verbose = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X_fdata</code></td>
+<td>
+<p>sample of functional data as an
+<code>fdata</code> object of length <code>n</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_fpc</code></td>
+<td>
+<p>number of FPC to be computed. If <code>n_fpc &gt; n</code>, <code>n_fpc</code>
+is set to <code>n</code>. Defaults to <code>3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centered</code></td>
+<td>
+<p>flag to indicate if <code>X_fdata</code> is centered or not.
+Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>int_rule</code></td>
+<td>
+<p>quadrature rule for approximating the definite
+unidimensional integral: trapezoidal rule (<code>int_rule = "trapezoid"</code>)
+and extended Simpson rule (<code>int_rule = "Simpson"</code>) are available.
+Defaults to <code>"trapezoid"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>equispaced</code></td>
+<td>
+<p>flag to indicate if <code>X_fdata$data</code> is valued in
+an equispaced grid or not. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>whether to show or not information about the <code>fpc</code>
+procedure. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The FPC are obtained by performing the single value decomposition
+</p>
+<p style="text-align: center;"><code class="reqn">\mathbf{X} \mathbf{W}^{1/2} =
+\mathbf{U} \mathbf{D} (\mathbf{V}' \mathbf{W}^{1/2})</code>
+</p>
+
+<p>where <code class="reqn">\mathbf{X}</code> is the matrix of discretized functional data,
+<code class="reqn">\mathbf{W}</code> is a diagonal matrix of weights (computed by
+<code>w_integral1D</code> according to <code>int_rule</code>), <code class="reqn">\mathbf{D}</code>
+is the diagonal matrix with singular values (standard deviations of FPC),
+<code class="reqn">\mathbf{U}</code> is a matrix whose columns contain the left singular
+vectors, and <code class="reqn">\mathbf{V}</code> is a matrix whose columns contain the
+right singular vectors (FPC).
+</p>
+
+
+<h3>Value</h3>
+
+<p>An <code>"fpc"</code> object containing the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>standard deviations of the FPC (i.e., square roots of
+eigenvalues of the empirical autocovariance estimator).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rotation</code></td>
+<td>
+<p>orthonormal eigenfunctions (loadings or functional
+principal components), as an <code>fdata</code> class object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scores</code></td>
+<td>
+<p>rotated samples: inner products.
+between <code>X_fdata</code> and eigenfunctions in<br><code>rotation</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>l</code></td>
+<td>
+<p>vector of index of FPC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>equispaced</code></td>
+<td>
+<p><code>equispaced</code> flag.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Javier Álvarez-Liébana and Gonzalo Álvarez-Pérez.
+</p>
+
+
+<h3>References</h3>
+
+<p>Jolliffe, I. T. (2002). Principal Component Analysis. Springer-Verlag,
+New York.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Computing FPC for equispaced data
+
+# Sample data
+X_fdata1 &lt;- r_ou(n = 200, t = seq(2, 4, l = 201))
+
+# FPC with trapezoid rule
+X_fpc1 &lt;- fpc(X_fdata = X_fdata1, n_fpc = 50, equispaced = TRUE,
+              int_rule = "trapezoid")
+
+# FPC with Simpsons's rule
+X_fpc2 &lt;- fpc(X_fdata = X_fdata1, n_fpc = 50, equispaced = TRUE,
+               int_rule = "Simpson")
+
+# Check if FPC are orthonormal
+norms1 &lt;- rep(0, length(X_fpc1$l))
+for (i in X_fpc1$l) {
+
+  norms1[i] &lt;- integral1D(fx = X_fpc1$rotation$data[i, ]^2,
+                          t = X_fdata1$argvals)
+
+}
+norms2 &lt;- rep(0, length(X_fpc2$l))
+for (i in X_fpc2$l) {
+
+  norms2[i] &lt;- integral1D(fx = X_fpc2$rotation$data[i, ]^2,
+                          t = X_fdata1$argvals)
+
+}
+
+## Computing FPC for non equispaced data
+
+# Sample data
+X_fdata2 &lt;- r_ou(n = 200, t = c(seq(0, 0.5, l = 201), seq(0.51, 1, l = 301)))
+
+# FPC with trapezoid rule
+X_fpc3 &lt;- fpc(X_fdata = X_fdata2, n_fpc = 5, int_rule = "trapezoid",
+              equispaced = FALSE)
+
+# Check if FPC are orthonormal
+norms3 &lt;- rep(0, length(X_fpc3$l))
+for (i in X_fpc3$l) {
+
+  norms3[i] &lt;- integral1D(fx = X_fpc3$rotation$data[i, ]^2,
+                          t = X_fdata2$argvals)
+
+}
+
+## Efficiency comparisons
+
+# fpc() vs. fda.usc::fdata2pc()
+data(phoneme, package = "fda.usc")
+mlearn &lt;- phoneme$learn[1:10, ]
+res1 &lt;- fda.usc::fdata2pc(mlearn, ncomp = 3)
+res2 &lt;- fpc(X_fdata = mlearn, n_fpc = 3)
+plot(res1$x[, 1:3], col = 1)
+points(res2$scores, col = 2)
+
+microbenchmark::microbenchmark(fda.usc::fdata2pc(mlearn, ncomp = 3),
+                               fpc(X_fdata = mlearn, n_fpc = 3), times = 1e3,
+                               control = list(warmup = 20))
+
+</code></pre>
+
+
+</div>

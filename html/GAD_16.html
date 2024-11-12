@@ -1,0 +1,120 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>snk.test</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Student-Newman-Keuls (SNK) procedure</h2>
+
+<h3>Description</h3>
+
+<p>This function performs a SNK post-hoc test of means on the factors of a chosen term of the model, comparing among levels of one factor within each level of other factor or combination of factors.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">snk.test(object, term = NULL, among = NULL, within = NULL, anova.tab = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>an object of class "<code>lm</code>" containing the specified design.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>term</code></td>
+<td>
+<p>term of the model to be analysed. Argument <code>term</code> can be a main effect, an interaction or a nested factor, which must be specified using "quotes". Use <code>estimates</code> to see the right form to inform it. See examples below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>among</code></td>
+<td>
+<p>specifies the factor which levels will be compared among. Need to be specified if the term to be analysed envolves more than one factor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>within</code></td>
+<td>
+<p>specifies the factor or combination of factors that will be compared within level among.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>anova.tab</code></td>
+<td>
+<p>an object containing the results returned by <code>gad</code> or <code>pooling</code> functions. See examples below.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>SNK is a stepwise procedure for hypothesis testing. First the sample means are sorted, then the pairwise studentized range (q) is calculated by dividing the differences between means by the standard error, which is based upon the average variance of the two samples.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list containing the standard error, the degrees of freedom and pairwise comparisons among levels of one factor within each level of other(s) factor(s).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Maurício Camargo (<a href="mailto:mauricio.camargo@furg.br">mauricio.camargo@furg.br</a>)
+</p>
+<p>Eliandro Gilbert (<a href="mailto:eliandrogilbert@gmail.com">eliandrogilbert@gmail.com</a>)
+</p>
+<p>Leonardo Sandrini-Neto (<a href="mailto:leonardosandrini@ufpr.br">leonardosandrini@ufpr.br</a>)
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gad</code>, <code>estimates</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(GAD)
+
+# Example 1
+data(rohlf95)
+CG &lt;- as.fixed(rohlf95$cages)     # a fixed factor
+MQ &lt;- as.random(rohlf95$mosquito) # a random factor nested in cages
+
+model &lt;- lm(wing ~ CG + CG%in%MQ, data = rohlf95)
+model.tab &lt;- gad(model) # storing ANOVA table in an object
+model.tab               # checking ANOVA results
+estimates(model)        # checking model structure
+
+# Comparison among levels of mosquito ("MQ") within each level of cage ("CG")
+snk.test(model, term = "CG:MQ", among = "CG", within = "MQ", anova.tab = model.tab)
+
+# Example 2
+data(snails)
+O &lt;- as.random(snails$origin)   # a random factor
+S &lt;- as.random(snails$shore)    # a random factor orthogonal to origin
+B &lt;- as.random(snails$boulder)  # a random factor nested in shore
+C &lt;- as.random(snails$cage)     # a random factor nested in the combination of boulder and origin
+model2 &lt;- lm(growth ~ O + S + O*S + B%in%S + O*(B%in%S) + C%in%(O*(B%in%S)), data = snails)
+model2.tab &lt;- gad(model2, quasi.f = FALSE) # storing ANOVA table in an object
+model2.tab                                 # checking ANOVA results
+estimates(model2, quasi.f = FALSE)         # checking model structure
+
+# Comparison among levels of "origin"
+snk.test(model2, term = "O", anova.tab = model2.tab)
+# Comparison among levels of "shore" within each level of "origin"
+snk.test(model2, term = "O:S", among = "S", within = "O", anova.tab = model2.tab)
+# If term "O:S:B" were significant, we could try
+snk.test(model2, term = "O:S:B", among = "B", within = "O:S", anova.tab = model2.tab)
+</code></pre>
+
+
+</div>

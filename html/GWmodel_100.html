@@ -1,0 +1,259 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gwr.robust</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Robust GWR model</h2>
+
+<h3>Description</h3>
+
+<p>This function implements two robust GWR models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gwr.robust(formula, data, bw,filtered=FALSE, kernel = "bisquare", adaptive = FALSE, p = 2, 
+          theta = 0, longlat = F, dMat, F123.test = F, maxiter=20,cut.filter= 3,cut1=2,
+          cut2=3,delta=1.0e-5, parallel.method = FALSE, parallel.arg = NULL)  </code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Regression model formula of a formula object </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a Spatial*DataFrame, i.e. SpatialPointsDataFrame or SpatialPolygonsDataFrame as defined in package <span class="pkg">sp</span></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bw</code></td>
+<td>
+<p>bandwidth used in the weighting function, possibly calculated by bw.gwr;fixed (distance) or adaptive bandwidth(number of nearest neighbours)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filtered</code></td>
+<td>
+<p>default FALSE, the automatic approach is used, if TRUE the filtered data approach is employed, as that described in Fotheringham et al. (2002 p.73-80)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kernel</code></td>
+<td>
+<p>function chosen as follows:
+</p>
+<p>gaussian: wgt = exp(-.5*(vdist/bw)^2);
+</p>
+<p>exponential: wgt = exp(-vdist/bw);
+</p>
+<p>bisquare: wgt = (1-(vdist/bw)^2)^2 if vdist &lt; bw, wgt=0 otherwise;
+</p>
+<p>tricube: wgt = (1-(vdist/bw)^3)^3 if vdist &lt; bw, wgt=0 otherwise; 
+</p>
+<p>boxcar: wgt=1 if dist &lt; bw, wgt=0 otherwise</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adaptive</code></td>
+<td>
+<p>if TRUE calculate an adaptive kernel where the bandwidth (bw) corresponds to the number of nearest neighbours (i.e. adaptive distance); default is FALSE, where a fixed kernel is found (bandwidth is a fixed distance)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>the power of the Minkowski distance, default is 2, i.e. the Euclidean distance</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>an angle in radians to rotate the coordinate system, default is 0</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>longlat</code></td>
+<td>
+<p>if TRUE, great circle distances will be calculated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dMat</code></td>
+<td>
+<p>a pre-specified distance matrix, it can be calculated by the function <code>gw.dist</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>F123.test</code></td>
+<td>
+<p>default FALSE, otherwise calculate F-test results (Leung et al. 2000)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiter</code></td>
+<td>
+<p>default 20, maximum number of iterations for the automatic approach</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cut.filter</code></td>
+<td>
+<p>If filtered is TRUE, it will be used as the residual cutoff for filtering data; default cutoff is 3</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cut1</code></td>
+<td>
+<p>default 2, first cutoff for the residual weighting function. wr(e)=1 if |e|&lt;=cut1*sigma</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cut2</code></td>
+<td>
+<p>default 3, second cutoff for the residual weighting function. wr(e)=(1-(|e|-2)^2)^2 if cut1*sigma&lt;|e|&lt;cut2*sigma, and wr(e)=0 if |e|&gt;=cut2*sigma; cut 1 and cut2 refer to the automatic approach</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>default 1.0e-5, tolerance of the iterative algorithm</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel.method</code></td>
+<td>
+<p> FALSE as default, and the calibration will be conducted traditionally via the serial technique, 
+"omp": multi-thread technique with the OpenMP API, 
+"cluster": multi-process technique with the <span class="pkg">parallel</span> package,
+"cuda": parallel computing technique with CUDA</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel.arg</code></td>
+<td>
+<p> if parallel.method is not FALSE, then set the argument by following:
+if parallel.method is "omp", parallel.arg refers to the number of threads used, and its default value is 
+the number of cores - 1;
+if parallel.method is "cluster", parallel.arg refers to the number of R sessions used, and its default value is 
+the number of cores - 1;
+if parallel.method is "cuda",  parallel.arg refers to the number of calibrations  included in each group, 
+but note a too large value may cause the overflow of GPU memory. </p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list of class “gwrm”:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>GW.arguments</code></td>
+<td>
+<p>a list class object including the model fitting parameters for generating the report file</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GW.diagnostic</code></td>
+<td>
+<p>a list class object including the diagnostic information of the model fitting</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lm</code></td>
+<td>
+<p>an object of class inheriting from “lm”, see lm. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SDF</code></td>
+<td>
+<p>a SpatialPointsDataFrame (may be gridded), or 
+SpatialPolygonsDataFrame object (see package “sp”), or sf object  (see package “sf”) 
+integrated with fit.points,GWR coefficient estimates, y value,predicted values, coefficient standard errors and t-values in its "data" slot. 
+Notably, E_weigts will be also included in the output SDF which represents the residual weighting when automatic approach is used; 
+When the filtered approach is used, E_weight is a vector consisted of 0 and 1, where 0 means outlier to be excluded from calibration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timings</code></td>
+<td>
+<p>starting and ending time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>this.call</code></td>
+<td>
+<p>the function call used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ftest.res</code></td>
+<td>
+<p>results of Leung's F tests when F123.test is TRUE.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Binbin Lu <a href="mailto:binbinlu@whu.edu.cn">binbinlu@whu.edu.cn</a></p>
+
+
+<h3>References</h3>
+
+<p>Fotheringham S, Brunsdon, C, and Charlton, M (2002),
+Geographically Weighted Regression: The Analysis of Spatially Varying Relationships, Chichester: Wiley.
+</p>
+<p>Harris P, Fotheringham AS, Juggins S (2010) Robust geographically weighed regression: a technique for quantifying spatial relationships between freshwater acidification critical loads and catchment attributes. Annals of the Association of American Geographers 100(2): 286-306
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+data(DubVoter)
+bw.a &lt;- bw.gwr(GenEl2004~DiffAdd+LARent+SC1+Unempl+LowEduc+Age18_24
++Age25_44+Age45_64,
+data=Dub.voter,approach="AICc",kernel="bisquare",adaptive=TRUE)
+bw.a
+gwr.res &lt;- gwr.basic(GenEl2004~DiffAdd+LARent+SC1+Unempl+LowEduc+Age18_24
++Age25_44+Age45_64,
+data=Dub.voter,bw=bw.a,kernel="bisquare",adaptive=TRUE,F123.test=TRUE)
+print(gwr.res)
+
+# Map of the estimated coefficients for LowEduc
+names(gwr.res$SDF)
+if(require("RColorBrewer"))
+{
+  mypalette&lt;-brewer.pal(6,"Spectral")
+  X11(width=10,height=12)
+  spplot(gwr.res$SDF,"LowEduc",key.space = "right",
+  col.regions=mypalette,at=c(-8,-6,-4,-2,0,2,4),
+  main="Basic GW regression coefficient estimates for LowEduc")
+}
+# Robust GW regression and map of the estimated coefficients for LowEduc
+rgwr.res &lt;- gwr.robust(GenEl2004~DiffAdd+LARent+SC1+Unempl+LowEduc+Age18_24
++Age25_44+Age45_64, data=Dub.voter,bw=bw.a,kernel="bisquare",
+adaptive=TRUE,F123.test=TRUE)
+print(rgwr.res)
+if(require("RColorBrewer"))
+{
+  X11(width=10,height=12)
+  spplot(rgwr.res$SDF, "LowEduc", key.space = "right",
+  col.regions=mypalette,at=c(-8,-6,-4,-2,0,2,4),
+  main="Robust GW regression coefficient estimates for LowEduc")
+}
+
+## End(Not run)
+</code></pre>
+
+
+</div>

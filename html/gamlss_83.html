@@ -1,0 +1,279 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fitDist</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fitting Different Parametric <code>gamlss.family</code> Distributions.
+</h2>
+
+<h3>Description</h3>
+
+<p>The function <code>fitDist()</code> is using the function <code>gamlssML()</code> to fit all relevant parametric <code>gamlss.family</code> distributions, specified by the argument <code>type</code>), to a single data vector (with no explanatory variables).  The final marginal distribution  is the one selected by the generalised Akaike information criterion with penalty <code>k</code>. The default is  <code>k=2</code> i.e AIC.
+</p>
+<p>The function <code>fitDistPred()</code> is using the function <code>gamlssMLpred()</code> to fit all relevant (marginal) parametric <code>gamlss.family</code> distributions to a single data vector (similar to <code>fitDist()</code>)  but the final model is selected by the minimum prediction global deviance. The user has to specify the training  and validation/test samples.
+</p>
+<p>The function <code>chooseDist()</code> is using the function <code>update.gamlss()</code> to fit all relevant parametric (conditional)  <code>gamlss.family</code> distributions to a given fitted <code>gamlss</code> model.  The output of the function is a matrix with  rows the different distributions (from the argument <code>type</code>) and columns the different GAIC's (). The default argument for <code>k</code> are 2, for AIC, 3.84, for Chi square, and log(n) for BIC.  No final model is given by the function  like for example  in <code>fitDist()</code>.   The function <code>getOrder()</code> can be used to rank the columns of the resulting table (matrix).
+The final model can be refitted using <code>update()</code>, see the examples.  
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fitDist(y, k = 2, 
+    type = c("realAll", "realline", "realplus", "real0to1", "counts", "binom"), 
+    try.gamlss = FALSE, extra = NULL, data = NULL,trace = FALSE, ...)
+
+fitDistPred(y, 
+    type = c("realAll", "realline", "realplus", "real0to1", "counts", "binom"), 
+    try.gamlss = FALSE, extra = NULL, data = NULL, rand = NULL,
+    newdata = NULL, trace = FALSE, ...)    
+      
+chooseDist(object, k = c(2, 3.84, round(log(length(object$y)), 2)), type = 
+    c("realAll", "realline", "realplus", "real0to1", "counts", "binom","extra"), 
+    extra = NULL, trace = FALSE, 
+    parallel = c("no", "multicore", "snow"), ncpus = 1L, cl = NULL, ...)
+
+chooseDistPred(object, type = c("realAll", "realline", "realplus", 
+     "real0to1", "counts", "binom", "extra"), extra = NULL, 
+     trace = FALSE, parallel = c("no", "multicore", "snow"), 
+     ncpus = 1L, cl = NULL, newdata = NULL, rand = NULL, ...)
+      
+getOrder(obj, column = 1)      
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>the data vector</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object, obj</code></td>
+<td>
+<p>a GAMLSS fitted model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>the penalty for the GAIC with default values <code>k=2</code> the standard AIC.  In the case of the function <code>chooseDist()</code> <code>k</code> can be a vector i.e. <code>k= c(2, 4, 6)</code> so more than one GAIC are saved.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>the type of distribution to be tried see details</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>try.gamlss</code></td>
+<td>
+<p>this applies to functions <code>fitDist()</code> and <code>fitDistPred()</code>.  It allows if  <code>gamlssML()</code> fail to fit the model to try <code>gamlss</code> instead. This will slow up things for big data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extra</code></td>
+<td>
+<p>whether extra distributions should be tried, which are not in the <code>type</code> list. Note that the function <code>chooseDist()</code> allows the fitting of only the ‘extra’ distributions. This can be achieved if <code>extra</code> is set i.e. <code>extra=c("GA", "IG", "GG")</code> and type is set to extra i.e. <code>type="extra"</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>the data frame where <code>y</code> can be found, only for functions <code>fitDist()</code> and <code>fitDistPred()</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rand</code></td>
+<td>
+<p>For <code>fitDistPred()</code> a factor with values 1 (for fitting) and 2 (for predicting).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>The prediction data  set (validation or test).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>whether to print during fitting. Note that when <code>parallel</code>  is 'multocore' or "snow" <code>"trace"</code> is not  produce any output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>The type of parallel operation to be used (if any). If missing, the default is "no".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncpus</code></td>
+<td>
+<p>integer: number of processes to be used in parallel operation: typically     one would chose this to the number of available CPUs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl</code></td>
+<td>
+<p>This is useful for snow clusters, i.e. <code>parallel = "snow"</code>, when the clusters are created in advance. If not supplied, a cluster on the local machine is created for the duration of the call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>column</code></td>
+<td>
+<p>which column of the output matrix to be ordered according to best GAIC</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>for extra arguments to be passed to gamlssML() to gamlss()</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The following are the different <code>type</code> argument:
+</p>
+
+<ul>
+<li>
+<p>realAll: All the <code>gamlss.family</code> continuous distributions defined on the real line, i.e. <code>realline</code> and the real positive line i.e. <code>realplus</code>.
+</p>
+</li>
+<li>
+<p>realline: The <code>gamlss.family</code> continuous distributions : "NO", "GU", "RG" ,"LO", "NET", "TF", "TF2", "PE","PE2", "SN1", "SN2", "exGAUS", "SHASH", "SHASHo","SHASHo2", "EGB2", "JSU", "JSUo", "SEP1", "SEP2", "SEP3", "SEP4",  "ST1", "ST2", "ST3", "ST4", "ST5", "SST", "GT".
+</p>
+</li>
+<li>
+<p>realplus: The <code>gamlss.family</code> continuous distributions in the positive real line: "EXP", "GA","IG","LOGNO", "LOGNO2","WEI", "WEI2", "WEI3", "IGAMMA","PARETO2", "PARETO2o", "GP", "BCCG", "BCCGo", "exGAUS", "GG", "GIG", "LNO","BCTo", "BCT", "BCPEo", "BCPE", "GB2".
+</p>
+</li>
+<li>
+<p>real0to1: The <code>gamlss.family</code> continuous distributions from 0 to 1: "BE", "BEo", "BEINF0", "BEINF1", "BEOI", "BEZI", "BEINF", "GB1".
+</p>
+</li>
+<li>
+<p>counts: The <code>gamlss.family</code> distributions for counts: "PO", "GEOM", "GEOMo","LG", "YULE", "ZIPF", "WARING", "GPO", "DPO", "BNB", "NBF","NBI", "NBII", "PIG", "ZIP","ZIP2", "ZAP", "ZALG", "DEL", "ZAZIPF", "SI", "SICHEL","ZANBI",  "ZAPIG", "ZINBI",  "ZIPIG", "ZINBF", "ZABNB", "ZASICHEL", "ZINBF",  "ZIBNB", 
+"ZISICHEL".
+</p>
+</li>
+<li>
+<p>binom: The <code>gamlss.family</code> distributions for binomial type data :"BI", "BB", "DB", "ZIBI", "ZIBB", "ZABI", "ZABB".
+</p>
+<p>The function <code>fitDist()</code> uses the function <code>gamlssML()</code> to fit the different models, the function  <code>fitDistPred()</code> uses  <code>gamlssMLpred()</code> and the function <code>chooseDist()</code> used <code>update.gamlss()</code>.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>For the functions <code>fitDist()</code> and <code>fitDistPred()</code> a <code>gamlssML</code> object is return (the one which minimised the GAIC or VDEV respectively) with two extra components: 
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>fits </code></td>
+<td>
+<p>an ordered list according to the GAIC of the fitted distribution</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>failed</code></td>
+<td>
+<p>the distributions where the <code>gamlssML)()</code> (or <code>gamlss()</code>) fits have failed</p>
+</td>
+</tr>
+</table>
+<p>For the function <code>chooseDist()</code> a matrix is returned,   with rows the different distributions and columns the different GAIC's  set by <code>k</code>.   
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Mikis Stasinopoulos, Bob Rigby, Vlasis Voudouris  and Majid Djennad.
+</p>
+
+
+<h3>References</h3>
+
+<p>Rigby, R. A. and  Stasinopoulos D. M. (2005). Generalized additive models for location, scale and shape,(with discussion), 
+<em>Appl. Statist.</em>, <b>54</b>, part 3, pp 507-554.
+</p>
+<p>Rigby, R. A., Stasinopoulos, D. M.,  Heller, G. Z.,  and De Bastiani, F. (2019)
+<em>Distributions for modeling location, scale, and shape: Using GAMLSS in R</em>, Chapman and Hall/CRC. An older version can be found in <a href="https://www.gamlss.com/">https://www.gamlss.com/</a>.
+</p>
+<p>Stasinopoulos D. M. Rigby R.A. (2007) Generalized additive models for location scale and shape (GAMLSS) in R.
+<em>Journal of Statistical Software</em>, Vol. <b>23</b>, Issue 7, Dec 2007, <a href="https://www.jstatsoft.org/v23/i07/">https://www.jstatsoft.org/v23/i07/</a>.
+</p>
+<p>Stasinopoulos D. M., Rigby R.A., Heller G., Voudouris V., and De Bastiani F., (2017)
+<em>Flexible Regression and Smoothing: Using GAMLSS in R</em>,  Chapman and Hall/CRC.  
+</p>
+<p>(see also <a href="https://www.gamlss.com/">https://www.gamlss.com/</a>).
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gamlss</code>, <code>gamlssML</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">y &lt;- rt(100, df=1)
+m1&lt;-fitDist(y, type="realline")
+m1$fits
+m1$failed
+# an example of using  extra
+## Not run: 
+#---------------------------------------  
+# Example of using the argument extra  
+library(gamlss.tr)
+data(tensile)
+gen.trun(par=1,family="GA", type="right")
+gen.trun(par=1,"LOGNO", type="right")
+gen.trun(par=c(0,1),"TF", type="both")
+ma&lt;-fitDist(str, type="real0to1", trace=T,
+       extra=c("GAtr", "LOGNOtr", "TFtr"), 
+     data=tensile) 
+ma$fits
+ma$failed
+#-------------------------------------
+# selecting model using the prediction global deviance
+# Using fitDistPred
+# creating training data
+y &lt;- rt(1000, df=2)
+m1 &lt;- fitDist(y, type="realline")
+m1$fits
+m1$fails
+# create validation data
+yn &lt;- rt(1000, df=2)
+# choose distribution which fits the new data best
+p1 &lt;- fitDistPred(y, type="realline", newdata=yn)
+p1$fits
+p1$failed
+#---------------------------------------
+# using the function chooseDist()
+# fitting normal distribution model
+m1 &lt;- gamlss(y~pb(x), sigma.fo=~pb(x), family=NO, data=abdom)
+# choose a distribution on the real line 
+# and save GAIC(k=c(2,4,6.4),  i.e. AIC, Chi-square and BIC.   
+t1 &lt;- chooseDist(m1, type="realline", parallel="snow", ncpus=4)
+# the GAIC's
+t1
+# the distributions which failed are with NA's 
+# ordering according to  BIC
+getOrder(t1,3)
+fm&lt;-update(m1, family=names(getOrder(t1,3)[1]))
+
+## End(Not run)
+</code></pre>
+
+
+</div>

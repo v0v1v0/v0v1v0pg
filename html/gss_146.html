@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.ssanova</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predicting from Smoothing Spline ANOVA Fits</h2>
+
+<h3>Description</h3>
+
+<p>Evaluate terms in a smoothing spline ANOVA fit at arbitrary points.
+Standard errors of the terms can be requested for use in
+constructing Bayesian confidence intervals.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'ssanova'
+predict(object, newdata, se.fit=FALSE,
+                          include=c(object$terms$labels,object$lab.p), ...)
+## S3 method for class 'ssanova0'
+predict(object, newdata, se.fit=FALSE,
+                           include=c(object$terms$labels,object$lab.p), ...)
+## S3 method for class 'ssanova'
+predict1(object, contr=c(1,-1), newdata, se.fit=TRUE,
+                           include=c(object$terms$labels,object$lab.p), ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>Object of class inheriting from <code>"ssanova"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>Data frame or model frame in which to predict.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.fit</code></td>
+<td>
+<p>Flag indicating if standard errors are required.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include</code></td>
+<td>
+<p>List of model terms to be included in the
+prediction.  The <code>offset</code> term, if present, is to be
+specified by <code>"offset"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contr</code></td>
+<td>
+<p>Contrast coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Ignored.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>For <code>se.fit=FALSE</code>, <code>predict.ssanova</code> returns a vector of
+the evaluated fit.
+</p>
+<p>For <code>se.fit=TRUE</code>, <code>predict.ssanova</code> returns a list
+consisting of the following elements.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>Vector of evaluated fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.fit</code></td>
+<td>
+<p>Vector of standard errors.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>For mixed-effect models through <code>ssanova</code> or
+<code>gssanova</code>, the Z matrix is set to 0 if not supplied.
+To supply the Z matrix, add an element <code>random=I(...)</code> in
+<code>newdata</code>, where the as-is function <code>I(...)</code> preserves the
+integrity of the Z matrix in data frame.
+</p>
+<p><code>predict1.ssanova</code> takes a list of data frames in
+<code>newdata</code> representing x1, x2, etc.  By default, it calculates
+f(x1)-f(x2) along with standard errors.  While pairwise contrast is
+the targeted application, all linear combinations can be computed.
+</p>
+<p>For <code>"gssanova"</code> objects, the results are on the link scale.
+See also <code>predict9.gssanova</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Gu, C. (1992), Penalized likelihood regression: a Bayesian
+analysis.  <em>Statistica Sinica</em>, <b>2</b>, 255–264.
+</p>
+<p>Gu, C. and Wahba, G. (1993), Smoothing spline ANOVA with
+component-wise Bayesian "confidence intervals."  <em>Journal of
+Computational and Graphical Statistics</em>, <b>2</b>, 97–117.
+</p>
+<p>Kim, Y.-J. and Gu, C. (2004), Smoothing spline Gaussian regression:
+more scalable computation via efficient approximation.
+<em>Journal of the Royal Statistical Society, Ser. B</em>, <b>66</b>,
+337–356.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Fitting functions <code>ssanova</code>, <code>ssanova0</code>,
+<code>gssanova</code>, <code>gssanova0</code> and
+methods <code>summary.ssanova</code>,
+<code>summary.gssanova</code>, <code>summary.gssanova0</code>,
+<code>project.ssanova</code>, <code>fitted.ssanova</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## THE FOLLOWING EXAMPLE IS TIME-CONSUMING
+## Not run: 
+## Fit a model with cubic and thin-plate marginals, where geog is 2-D
+data(LakeAcidity)
+fit &lt;- ssanova(ph~log(cal)*geog,,LakeAcidity)
+## Obtain estimates and standard errors on a grid
+new &lt;- data.frame(cal=1,geog=I(matrix(0,1,2)))
+new &lt;- model.frame(~log(cal)+geog,new)
+predict(fit,new,se=TRUE)
+## Evaluate the geog main effect
+predict(fit,new,se=TRUE,inc="geog")
+## Evaluate the sum of the geog main effect and the interaction
+predict(fit,new,se=TRUE,inc=c("geog","log(cal):geog"))
+## Evaluate the geog main effect on a grid
+grid &lt;- seq(-.04,.04,len=21)
+new &lt;- model.frame(~geog,list(geog=cbind(rep(grid,21),rep(grid,rep(21,21)))))
+est &lt;- predict(fit,new,se=TRUE,inc="geog")
+## Plot the fit and standard error
+par(pty="s")
+contour(grid,grid,matrix(est$fit,21,21),col=1)
+contour(grid,grid,matrix(est$se,21,21),add=TRUE,col=2)
+## Clean up
+rm(LakeAcidity,fit,new,grid,est)
+dev.off()
+
+## End(Not run)
+</code></pre>
+
+
+</div>

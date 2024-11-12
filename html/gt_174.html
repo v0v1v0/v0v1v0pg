@@ -1,0 +1,226 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sub_large_vals</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Substitute large values in the table body</h2>
+
+<h3>Description</h3>
+
+<p>Wherever there are numerical data that are very large in value, replacement
+text may be better for explanatory purposes. <code>sub_large_vals()</code> allows for
+this replacement through specification of a <code>threshold</code>, a <code>large_pattern</code>,
+and the sign (positive or negative) of the values to be considered.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sub_large_vals(
+  data,
+  columns = everything(),
+  rows = everything(),
+  threshold = 1e+12,
+  large_pattern = "&gt;={x}",
+  sign = "+"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p><em>The gt table data object</em>
+</p>
+<p><code style="white-space: pre;">⁠obj:&lt;gt_tbl&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>This is the <strong>gt</strong> table object that is commonly created through use of the
+<code>gt()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>columns</code></td>
+<td>
+<p><em>Columns to target</em>
+</p>
+<p><code>&lt;column-targeting expression&gt;</code> // <em>default:</em> <code>everything()</code>
+</p>
+<p>The columns to which substitution operations are constrained. Can either
+be a series of column names provided in <code>c()</code>, a vector of column indices,
+or a select helper function (e.g. <code>starts_with()</code>, <code>ends_with()</code>,
+<code>contains()</code>, <code>matches()</code>, <code>num_range()</code>, and <code>everything()</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rows</code></td>
+<td>
+<p><em>Rows to target</em>
+</p>
+<p><code>&lt;row-targeting expression&gt;</code> // <em>default:</em> <code>everything()</code>
+</p>
+<p>In conjunction with <code>columns</code>, we can specify which of their rows should
+form a constraint for targeting operations. The default <code>everything()</code>
+results in all rows in <code>columns</code> being formatted. Alternatively, we can
+supply a vector of row IDs within <code>c()</code>, a vector of row indices, or a
+select helper function (e.g. <code>starts_with()</code>, <code>ends_with()</code>, <code>contains()</code>,
+<code>matches()</code>, <code>num_range()</code>, and <code>everything()</code>). We can also use
+expressions to filter down to the rows we need
+(e.g., <code style="white-space: pre;">⁠[colname_1] &gt; 100 &amp; [colname_2] &lt; 50⁠</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threshold</code></td>
+<td>
+<p><em>Threshold value</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;numeric|integer&gt;⁠</code> // <em>default:</em> <code>1E12</code>
+</p>
+<p>The threshold value with which values should be considered large enough for
+replacement.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>large_pattern</code></td>
+<td>
+<p><em>Pattern specification for large values</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <em>default:</em> <code>"&gt;={x}"</code>
+</p>
+<p>The pattern text to be used in place of the suitably large values in the
+rendered table.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sign</code></td>
+<td>
+<p><em>Consider positive or negative values?</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <em>default:</em> <code>"+"</code>
+</p>
+<p>The sign of the numbers to be considered in the replacement. By default, we
+only consider positive values (<code>"+"</code>). The other option (<code>"-"</code>) can be used
+to consider only negative values.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>gt_tbl</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<p>Let's generate a simple, single-column tibble that contains an assortment of
+values that could potentially undergo some substitution.
+</p>
+<div class="sourceCode r"><pre>tbl &lt;- dplyr::tibble(num = c(0, NA, 10^(8:14)))
+
+tbl
+#&gt; # A tibble: 9 x 1
+#&gt;     num
+#&gt;   &lt;dbl&gt;
+#&gt; 1  0   
+#&gt; 2 NA   
+#&gt; 3  1e 8
+#&gt; 4  1e 9
+#&gt; 5  1e10
+#&gt; 6  1e11
+#&gt; 7  1e12
+#&gt; 8  1e13
+#&gt; 9  1e14
+</pre></div>
+<p>The <code>tbl</code> object contains a variety of larger numbers and some might be
+larger enough to reformat with a threshold value. With <code>sub_large_vals()</code> we
+can do just that:
+</p>
+<div class="sourceCode r"><pre>tbl |&gt;
+  gt() |&gt;
+  fmt_number(columns = num) |&gt;
+  sub_large_vals()
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_sub_large_vals_1.png" alt="This image of a table was generated from the first code example in the `sub_large_vals()` help file." style="width:100%;"><p>Large negative values can also be handled but they are handled specially by
+the <code>sign</code> parameter. Setting that to <code>"-"</code> will format only the large values
+that are negative. Notice that with the default <code>large_pattern</code> value of
+<code>"&gt;={x}"</code> the <code>"&gt;="</code> is automatically changed to <code>"&lt;="</code>.
+</p>
+<div class="sourceCode r"><pre>tbl |&gt;
+  dplyr::mutate(num = -num) |&gt;
+  gt() |&gt;
+  fmt_number(columns = num) |&gt;
+  sub_large_vals(sign = "-")
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_sub_large_vals_2.png" alt="This image of a table was generated from the second code example in the `sub_large_vals()` help file." style="width:100%;"><p>You don't have to settle with the default <code>threshold</code> value or the default
+replacement pattern (in <code>large_pattern</code>). This can be changed and the
+<code>"{x}"</code> in <code>large_pattern</code> (which uses the <code>threshold</code> value) can even be
+omitted.
+</p>
+<div class="sourceCode r"><pre>tbl |&gt;
+  gt() |&gt;
+  fmt_number(columns = num) |&gt;
+  sub_large_vals(
+    threshold = 5E10,
+    large_pattern = "hugemongous"
+  )
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_sub_large_vals_3.png" alt="This image of a table was generated from the third code example in the `sub_large_vals()` help file." style="width:100%;"><h3>Function ID</h3>
+
+<p>3-34
+</p>
+
+
+<h3>Function Introduced</h3>
+
+<p><code>v0.6.0</code> (May 24, 2022)
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other data formatting functions: 
+<code>data_color()</code>,
+<code>fmt()</code>,
+<code>fmt_auto()</code>,
+<code>fmt_bins()</code>,
+<code>fmt_bytes()</code>,
+<code>fmt_chem()</code>,
+<code>fmt_country()</code>,
+<code>fmt_currency()</code>,
+<code>fmt_date()</code>,
+<code>fmt_datetime()</code>,
+<code>fmt_duration()</code>,
+<code>fmt_email()</code>,
+<code>fmt_engineering()</code>,
+<code>fmt_flag()</code>,
+<code>fmt_fraction()</code>,
+<code>fmt_icon()</code>,
+<code>fmt_image()</code>,
+<code>fmt_index()</code>,
+<code>fmt_integer()</code>,
+<code>fmt_markdown()</code>,
+<code>fmt_number()</code>,
+<code>fmt_partsper()</code>,
+<code>fmt_passthrough()</code>,
+<code>fmt_percent()</code>,
+<code>fmt_roman()</code>,
+<code>fmt_scientific()</code>,
+<code>fmt_spelled_num()</code>,
+<code>fmt_tf()</code>,
+<code>fmt_time()</code>,
+<code>fmt_units()</code>,
+<code>fmt_url()</code>,
+<code>sub_missing()</code>,
+<code>sub_small_vals()</code>,
+<code>sub_values()</code>,
+<code>sub_zero()</code>
+</p>
+
+
+</div>

@@ -1,0 +1,640 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GeoKrigloc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Spatial (bivariate) and spatio temporal optimal linear  local  prediction 
+for Gaussian and non Gaussian RFs.</h2>
+
+<h3>Description</h3>
+
+<p>For a  given set of  spatial location sites (and temporal instants),
+the function computes optmal local  linear prediction and the associated mean squared error 
+for the Gaussian and non Gaussian case using a spatial (temporal) neighborhood
+computed using the  function <code>GeoNeighborhood</code>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GeoKrigloc(estobj=NULL,data, coordx, coordy=NULL, coordt=NULL,
+    coordx_dyn=NULL, corrmodel, distance="Eucl", grid=FALSE, 
+    loc, neighb=NULL, maxdist=NULL, 
+    maxtime=NULL, method="cholesky",
+    model="Gaussian", n=1,nloc=NULL, mse=FALSE,  
+    param, anisopars=NULL,radius=6371,
+    sparse=FALSE, time=NULL, type="Standard",type_mse=NULL,
+    type_krig="Simple",weigthed=TRUE, 
+    which=1, copula=NULL,X=NULL,Xloc=NULL,
+    Mloc=NULL,spobj=NULL,spdata=NULL,parallel=FALSE,ncores=NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>estobj</code></td>
+<td>
+<p>An object of class Geofit that includes information about data, model and estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A <code class="reqn">d</code>-dimensional vector (a single spatial realisation) or a (<code class="reqn">d \times d</code>)-matrix (a single spatial realisation on regular grid) or a
+(<code class="reqn">t \times d</code>)-matrix (a single spatial-temporal realisation)  or an (<code class="reqn">d \times d \times t \times n </code>)-array
+(a single spatial-temporal realisation on regular grid) giving the data used for prediction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordx</code></td>
+<td>
+<p>A numeric (<code class="reqn">d \times 2</code>)-matrix (where <code>d</code> is the number of spatial sites) giving 2-dimensions of spatial coordinates or a numeric <code class="reqn">d</code>-dimensional vector giving 1-dimension of spatial coordinates used for prediction. <code class="reqn">d</code>-dimensional vector giving 1-dimension of spatial coordinates.   Coordinates on a sphere for a  fixed radius <code>radius</code> 
+are passed in lon/lat format expressed in decimal degrees.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordy</code></td>
+<td>
+<p>A numeric vector giving 1-dimension of
+spatial coordinates used for prediction; <code>coordy</code> is interpreted only if <code>coordx</code> is a numeric
+vector or <code>grid=TRUE</code> otherwise it will be ignored. Optional argument, the default is <code>NULL</code> then <code>coordx</code> is expected to be numeric a (<code class="reqn">d \times 2</code>)-matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordt</code></td>
+<td>
+<p>A numeric vector giving 1-dimension of
+temporal coordinates used for prediction; the default is <code>NULL</code>
+then a spatial random field is expected.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordx_dyn</code></td>
+<td>
+<p>A list of <code class="reqn">m</code> numeric (<code class="reqn">d_t \times 2</code>)-matrices
+containing dynamical (in time) spatial coordinates. Optional argument, the default is <code>NULL</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corrmodel</code></td>
+<td>
+<p>String; the name of a correlation model, for the
+description see the Section <b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distance</code></td>
+<td>
+<p>String; the name of the spatial distance. The default
+is <code>Eucl</code>, the euclidean distance. See the Section
+<b>Details</b> of <code>GeoFit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+<p>Logical; if <code>FALSE</code> (the default) the data used for prediction
+are interpreted as spatial or spatial-temporal realisations on a set
+of non-equispaced spatial sites (irregular grid).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loc</code></td>
+<td>
+<p>A numeric (<code class="reqn">n \times 2</code>)-matrix (where
+<code>n</code> is the number of spatial sites) giving 2-dimensions of spatial coordinates to be predicted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>neighb</code></td>
+<td>
+<p>Numeric; an optional positive integer indicating the 
+order of the  neighborhood.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxdist</code></td>
+<td>
+<p>Numeric; an optional positive value indicating the distance in the spatial neighborhood.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxtime</code></td>
+<td>
+<p>Numeric; an optional positive integer value indicating the order of the temporal neighborhood.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>String; the type of matrix decomposition used in the simulation. Default is <code>cholesky</code>. 
+The other possible choices is <code>svd</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Numeric; the number of trials in a binomial random fields.
+Default is <code class="reqn">1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nloc</code></td>
+<td>
+<p>Numeric; the number of trials  of the locations sites to be predicted in the binomial random field.
+If missing then a rounded mean of n is considered.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mse</code></td>
+<td>
+<p>Logical; if <code>TRUE</code> (the default) MSE of the kriging predictor  is computed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>String; the type of RF and therefore the densities associated to the likelihood
+objects. <code>Gaussian</code> is the default, see the Section
+<b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>A list of parameter values required  for the correlation model.See the Section <b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>anisopars</code></td>
+<td>
+<p> A list of two elements: "angle" and "ratio" i.e. the anisotropy angle and the anisotropy ratio, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>radius</code></td>
+<td>
+<p>Numeric: the radius of the sphere if coordinates are passed in lon/lat format;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sparse</code></td>
+<td>
+<p>Logical; if <code>TRUE</code> kriging is computed with sparse matrices algorithms 
+using spam package. Default is FALSE. It should be used with compactly supported covariances.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>A numeric (<code class="reqn">m \times 1</code>) vector (where
+<code>m</code> is the number of temporal instants) giving the temporal instants to be predicted; the default is <code>NULL</code>
+then only spatial prediction is performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>String; if <code>Standard</code>   then standard kriging is performed;if <code>Tapering</code>   
+then  kriging with covariance tapering is performed;if <code>Pairwise</code> then pairwise
+kriging is performed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type_mse</code></td>
+<td>
+<p>String; if  <code>Theoretical</code> then theoretical MSE pairwise kriging is computed.
+If <code>SubSamp</code> then  an estimation based on subsampling is computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type_krig</code></td>
+<td>
+<p>String; the type of kriging. If <code>Simple</code> (the
+default) then simple kriging is performed. If <code>Optim</code> then optimal kriging is performed for some non-Gaussian RFs</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weigthed</code></td>
+<td>
+<p>Logical; if <code>TRUE</code> then decreasing weigths coming 
+from a compactly supported correlation function
+with compact support <code>maxdist</code> (<code>maxtime</code>)are used in the pairwise kriging.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>which</code></td>
+<td>
+<p>Numeric; In the case of bivariate (tapered) cokriging it indicates which variable to predict.
+It can be 1 or 2</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>copula</code></td>
+<td>
+<p>String; the type of copula. It can be "Clayton" or "Gaussian"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Numeric; Matrix of spatio(temporal)covariates in the linear mean specification.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Xloc</code></td>
+<td>
+<p>Numeric; Matrix of spatio(temporal)covariates in the linear mean specification
+associated to predicted locations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mloc</code></td>
+<td>
+<p>Numeric; Vector of spatio(temporal) estimated means 
+associated to predicted locations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spobj</code></td>
+<td>
+<p>An object of class sp or spacetime</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spdata</code></td>
+<td>
+<p>Character:The name of data in the sp or spacetime object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>Logical; if <code>TRUE</code> then 
+the prediction computation is  parallelized 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Numeric; number of cores involved in parallelization.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function use the <code>GeoKrig</code> with a
+spatial or spatio-temporal neighborhood computed using  the function <code>GeoNeighborhood</code>.
+The neighborhood is specified with the option <code>maxdist</code>  and <code>maxtime</code>.</p>
+
+
+<h3>Value</h3>
+
+<p>Returns an object of class <code>Kg</code>.
+An object of class <code>Kg</code> is a list containing
+at most the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>bivariate</code></td>
+<td>
+<p><code>TRUE</code> if spatial bivariate cokriging is performed, otherwise  <code>FALSE</code>;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordx</code></td>
+<td>
+<p>A <code class="reqn">d</code>-dimensional vector of spatial coordinates used for prediction;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordy</code></td>
+<td>
+<p>A <code class="reqn">d</code>-dimensional vector of spatial coordinates used for prediction;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordt</code></td>
+<td>
+<p>A <code class="reqn">t</code>-dimensional vector of temporal coordinates used for prediction;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corrmodel</code></td>
+<td>
+<p>String: the correlation model;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covmatrix</code></td>
+<td>
+<p>The covariance matrix if <code>type</code> is <code>Standard</code>. An object of class spam if <code>type</code> is <code>Tapering</code>   </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The vector or matrix or array of data used for prediction</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distance</code></td>
+<td>
+<p>String: the type of spatial distance;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+<p><code>TRUE</code> if the spatial data used for prediction are observed in a regular grid, otherwise  <code>FALSE</code>;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loc</code></td>
+<td>
+<p>A (<code class="reqn">n \times 2</code>)-matrix of spatial locations to be predicted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The number of trial for Binomial RFs</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nozero</code></td>
+<td>
+<p>In the case of tapered simple kriging the percentage of non zero values in the covariance matrix.
+Otherwise is NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numcoord</code></td>
+<td>
+<p>Numeric:he number <code class="reqn">d</code> of spatial coordinates used for prediction;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numloc</code></td>
+<td>
+<p>Numeric: the number <code class="reqn">n</code> of spatial coordinates to be predicted;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numtime</code></td>
+<td>
+<p>Numeric: the number <code class="reqn">d</code>  of the temporal instants used for prediction;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numt</code></td>
+<td>
+<p>Numeric: the number <code class="reqn">m</code>  of the temporal instants to be predicted;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>The type of RF, see <code>GeoFit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>Numeric: The covariance parameters;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pred</code></td>
+<td>
+<p>A (<code class="reqn">m \times n</code>)-matrix of spatio or spatio temporal kriging prediction;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>radius</code></td>
+<td>
+<p>Numeric: the radius of the sphere if coordinates are pssed in lon/lat format;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spacetime</code></td>
+<td>
+<p><code>TRUE</code> if spatio-temporal kriging and <code>FALSE</code> if
+spatial kriging;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tapmod</code></td>
+<td>
+<p>String: the taper model if <code>type</code> is <code>Tapering</code>. Otherwise is NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>A <code class="reqn">m</code>-dimensional vector of temporal coordinates to be predicted;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>String:  the type of kriging (Standard or Tapering).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type_krig</code></td>
+<td>
+<p>String: the type of kriging.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mse</code></td>
+<td>
+<p>A (<code class="reqn">m \times n</code>)-matrix of spatio or spatio temporal mean square error kriging prediction;</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Moreno Bevilacqua, <a href="mailto:moreno.bevilacqua89@gmail.com">moreno.bevilacqua89@gmail.com</a>,<a href="https://sites.google.com/view/moreno-bevilacqua/home">https://sites.google.com/view/moreno-bevilacqua/home</a>,
+Víctor Morales Oñate, <a href="mailto:victor.morales@uv.cl">victor.morales@uv.cl</a>, <a href="https://sites.google.com/site/moralesonatevictor/">https://sites.google.com/site/moralesonatevictor/</a>,
+Christian", Caamaño-Carrillo, <a href="mailto:chcaaman@ubiobio.cl">chcaaman@ubiobio.cl</a>,<a href="https://www.researchgate.net/profile/Christian-Caamano">https://www.researchgate.net/profile/Christian-Caamano</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Gaetan, C. and Guyon, X. (2010) <em>Spatial Statistics and Modelling</em>.
+Spring Verlang, New York.
+Furrer R.,  Genton, M.G. and  Nychka D. (2006). <em>Covariance
+Tapering for Interpolation of Large Spatial Datasets</em>.
+Journal of Computational and Graphical Statistics, <b>15-3</b>, 502–523.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GeoCovmatrix</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+################################################################
+############### Examples of Spatial local kriging  #############
+################################################################
+require(GeoModels)
+####
+model="Gaussian"
+
+# Define the spatial-coordinates of the points:
+set.seed(759)
+x = runif(1000, 0, 1)
+y = runif(1000, 0, 1)
+coords=cbind(x,y)
+# Set the exponential cov parameters:
+corrmodel = "GenWend"
+mean=0; sill=1
+nugget=0; scale=0.2
+param=list(mean=mean,sill=sill,nugget=nugget,smooth=0,
+scale=scale,power2=4)
+
+# Simulation of the spatial Gaussian random field:
+data = GeoSim(coordx=coords, corrmodel=corrmodel,
+              param=param)$data
+
+# Maximum pairwise likelihood fitting of the space time random field:
+
+start=list(scale=scale,sill=sill,mean=mean)
+fixed=list(power2=4,smooth=0,nugget=0)
+fit = GeoFit(data, coordx=coords, corrmodel=corrmodel, 
+              start=start,fixed=fixed,
+             likelihood='Conditional', type='Pairwise',
+              neighb=3)
+
+# locations to predict
+loc_to_pred=matrix(runif(8),4,2)
+################################################################
+###
+### Example 1. Comparing spatial kriging with local kriging for
+### a Gaussian random field with GenWend correlation.
+### 
+###############################################################
+param=append(fit$param,fit$fixed)
+pr=GeoKrig(fit,loc=loc_to_pred,mse=TRUE)
+
+pr_loc=GeoKrigloc(fit,loc=loc_to_pred,neighb=100,mse=TRUE)
+
+pr$pred;
+pr_loc$pred
+
+
+############################################################
+#### Example: spatio temporal  Gaussian local kriging ######
+############################################################
+
+
+require(GeoModels)
+require(fields)
+set.seed(78)
+coords=cbind(runif(100),runif(100))
+coordt=seq(0,5,0.25)
+corrmodel="Matern_Matern"
+param=list(nugget=0,mean=0,scale_s=0.2/3,scale_t=0.25/3,sill=2,
+  smooth_s=0.5,smooth_t=0.5)
+
+data = GeoSim(coordx=coords, coordt=coordt,
+     corrmodel=corrmodel, param=param)$data
+
+
+# Maximum pairwise likelihood fitting of the space time random field:
+start = list(scale_s=0.2/3,scale_t=0.25,sill=2,mean=0)
+fixed = list(smooth_s=0.5,smooth_t=0.5,nugget=0)
+I=Inf
+lower=list(scale_s=0,scale_t=0,sill=0,mean=-I)
+upper=list(scale_s=I,scale_t=I,sill=I,mean=I)
+fit = GeoFit(data, coordx=coords, coordt=coordt, model=model, corrmodel=corrmodel, 
+             likelihood='Conditional', type='Pairwise',start=start,fixed=fixed,
+             optimizer="nlminb",lower=lower,upper=upper,
+              neighb=3,maxtime=1)
+
+##  four location to predict
+loc_to_pred=matrix(runif(8),4,2)
+## three temporal instants to predict
+time=c(0.5,1.5,3.5)
+
+
+pr=GeoKrig(fit,loc=loc_to_pred,time=time,mse=TRUE)
+pr_loc=GeoKrigloc(fit,loc=loc_to_pred,time=time,
+  neigh=25,maxtime=1, mse=TRUE)
+
+##  full and local prediction 
+pr$pred
+pr_loc$pred
+
+
+
+############################################################
+#### Example: spatio bivariate  Gaussian local cokriging ######
+############################################################
+#set.seed(6)
+#NN=1500 # number of spatial locations 
+#x = runif(NN, 0, 1); 
+#y = runif(NN, 0, 1) 
+#coords=cbind(x,y) 
+
+## setting parameters
+#mean_1 = 2; mean_2= -1
+#nugget_1 =0;nugget_2=0
+#sill_1 =0.5; sill_2 =1; 
+
+### correlation parameters
+#CorrParam("Bi_Matern")
+#scale_1=0.2/3; scale_2=0.15/3; scale_12=0.5*(scale_2+scale_1) 
+#smooth_1=smooth_2=smooth_12=0.5
+#pcol = -0.4
+#param= list(nugget_1=nugget_1,nugget_2=nugget_2,
+#          sill_1=sill_1,sill_2=sill_2,
+#          mean_1=mean_1,mean_2=mean_2,
+#          smooth_1=smooth_1, smooth_2=smooth_2,smooth_12=smooth_12,
+#          scale_1=scale_1, scale_2=scale_2,scale_12=scale_12,
+#          pcol=pcol)
+
+## simulation
+#data = GeoSim(coordx=coords, corrmodel="Bi_Matern",model=model,param=param)$data
+
+#fixed=list(mean_1=mean_1,mean_2=mean_2, nugget_1=nugget_1,nugget_2=nugget_2, 
+#       smooth_1=smooth_1, smooth_2=smooth_2,smooth_12=smooth_12)
+
+#start=list( sill_1=sill_1,sill_2=sill_2,
+#        scale_1=scale_1,scale_2=scale_2,scale_12=scale_12, pcol=pcol)
+
+## estimation with maximum likelihood 
+#fit = GeoFit(data=data,coordx=coords, corrmodel="Bi_Matern",
+#likelihood="Full",type="Standard",optimizer="BFGS",
+ # likelihood="Marginal",type="Pairwise",optimizer="BFGS",neighb=5,
+  #start=start,fixed=fixed)
+
+###### co-kriging for the fist component ##############
+#xx=seq(0,1,0.022)
+#loc_to_pred=as.matrix(expand.grid(xx,xx))
+#pr1 = GeoKrigloc(fit,which=1,mse=TRUE,loc=loc_to_pred,neighb=100)
+
+#opar=par(no.readonly = TRUE)
+#par(mfrow=c(1,2))
+#zlim=c(-2.5,2.5)
+#colour = rainbow(100)
+#quilt.plot(coords,data[1,] ,col=colour,main = paste(" Fist component"))   
+#quilt.plot(loc_to_pred,pr1$pred,col=colour,
+#          main = paste(" Kriging first component"),ylab="")
+#par(opar)
+
+</code></pre>
+
+
+</div>

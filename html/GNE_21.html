@@ -1,0 +1,494 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GNE.ceq</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Constrained equation reformulation of the GNE problem.</h2>
+
+<h3>Description</h3>
+
+<p>Constrained equation reformulation via the extended KKT system of the GNE problem.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GNE.ceq(init, dimx, dimlam, grobj, arggrobj, heobj, argheobj, 
+	constr, argconstr, grconstr, arggrconstr, heconstr, argheconstr,
+	dimmu, joint, argjoint, grjoint, arggrjoint, hejoint, arghejoint, 
+	method="PR", control=list(), silent=TRUE, ...)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p>Initial values for the parameters to be optimized over: <code class="reqn">z=(x, lambda, mu)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dimx</code></td>
+<td>
+<p>a vector of dimension for <code class="reqn">x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dimlam</code></td>
+<td>
+<p>a vector of dimension for <code class="reqn">lambda</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grobj</code></td>
+<td>
+<p>gradient of the objective function (to be minimized), see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>arggrobj</code></td>
+<td>
+<p>a list of additional arguments of the objective gradient.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>heobj</code></td>
+<td>
+<p>Hessian of the objective function, see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>argheobj</code></td>
+<td>
+<p>a list of additional arguments of the objective Hessian.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constr</code></td>
+<td>
+<p>constraint function (<code class="reqn">g^i(x)&lt;=0</code>), see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>argconstr</code></td>
+<td>
+<p>a list of additional arguments of the constraint function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grconstr</code></td>
+<td>
+<p>gradient of the constraint function, see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>arggrconstr</code></td>
+<td>
+<p>a list of additional arguments of the constraint gradient.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>heconstr</code></td>
+<td>
+<p>Hessian of the constraint function, see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>argheconstr</code></td>
+<td>
+<p>a list of additional arguments of the constraint Hessian.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dimmu</code></td>
+<td>
+<p>a vector of dimension for <code class="reqn">mu</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>joint</code></td>
+<td>
+<p>joint function (<code class="reqn">h(x)&lt;=0</code>), see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>argjoint</code></td>
+<td>
+<p>a list of additional arguments of the joint function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grjoint</code></td>
+<td>
+<p>gradient of the joint function, see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>arggrjoint</code></td>
+<td>
+<p>a list of additional arguments of the joint gradient.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hejoint</code></td>
+<td>
+<p>Hessian of the joint function, see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>arghejoint</code></td>
+<td>
+<p>a list of additional arguments of the joint Hessian.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>a character string specifying the method 
+<code>"PR"</code> or <code>"AS"</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>a list with control parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments to be passed to the optimization routine. 
+NOT to the functions <code>H</code> and <code>jacH</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>silent</code></td>
+<td>
+<p>a logical to get some traces. Default to <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>GNE.ceq</code> solves the GNE problem via a constrained equation reformulation of the KKT system. 
+</p>
+<p>This approach consists in solving the extended Karush-Kuhn-Tucker 
+(KKT) system denoted by <code class="reqn">H(z)=0</code>, for <code class="reqn">z \in \Omega</code> where eqnz is formed by the players strategy 
+<code class="reqn">x</code>, the Lagrange multiplier <code class="reqn">\lambda</code> and the slate variable <code class="reqn">w</code>.
+The root problem <code class="reqn">H(z)=0</code> is solved by an iterative scheme <code class="reqn">z_{n+1} = z_n + d_n</code>,
+where the direction <code class="reqn">d_n</code> is computed in two different ways. Let <code class="reqn">J(x)=Jac H(x)</code>.
+There are two possible methods either <code>"PR"</code> for potential reduction algorithm
+or <code>"AS"</code> for affine scaled trust reduction algorithm.
+</p>
+
+<dl>
+<dt>(a) potential reduction algorithm:</dt>
+<dd>
+<p>The direction solves the system 
+<code class="reqn">H(z_n) + J(z_n) d = sigma_n a^T H(z_n) / ||a||_2^2 a</code>.
+</p>
+</dd>
+<dt>(b) bound-constrained trust region algorithm:</dt>
+<dd>
+<p>The direction solves the system
+<code class="reqn">\min_p ||J(z_n)^T p + H(z_n)||^2 </code>,
+for <code class="reqn">p</code> such that <code class="reqn">||p|| &lt;= Delta_n||</code>.
+</p>
+</dd>
+</dl>
+<p><code>...</code> are further arguments to be passed to the optimization routine, 
+that is <code>global</code>, <code>xscalm</code>, <code>silent</code>. 
+A globalization scheme can be choosed using the <code>global</code> argument. 
+Available schemes are 
+</p>
+
+<dl>
+<dt>(1) Line search:</dt>
+<dd>
+<p> if <code>global</code> is set to <code>"qline"</code> or <code>"gline"</code>, a line search
+is used with the merit function being half of the L2 norm of <code class="reqn">Phi</code>, respectively with a
+quadratic or a geometric implementation.</p>
+</dd>
+<dt>(3) Trust-region:</dt>
+<dd>
+<p> if  <code>global</code> is set to <code>"pwldog"</code>, the Powell dogleg method
+is used. </p>
+</dd>
+<dt>(2) None:</dt>
+<dd>
+<p> if  <code>global</code> is set to <code>"none"</code>, no globalization is done. </p>
+</dd>
+</dl>
+<p>The default value of <code>global</code> is <code>"gline"</code> when <code>method="PR"</code> and 
+<code>"pwldog"</code> when <code>method="AS"</code>.
+The <code>xscalm</code> is a scaling parameter to used, either <code>"fixed"</code> (default)
+or <code>"auto"</code>, for which scaling factors are calculated from the euclidean norms of the 
+columns of the jacobian matrix. 
+The <code>silent</code> argument is a logical to report or not the optimization process, default
+to <code>FALSE</code>.
+</p>
+<p>The <code>control</code> argument is a list that can supply any of the following components:
+</p>
+
+<dl>
+<dt><code>xtol</code></dt>
+<dd>
+<p>The relative steplength tolerance.
+When the relative  steplength of all scaled x values is smaller than this value
+convergence is declared. The default value is <code class="reqn">10^{-8}</code>.
+</p>
+</dd>
+<dt><code>ftol</code></dt>
+<dd>
+<p>The function value tolerance.
+Convergence is declared when the largest absolute function value is smaller than <code>ftol</code>.
+The	default value is <code class="reqn">10^{-8}</code>.
+</p>
+</dd>
+<dt><code>btol</code></dt>
+<dd>
+<p>The backtracking tolerance.
+The	default value is <code class="reqn">10^{-2}</code>.
+</p>
+</dd>	
+<dt><code>maxit</code></dt>
+<dd>
+<p>The maximum number of major iterations. The default value is 100 if a 
+global strategy has been specified.</p>
+</dd>
+<dt><code>trace</code></dt>
+<dd>
+<p>Non-negative integer. A value of 1 will give a detailed report of the
+progress of the iteration, default 0.</p>
+</dd>
+<dt>
+<code>sigma</code>, <code>delta</code>, <code>zeta</code>
+</dt>
+<dd>
+<p>Parameters initialized to <code>1/2</code>, 
+<code>1</code>, <code>length(init)/2</code>, respectively, when <code>method="PR"</code>.</p>
+</dd>
+<dt><code>forcingpar</code></dt>
+<dd>
+<p>Forcing parameter set to 0.1, when <code>method="PR"</code>.</p>
+</dd>
+<dt>
+<code>theta</code>, <code>radiusmin</code>, <code>reducmin</code>, <code>radiusmax</code>, 
+<code>radiusred</code>, <code>reducred</code>, <code>radiusexp</code>, <code>reducexp</code>
+</dt>
+<dd>
+<p>Parameters initialized to <code>0.99995</code>, <code>1</code>, <code>0.1</code>, <code>1e10</code>, 
+<code>1/2</code>, <code>1/4</code>, <code>2</code>, <code>3/4</code>, when <code>method="AS"</code>.</p>
+</dd>
+</dl>
+<h3>Value</h3>
+
+<p><code>GNE.ceq</code> returns a list with components:
+</p>
+
+<dl>
+<dt><code>par</code></dt>
+<dd>
+<p>The best set of parameters found.</p>
+</dd>
+<dt><code>value</code></dt>
+<dd>
+<p>The value of the merit function.</p>
+</dd>
+<dt><code>counts</code></dt>
+<dd>
+<p>A two-element integer vector giving the number of calls to 
+<code>H</code> and <code>jacH</code> respectively.</p>
+</dd>			
+<dt><code>iter</code></dt>
+<dd>
+<p>The outer iteration number.</p>
+</dd>
+<dt><code>code</code></dt>
+<dd>
+<p>The values returned are
+</p>
+
+<dl>
+<dt><code>1</code></dt>
+<dd>
+<p>Function criterion is near zero.
+Convergence of function values has been achieved.</p>
+</dd>
+<dt><code>2</code></dt>
+<dd>
+<p>x-values within tolerance. This means that the relative distance between two
+consecutive x-values is smaller than <code>xtol</code>.</p>
+</dd>
+<dt><code>3</code></dt>
+<dd>
+<p>No better point found.
+This means that the algorithm has stalled and cannot find an acceptable new point.
+This may or may not indicate acceptably small function values.</p>
+</dd>
+<dt><code>4</code></dt>
+<dd>
+<p>Iteration limit <code>maxit</code> exceeded.</p>
+</dd>
+<dt><code>5</code></dt>
+<dd>
+<p>Jacobian is too ill-conditioned.</p>
+</dd>
+<dt><code>6</code></dt>
+<dd>
+<p>Jacobian is singular.</p>
+</dd>
+<dt><code>100</code></dt>
+<dd>
+<p>an error in the execution.</p>
+</dd>
+</dl>
+</dd>
+<dt><code>message</code></dt>
+<dd>
+<p>a string describing the termination code.</p>
+</dd>	
+<dt><code>fvec</code></dt>
+<dd>
+<p>a vector with function values.</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Christophe Dutang
+</p>
+
+
+<h3>References</h3>
+
+<p>J.E. Dennis and J.J. Moree (1977), 
+<em>Quasi-Newton methods, Motivation and Theory</em>,
+SIAM review.
+</p>
+<p>Monteiro, R. and Pang, J.-S. (1999), 
+<em>A Potential Reduction Newton Method for Constrained equations</em>, 
+SIAM Journal on Optimization 9(3), 729-754.
+</p>
+<p>S. Bellavia, M. Macconi and B. Morini (2003),
+<em>An affine scaling trust-region approach to bound-constrained nonlinear systems</em>,
+Applied Numerical Mathematics 44, 257-280
+</p>
+<p>A. Dreves, F. Facchinei, C. Kanzow and S. Sagratella (2011), 
+<em>On the solutions of the KKT conditions of generalized Nash equilibrium problems</em>, 
+SIAM Journal on Optimization 21(3), 1082-1108.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>See <code>GNE.fpeq</code>, <code>GNE.minpb</code> and <code>GNE.nseq</code> 
+for other approaches; <code>funCER</code> and
+<code>jacCER</code> for template functions of <code class="reqn">H</code> and <code class="reqn">Jac H</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+#-------------------------------------------------------------------------------
+# (1) Example 5 of von Facchinei et al. (2007)
+#-------------------------------------------------------------------------------
+
+dimx &lt;- c(1, 1)
+#Gr_x_j O_i(x)
+grobj &lt;- function(x, i, j)
+{
+	if(i == 1)
+		res &lt;- c(2*(x[1]-1), 0)
+	if(i == 2)
+		res &lt;- c(0, 2*(x[2]-1/2))
+	res[j]	
+}
+#Gr_x_k Gr_x_j O_i(x)
+heobj &lt;- function(x, i, j, k)
+	2 * (i == j &amp;&amp; j == k)
+
+dimlam &lt;- c(1, 1)
+#constraint function g_i(x)
+g &lt;- function(x, i)
+	sum(x[1:2]) - 1
+#Gr_x_j g_i(x)
+grg &lt;- function(x, i, j)
+	1
+#Gr_x_k Gr_x_j g_i(x)
+heg &lt;- function(x, i, j, k)
+	0
+
+
+x0 &lt;- rep(0, sum(dimx))
+z0 &lt;- c(x0, 2, 2, max(10, 5-g(x0, 1) ), max(10, 5-g(x0, 2) ) )
+
+#true value is (3/4, 1/4, 1/2, 1/2)
+GNE.ceq(z0, dimx, dimlam, grobj=grobj, heobj=heobj, 
+	constr=g, grconstr=grg, heconstr=heg, method="PR", 
+	control=list(trace=0, maxit=10))
+
+
+GNE.ceq(z0, dimx, dimlam, grobj=grobj, heobj=heobj, 
+	constr=g, grconstr=grg, heconstr=heg, method="AS", global="pwldog", 
+	xscalm="auto", control=list(trace=0, maxit=100))
+
+
+#-------------------------------------------------------------------------------
+# (2) Duopoly game of Krawczyk and Stanislav Uryasev (2000)
+#-------------------------------------------------------------------------------
+
+
+#constants
+myarg &lt;- list(d= 20, lambda= 4, rho= 1)
+
+dimx &lt;- c(1, 1)
+#Gr_x_j O_i(x)
+grobj &lt;- function(x, i, j, arg)
+{
+	res &lt;- -arg$rho * x[i]
+	if(i == j)
+	res &lt;- res + arg$d - arg$lambda - arg$rho*(x[1]+x[2])
+	-res
+}
+#Gr_x_k Gr_x_j O_i(x)
+heobj &lt;- function(x, i, j, k, arg)
+	arg$rho * (i == j) + arg$rho * (j == k)	
+
+
+dimlam &lt;- c(1, 1)
+#constraint function g_i(x)
+g &lt;- function(x, i)
+	-x[i]
+#Gr_x_j g_i(x)
+grg &lt;- function(x, i, j)
+	-1*(i == j)
+#Gr_x_k Gr_x_j g_i(x)
+heg &lt;- function(x, i, j, k)
+	0
+
+#true value is (16/3, 16/3, 0, 0) 
+
+x0 &lt;- rep(0, sum(dimx))
+z0 &lt;- c(x0, 2, 2, max(10, 5-g(x0, 1) ), max(10, 5-g(x0, 2) ) )
+
+
+GNE.ceq(z0, dimx, dimlam, grobj=grobj, heobj=heobj, arggrobj=myarg, 
+	argheobj=myarg, constr=g, grconstr=grg, heconstr=heg,
+	method="PR", control=list(trace=0, maxit=10))
+
+GNE.ceq(z0, dimx, dimlam, grobj=grobj, heobj=heobj, arggrobj=myarg, 
+	argheobj=myarg, constr=g, grconstr=grg, heconstr=heg, 
+	method="AS", global="pwldog", xscalm="auto", control=list(trace=0, maxit=100))
+
+	
+
+</code></pre>
+
+
+</div>

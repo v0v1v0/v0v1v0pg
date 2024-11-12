@@ -1,0 +1,160 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>query_gesla</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Query the GESLA dataset</h2>
+
+<h3>Description</h3>
+
+<p>This function will make a query to fetch a subset of
+the GESLA dataset. At least a country code and one year must be
+specified. Site names can also be specified, but are optional. By
+default, the resulting subset will contain only data that were
+revised and recommended for analysis, by the GESLA group of
+researchers.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">query_gesla(
+  country,
+  year = NULL,
+  site_name = NULL,
+  use_flag = 1,
+  as_data_frame = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>country</code></td>
+<td>
+<p>A character vector specifying the selected countries,
+using the three-letter <a href="https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3">ISO 3166-1 alpha-3</a> code. See
+Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>year</code></td>
+<td>
+<p>A numeric vector specifying the selected years. If
+<code>NULL</code> (the default), all available years will be selected.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>site_name</code></td>
+<td>
+<p>Optional character vector of site names.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_flag</code></td>
+<td>
+<p>The default is <code>1</code>, which means to use only the data
+that was revised and usefull for analysis. Can be <code>0</code>, to fetch only
+revised and not recommend for analysis, or <code>c(0, 1)</code> to fetch all
+the data. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>as_data_frame</code></td>
+<td>
+<p>If <code>FALSE</code> (default), the data will be imported
+as an <code>arrow_dplyr_query</code> object. Otherwise, the data will be in a
+<code>tbl_df</code> (<code>data.frame</code>) format. See Details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The country codes must follow the three-letter <a href="https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3">ISO 3166-1 alpha-3</a> code.
+However, note that not all countries are available at the GESLA
+dataset. If in doubt, please check the GESLA Shiny app interface
+(geslaR-app) online in this <a href="https://rstudio.maths.nuim.ie:3939/content/3258adf1-efbb-4996-9a8a-08a474639e8b/">server</a>, or use the
+<code>run_gesla_app()</code> function to open the interface locally.
+</p>
+<p>The <code>use_flag</code> argument must be <code>1</code> or <code>0</code>, or <code>c(0, 1)</code>. The
+<code>use_flag</code> is a column at the GESLA dataset thet indicates wehter
+the data should be used for analysis or not. The <code>1</code> (default)
+indicates it should, and <code>0</code> the otherwise. In a data analysis
+scenario, the user must only be interested in using the recommended
+data, so this argument shouldn't be changed. However, in same cases,
+one must be interested in the non-recommended data, therefore this
+option is available. Also, you can specify <code>c(0, 1)</code> to fetch all
+the data (usable and not usable). In any case, the <code>use_flag</code> column
+will always be present, and it can be used for any post-processing.
+Please, see the <a href="https://gesla787883612.wordpress.com/format/">GESLA format</a> documentation
+for more details.
+</p>
+<p>The default argument <code>as_data_frame = FALSE</code> will result in an
+object of the <code>arrow_dplyr_query</code> class. The advantage is that,
+regardless of the size of the resulting dataset, the object will be
+small in (memory) size. Also, as it happens with the Arrow <code>Table</code>
+class, it can be manipulated with <code>dplyr</code> verbs. Please, see the
+documentation at the <a href="https://arrow.apache.org/docs/r/articles/data_wrangling.html">Arrow website</a>.
+</p>
+<p>Note that, if the <code>as_data_frame</code> argument is set to <code>TRUE</code>, the
+imported R object will vary in size, according to the size of the
+subset. In many situations, this can take a long time an may even be
+infeasible, since the object can result in a "larger-than-memory"
+size, and possibly will make R operations slow or even a session
+crash. Therefore, we always recommend to start with <code>as_data_frame = FALSE</code>, and work with the dataset from there.
+</p>
+<p>Please, see <code>vignette("intro-to-geslaR")</code> for a detailed example.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>arrow_dplyr_query</code> or a <code>tbl_df</code>
+(<code>data.frame</code>).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Fernando Mayer <a href="mailto:fernando.mayer@mu.ie">fernando.mayer@mu.ie</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(interactive()) {
+    ## Simple query
+    da &lt;- query_gesla(country = "IRL")
+
+    ## Select one specific year
+    da &lt;- query_gesla(country = "IRL", year = 2015)
+
+    ## Multiple years
+    da &lt;- query_gesla(country = "IRL", year = c(2015, 2017))
+    da &lt;- query_gesla(country = "IRL", year = 2010:2017)
+    da &lt;- query_gesla(country = "IRL", year = c(2010, 2012, 2015))
+    da |&gt;
+        count(year) |&gt;
+        collect()
+
+    ## Multiple countries
+    da &lt;- query_gesla(country = c("IRL", "ATA"), year = 2015)
+    da &lt;- query_gesla(country = c("IRL", "ATA"), year = 2010:2017)
+    da |&gt;
+        count(country, year) |&gt;
+        collect()
+
+    ## Specifying a site name
+    da &lt;- query_gesla(country = "IRL", year = c(2015, 2017),
+        site_name = "Dublin_Port")
+    da |&gt;
+        count(year) |&gt;
+        collect()
+}
+</code></pre>
+
+
+</div>

@@ -1,0 +1,183 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemSkill</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some General Equilibrium Models with Skill (i.e. Human Capital)</h2>
+
+<h3>Description</h3>
+
+<p>Some general equilibrium models with skill (i.e. human capital).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemSkill(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+depreciation.rate &lt;- 0.05 # the depreciation rate of skill
+skill.density &lt;- 10
+relative.efficiency.coef &lt;- 2
+efficiency.coef &lt;- skill.density * relative.efficiency.coef
+
+dst.efficiency.unit &lt;- node_new("efficiency unit",
+  type = "Leontief",
+  a =  1 / efficiency.coef,
+  "complex labor"
+)
+
+dst.firm &lt;- node_new(
+  "product",
+  type = "SCES", alpha = 1,
+  beta = c(0.4, 0.6), es = 0.5,
+  "product", "labor"
+)
+node_set(dst.firm, "labor",
+  type = "SCES", alpha = 1,
+  beta = c(0.5, 0.5), es = 1.5,
+  "simple labor", dst.efficiency.unit
+)
+
+dst.school &lt;- node_new(
+  "skill",
+  type = "Leontief",
+  a = c(0.1, 1, 0.1),
+  "product", "simple labor", dst.efficiency.unit
+)
+
+dst.complex.laborer &lt;- node_new(
+  "complex labor",
+  type = "Leontief", a = c(skill.density, 1),
+  "skill", "simple labor"
+)
+
+dst.simple.laborer &lt;- node_new(
+  "util",
+  type = "Leontief", a = 1,
+  "product"
+)
+
+ge &lt;- sdm2(
+  A = list(dst.firm, dst.school, dst.complex.laborer, dst.simple.laborer),
+  B = matrix(c(
+    1, 0, 0, 0,
+    0, 1, skill.density * (1 - depreciation.rate), 0,
+    0, 0, 1, 0,
+    0, 0, 0, 0
+  ), 4, 4, TRUE),
+  S0Exg = {
+    tmp &lt;- matrix(NA, 4, 4)
+    tmp[4, 4] &lt;- 100
+    tmp
+  },
+  names.commodity = c("product", "skill", "complex labor", "simple labor"),
+  names.agent = c("firm", "school", "complex laborer", "simple laborer"),
+  numeraire = "simple labor",
+  policy = makePolicyMeanValue(50),
+  priceAdjustmentVelocity = 0.05,
+  maxIteration = 1,
+  numberOfPeriods = 1000,
+  ts = TRUE
+)
+
+ge$p
+ge$z
+addmargins(ge$D, 2)
+addmargins(ge$S, 2)
+matplot(ge$ts.p, type = "l")
+
+#### Assumed that the amount of education and training purchased by laborers is
+## determined primarily by their preferences rather than their investment motives.
+depreciation.rate &lt;- 0.05
+skill.density &lt;- 10
+relative.efficiency.coef &lt;- 2
+efficiency.coef &lt;- skill.density * relative.efficiency.coef
+
+dst.efficiency.unit &lt;- node_new("efficiency unit",
+  type = "Leontief",
+  a = c(skill.density / efficiency.coef, 1 / efficiency.coef),
+  "skill service", "simple labor"
+)
+
+dst.firm &lt;- node_new(
+  "product",
+  type = "SCES", alpha = 1,
+  beta = c(0.4, 0.6), es = 0.5,
+  "product", "labor"
+)
+node_set(dst.firm, "labor",
+  type = "SCES", alpha = 1,
+  beta = c(0.5, 0.5), es = 1.5,
+  "simple labor", dst.efficiency.unit
+)
+
+dst.school &lt;- node_new(
+  "skill",
+  type = "Leontief",
+  a = c(0.1, 1, 0.1),
+  "product", "simple labor", dst.efficiency.unit
+)
+
+dst.laborer &lt;- node_new(
+  "util",
+  type = "CD", alpha = 1,
+  beta = c(0.7887, 0.2113),
+  # beta &lt;- c(0.9, 0.1),
+  # beta &lt;- c(0.6, 0.4),
+  "product", "skill",
+  skill.stock = 0
+)
+
+ge &lt;- sdm2(
+  A = list(dst.firm, dst.school, dst.laborer),
+  B = matrix(c(
+    1, 0, 0,
+    0, 1, 0,
+    0, 0, 0,
+    0, 0, 0
+  ), 4, 3, TRUE),
+  S0Exg = {
+    tmp &lt;- matrix(NA, 4, 3)
+    tmp[4, 3] &lt;- 100
+    tmp
+  },
+  names.commodity = c("product", "skill", "skill service", "simple labor"),
+  names.agent = c("firm", "school", "laborer"),
+  numeraire = "simple labor",
+  policy = function(A, state) {
+    last.D &lt;- state$last.A %*% dg(state$last.z)
+    new.skill &lt;- last.D[2, 3]
+    state$S[3, 3] &lt;- A[[3]]$skill.stock &lt;-
+      A[[3]]$skill.stock * (1 - depreciation.rate) + new.skill
+    state
+  },
+  priceAdjustmentVelocity = 0.05,
+  maxIteration = 1,
+  numberOfPeriods = 1000,
+  ts = TRUE
+)
+
+ge$p
+ge$z
+addmargins(ge$D, 2)
+addmargins(ge$S, 2)
+matplot(log(ge$ts.p), type = "l")
+
+</code></pre>
+
+
+</div>

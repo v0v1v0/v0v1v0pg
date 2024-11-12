@@ -1,0 +1,107 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>random_init_polynomial</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Randomly generate an initial point in the domain defined by a single polynomial with no negative coefficient.</h2>
+
+<h3>Description</h3>
+
+<p>Randomly generate an initial point in the domain defined by a single polynomial with no negative coefficient.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">random_init_polynomial(domain)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>domain</code></td>
+<td>
+<p>A list returned from <code>make_domain()</code> that represents the domain. Currently only supports <code>domain$type == "polynomial" &amp;&amp; length(domain$ineqs) == 1</code>. If <code>domain$ineqs[[1]]$uniform == FALSE</code>, <code>domain$ineqs[[1]]$coeffs</code> must not contain negative numbers.</p>
+</td>
+</tr></table>
+<h3>Details</h3>
+
+<p>If inequality is uniform, find the uniform bound for each component and generate each coordinate using <code>random_init_uniform()</code>.
+Otherwise, first randomly generate centered laplace variables for components with coefficient 0 (free variables).
+Then assign a <code>quota</code> of <code>eq$const / length(nonzero_coefficient)</code> to each coordinate (so that each <br><code>frac_pow(x[i], eq$power_numers[i], eq$power_denoms[i], eq$abs) * eq$coeffs[i]</code> is compared to <code>quota</code>).
+Deal with components with <code>exp()</code> term first, and generate each coordinate while fulfilling <code>quota</code> if possible; if not, randomly generate from <br><code>[-0.01,0.01]/abs(eq$power_numers[i])</code>.
+Then recalculate the new <code>quota</code> which subtracts the exp() terms from <code>eq$const</code>, and this time divided by the number of remaining components.
+If <code>quota</code> becomes negative and <code>eq$larger == FALSE</code>, each component, after <code>frac_pow()</code> is assumed to give a negative number.
+This is not possible if the term has the form x^{even_number/even_number}, or if the term is not log() in the case where <code>eq$nonnegative == TRUE || eq$abs == TRUE</code>.
+Change quota to a positive smaller in absolute value for these bad terms and generate.
+Finally, recalculate quota as before and generate the rest of the "good" components.
+</p>
+<p>In some extreme domains the function may fail to generate a point within the domain.
+Also, it is not guaranteed that the function returns a point in an area with a high probability density.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>p</code> vector inside the domain defined by <code>domain</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">p &lt;- 30
+poly_d &lt;- function(ex, abs, nng){
+   return (make_domain("polynomial", p=p, 
+                       ineqs=list(list(expression=ex, abs=abs, nonnegative=nng))))
+}
+
+random_init_polynomial(poly_d(paste("sum(exp(x))&lt;=", p*1.01), abs=TRUE, nng=TRUE))
+random_init_polynomial(poly_d(paste("sum(exp(x))&lt;=", p*1.01), abs=FALSE, nng=FALSE))
+random_init_polynomial(poly_d(paste("sum(exp(x))&gt;", p*1.01), abs=TRUE, nng=TRUE))
+random_init_polynomial(poly_d(paste("sum(exp(x))&gt;", p*1.01), abs=TRUE, nng=FALSE))
+random_init_polynomial(poly_d(paste("sum(log(x))&lt;=", 0.01), abs=TRUE, nng=TRUE))
+random_init_polynomial(poly_d(paste("sum(log(x))&gt;", 0.01), abs=TRUE, nng=TRUE))
+random_init_polynomial(poly_d(paste("sum(x^2)&lt;=", 0.01), abs=TRUE, nng=TRUE))
+random_init_polynomial(poly_d(paste("sum(x^2)&gt;", 0.01), abs=TRUE, nng=TRUE))
+
+random_init_polynomial(poly_d(paste("exp(x)&lt;=", 1.01), abs=TRUE, nng=TRUE))
+random_init_polynomial(poly_d(paste("exp(x)&lt;=", 1.01), abs=FALSE, nng=FALSE))
+random_init_polynomial(poly_d(paste("exp(x)&gt;", 1.01), abs=TRUE, nng=TRUE))
+random_init_polynomial(poly_d(paste("exp(x)&gt;", 1.01), abs=TRUE, nng=FALSE))
+random_init_polynomial(poly_d(paste("log(x)&lt;=", 0.01), abs=TRUE, nng=TRUE))
+random_init_polynomial(poly_d(paste("log(x)&gt;", 0.01), abs=TRUE, nng=TRUE))
+random_init_polynomial(poly_d(paste("x^2&lt;=", 0.01), abs=TRUE, nng=TRUE))
+random_init_polynomial(poly_d(paste("x^2&gt;", 0.01), abs=TRUE, nng=TRUE))
+
+random_init_polynomial(poly_d("x1^2+x2^2+log(x3)&lt;-2", abs=TRUE, nng=TRUE))
+random_init_polynomial(poly_d("x1^2+x2^2+log(x3)&gt;-2", abs=FALSE, nng=FALSE))
+random_init_polynomial(poly_d("x1^(3/5)+x2^2+x3^(1/3)&lt;-2", abs=FALSE, nng=FALSE))
+random_init_polynomial(poly_d("x1^(3/5)+x2^2+x3^(1/3)&gt;-2", abs=FALSE, nng=FALSE))
+random_init_polynomial(poly_d("x1^(3/5)+1.2*exp(2*x2)+2.3*exp(-3*x3)&lt;-2", abs=FALSE, nng=FALSE))
+random_init_polynomial(poly_d("x1^(3/5)+1.2*exp(2*x2)+2.3*exp(-3*x3)&lt;2", abs=TRUE, nng=FALSE))
+random_init_polynomial(poly_d("x1^(3/5)+1.2*exp(2*x2)+2.3*exp(-3*x3)&gt;-2", abs=TRUE, nng=FALSE))
+random_init_polynomial(poly_d("x1^(3/5)+2.3*log(x4)+1.3*exp(2*x2)+0.7*exp(-3*x3)&lt;-2", 
+                       abs=TRUE, nng=FALSE))
+random_init_polynomial(poly_d("x1^(3/5)+2.3*log(x4)+1.3*exp(2*x2)+0.7*exp(-3*x3)&gt;-2", 
+                       abs=FALSE, nng=FALSE))
+random_init_polynomial(poly_d(
+   "x1^(3/5)+0.9*x2^(2/3)+2.7*x3^(-3/2)+1.1*x4^(-5)+1.1*exp(2x5)+1.3*exp(-3x6)+0.7*log(x7)&lt;-2", 
+                       abs=TRUE, nng=FALSE))
+random_init_polynomial(poly_d(
+   "x1^(3/5)+0.9*x2^(2/3)+2.7*x3^(-3/2)+1.1*x4^(-5)+1.1*exp(2x5)+1.3*exp(-3x6)+0.7*log(x7)&lt;-2", 
+                       abs=FALSE, nng=TRUE))
+random_init_polynomial(poly_d(
+   "x1^(3/5)+0.9*x2^(2/3)+2.7*x3^(-3/2)+1.1*x4^(-5)+1.1*exp(2x5)+1.3*exp(-3x6)+0.7*log(x7)&gt;-2", 
+                       abs=TRUE, nng=FALSE))
+random_init_polynomial(poly_d(
+   "x1^(3/5)+0.9*x2^(2/3)+2.7*x3^(-3/2)+1.1*x4^(-5)+1.1*exp(2x5)+1.3*exp(-3x6)+0.7*log(x7)&gt;2", 
+                       abs=TRUE, nng=TRUE))
+random_init_polynomial(poly_d(
+   "x1^(3/5)+0.9*x2^(2/3)+2.7*x3^(-3/2)+1.1*x4^(-5)+1.1*exp(2x5)+1.3*exp(-3x6)+0.7*log(x7)&gt;2", 
+                       abs=FALSE, nng=FALSE))
+</code></pre>
+
+
+</div>

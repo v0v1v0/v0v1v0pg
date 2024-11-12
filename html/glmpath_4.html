@@ -1,0 +1,413 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>coxpath</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fits the entire L1 regularization path for Cox proportional hazards
+model
+</h2>
+
+<h3>Description</h3>
+
+<p>This algorithm uses predictor-corrector method to compute the
+entire regularization path for Cox proportional hazards model with L1
+penalty.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  coxpath(data, nopenalty.subset = NULL, method = c("breslow", "efron"),
+          lambda2 = 1e-5, max.steps = 10 * min(n, m), max.norm = 100 * m,
+          min.lambda = (if (m &gt;= n) 1e-3 else 0), max.vars = Inf,
+          max.arclength = Inf, frac.arclength = 1, add.newvars = 1,
+          bshoot.threshold = 0.1, relax.lambda = 1e-7,
+          approx.Gram = FALSE, standardize = TRUE,
+          eps = .Machine$double.eps, trace = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>a list consisting of <code>x:</code> a matrix of features, <code>time:</code>
+the survival time, and <code>status:</code> censor status with 1 if died
+and 0 if censored. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nopenalty.subset</code></td>
+<td>
+
+<p>a set of indices for the predictors that are not subject to the L1
+penalty
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+
+<p>approximation method for tied survival times. Approximations derived
+by Breslow (1974) and Efron (1977) are available. Default is
+<code>breslow.</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda2</code></td>
+<td>
+
+<p>regularization parameter for the L2 norm of the
+coefficients. Default is <code>1e-5.</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.steps</code></td>
+<td>
+
+<p>an optional bound for the number of steps to be taken. Default is
+<code>10 * min{nrow(x), ncol(x)}.</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.norm</code></td>
+<td>
+
+<p>an optional bound for the L1 norm of the coefficients. Default is
+<code>100 * ncol(x).</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min.lambda</code></td>
+<td>
+
+<p>an optional (lower) bound for the size of <code class="reqn">\lambda</code>. When
+<code>ncol(x)</code> is relatively large, the coefficient estimates are
+prone to numerical precision errors at extremely small
+<code class="reqn">\lambda</code>. In such cases, early stopping is recommended. Default
+is <code>0</code> for <code>ncol(x) &lt; nrow(x)</code> cases and <code>1e-3</code>
+otherwise.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.vars</code></td>
+<td>
+
+<p>an optional bound for the number of active variables. Default is
+<code>Inf.</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.arclength</code></td>
+<td>
+
+<p>an optional bound for arc length (L1 norm) of a step. If
+<code>max.arclength</code> is extremely small, an exact nonlinear path is
+produced. Default is <code>Inf.</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>frac.arclength</code></td>
+<td>
+
+<p>Under the default setting, the next step size is computed so that
+the active set changes right at the next value of lambda. When
+<code>frac.arclength</code> is assigned some fraction between 0 and 1, the
+step size is decreased by the factor of <code>frac.arclength</code> in arc
+length. If <code>frac.arclength=0.2,</code> the step length is adjusted so
+that the active set would change after five smaller steps. Either
+<code>max.arclength</code> or <code>frac.arclength</code> can be used to force
+the path to be more accurate. Default is <code>1.</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>add.newvars</code></td>
+<td>
+
+<p><code>add.newvars</code> candidate variables (that are currently not in
+the active set) are used in the corrector step as potential active
+variables. Default is <code>1.</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bshoot.threshold</code></td>
+<td>
+
+<p>If the absolute value of a coefficient is larger than
+<code>bshoot.threshold</code> at the first corrector step it becomes
+nonzero (therefore when <code class="reqn">\lambda</code> is considered to have been
+decreased too far), <code class="reqn">\lambda</code> is increased again. i.e. A
+backward distance in <code class="reqn">\lambda</code> that makes the coefficient zero
+is computed. Default is <code>0.1.</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>relax.lambda</code></td>
+<td>
+
+<p>A variable joins the active set if <code class="reqn">|l'(\beta)| &gt;
+      \lambda</code>*(1-<code>relax.lambda</code>). Default is <code>1e-7.</code> If no
+variable joins the active set even after many (&gt;20) steps, the user
+should increase <code>relax.lambda</code> to <code>1e-6</code> or <code>1e-5,</code>
+but not more than that. This adjustment is sometimes needed because
+of the numerical precision/error propagation problems. In general,
+the paths are less accurate with relaxed lambda.     
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>approx.Gram</code></td>
+<td>
+
+<p>If <code>TRUE,</code> an approximated Gram matrix is used in predictor
+steps; each step takes less number of computations, but the total
+number of steps usually increases. This might be useful when the
+number of features is large.    
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standardize</code></td>
+<td>
+
+<p>If <code>TRUE,</code> predictors are standardized to have a unit variance.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+
+<p>an effective zero
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+
+<p>If <code>TRUE,</code> the algorithm prints out its progress.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This algorithm implements the predictor-corrector method to determine
+the entire path of the coefficient estimates as the amount of
+regularization varies; it computes a series of solution sets,
+each time estimating the coefficients with less regularization, based
+on the previous estimate. The coefficients are estimated with
+no error at the knots, and the values are connected, thereby making
+the paths piecewise linear.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>coxpath</code> object is returned.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+
+<p>vector of <code class="reqn">\lambda</code> values for which the exact coefficients are
+computed
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda2</code></td>
+<td>
+
+<p><code class="reqn">\lambda_2</code> used
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>step.length</code></td>
+<td>
+
+<p>vector of step lengths in <code class="reqn">\lambda</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corr</code></td>
+<td>
+
+<p>matrix of <code class="reqn">l'(\beta)</code> values (derivatives of the
+log-partial-likelihood)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>new.df</code></td>
+<td>
+
+<p>vector of degrees of freedom (to be used in the plot function)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+
+<p>vector of degrees of freedom at each step
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loglik</code></td>
+<td>
+
+<p>vector of log-partial-likelihood computed at each step
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aic</code></td>
+<td>
+
+<p>vector of AIC values 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bic</code></td>
+<td>
+
+<p>vector of BIC values 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b.predictor</code></td>
+<td>
+
+<p>matrix of coefficient estimates from the predictor steps
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b.corrector</code></td>
+<td>
+
+<p>matrix of coefficient estimates from the corrector steps
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>new.A</code></td>
+<td>
+
+<p>vector of boolean values indicating the steps at which the active
+set changed (to be used in the plot/predict functions)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>actions</code></td>
+<td>
+
+<p>actions taken at each step
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>meanx</code></td>
+<td>
+
+<p>means of the columns of x
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sdx</code></td>
+<td>
+
+<p>standard deviations of the columns of x
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xnames</code></td>
+<td>
+
+<p>column names of x
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+
+<p>method used
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nopenalty.subset</code></td>
+<td>
+
+<p>nopenalty.subset used
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standardize</code></td>
+<td>
+
+<p><code>TRUE</code> if the predictors were standardized before fitting
+</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Mee Young Park and Trevor Hastie</p>
+
+
+<h3>References</h3>
+
+<p>Mee Young Park and Trevor Hastie (2007) L1 regularization path
+algorithm for generalized linear models. <em>J. R. Statist. Soc.</em> B,
+69, 659-677.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>cv.coxpath, plot.coxpath, predict.coxpath, summary.coxpath
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(lung.data)
+attach(lung.data)
+fit.a &lt;- coxpath(lung.data)
+fit.b &lt;- coxpath(lung.data, method="efron")
+detach(lung.data)
+</code></pre>
+
+
+</div>

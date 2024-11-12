@@ -1,0 +1,251 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>CV.CMB3S</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Cross-validated version of CMB-3S</h2>
+
+<h3>Description</h3>
+
+<p>Cross-validates the whole loss-based Stability Selection by aggregating several stable models according
+to their performance on validation sets. Also computes a cross-validated test loss on a disjoint test set.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">CV.CMB3S(
+  D,
+  nsing,
+  Bsing = 1,
+  B = 100,
+  alpha = 1,
+  singfam = Gaussian(),
+  evalfam = Gaussian(),
+  sing = FALSE,
+  M = 10,
+  m_iter = 100,
+  kap = 0.1,
+  LS = FALSE,
+  best = 1,
+  wagg,
+  gridtype,
+  grid,
+  ncmb,
+  CVind,
+  targetfam = Gaussian(),
+  print = TRUE,
+  robagg = FALSE,
+  lower = 0,
+  singcoef = FALSE,
+  Mfinal = 10,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>D</code></td>
+<td>
+<p>Data matrix. Has to be an <code class="reqn">n \times (p+1)-</code>dimensional data frame in the format <code class="reqn">(X,Y)</code>. The <code class="reqn">X-</code>part must not
+contain an intercept column containing only ones since this column will be added automatically.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsing</code></td>
+<td>
+<p>Number of observations (rows) used for the SingBoost submodels.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Bsing</code></td>
+<td>
+<p>Number of subsamples based on which the SingBoost models are validated. Default is 1. Not to confuse with parameter <code>B</code> for the Stability Selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+<p>Number of subsamples based on which the CMB models are validated. Default is 100. Not to confuse with <code>Bsing</code> for CMB.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Optional real number in <code class="reqn">]0,1]</code>. Defines the fraction of best SingBoost models used in the aggregation step. Default is 1 (use all models).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>singfam</code></td>
+<td>
+<p>A SingBoost family. The SingBoost models are trained based on the corresponding loss function. Default is <code>Gaussian()</code> (squared loss).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>evalfam</code></td>
+<td>
+<p>A SingBoost family. The SingBoost models are validated according to the corresponding loss function. Default is <code>Gaussian()</code> (squared loss).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sing</code></td>
+<td>
+<p>If <code>sing=FALSE</code> and the <code>singfam</code> family is a standard Boosting family that is contained in the package
+<code>mboost</code>, the CMB aggregation procedure is executed for the corresponding standard Boosting models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>An integer between 2 and <code>m_iter</code>. Indicates that in every <code class="reqn">M-</code>th iteration, a singular iteration will be
+performed. Default is 10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m_iter</code></td>
+<td>
+<p>Number of SingBoost iterations. Default is 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kap</code></td>
+<td>
+<p>Learning rate (step size). Must be a real number in <code class="reqn">]0,1]</code>. Default is 0.1 It is recommended to use
+a value smaller than 0.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LS</code></td>
+<td>
+<p>If a <code>singfamily</code> object that is already provided by <code>mboost</code> is used, the respective Boosting algorithm
+will be performed in the singular iterations if <code>Ls</code> is set to <code>TRUE</code>. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>best</code></td>
+<td>
+<p>Needed in the case of localized ranking. The parameter <code>K</code> of the localized ranking loss will be
+computed by <code class="reqn">best \cdot n</code> (rounded to the next larger integer). Warning: If a parameter <code>K</code> is inserted into the
+<code>LocRank</code> family, it will be ignored when executing SingBoost.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wagg</code></td>
+<td>
+<p>Type of row weight aggregation. <code>'weights1'</code> indicates that the selection frequencies of the (best)
+SingBoost models are averaged. <code>'weights2'</code> respects the validation losses for each model and downweights the ones
+with higher validation losses.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gridtype</code></td>
+<td>
+<p>Choose between <code>'pigrid'</code> and <code>'qgrid'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+<p>The grid for the thresholds (in <code class="reqn">]0,1]</code>) or the numbers of final variables (positive integers).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncmb</code></td>
+<td>
+<p>Number of samples used for <code>CMB</code>. Integer that must be smaller than the number of samples in <code>D</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CVind</code></td>
+<td>
+<p>A list where each element contains a vector on length <code class="reqn">n</code> (number of samples in the data matrix <code>D</code>) which
+contains the strings <code>'tr'</code> (training set), <code>'v'</code> (validation set) and <code>'te'</code> (test set). This list can be easily
+generated using the function <code>random_CVind</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>targetfam</code></td>
+<td>
+<p>Target loss. Should be the same family as <code>evalfam</code>. Default is <code>Gaussian()</code> (squared loss).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print</code></td>
+<td>
+<p>If set to <code>TRUE</code> (default), the number of the currently finished outer cross-validation loop is printed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>robagg</code></td>
+<td>
+<p>Optional. If setting <code>robagg=TRUE</code>, the best SingBoost models are ignored when executing the
+aggregation to avoid inlier effects. Only reasonable in combination with <code>lower</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>Optional argument. Only reasonable when setting <code>robagg=TRUE</code>. <code>lower</code> is a real number in <code class="reqn">[0,1[</code> (a rather
+small number is recommended) and indicates that the aggregation ignores the SingBoost models with the best
+performances to avoid possible inlier effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>singcoef</code></td>
+<td>
+<p>Default is <code>FALSE</code>. Then the coefficients for the candidate stable models are computed by standard
+linear regression (provided that the number of columns is smaller than the number of samples in the training set
+for each grid element). If set to <code>TRUE</code>, the coefficients are computed by SingBoost.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mfinal</code></td>
+<td>
+<p>Optional. Necessary if <code>singcoef=TRUE</code> to determine the frequency of singular iterations in the
+SingBoost models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Optional further arguments</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In <code>CMB3S</code>, a validation set is given based on which the optimal stable model is chosen. The <code>CV.CMB3S</code>
+function adds an outer cross-validation step such that both the training and the validation data sets (and
+optionally the test data sets) are chosen randomly by disjointly dividing the initial data set. The aggregated
+stable models form an ”ultra-stable” model. It is strongly recommended to use this function is a parallelized
+manner due to huge computation time.
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Cross-validated loss</code></td>
+<td>
+<p>A vector containing the cross-validated test losses.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ultra-stable column measure</code></td>
+<td>
+<p>A vector containing the aggregated selection frequencies of the stable models.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Werner, T., Gradient-Free Gradient Boosting, PhD Thesis, Carl von Ossietzky University Oldenburg, 2020
+</p>
+
+
+</div>

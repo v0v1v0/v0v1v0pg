@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plot.GPCMlasso</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Plot function for GPCMlasso</h2>
+
+<h3>Description</h3>
+
+<p>Plot function for a <code>GPCMlasso</code> object. Plots show coefficient paths
+of DIF (or DSF) parameters along (a transformation of) the tuning parameter lambda.
+One plot per item is created, every single parameter corresponding to this item
+is depicted by a single path. 
+The optimal model is highlighted with a red dashed line.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'GPCMlasso'
+plot(x, select = c("BIC", "AIC", "cAIC", "cv"),
+log.lambda = TRUE, items_per_page = 1, items = "all", 
+columns = NULL, ask_new = TRUE, lambda.lines = TRUE,
+equal_range = TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p><code>GPCMlasso</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>select</code></td>
+<td>
+<p>Specifies which criterion to use for the optimal model, we recommend the 
+default value "BIC". If cross-validation was performed, automatically the optimal
+model according to cross-validation is used. The chosen optimal model is 
+highlighted with a red dashed line.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log.lambda</code></td>
+<td>
+<p>A logical value indicating whether lambda or a log-transformation of 
+lambda should be used as x-axis in the plots.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>items_per_page</code></td>
+<td>
+<p>By default, each plot/item is put on a separate page. For example,
+<code>items_per_page=4</code> would put four plots/items on one page.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>items</code></td>
+<td>
+<p>By default, all items are plotted. If <code>items=c(1,3)</code>, 
+only the first and the third item are plotted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>columns</code></td>
+<td>
+<p>Specifies the number of columns to use when several
+plots are on one page. Only relevant if <code>items_per_page</code>&gt;1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ask_new</code></td>
+<td>
+<p>If TRUE, the user is asked to confirm before the next item is plotted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.lines</code></td>
+<td>
+<p>A logical value indicating whether a thin gray line plotted
+for each value from the vector of tuning parameters from <code>object</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>equal_range</code></td>
+<td>
+<p>A logical value indicating whether for each plot equal limits 
+on the y-axis shall be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further plot arguments.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Gunther Schauberger<br><a href="mailto:gunther.schauberger@tum.de">gunther.schauberger@tum.de</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Schauberger, Gunther and Mair, Patrick (2019): A Regularization Approach for the Detection of Differential 
+Item Functioning in Generalized Partial Credit Models, <em>Behavior Research Methods</em>, <a href="https://link.springer.com/article/10.3758/s13428-019-01224-2">https://link.springer.com/article/10.3758/s13428-019-01224-2</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GPCMlasso</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(tenseness_small)
+
+## formula for simple model without covariates
+form.0 &lt;- as.formula(paste("cbind(",paste(colnames(tenseness_small)[1:5],collapse=","),")~0"))
+
+######
+## fit simple RSM where loglikelihood and score function are evaluated parallel on 2 cores
+rsm.0 &lt;- GPCMlasso(form.0, tenseness_small, model = "RSM", 
+control= ctrl_GPCMlasso(cores=2))
+rsm.0
+
+## Not run: 
+## formula for model with covariates (and DIF detection)
+form &lt;- as.formula(paste("cbind(",paste(colnames(tenseness_small)[1:5],collapse=","),")~."))
+
+######
+## fit GPCM model with 10 different tuning parameters
+gpcm &lt;- GPCMlasso(form, tenseness_small, model = "GPCM", 
+                  control = ctrl_GPCMlasso(l.lambda = 10))
+gpcm
+plot(gpcm)
+pred.gpcm &lt;- predict(gpcm)
+trait.gpcm &lt;- trait.posterior(gpcm)
+
+######
+## fit RSM, detect differential step functioning (DSF)
+rsm.DSF &lt;- GPCMlasso(form, tenseness_small, model = "RSM", DSF = TRUE, 
+                     control = ctrl_GPCMlasso(l.lambda = 10))
+rsm.DSF
+plot(rsm.DSF)
+
+## create binary data set
+tenseness_small_binary &lt;- tenseness_small
+tenseness_small_binary[,1:5][tenseness_small[,1:5]&gt;1] &lt;- 2
+
+######
+## fit and cross-validate Rasch model
+set.seed(1860)
+rm.cv &lt;- GPCMlasso(form, tenseness_small_binary, model = "RM", cv = TRUE, 
+                   control = ctrl_GPCMlasso(l.lambda = 10))
+rm.cv
+plot(rm.cv)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

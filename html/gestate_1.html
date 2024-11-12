@@ -1,0 +1,259 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>analyse_sim</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Analyse simulations of time-to-event data using arbitrary event, censoring and recruitment distributions.</h2>
+
+<h3>Description</h3>
+
+<p>Function for analysing simulated time-to-event trial data produced by simulate_trials() or simulate_trials_strata().<br>
+This function automatically reads in either list or matrix simulate_trials() data formats.
+It performs log rank test and Cox regression analysis by default, but can also/instead perform RMST and/or landmark analyses.
+Covariate adjusted (/ stratified) analysis may be selected by using the "stratum" argument.
+If a stratum is specified, it will be included as a covariate in Cox and RMST analysis, and as a stratum in a stratified log-rank test and an inverse-precision-weighted landmark test.
+Strata values are handled as factors, so continuous covariates are not supported.<br>
+Analysis is typically the slowest part of simulation studies, so parallel processing using the doParallel package is built in.
+Parallel processing is enabled by setting the number of cores in the "parallel_cores" argument.
+Use of parallel processing is recommended for largescale (e.g. 100,000 iteration) simulations.
+To avoid unnecessary issues, ensure that the number of cores specified does not exceed number of threads provided by hardware.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">analyse_sim(
+  data,
+  LR = TRUE,
+  RMST = NA,
+  landmark = NA,
+  stratum = "",
+  parallel_cores = 1,
+  Time = "Time",
+  Event = "Censored",
+  censoringOne = TRUE,
+  Trt = "Trt",
+  Iter = "Iter"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Output file from simulate_trials(). Only simulate_trials() or simulate_trials_strata() output is supported, in either "list" or "matrix" format.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LR</code></td>
+<td>
+<p>Requests log-rank test and Cox regression. Default=TRUE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RMST</code></td>
+<td>
+<p>Requests Restricted Mean Survival Time analysis with specified (positive integer) restriction time, leave NULL for no analysis. Default=NULL (no RMST analysis).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>landmark</code></td>
+<td>
+<p>Requests Landmark analysis at specified (positive integer) time, leave NULL for no analysis. Default=NULL (no landmark analysis).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stratum</code></td>
+<td>
+<p>Specify name of column of a stratification factor and turn on stratified (LR/LM) and covariate-adjusted (Cox/RMST) analysis. By default, "", and no stratification.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel_cores</code></td>
+<td>
+<p>Positive integer specifying number of cores to use. If 1 specified then no parallel processing. Default=1 (no parallel processing).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Time</code></td>
+<td>
+<p>String specifying the name of the time column. Default="Time"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Event</code></td>
+<td>
+<p>String specifying the name of the censoring/event column. Default="Censored" (and by default it is a censoring column unless censoringOne=FALSE)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>censoringOne</code></td>
+<td>
+<p>Boolean specifying whether censoring is denoted in the censoring/event column by a one (TRUE) or zero (FALSE). Default=TRUE (censorings denoted by 1, events by 0)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Trt</code></td>
+<td>
+<p>String specifying the name of the treatment column. Default="Trt"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Iter</code></td>
+<td>
+<p>String specifying the name of the iterations column. Default="Iter"</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a table with one row per simulation. Table contains the following columns:
+</p>
+
+<ul>
+<li>
+<p>"HR" Cox Hazard Ratio (LR/Cox analysis only)
+</p>
+</li>
+<li>
+<p>"LogHR" Cox Log Hazard Ratio (LR/Cox analysis only)
+</p>
+</li>
+<li>
+<p>"LogHR_SE" Cox Standard Error of log Hazard Ratio (LR/Cox analysis only)
+</p>
+</li>
+<li>
+<p>"HR_Z" Cox Z-Score (LR/Cox analysis only)
+</p>
+</li>
+<li>
+<p>"HR_P" 1-sided Cox p-value (LR/Cox analysis only)
+</p>
+</li>
+<li>
+<p>"LR_Z" Log-Rank Test Z-Score (LR/Cox analysis only)
+</p>
+</li>
+<li>
+<p>"LR_P" 1-sided Log-Rank Test p-value (LR/Cox analysis only)
+</p>
+</li>
+<li>
+<p>"Events_Active" Events in Active arm (LR/Cox analysis only)
+</p>
+</li>
+<li>
+<p>"Events_Control" Events in Control arm (LR/Cox analysis only)
+</p>
+</li>
+<li>
+<p>"RMST_Time" RMST restriction time (RMST analysis only)
+</p>
+</li>
+<li>
+<p>"RMST_Active" RMST for Active arm (RMST analysis only)
+</p>
+</li>
+<li>
+<p>"RMST_Active_SE" RMST Standard Error for Active arm (RMST analysis only)
+</p>
+</li>
+<li>
+<p>"RMST_Control" RMST for Control arm (RMST analysis only)
+</p>
+</li>
+<li>
+<p>"RMST_Control_SE" RMST Standard Error for Control arm (RMST analysis only)
+</p>
+</li>
+<li>
+<p>"RMST_Delta" RMST difference between arms active-control (RMST analysis only)
+</p>
+</li>
+<li>
+<p>"RMST_Delta_SE" RMST difference between arms Standard Error (RMST analysis only)
+</p>
+</li>
+<li>
+<p>"RMST_Z" Z-score for RMST (RMST analysis only)
+</p>
+</li>
+<li>
+<p>"RMST_P" 1-sided RMST p-value (RMST analysis only)
+</p>
+</li>
+<li>
+<p>"LM_Time" Landmark time, i.e. time of survival function comparison  (Landmark analysis only)
+</p>
+</li>
+<li>
+<p>"LM_Active" Survival function for active arm at landmark time (Landmark analysis only)
+</p>
+</li>
+<li>
+<p>"LM_Active_SE" Greenwood standard error for active arm at landmark time (Landmark analysis only)
+</p>
+</li>
+<li>
+<p>"LM_Control" Survival function for control arm at landmark time (Landmark analysis only)
+</p>
+</li>
+<li>
+<p>"LM_Control_SE" Greenwood standard error for control arm at landmark time (Landmark analysis only)
+</p>
+</li>
+<li>
+<p>"LM_Delta" Survival function difference between arms active-control at landmark time (Landmark analysis only)
+</p>
+</li>
+<li>
+<p>"LM_Delta_SE" Greenwood standard error for difference between arms at landmark time (Landmark analysis only)
+</p>
+</li>
+<li>
+<p>"LM_Z" Z-score for landmark analysis (Landmark analysis only)
+</p>
+</li>
+<li>
+<p>"LM_P" 1-sided landmark analysis p-value (Landmark analysis only)
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>James Bell
+</p>
+
+
+<h3>References</h3>
+
+<p>Uno H, Claggett B, Tian L, Inoue E, Gallo P, Miyata T, Schrag D, Takeuchi M, Uyama Y, Zhao L,
+Skali H, Solomon S, Jacobus S, Hughes M, Packer M, Wei LJ. Moving beyond the hazard ratio in
+quantifying the between-group difference in survival analysis. Journal of clinical Oncology 2014,32, 2380-2385.
+Tian L, Zhao L, Wei LJ. Predicting the restricted mean event time with the subjects baseline covariates in survival analysis.
+Biostatistics 2014, 15, 222-233.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">example_sim &lt;- simulate_trials(active_ecurve=Weibull(250,0.8),control_ecurve=Weibull(100,1),
+rcurve=LinearR(12,100,100), assess=20,iterations=100,seed=12345,detailed_output=TRUE)
+
+example_analysis1 &lt;- analyse_sim(example_sim)
+example_analysis2 &lt;- analyse_sim(data=example_sim,RMST=15,landmark=15)
+
+example_strat_sim &lt;- simulate_trials_strata(stratum_probs=c(0.5,0.5),
+active_ecurve=c(Weibull(250,0.8),Weibull(100,1)), control_ecurve=Weibull(100,1),
+rcurve=LinearR(12,100,100),assess=20,iterations=100,seed=12345)
+
+example_strat_analysis &lt;- analyse_sim(data=example_strat_sim,RMST=15,landmark=15,stratum="Stratum")
+</code></pre>
+
+
+</div>

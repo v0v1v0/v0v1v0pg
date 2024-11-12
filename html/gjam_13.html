@@ -1,0 +1,234 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gjamPredict</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict gjam data</h2>
+
+<h3>Description</h3>
+
+<p>Predicts data from a gjam object, including conditional and out-of-sample prediction.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  gjamPredict(output, newdata = NULL, y2plot = NULL, ylim = NULL, 
+              FULL = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>output</code></td>
+<td>
+<p>object of <code>class</code> "gjam".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>a <code>list</code> of data for prediction, see <b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y2plot</code></td>
+<td>
+<p><code>character</code> vector of columns in <code>output$y</code> to plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ylim</code></td>
+<td>
+<p>vector of lower and upper bounds for prediction plot</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FULL</code></td>
+<td>
+<p>will return full chains for predictions as <code>output$ychains</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If <code>newdata</code> is not specified, the response is predicted from <code>xdata</code>  as an in-sample prediction. If <code>newdata</code> is specified, prediction is either conditional or out-of-sample. 
+</p>
+<p>Conditional prediction on a new set of <code>y</code> values is done if <code>newdata</code> includes the <code>matrix ycondData</code>, which holds columns to condition on.  <code>ycondData</code> must be a <code>matrix</code> and have column names matching those in <code>y</code> that it will replace.  <code>ycondData</code> must have at least one column, but fewer than <code>ncol(y)</code> columns.  Columns not included in <code>ycondData</code> will be predicted conditionally. Note that conditional prediction can be erratic if the observations on which the prediction is conditioned are unlikely given the model.
+</p>
+<p>Alternatively, the <code>list newdata</code> can include a new version of <code>xdata</code> for out-of-sample prediction.  The version of <code>xdata</code> passed in <code>newdata</code> has the columns with the same names and variable types as <code>xdata</code> passed to <code>gjam</code>.  Note that factor levels must also match those included when fitting the model.  All columns in <code>y</code> will be predicted out-of-sample.  
+</p>
+<p>For count composition data the effort (total count) is 1000.
+</p>
+<p>Because there is no out-of-sample effort for <code>'CC'</code> data, values are predicted on the [0, 1] scale.
+</p>
+<p>See examples below.
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>design matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sdList</code></td>
+<td>
+<p><code>list</code> of predictive means and standard errors includes <code>yMu, yPe</code> (predictive mean, SE), <code>wMu, wSe</code> (mean latent states and SEs)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>piList</code></td>
+<td>
+<p>predictive intervals, only generated if <code>length(y) &lt; 10000</code>, includes <code>yLo, yHi</code> (0.025, 0.975) prediction interval, <code>wLo, wHi</code> (0.025, 0.975) for latent states </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prPresent</code></td>
+<td>
+<p><code>n x S matrix</code> of probabilities of presence</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ematrix</code></td>
+<td>
+<p>effort</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ychains</code></td>
+<td>
+<p>full prediction chains if <code>FULL = T</code></p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>James S Clark, <a href="mailto:jimclark@duke.edu">jimclark@duke.edu</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Clark, J.S., D. Nemergut, B. Seyednasrollah, P. Turner, and S. Zhang. 2016.  Generalized joint attribute modeling for biodiversity analysis: Median-zero, multivariate, multifarious data.  Ecological Monographs, 87, 34-56.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gjamSimData</code> simulates data
+</p>
+<p>A more detailed vignette is can be obtained with:
+</p>
+<p><code>browseVignettes('gjam')</code>
+</p>
+<p>web site 'http://sites.nicholas.duke.edu/clarklab/code/'.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+S   &lt;- 10
+f   &lt;- gjamSimData(n = 200, S = S, Q = 3, typeNames = 'CC') 
+ml  &lt;- list(ng = 1500, burnin = 50, typeNames = f$typeNames, holdoutN = 10)
+out &lt;- gjam(f$formula, f$xdata, f$ydata, modelList = ml)
+
+# predict data
+cols &lt;- c('#018571', '#a6611a')
+par(mfrow=c(1,3),bty='n')             
+gjamPredict(out, y2plot = colnames(f$ydata)) # predict the data in-sample
+title('full sample')
+
+# out-of-sample prediction
+xdata     &lt;- f$xdata[1:20,]
+xdata[,3] &lt;- mean(f$xdata[,3])     # mean for x[,3]
+xdata[,2] &lt;- seq(-2,2,length=20)   # gradient x[,2]
+newdata   &lt;- list(xdata = xdata, nsim = 50 )
+p1 &lt;- gjamPredict( output = out, newdata = newdata)
+
+# plus/minus 1 prediction SE, default effort = 1000
+x2   &lt;- p1$x[,2]
+ylim &lt;- c(0, max(p1$sdList$yMu[,1] + p1$sdList$yPe[,1]))
+plot(x2, p1$sdList$yMu[,1],type='l',lwd=2, ylim=ylim, xlab='x2',
+     ylab = 'Predicted', col = cols[1])
+lines(x2, p1$sdList$yMu[,1] + p1$sdList$yPe[,1], lty=2, col = cols[1])
+lines(x2, p1$sdList$yMu[,1] - p1$sdList$yPe[,1], lty=2, col = cols[1])
+
+# upper 0.95 prediction error
+lines(x2, p1$piList$yLo[,1], lty=3, col = cols[1])
+lines(x2, p1$piList$yHi[,1], lty=3, col = cols[1])
+title('SE and prediction, Sp 1')
+
+# conditional prediction, assume first species is absent
+ydataCond &lt;- out$inputs$y[,1,drop=FALSE]*0                 # set first column to zero
+newdata   &lt;- list(ydataCond = ydataCond, nsim=50)
+p0        &lt;- gjamPredict(output = out, newdata = newdata)
+
+ydataCond &lt;- ydataCond + 10                                # first column is 10
+newdata   &lt;- list(ydataCond = ydataCond, nsim=50)
+p1        &lt;- gjamPredict(output = out, newdata = newdata)
+
+s    &lt;- 4         # species chosen at random to compare
+ylim &lt;- range( p0$sdList$yMu[,s], p1$sdList$yMu[,s] )
+plot(out$inputs$y[,s],p0$sdList$yMu[,s], cex=.2, col=cols[1],
+     xlab = 'Observed', ylab = 'Predicted', ylim = ylim)
+abline(0,1,lty=2)
+points(out$inputs$y[,s],p1$sdList$yMu[,s], cex=.2, col=cols[2])
+title('Cond. on 1st Sp')
+legend( 'topleft', c('first species absent', 'first species = 10'), 
+        text.col = cols, bty = 'n')
+
+# conditional, out-of-sample
+n   &lt;- 1000
+S   &lt;- 10
+f   &lt;- gjamSimData(n = n, S = S, Q = 3, typeNames = 'CA') 
+
+holdOuts &lt;- sort( sample(n, 50) )
+
+xdata &lt;- f$xdata[-holdOuts,] # fitted data
+ydata &lt;- f$ydata[-holdOuts,]
+
+xx &lt;- f$xdata[holdOuts,]     # use for prediction
+yy &lt;- f$ydata[holdOuts,]
+
+ml  &lt;- list(ng = 2000, burnin = 500, typeNames = f$typeNames)   # fit the non-holdouts
+out &lt;- gjam(f$formula, xdata, ydata, modelList = ml)
+
+cdex &lt;- sample(S, 4)        # condition on 4 species
+ndex &lt;- c(1:S)[-cdex]       # conditionally predict others
+
+newdata &lt;- list(xdata = xx, ydataCond = yy[,cdex], nsim = 200) # conditionally predict out-of-sample
+p2      &lt;- gjamPredict(output = out, newdata = newdata)
+
+par(bty='n', mfrow=c(1,1))
+plot( as.matrix(yy[,ndex]), p2$sdList$yMu[,ndex], 
+      xlab = 'Observed', ylab = 'Predicted', cex=.3, col = cols[1])
+abline(0,1,lty=2)
+title('RMSPE')
+mspeC &lt;- sqrt( mean(  (as.matrix(yy[,ndex]) - p2$sdList$yMu[,ndex])^2 ) )
+
+#predict unconditionally, out-of-sample
+newdata   &lt;- list(xdata = xx, nsim = 200 ) 
+p1 &lt;- gjamPredict(out, newdata = newdata)
+
+points( as.matrix(yy[,ndex]), p1$sdList$yMu[,ndex], col=cols[2], cex = .3)
+mspeU &lt;- sqrt( mean(  (as.matrix(yy[,ndex]) - p1$sdList$yMu[,ndex])^2 ) )
+
+e1 &lt;- paste( 'cond, out-of-sample =', round(mspeC, 2) )
+e2 &lt;- paste( 'uncond, out-of-sample =', round(mspeU, 2) )
+
+legend('topleft', c(e1, e2), text.col = cols, bty = 'n')
+
+## End(Not run)
+</code></pre>
+
+
+</div>

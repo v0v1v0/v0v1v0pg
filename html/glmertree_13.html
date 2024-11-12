@@ -1,0 +1,130 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GrowthCurveDemo</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Artificial dataset for partitioning of linear growth curve models</h2>
+
+<h3>Description</h3>
+
+<p>Artificial dataset to illustrate fitting of LMM trees with growth curve models  
+in the terminal nodes. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">data("GrowthCurveDemo")
+</code></pre>
+
+
+<h3>Format</h3>
+
+<p>A data frame containing 1250 repeated observations on 250 persons. x1 - x8 are
+time-invariant partitioning variables. Thus, they are measurements on the person
+(i.e., cluster) level, not on the individual observation level.
+</p>
+
+<dl>
+<dt>person</dt>
+<dd>
+<p>numeric. Indicator linking repeated measurements to persons.</p>
+</dd>
+<dt>time</dt>
+<dd>
+<p>factor. Indicator for timepoint.</p>
+</dd>
+<dt>y</dt>
+<dd>
+<p>numeric. Response variable.</p>
+</dd>
+<dt>x1</dt>
+<dd>
+<p>numeric. Potential partitioning variable.</p>
+</dd>
+<dt>x2</dt>
+<dd>
+<p>numeric. Potential partitioning variable.</p>
+</dd>
+<dt>x3</dt>
+<dd>
+<p>numeric. Potential partitioning variable.</p>
+</dd>
+<dt>x4</dt>
+<dd>
+<p>numeric. Potential partitioning variable.</p>
+</dd>
+<dt>x5</dt>
+<dd>
+<p>numeric. Potential partitioning variable.</p>
+</dd>
+<dt>x6</dt>
+<dd>
+<p>numeric. Potential partitioning variable.</p>
+</dd>
+<dt>x7</dt>
+<dd>
+<p>numeric. Potential partitioning variable.</p>
+</dd>
+<dt>x8</dt>
+<dd>
+<p>numeric. Potential partitioning variable.</p>
+</dd>
+</dl>
+<h3>Details</h3>
+
+<p>Data were generated so that <code>x1</code>, <code>x2</code> and <code>x3</code> are
+true partitioning variables, <code>x4</code> through <code>x8</code> are noise
+variables. The (potential) partitioning variables are time invariant.
+Time-varying covariates can also be included in the model. For partitioning
+growth curves these should probably not be potential partitioning variables,
+as this could result in observations from the same person ending up in 
+different terminal nodes. Thus, time-varying covariates are probably
+best included as predictors in the node-specific regression model. E.g.: 
+<code>y ~ time + timevarying_cov | person | x1 + x2 + x3 + x4</code>.</p>
+
+
+<h3>References</h3>
+
+<p>Fokkema M &amp; Zeileis A (2024). Subgroup detection in linear growth curve models with 
+generalized linear mixed model (GLMM) trees. Behavior Research Methods. 
+<a href="https://doi.org/10.3758/s13428-024-02389-1">doi:10.3758/s13428-024-02389-1</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>lmertree</code>, <code>glmertree</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data("GrowthCurveDemo", package = "glmertree")
+head(GrowthCurveDemo)
+
+## Fit LMM tree with a random intercept w.r.t. person:
+form &lt;- y ~ time | person | x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8
+lt.default &lt;- lmertree(form, data = GrowthCurveDemo)
+plot(lt.default, which = "tree") ## yields too large tree
+VarCorr(lt.default)
+
+## Account for measurement level of the partitioning variables:
+lt.cluster &lt;- lmertree(form, cluster = person, data = GrowthCurveDemo)
+plot(lt.cluster, which = "tree") ## yields correct tree
+plot(lt.cluster, which = "growth") ## plot individual growth curves not datapoints 
+coef(lt.cluster) ## node-specific fixed effects
+VarCorr(lt.cluster) ## with smaller trees random effects explain more variance
+
+## Fit LMM tree with random intercept and random slope of time w.r.t. person:
+form.s &lt;- y ~ time | (1 + time | person) | x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8
+lt.s.cluster &lt;- lmertree(form.s, cluster = person, data = GrowthCurveDemo)
+plot(lt.s.cluster, which = "tree") ## same tree as before
+coef(lt.cluster) 
+VarCorr(lt.s.cluster)
+
+</code></pre>
+
+
+</div>

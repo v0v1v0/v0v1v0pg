@@ -1,0 +1,246 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>auto.gdpc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Automatic Fitting of Generalized Dynamic Principal Components</h2>
+
+<h3>Description</h3>
+
+<p>Computes Generalized Dynamic Principal Components. The number of components can be supplied by the user or chosen automatically so that a given proportion of variance is explained. The number of lags is chosen automatically using one of the following criteria: Leave-one-out cross-validation, an AIC type criterion, a BIC type criterion or a criterion based on a proposal of Bai and Ng (2002). See Peña, Smucler and Yohai (2020) for more details. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">auto.gdpc(Z, crit = 'LOO', normalize = 1, auto_comp = TRUE, expl_var = 0.9,
+          num_comp = 5, tol = 1e-4, k_max = 10,
+          niter_max = 500, ncores = 1, verbose = FALSE)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Z</code></td>
+<td>
+<p>Data matrix. Each column is a different time series.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>crit</code></td>
+<td>
+<p>A string specifying the criterion to be used. Options are 'LOO', 'AIC', 'BIC' and 'BNG'. Default is 'LOO'. See Details below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normalize</code></td>
+<td>
+<p>Integer. Either 1, 2 or 3. Indicates whether the data should be standardized. Default is 1. See Details below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>auto_comp</code></td>
+<td>
+<p>Logical. If TRUE compute components until the proportion of explained variance is equal to expl_var, otherwise use num_comp components. Default is TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expl_var</code></td>
+<td>
+<p>A number between 0 and 1. Desired proportion of explained variance (only used if auto_comp==TRUE). Default is 0.9.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_comp</code></td>
+<td>
+<p>Integer. Number of components to be computed (only used if auto_comp==FALSE). Default is 5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>Relative precision. Default is 1e-4.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k_max</code></td>
+<td>
+<p>Integer. Maximum possible number of lags. Default is 10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>niter_max</code></td>
+<td>
+<p>Integer. Maximum number of iterations. Default is 500.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Integer. Number of cores to be used for parallel computations. Default is 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical. Should progress be reported? Default is FALSE.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Suppose the data matrix consists of <code class="reqn">m</code> series of length <code class="reqn">T</code>.
+Let <code class="reqn">\bold{f}</code> be the dynamic principal component defined using <code class="reqn">k</code> lags, let <code class="reqn">R</code> be the corresponding matrix of residuals and let <code class="reqn">\Sigma = (R^{\prime} R) / T</code>.
+</p>
+<p>If crit = 'LOO' the number of lags is chosen among <code class="reqn">0,\dots, k_{max}</code> as the value <code class="reqn">k</code> that minimizes the leave-one-out (LOO) cross-validation mean squared error, given by
+</p>
+<p style="text-align: center;"><code class="reqn"> LOO = \frac{1}{T m}\sum\limits_{i=1}^{m}\sum\limits_{t=1}^{T}\frac{R_{t,i}^{2}}{(1-h_{t,t})^{2}},</code>
+</p>
+
+<p>where <code class="reqn">h_{t,t}</code> are the diagonal elements of the hat matrix <code class="reqn">H = F(F^{\prime} F)^{-1} F^{\prime} </code>, with <code class="reqn">F</code> being the <code class="reqn">T \times (k+2)</code> matrix with rows <code class="reqn">(f_{t-k}, f_{t-k+1}, \dots, f_{t}, 1)</code>.
+</p>
+<p>If crit = 'AIC' the number of lags is chosen among <code class="reqn">0,\dots, k_{max}</code> as the value <code class="reqn">k</code> that minimizes the following AIC type criterion
+</p>
+<p style="text-align: center;"><code class="reqn"> AIC = T \log(trace(\Sigma)) + 2 m (k+2) .</code>
+</p>
+
+<p>If crit = 'BIC' the number of lags is chosen among <code class="reqn">0,\dots, k_{max}</code> as the value <code class="reqn">k</code> that minimizes the following BIC type criterion
+</p>
+<p style="text-align: center;"><code class="reqn"> BIC = T \log(trace(\Sigma)) + m (k+2) \log(T) .</code>
+</p>
+
+<p>If crit = 'BNG' the number of lags is chosen among <code class="reqn">0,\dots, k_{max}</code> as the value <code class="reqn">k</code> that minimizes the following criterion
+</p>
+<p style="text-align: center;"><code class="reqn"> BNG = \min(T, m) \log(trace(\Sigma)) + (k+1) \log(\min(T, m)).</code>
+</p>
+
+<p>This is an adaptation of a criterion proposed by Bai and Ng (2002).
+</p>
+<p>For problems of relatively small dimension, say <code class="reqn">T \geq m 10</code>, 'AIC' can can give better results than the
+default 'LOO'.
+</p>
+<p>If normalize = 1, the data is analyzed in the original units, without mean and variance standarization. If normalize = 2, the data is standardized to zero mean and unit variance before computing the principal components, but the intercepts and loadings are those needed to reconstruct the original series. If normalize = 3 the data are standardized as in normalize = 2, but the intercepts and the loadings are those needed to reconstruct the standardized series. Default is normalize = 1.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>gdpcs</code>, that is, a list of length equal to the number of computed components. The i-th entry of this list is an object of class <code>gdpc</code>, that is, a list with entries
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>expart</code></td>
+<td>
+<p>Proportion of the variance explained by the first i components.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mse</code></td>
+<td>
+<p>Mean squared error of the reconstruction using the first i components.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>crit</code></td>
+<td>
+<p>The value of the criterion of the reconstruction, according to what the user specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>Number of lags chosen.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Vector of intercepts corresponding to f.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>Matrix of loadings corresponding to f. Column number <code class="reqn">k</code> is the vector of <code class="reqn">k-1</code> lag loadings.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>f</code></td>
+<td>
+<p>Coordinates of the i-th dynamic principal component corresponding to the periods <code class="reqn">1,\dots,T</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial_f</code></td>
+<td>
+<p>Coordinates of the i-th dynamic principal component corresponding to the periods <code class="reqn">-k+1,\dots,0</code>. Only for the case <code class="reqn">k&gt;0</code>, otherwise 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The matched call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conv</code></td>
+<td>
+<p>Logical. Did the iterations converge?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>niter</code></td>
+<td>
+<p>Integer. Number of iterations.</p>
+</td>
+</tr>
+</table>
+<p><code>components</code>, <code>fitted</code>, <code>plot</code> and <code>print</code> methods are available for this class.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Daniel Peña, Ezequiel Smucler, Victor Yohai
+</p>
+
+
+<h3>References</h3>
+
+<p>Bai J. and Ng S. (2002). “Determining the Number of Factors in Approximate Factor Models.”
+Econometrica, 70(1), 191–221.
+</p>
+<p>Peña D., Smucler E. and Yohai V.J. (2020). “gdpc: An R Package for Generalized Dynamic Principal Components.” Journal of Statistical Software, 92(2), 1-23.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gdpc</code>, <code>plot.gdpc</code>, <code>plot.gdpcs</code>, <code>fitted.gdpcs</code>, <code>components.gdpcs</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">T &lt;- 200 #length of series
+m &lt;- 200 #number of series
+set.seed(1234)
+f &lt;- rnorm(T + 1)
+x &lt;- matrix(0, T, m)
+u &lt;- matrix(rnorm(T * m), T, m)
+for (i in 1:m) {
+    x[, i] &lt;- 10 * sin(2 * pi * (i/m)) * f[1:T] + 10 * cos(2 * pi * (i/m)) * f[2:(T + 1)] + u[, i]
+}
+#Choose number of lags using the LOO criterion.
+#k_max=3 to keep computation time low
+autofit &lt;- auto.gdpc(x, k_max = 3)
+autofit
+fit_val &lt;- fitted(autofit, 1) #Get fitted values
+resid &lt;- x - fit_val #Residuals
+plot(autofit, which_comp = 1) #Plot component
+</code></pre>
+
+
+</div>

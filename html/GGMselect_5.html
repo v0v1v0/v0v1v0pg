@@ -1,0 +1,163 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>selectFast</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>  Estimate a graph in a Gaussian  Graphical Model: Fast procedure</h2>
+
+<h3>Description</h3>
+
+<p>Select a graph within the (data-driven) families of graphs <code>EW</code>, <code>C01</code>, and <code>LA</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">selectFast(X, dmax=min(floor(nrow(X)/3),nrow(X)-3,ncol(X)-1),
+           K=2.5, family="EW",
+           min.ev=10**(-8), max.iter=200, eps=0.01,
+           beta=nrow(X)*nrow(X)/2, tau=1/sqrt(nrow(X)*(ncol(X)-1)), h=0.001, T0=10,
+           verbose=FALSE )
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+ <p><code>n x p</code> matrix where <code>n</code> is the sample size and
+<code>p</code> the number of variables. <code>n</code> should be greater than
+<code>3</code> and <code>p</code> greater than <code>1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dmax</code></td>
+<td>
+<p> integer or <code>p</code>-dimensional vector of integers
+smaller or equal to
+<code>min(n-3, p-1)</code>. When <code>dmax</code> is a scalar, it gives the maximum
+degree of the estimated graph. When  <code>dmax</code> is a vector,
+<code>dmax[a]</code> gives the maximum degree of the node <code>a</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p> scalar or vector  with values greater than 1. Tuning
+parameter of the penalty 
+function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>character string or vector of character strings, among <code>"EW"</code>, <code>"LA"</code>, <code>"C01"</code>,
+<code>c("C01","LA")</code> or <code>c("C01","LA","EW")</code>.  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min.ev</code></td>
+<td>
+<p> minimum eigenvalue for matrix inversion. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.iter, eps, beta, tau, h, T0</code></td>
+<td>
+<p> tuning parameters for the
+Langevin Monte Carlo algorithm. Only used when
+<code>family</code> is <code>"EW"</code> or <code>c("C01","LA","EW")</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p> logical. If <code>TRUE</code> a trace of the current process is displayed in real time.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>More details are available on <a href="../doc/Notice.pdf">../doc/Notice.pdf</a>
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with components <code>"EW"</code>, <code>"LA"</code>, <code>"C01"</code>,
+<code>"C01.LA"</code> and <code>"C01.LA.EW"</code>, according to the
+<code>family</code> argument, each one with components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Neighb </code></td>
+<td>
+<p>array of dimension  <code>p x max(dmax) x
+      length(K)</code> or, when <code>length(K)</code> equals 1,
+matrix of dimension <code>p x max(dmax)</code>.
+<code>Neighb[a, , k ]</code> contains the indices
+of the nodes connected
+to node <code>a</code> for <code>K[k]</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>crit.min</code></td>
+<td>
+<p>vector of dimension <code>length(K)</code>.
+It gives the minimal values of the selection criterion
+for each value of <code>K</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+<p>array of dimension <code>p x p x length(K)</code> or, when
+<code>length(K)</code> equals 1, matrix of dimension <code>p x p</code>.
+<code>G[,,k]</code> gives the adjacency matrix for <code>K[k]</code>. </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Bouvier A, Giraud C, Huet S, Verzelen N.</p>
+
+
+<h3>References</h3>
+
+<p>Please use <code>citation("GGMselect")</code>.</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>selectQE</code>, <code>selectMyFam</code>,
+<code>simulateGraph</code>, <code>penalty</code>,
+<code>convertGraph</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">p=30
+n=30
+# simulate graph
+eta=0.11
+Gr &lt;- simulateGraph(p,eta)
+# simulate data
+X &lt;- rmvnorm(n, mean=rep(0,p), sigma=Gr$C)
+# estimate graph
+GRest &lt;- selectFast(X, family="C01")
+
+# plot result
+library(network)
+par(mfrow=c(1,2))
+gV &lt;- network(Gr$G)
+plot(gV,jitter=TRUE, usearrows = FALSE, label=1:p,displaylabels=TRUE)
+g &lt;- network(GRest$C01$G)
+plot(g, jitter=TRUE, usearrows = FALSE,  label=1:p,displaylabels=TRUE)
+</code></pre>
+
+
+</div>

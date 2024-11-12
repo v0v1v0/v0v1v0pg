@@ -1,0 +1,295 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>glca</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fits Latent Class Models for Data Containing Group Variable and Covariates</h2>
+
+<h3>Description</h3>
+
+<p>Function for fitting latent class models with multiple groups, which may or may not include latent class structure for group variable.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">glca(
+  formula,
+  group = NULL,
+  data = NULL,
+  nclass = 3,
+  ncluster = NULL,
+  std.err = TRUE,
+  measure.inv = TRUE,
+  coeff.inv = TRUE,
+  init.param = NULL,
+  n.init = 10,
+  decreasing = FALSE,
+  testiter = 50,
+  maxiter = 5000,
+  eps = 1e-06,
+  na.rm = FALSE,
+  seed = NULL,
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>a formula for specifying manifest items and covariates using the "<code>item</code>" function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>an optional vector specifying a group of observations. Given group variable, group covariates can be incorporated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a data frame containing the manifest item, covariates and group variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nclass</code></td>
+<td>
+<p>number of level-1 (individual-level) latent classes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncluster</code></td>
+<td>
+<p>number of level-2 (group-level) latent classes. When <code>group</code> and <code>ncluster</code> (&gt;1) are given the multilevel latent class models will be fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>std.err</code></td>
+<td>
+<p>a logical value for whether calculating standard errors for estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>measure.inv</code></td>
+<td>
+<p>a logical value of the measurement invariance assumption across groups.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coeff.inv</code></td>
+<td>
+<p>a logical value of the coefficient invariance assumption across groups (random intercept model).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init.param</code></td>
+<td>
+<p>A set of model parameters to be used as the user-defined initial values for the EM algorithm. It should be <code>list</code> with the named parameters and have same structure of <code>param</code> of the <code>glca</code> output. In default, initial parameters are randomly generated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.init</code></td>
+<td>
+<p>number of randomly generated initial parameter sets to be used for avoiding the problem of local maxima.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>decreasing</code></td>
+<td>
+<p>a logical value for whether reordering the parameters by descending order responding probability for first-category of first manifest item.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>testiter</code></td>
+<td>
+<p>number of iterations in the EM algorithm for each initial parameter set. The initial parameter set that provides the largest log-likelihood will be selected for estimating the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiter</code></td>
+<td>
+<p>maximum number of iterations for the EM algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>a convergence tolerance value. When the largest absolute difference between former estimates and current estimates is less than <code>eps</code>, the algorithm will stop updating and consider the convergence to be reached.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.rm</code></td>
+<td>
+<p>a logical value for deleting the lines that have at least one missing manifest item. If <code>na.rm = FALSE</code>, MAR procedure will be conducted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>In default, the set of initial parameters is drawn randomly. As the same value for seed guarantees the same initial parameters to be drawn, this argument can be used for reproducibility of estimation results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>a logical value indicating whether <code>glca</code> should print the estimation procedure onto the screen.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>glca</code> is the function for implementing LCA consist of two-type latent categorical variables (i.e., level-1 and level-2 latent class). The level-1 (individual-level) latent class is identified by the association among the individuals' responses to multiple manifest items, but level-2 (group-level) latent class is categorized by the prevalence of level-1 latent class for group variable. The function <code>glca</code> can handle two types of covariates: level-1 and level-2 covariates. If covariates vary across individuals, they are considered as level-1 covariates. When <code>group</code> and <code>ncluster</code> (&gt;1) are given, covariates which are varying across groups are considered as level-2 covariates. Both types of covariates have effect on level-1 class prevalence.
+</p>
+<p>The formula should consist of an <code>~</code> operator between two sides. Manifest items should be indicated in LHS of formula using <code>item</code> function and covariates should be specified in RHS of formula. For example, <br><code>item(y1, y2, y3) ~ 1</code><br><code>item(y1, y2, y3) ~ x1 + x2</code><br>
+where the first fomula indicates LCA with three manifest variables (<code>y1</code>, <code>y2</code>, and <code>y3</code>) and no covariate, and the second formula includes two covariates (<code>x1</code> and <code>x2</code>). Two types of covariates (i.e., level-1 and level-2 covariates) will be automatically detected by <code>glca</code>.
+</p>
+<p>The estimated parameters in <code>glca</code> are <code>rho</code>, <code>gamma</code>, <code>delta</code>, and <code>beta</code>. The set of item response probabilities for each level-1 class is <code>rho</code>. The sets of prevalences for level-1 and level-2 class are <code>gamma</code> and <code>delta</code>, respectively. The prevalence for level-1 class (i.e., <code>gamma</code>) can be modeled as logistic regression using level-1 and/or level-2 covariates. The set of logistic regression coefficients is <code>beta</code> in <code>glca</code> output.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>glca</code> returns an object of class "<code>glca</code>".
+</p>
+<p>The function <code>summary</code> prints estimates for parameters and <code>glca.gof</code> function gives goodness of fit measures for the model.
+</p>
+<p>An object of class "<code>glca</code>" is a list containing the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the matched call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms</code></td>
+<td>
+<p>the <code>terms</code> object used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>a <code>list</code> of model description.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var.names</code></td>
+<td>
+<p>a <code>list</code> of names of data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>datalist</code></td>
+<td>
+<p>a <code>list</code> of data used for fitting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>a <code>list</code> of parameter estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>std.err</code></td>
+<td>
+<p>a <code>list</code> of standard errors for estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coefficient</code></td>
+<td>
+<p>a <code>list</code> of logistic regression coefficients for prevalence of level-1 class.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>posterior</code></td>
+<td>
+<p>a <code>data.frame</code> or a <code>list</code> of posterior probablities of each individaul for latent classes and each group for latent clusters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gof</code></td>
+<td>
+<p>a <code>list</code> of goodness of fit measures.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convergence</code></td>
+<td>
+<p>a <code>list</code> containing information about convergence.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Vermunt, J.K. (2003) Multilevel latent class models. <em>Sociological Methodology</em>, <b>33</b>, 213–239. <a href="https://doi.org/10.1111/j.0081-1750.2003.t01-1-00131.x">doi:10.1111/j.0081-1750.2003.t01-1-00131.x</a>
+</p>
+<p>Collins, L.M. and Lanza, S.T. (2009) <em>Latent Class and Latent Transition Analysis: With Applications in the Social, Behavioral, and Health Sciences</em>. John Wiley &amp; Sons Inc.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gss08</code> <code>nyts18</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">##
+## Example 1. GSS dataset
+##
+data("gss08")
+# LCA
+lca = glca(item(DEFECT, HLTH, RAPE, POOR, SINGLE, NOMORE) ~ 1,
+            data = gss08, nclass = 3, n.init = 1)
+summary(lca)
+
+# LCA with covariate(s)
+lcr = glca(item(DEFECT, HLTH, RAPE, POOR, SINGLE, NOMORE) ~ AGE,
+           data = gss08, nclass = 3, n.init = 1)
+summary(lcr)
+coef(lcr)
+
+
+# Multiple-group LCA (MGLCA)
+mglca = glca(item(DEFECT, HLTH, RAPE, POOR, SINGLE, NOMORE) ~ 1,
+             group = DEGREE, data = gss08, nclass = 3, n.init = 1)
+summary(mglca)
+
+# Multiple-group LCA with covariate(s) (MGLCR)
+mglcr = glca(item(DEFECT, HLTH, RAPE, POOR, SINGLE, NOMORE) ~ SEX,
+             group = DEGREE, data = gss08, nclass = 3, n.init = 1)
+summary(mglcr)
+coef(mglcr)
+
+
+##
+## Example 2. NYTS dataset
+##
+data("nyts18")
+# Multilevel LCA (MLCA)
+mlca = glca(item(ECIGT, ECIGAR, ESLT, EELCIGT, EHOOKAH) ~ 1,
+            group = SCH_ID, data = nyts18, nclass = 3, ncluster = 2, n.init = 1)
+summary(mlca)
+
+# MLCA with covariate(s) (MLCR)
+# (SEX: level-1 covariate, SCH_LEV: level-2 covariate)
+mlcr = glca(item(ECIGT, ECIGAR, ESLT, EELCIGT, EHOOKAH) ~ SEX + SCH_LEV,
+            group = SCH_ID, data = nyts18, nclass = 3, ncluster = 2, n.init = 1)
+coef(mlcr)
+
+
+</code></pre>
+
+
+</div>

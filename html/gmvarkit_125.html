@@ -1,0 +1,158 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>smart_covmat</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create random VAR-model <code class="reqn">(dxd)</code> error term covariance matrix <code class="reqn">\Omega</code>
+fairly close to a given <strong>positive definite</strong> covariance matrix using (scaled)
+Wishart distribution</h2>
+
+<h3>Description</h3>
+
+<p><code>random_covmat</code> generates random VAR model <code class="reqn">(dxd)</code> error term covariance matrix <code class="reqn">\Omega</code>
+from (scaled) Wishart distribution that is fairly close to the given matrix.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">smart_covmat(d, M, Omega, W_and_lambdas, accuracy, structural_pars = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>the number of time series in the system.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+
+<dl>
+<dt>For <strong>GMVAR</strong> and <strong>StMVAR</strong> models:</dt>
+<dd>
+<p>a positive integer specifying the number of mixture components.</p>
+</dd>
+<dt>For <strong>G-StMVAR</strong> models:</dt>
+<dd>
+<p>a size (2x1) integer vector specifying the number of <em>GMVAR type</em> components <code>M1</code>
+in the first element and <em>StMVAR type</em> components <code>M2</code> in the second element. The total number of mixture components
+is <code>M=M1+M2</code>.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Omega</code></td>
+<td>
+<p>a symmetric positive definite <code class="reqn">(dxd)</code> covariance matrix specifying
+expected value of the matrix to be generated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>W_and_lambdas</code></td>
+<td>
+<p>the mean of the normal distribution the new parameters are generated
+from.
+</p>
+
+<dl>
+<dt>If lambdas are <strong>not constrained</strong>:</dt>
+<dd>
+<p>a size <code class="reqn">(d^2 - n_zeros + d*(M - 1))</code> vector
+<code class="reqn">(Wvec(W),\lambda_{2},...,\lambda{M})</code>, where <code class="reqn">n_zeros</code> is the number of zero constraints
+in <code class="reqn">W</code> and <code class="reqn">\lambda_m=(\lambda_{m1},...,\lambda_{md})</code>.</p>
+</dd>
+<dt>If lambdas are <strong>constrained</strong>:</dt>
+<dd>
+<p>a size <code class="reqn">(d^2 - n_zeros + r)</code> vector
+<code class="reqn">(Wvec(W),\gamma)</code>, where <code class="reqn">C_{\lambda}\gamma =(\lambda_2,....,\lambda_M)</code>, <code class="reqn">\gamma</code>
+is of the size <code class="reqn">(r x 1)</code>, and <code class="reqn">C_{\lambda}</code> of the size <code class="reqn">(d*(M - 1) x r</code>).</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>accuracy</code></td>
+<td>
+<p>a positive real number adjusting how close to the given covariance matrix
+the returned individual should be.
+</p>
+<p>For <strong>reduced form models</strong> standard deviation of each diagonal element is for reduced form
+models
+</p>
+
+<ul>
+<li> <p><code class="reqn">\omega_{i,i}/</code><code>accuracy</code> when <code>accuracy &gt; d/2</code>
+</p>
+</li>
+<li>
+<p> and <code>sqrt(2/d)*</code><code class="reqn">\omega_{i,i}</code> when <code>accuracy &lt;= d/2</code>.
+</p>
+</li>
+</ul>
+<p>Wishart distribution is used for reduced form models, but for more details read the source code.
+</p>
+<p>For <strong>structural models</strong>, the parameters are generated from normal distribution with mean given
+by the argument <code>W_and_lambdas</code> and the standard deviation is <code>sqrt(abs(W_and_lambdas)/(d + accuracy))</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>structural_pars</code></td>
+<td>
+<p>If <code>NULL</code> a reduced form model is considered. Reduced models can be used directly as recursively
+identified structural models. For a structural model identified by conditional heteroskedasticity, should be a list containing
+at least the first one of the following elements:
+</p>
+
+<ul>
+<li> <p><code>W</code> - a <code class="reqn">(dxd)</code> matrix with its entries imposing constraints on <code class="reqn">W</code>: <code>NA</code> indicating that the element is
+unconstrained, a positive value indicating strict positive sign constraint, a negative value indicating strict
+negative sign constraint, and zero indicating that the element is constrained to zero.
+</p>
+</li>
+<li> <p><code>C_lambda</code> - a <code class="reqn">(d(M-1) x r)</code> constraint matrix that satisfies (<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{2}</code><code class="reqn">,...,</code>
+<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{M}) =</code> <strong><code class="reqn">C_{\lambda} \gamma</code></strong> where <strong><code class="reqn">\gamma</code></strong> is the new <code class="reqn">(r x 1)</code>
+parameter subject to which the model is estimated (similarly to AR parameter constraints). The entries of <code>C_lambda</code>
+must be either <strong>positive</strong> or <strong>zero</strong>. Ignore (or set to <code>NULL</code>) if the eigenvalues <code class="reqn">\lambda_{mi}</code>
+should not be constrained.
+</p>
+</li>
+<li> <p><code>fixed_lambdas</code> - a length <code class="reqn">d(M-1)</code> numeric vector (<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{2}</code><code class="reqn">,...,</code>
+<strong><code class="reqn">\lambda</code></strong><code class="reqn">_{M})</code> with elements strictly larger than zero specifying the fixed parameter values for the
+parameters <code class="reqn">\lambda_{mi}</code> should be constrained to. This constraint is alternative <code>C_lambda</code>.
+Ignore (or set to <code>NULL</code>) if the eigenvalues <code class="reqn">\lambda_{mi}</code> should not be constrained.
+</p>
+</li>
+</ul>
+<p>See Virolainen (forthcoming) for the conditions required to identify the shocks and for the B-matrix as well (it is <code class="reqn">W</code> times
+a time-varying diagonal matrix with positive diagonal entries).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+
+<dl>
+<dt>For <strong>reduced form models</strong>:</dt>
+<dd>
+<p>Returns a <code class="reqn">(d(d+1)/2x1)</code> vector containing vech-vectorized covariance matrix
+<code class="reqn">\Omega</code>.</p>
+</dd>
+<dt>For <strong>structural models</strong>:</dt>
+<dd>
+<p>Returns a length <code class="reqn">d^2 - n_zeros - d*(M - 1)</code> vector of the form
+<code class="reqn">(Wvec(W),\lambda_2,...,\lambda_M)</code> where <code class="reqn">\lambda_m=(\lambda_{m1},...,\lambda_{md})</code>
+contains the eigenvalue parameters of the <code class="reqn">m</code>th regime <code class="reqn">(m&gt;1)</code> and <code class="reqn">n_zeros</code> is the number of zero constraints
+in <code class="reqn">W</code>. If lambdas are <code>C_lambda</code> constrained, replace <code class="reqn">d*(M - 1)</code> in the length with <code class="reqn">r</code> and
+<code class="reqn">\lambda_2,...,\lambda_M)</code> with <strong><code class="reqn">\gamma</code></strong>. If <code>fixed_lambdas</code> are used, the <code class="reqn">\lambda_{mi}</code> parameters
+are not included. The operator <code class="reqn">Wvec()</code> vectorizes a matrix and removes zeros.</p>
+</dd>
+</dl>
+</div>

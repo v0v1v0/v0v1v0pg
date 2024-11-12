@@ -1,0 +1,127 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GNARXdesign</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Function to create the GNARX design matrix</h2>
+
+<h3>Description</h3>
+
+<p>Creates the design matrix necessary for fitting the GNAR model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GNARXdesign(vts = GNAR::fiveVTS, net = GNAR::fiveNet, alphaOrder = 2, betaOrder = c(1,1),
+ fact.var = NULL, globalalpha=TRUE, tvnets=NULL, netsstart=NULL, lambdaOrder=NULL, 
+ xvts=NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>vts</code></td>
+<td>
+<p>a matrix or ts object containing the multivariate time series to be modelled. The <code>i,j</code> entry of this matrix should be for time <code>i</code> and vertex/node <code>j</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>net</code></td>
+<td>
+<p>the (first) network associated with the time series, containing a list with entries <code>$edges</code> and <code>$dist</code>. This network should have the same number of nodes as the number of columns of the <code>vts</code> matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alphaOrder</code></td>
+<td>
+<p>a non-negative integer specifying the maximum time-lag to model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>betaOrder</code></td>
+<td>
+<p>a vector of length <code>alphaOrder</code> specifying the maximum neighbour set to model at each of the time-lags.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fact.var</code></td>
+<td>
+<p>a vector of factors indicating which nodes belong to each set with different parameters to be fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>globalalpha</code></td>
+<td>
+<p>a TRUE/FALSE value indivating whether to use global alpha parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tvnets</code></td>
+<td>
+<p>a list of additional networks. Currently only NULL (the static network case) is supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>netsstart</code></td>
+<td>
+<p>a vector of times corresponding to the first time points for each network of <code>tvnets</code>. Currently only NULL (the static network case) is supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambdaOrder</code></td>
+<td>
+<p>a vector of the same length as <code>xvts</code> containing non-negative integers specifying the maximum time-lag of exogenous regressors to model. The <code>h</code>th element of the vector refers to the maximum lag of the <code>h</code>th exogenous regressor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xvts</code></td>
+<td>
+<p>a list of matrices containing values of the exogenous regressors for each vertex/node. The <code>i,j</code> entry of the <code>h</code>th element of the list refers to the value of the <code>h</code>th exogenous regressor for time <code>i</code> and vertex/node <code>j</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>GNARdesign</code></td>
+<td>
+<p>returns a matrix containing <code>(t-alphaOrder)nnodes</code> rows and a column for each parameter to be fitted. The columns are in time-lag order, eg for GNAR(2,[1,0]) the columns are <code>alpha1</code>, <code>beta1.1</code>, <code>alpha2</code>. When a factor variable is specified the columns are labelled with the factor. If exogenous regressors are included, the matrix takes the form given in Equation 10 of the supplement to the referenced paper.</p>
+</td>
+</tr></table>
+<h3>References</h3>
+
+<p>Nason G.P. and Wei J. (2022) Quantifying the economic response to COVID-19 mitigations and death rates via forecasting Purchasing Managers’ Indices using Generalised Network Autoregressive models with exogenous variables. <em>Journal of the Royal Statistical Society Series A</em>, <b>185</b>, 1778–1792.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+set.seed(1)
+n = 1000
+xvts=list()
+xvts[[1]] = matrix(rnorm(5*n, mean=0, sd=2), nrow=n, ncol=5)
+xvts[[2]] = matrix(rnorm(5*n, mean=0, sd=2), nrow=n, ncol=5)
+lambdaParams=list()
+lambdaParams[[1]] = c(0.5, -0.5)
+lambdaParams[[2]] = c(0.3, 0.1)
+
+# Simulate the GNARX using the exogenous variables xvts with associated parameters lambdaParams
+
+Y_data &lt;- GNARXsim(n=n, net=GNAR::fiveNet, alphaParams=list(c(rep(0.2,5))), betaParams=list(c(0.5)),
+                      sigma=1, xvts=xvts, lambdaParams=lambdaParams)
+
+#Design matrix to fit GNARX(2,[1,1]) to the fiveVTS data
+
+Xdesign &lt;- GNARXdesign(vts = Y_data, net = GNAR::fiveNet, globalalpha = TRUE, alphaOrder = 1,
+                betaOrder = 1, xvts = xvts, lambdaOrder = c(1,1))
+
+Xdesign
+</code></pre>
+
+
+</div>

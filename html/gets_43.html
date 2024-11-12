@@ -1,0 +1,362 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>isat</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Indicator Saturation</h2>
+
+<h3>Description</h3>
+
+<p>The <code>isat</code> function undertakes multi-path indicator saturation to detect outliers and mean-shifts using impulses (IIS), step-shifts (SIS), or trend-indicators (TIS). Indicators are partitioned into blocks and selected over at a chosen level of significance (<code>t.pval</code>) using the <code>getsm</code> function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">isat(y, ...)
+
+##default S3 method:
+## Default S3 method:
+isat(y, mc=TRUE, ar=NULL, ewma=NULL, mxreg=NULL, iis=FALSE, sis=TRUE,
+  tis=FALSE, uis=FALSE, blocks=NULL, ratio.threshold=0.8, max.block.size=30,
+  t.pval=0.001, wald.pval=t.pval,
+  vcov.type= c("ordinary","white","newey-west"), do.pet=FALSE, ar.LjungB=NULL,
+  arch.LjungB=NULL, normality.JarqueB=NULL, info.method=c("sc","aic","hq"),
+  user.diagnostics=NULL, user.estimator=NULL, gof.function=NULL,
+  gof.method = c("min", "max"), include.gum=NULL, include.1cut=FALSE,
+  include.empty=FALSE, max.paths=NULL, parallel.options=NULL, turbo=FALSE,
+  tol=1e-07, LAPACK=FALSE, max.regs=NULL, print.searchinfo=TRUE, plot=NULL,
+  alarm=FALSE, ...)
+  
+##S3 method for objects of class 'lm':
+## S3 method for class 'lm'
+isat(y, ar=NULL, ewma=NULL, iis=FALSE, sis=TRUE,
+  tis=FALSE, uis=FALSE, blocks=NULL, ratio.threshold=0.8, max.block.size=30,
+  t.pval=0.001, wald.pval=t.pval,
+  vcov.type= c("ordinary","white","newey-west"), do.pet=FALSE, ar.LjungB=NULL,
+  arch.LjungB=NULL, normality.JarqueB=NULL, info.method=c("sc","aic","hq"),
+  user.diagnostics=NULL, user.estimator=NULL, gof.function=NULL,
+  gof.method = c("min", "max"), include.gum=NULL, include.1cut=FALSE,
+  include.empty=FALSE, max.paths=NULL, parallel.options=NULL, turbo=FALSE,
+  tol=1e-07, LAPACK=FALSE, max.regs=NULL, print.searchinfo=TRUE, plot=NULL,
+  alarm=FALSE, ...)
+
+##S3 method for objects of class 'arx':
+## S3 method for class 'arx'
+isat(y, mc=TRUE, ar=NULL, ewma=NULL, iis=FALSE, sis=TRUE,
+  tis=FALSE, uis=FALSE, blocks=NULL, ratio.threshold=0.8, max.block.size=30,
+  t.pval=0.001, wald.pval=t.pval,
+  vcov.type= c("ordinary","white","newey-west"), do.pet=FALSE, ar.LjungB=NULL,
+  arch.LjungB=NULL, normality.JarqueB=NULL, info.method=c("sc","aic","hq"),
+  user.diagnostics=NULL, user.estimator=NULL, gof.function=NULL,
+  gof.method = c("min", "max"), include.gum=NULL, include.1cut=FALSE,
+  include.empty=FALSE, max.paths=NULL, parallel.options=NULL, turbo=FALSE,
+  tol=1e-07, LAPACK=FALSE, max.regs=NULL, print.searchinfo=TRUE, plot=NULL,
+  alarm=FALSE, ...)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>numeric vector, time-series, <code>zoo</code>, or object of class <code>lm</code> or <code>arx</code>. Missing values in the beginning and at the end of the series is allowed, as they are removed with the <code>na.trim</code> command</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc</code></td>
+<td>
+<p>logical. <code>TRUE</code> (default) includes an intercept in the mean specification, whereas FALSE does not</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ar</code></td>
+<td>
+<p>integer vector, say, c(2,4) or 1:4. The AR-lags to include in the mean specification</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ewma</code></td>
+<td>
+<p>either NULL (default) or a list with arguments sent to the <code>eqwma</code> function. In the latter case a lagged moving average of y is included as a regressor</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mxreg</code></td>
+<td>
+<p>numeric vector or matrix, say, a <code>zoo</code> object, of conditioning variables. Note that missing values in the beginning or at the end of the series is allowed, as they are removed with the <code>na.trim</code> command. Note also that, if both <code>y</code> and <code>mxreg</code> are <code>zoo</code> objects, then their samples are chosen to match</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iis</code></td>
+<td>
+<p>logical. If <code>TRUE</code>, impulse indicator saturation is performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sis</code></td>
+<td>
+<p>logical. If <code>TRUE</code>, step indicator saturation is performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tis</code></td>
+<td>
+<p>logical. If <code>TRUE</code>, trend indicator saturation is performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>uis</code></td>
+<td>
+<p>a matrix of regressors, or a list of matrices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>blocks</code></td>
+<td>
+<p><code>NULL</code> (default), an integer (the number of blocks) or a user-specified <code>list</code> that indicates how blocks should be put together. If <code>NULL</code>, then the number of blocks is determined automatically</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ratio.threshold</code></td>
+<td>
+<p>Minimum ratio of variables in each block to total observations to determine the block size, default=0.8. Only relevant if blocks = <code>NULL</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.block.size</code></td>
+<td>
+<p>Maximum size of block of variables to be selected over, default=30. Block size used is the maximum of given by either the ratio.threshold and max.block.size </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t.pval</code></td>
+<td>
+<p>numeric value between 0 and 1. The significance level used for the two-sided regressor significance t-tests</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wald.pval</code></td>
+<td>
+<p>numeric value between 0 and 1. The significance level used for the Parsimonious Encompassing Tests (PETs)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov.type</code></td>
+<td>
+<p>the type of variance-covariance matrix used. If NULL (default), then the type used is that of the 'arx' object. This can be overridden by either "ordinary" (i.e. the ordinary variance-covariance matrix) or "white" (i.e. the White (1980) heteroscedasticity robust variance-covariance matrix)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>do.pet</code></td>
+<td>
+<p>logical. If <code>TRUE</code>, then a Parsimonious Encompassing Test (PET) against the GUM is undertaken at each regressor removal for the joint significance of all the deleted regressors along the current path. If FALSE (default), then a PET is not undertaken at each regressor removal. By default, the numeric value is the same as that of <code>t.pval</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ar.LjungB</code></td>
+<td>
+<p>a two-item list with names <code>lag</code> and <code>pval</code>, or NULL (default). In the former case <code>lag</code> contains the order of the Ljung and Box (1979) test for serial correlation in the standardised residuals, and <code>pval</code> contains the significance level. If <code>lag=NULL</code> (default), then the order used is that of the estimated 'arx' object. If <code>ar.Ljungb=NULL</code>, then the standardised residuals are not checked for serial correlation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>arch.LjungB</code></td>
+<td>
+<p>a two-item list with names <code>lag</code> and <code>pval</code>, or NULL (default). In the former case, <code>lag</code> contains the order of the Ljung and Box (1979) test for serial correlation in the squared standardised residuals, and <code>pval</code> contains the significance level. If <code>lag=NULL</code> (default), then the order used is that of the estimated 'arx' object. If <code>arch.Ljungb=NULL</code>, then the standardised residuals are not checked for ARCH</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normality.JarqueB</code></td>
+<td>
+<p><code>NULL</code> (the default) or a value between 0 and 1. In the latter case, a test for non-normality is conducted using a significance level equal to <code>normality.JarqueB</code>. If <code>NULL</code>, then no test for non-normality is conducted</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>info.method</code></td>
+<td>
+<p>character string, "sc" (default), "aic" or "hq", which determines the information criterion to be used when selecting among terminal models. The abbreviations are short for the Schwarz or Bayesian information criterion (sc), the Akaike information criterion (aic) and the Hannan-Quinn (hq) information criterion</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>user.diagnostics</code></td>
+<td>
+<p><code>NULL</code> or a <code>list</code> with two entries, <code>name</code> and <code>pval</code>, see the <code>user.fun</code> argument in <code>diagnostics</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>user.estimator</code></td>
+<td>
+<p><code>NULL</code> or a <code>list</code> with at least one entry, <code>name</code>, see the <code>user.estimator</code> argument in <code>getsFun</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gof.function</code></td>
+<td>
+<p><code>NULL</code> or a <code>list</code> with at least one entry, <code>name</code>, see the <code>user.estimator</code> argument in <code>getsFun</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gof.method</code></td>
+<td>
+<p><code>NULL</code> or a <code>character</code> that determines whether the best Goodness-of-Fit is a minimum or maximum </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include.gum</code></td>
+<td>
+<p>ignored (temporarily deprecated)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include.1cut</code></td>
+<td>
+<p>logical. If <code>TRUE</code>, then the 1-cut model is included among the terminal models, if it passes the diagnostic tests, even if it is not equal to one of the terminals. If FALSE (default), then the 1-cut model is not included (unless it is one of the terminals)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include.empty</code></td>
+<td>
+<p>logical. If <code>TRUE</code>, then an empty model is included among the terminal models, if it passes the diagnostic tests, even if it is not equal to one of the terminals. If FALSE (default), then the empty model is not included (unless it is one of the terminals)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.paths</code></td>
+<td>
+<p><code>NULL</code> (default) or an integer indicating the maximum number of paths to search</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel.options</code></td>
+<td>
+<p><code>NULL</code> or an integer, i.e. the number of cores/threads to be used for parallel computing (implemented w/<code>makeCluster</code> and <code>parLapply</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>turbo</code></td>
+<td>
+<p>logical. If <code>TRUE</code>, then (parts of) paths are not searched twice (or more) unnecessarily, thus yielding a significant potential for speed-gain. However, the checking of whether the search has arrived at a point it has already been comes with a slight computational overhead. Accordingly, if <code>turbo=TRUE</code>, then the total search time might in fact be higher than if <code>turbo=FALSE</code>. This happens if estimation is very fast, say, less than quarter of a second. Hence the default is <code>FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>numeric value (default = 1e-07). The tolerance for detecting linear dependencies in the columns of the regressors (see <code>qr</code> function). Only used if LAPACK is FALSE (default)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LAPACK</code></td>
+<td>
+<p>logical. If <code>TRUE</code>, then use LAPACK. If <code>FALSE</code> (default), then use LINPACK (see <code>qr</code> function)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.regs</code></td>
+<td>
+<p>integer. The maximum number of regressions along a deletion path. It is not recommended that this is altered</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print.searchinfo</code></td>
+<td>
+<p>logical. If <code>TRUE</code> (default), then a print is returned whenever simiplification along a new path is started, and whenever regressors are dropped due to exact multicolinearity</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>NULL or logical. If <code>TRUE</code>, then the fitted values and the residuals of the final model are plotted after model selection. If NULL (default), then the value set by <code>options</code> determines whether a plot is produced or not.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alarm</code></td>
+<td>
+<p>logical. If <code>TRUE</code>, then a sound is emitted (in order to alert the user) when the model selection ends</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments passed to or from other methods</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Multi-path indicator saturation using impulses (IIS), step-shifts (SIS), or trend-indicators (TIS). Indicators are partitioned into sequential blocks (as of beta version 0.7) where the block intervals are defined by the ratio of variables to observations in each block and a specified maximum block size. Indicators are selected over using the <code>getsm</code> function. Retained indicators in each block are combined and re-selected over. Fixed covariates that are not selected over can be included in the regression model either in the mxreg matrix, or for auto-regressive terms through the ar specification. See Hendry, Johansen and Santos (2007) and Castle, Doornik, Hendry, and Pretis (2015)</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class 'isat'</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Jonas Kurle, <a href="https://www.jonaskurle.com/">https://www.jonaskurle.com/</a><br>
+Felix Pretis, <a href="https://felixpretis.climateeconometrics.org/">https://felixpretis.climateeconometrics.org/</a><br>
+James Reade,  <a href="https://sites.google.com/site/jjamesreade/">https://sites.google.com/site/jjamesreade/</a><br>
+Moritz Schwarz, <a href="https://www.inet.ox.ac.uk/people/moritz-schwarz">https://www.inet.ox.ac.uk/people/moritz-schwarz</a><br>
+Genaro Sucarrat <a href="https://www.sucarrat.net/">https://www.sucarrat.net/</a><br><br></p>
+
+
+<h3>References</h3>
+
+<p>Castle, Jennifer, L., Doornik, Jurgen, A., Hendry, David F., and Pretis, Felix (2015): 'Detecting Location Shifts during Model Selection by Step-Indicator Saturation', Econometrics, vol 3:2, 240-264.
+</p>
+<p>Hendry, David, F., Johansen, Soren, and Santos, Carlos (2007):  'Automatic selection of indicators in a fully saturated regression'. Computational Statistics, vol 23:1, pp.317-335.
+</p>
+<p>Pretis, Felix, Reade, James and Sucarrat, Genaro (2018): 'Automated General-to-Specific (GETS) Regression Modeling and Indicator Saturation for Outliers and Structural Breaks'. Journal of Statistical Software 86, Number 3, pp. 1-44
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Extraction functions for 'isat' objects: <code>coef.isat</code>, <code>fitted.isat</code>, <code>paths</code>, <code>plot.isat</code>, <code>print.isat</code>,<br><code>residuals.isat</code>, <code>summary.isat</code>, <code>terminals</code>, <code>vcov.isat</code><br></p>
+<p>Related functions: <code>arx</code>, <code>eqwma</code>, <code>leqwma</code>, <code>zoo</code>, <code>getsFun</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">##SIS using the Nile data
+data(Nile)
+isat(Nile, sis=TRUE, iis=FALSE, plot=TRUE, t.pval=0.005)
+
+##SIS using the Nile data in an autoregressive model
+#isat(Nile, ar=1:2, sis=TRUE, iis=FALSE, plot=TRUE, t.pval=0.005)
+
+##HP Data
+##load Hoover and Perez (1999) data:
+#data(hpdata)
+
+##make quarterly data-matrix of zoo type
+##(GCQ = personal consumption expenditure):
+#y &lt;- zooreg(hpdata$GCQ, 1959, frequency=4)
+
+##transform data to log-differences:
+#dlogy &lt;- diff(log(y))
+
+##run isat with step impulse saturation on four
+##lags and a constant 1 percent significance level:
+#isat(dlogy, ar=1:4, sis=TRUE, t.pval =0.01)
+
+##Example with additional covariates entering through mxreg:
+
+##(GYDQ = disposable personal income):
+#x &lt;- zooreg(hpdata$GYDQ, 1959, frequency=4)
+
+##transform data to log-differences:
+#dlogx &lt;- diff(log(x))
+
+##run isat with step impulse saturation on four
+##lags and a constant 1 percent significance level:
+#isat(dlogy, mxreg=dlogx, ar=1:4, sis=TRUE, t.pval =0.01)
+
+</code></pre>
+
+
+</div>

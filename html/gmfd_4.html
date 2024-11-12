@@ -1,0 +1,125 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gmfd_kmeans</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>k-means clustering algorithm</h2>
+
+<h3>Description</h3>
+
+<p>This function performs a k-means clustering algorithm on an univariate or multivariate functional data using a generalization of Mahalanobis distance.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gmfd_kmeans(FD, n.cl = 2, metric, p = NULL, k_trunc = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>FD</code></td>
+<td>
+<p>a functional data object of type <code>funData</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.cl</code></td>
+<td>
+<p>an integer representing the number of clusters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metric</code></td>
+<td>
+<p>the chosen distance to be used: <code>"L2"</code> for the classical L2-distance, <code>"trunc"</code> for the truncated Mahalanobis semi-distance, <code>"mahalanobis"</code> for the generalized Mahalanobis distance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>a positive numeric value containing the parameter of the regularizing function for the generalized Mahalanobis distance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k_trunc</code></td>
+<td>
+<p>a positive numeric value representing the number of components at which the truncated mahalanobis distance must be truncated</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The function returns a list with the following components:
+<code>cluster</code>: a vector of integers (from <code>1</code> to <code>n.cl</code>) indicating the cluster to which each curve is allocated;
+<code>centers</code>: a list of <code>d</code> matrices (<code>k</code> x <code>T</code>) containing the centroids of the clusters
+</p>
+
+
+<h3>References</h3>
+
+<p>Martino A., Ghiglietti A., Ieva F., Paganoni A. M. (2017). A k-means procedure based on a Mahalanobis type
+distance for clustering multivariate functional data, <em>MOX report 44/2017</em>
+</p>
+<p>Ghiglietti A., Ieva F., Paganoni A. M. (2017). Statistical inference for stochastic processes:
+Two-sample hypothesis tests, <em>Journal of Statistical Planning and Inference</em>, 180:49-68.
+</p>
+<p>Ghiglietti A., Paganoni A. M. (2017). Exact tests for the means of gaussian stochastic processes.
+<em>Statistics &amp; Probability Letters</em>, 131:102–107.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>funDist</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Define parameters
+n &lt;- 50
+P &lt;- 100
+K &lt;- 150
+
+# Grid of the functional dataset
+t &lt;- seq( 0, 1, length.out = P )
+
+# Define the means and the parameters to use in the simulation
+m1 &lt;- t^2 * ( 1 - t )
+
+rho &lt;- rep( 0, K )
+theta &lt;- matrix( 0, K, P )
+for ( k in 1:K) {
+  rho[k] &lt;- 1 / ( k + 1 )^2
+  if ( k%%2 == 0 )
+    theta[k, ] &lt;- sqrt( 2 ) * sin( k * pi * t )
+  else if ( k%%2 != 0 &amp;&amp; k != 1 )
+    theta[k, ] &lt;- sqrt( 2 ) * cos( ( k - 1 ) * pi * t )
+  else
+    theta[k, ] &lt;- rep( 1, P )
+}
+
+s &lt;- 0
+for (k in 4:K) {
+ s &lt;- s + sqrt( rho[k] ) * theta[k, ]
+}
+
+m2 &lt;- m1 + s
+
+# Simulate the functional data
+x1 &lt;- gmfd_simulate( n, m1, rho = rho, theta = theta )
+x2 &lt;- gmfd_simulate( n, m2, rho = rho, theta = theta )
+
+# Create a single functional dataset containing the simulated datasets:
+FD &lt;- funData(t, rbind( x1, x2 ) )
+
+output &lt;- gmfd_kmeans( FD, n.cl = 2, metric = "mahalanobis", p = 10^6 )
+</code></pre>
+
+
+</div>

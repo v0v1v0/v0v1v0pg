@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gp.mcmc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A wraper to fit a Gaussian stochastic process model with MCMC algorithms</h2>
+
+<h3>Description</h3>
+
+<p>This function is a wraper to estimate parameters via MCMC algorithms in the GaSP model with different
+choices of priors.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gp.mcmc(
+  obj,
+  input.new = NULL,
+  method = "Cauchy_prior",
+  prior = list(),
+  proposal = list(),
+  nsample = 10000,
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>obj</code></td>
+<td>
+<p>an <code>S4</code> object gp</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>input.new</code></td>
+<td>
+<p>a matrix of prediction locations. Default value is <code>NULL</code>, 
+indicating that prediction is not carried out along with parameter estimation in the MCMC algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>a string indicating the Bayes estimation approaches with different choices of priors on correlation parameters:
+</p>
+
+<dl>
+<dt>Cauchy_prior</dt>
+<dd>
+<p>This indicates that a fully Bayesian approach with objective priors is used
+for parameter estimation, where location-scale parameters are assigned with constant priors and 
+correlation parameters are assigned with half-Cauchy priors (default). 
+If the smoothness parameter is estimated for <code>isotropic</code> covariance functions, the smoothness parameter is assigned with a uniform prior on (0, 4), 
+indicating that the corresponding GP is at most four times mean-square differentiable. This is a 
+reasonable prior belief for modeling spatial processes; If the smoothness parameter is estimated for <code>tensor</code> or <code>ARD</code> covariance functions,
+the smoothness parameter is assigned with a uniform prior on (0, 6).</p>
+</dd>
+<dt>Ref_prior</dt>
+<dd>
+<p>This indicates that a fully Bayesian approach with objective priors is used
+for parameter estimation, where location-scale parameters are assigned with constant priors and 
+correlation parameters are assigned with reference priors. 
+If the smoothness parameter is estimated for <code>isotropic</code> covariance functions, the smoothness parameter is assigned with a uniform prior on (0, 4), 
+indicating that the corresponding GP is at most four times mean-square differentiable. This is a 
+reasonable prior belief for modeling spatial processes; If the smoothness parameter is estimated for <code>tensor</code> or <code>ARD</code> covariance functions,
+the smoothness parameter is assigned with a uniform prior on (0, 6).</p>
+</dd>
+<dt>Beta_prior</dt>
+<dd>
+<p>This indicates that a fully Bayesian approach with subjective priors is used
+for parameter estimation, where location-scale parameters are assigned with constant priors and 
+correlation parameters are assigned with beta priors parameterized as <code class="reqn">Beta(a, b, lb, ub)</code>.
+In the beta distribution, <strong>lb</strong> and <strong>ub</strong> are the support for correlation parameters, and
+they should be determined based on domain knowledge. <strong>a</strong> and <strong>b</strong> are two shape parameters with default values at 1,
+corresponding to the uniform prior over the support <code class="reqn">(lb, ub)</code>. 
+</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>a list containing tuning parameters in prior distributions. This is used only if a Bayes estimation method with subjective priors is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>proposal</code></td>
+<td>
+<p>a list containing tuning parameters in proposal distributions. This is used only if a Bayes estimation method is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsample</code></td>
+<td>
+<p>an integer indicating the number of MCMC samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>a logical value. If it is <code>TRUE</code>, the MCMC progress bar is shown.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a <code>gp</code> object with prior, proposal, MCMC samples included.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Pulong Ma <a href="mailto:mpulong@gmail.com">mpulong@gmail.com</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>GPBayes-package, <code>GaSP</code>, gp, <code>gp.optim</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> 
+ 
+code = function(x){
+y = (sin(pi*x/5) + 0.2*cos(4*pi*x/5))*(x&lt;=9.6) + (x/10-1)*(x&gt;9.6) 
+return(y)
+}
+n=100
+input = seq(0, 20, length=n)
+XX = seq(0, 20, length=99)
+Ztrue = code(input)
+set.seed(1234)
+output = Ztrue + rnorm(length(Ztrue), sd=0.1)
+obj = gp(formula=~1, output, input, 
+        param=list(range=4, nugget=0.1,nu=2.5),
+        smooth.est=FALSE,
+        cov.model=list(family="matern", form="isotropic"))
+        
+fit.mcmc = gp.mcmc(obj, method="Cauchy_prior",
+                   proposal=list(range=0.3, nugget=0.8),
+                   nsample=100, verbose=TRUE)
+                   
+</code></pre>
+
+
+</div>

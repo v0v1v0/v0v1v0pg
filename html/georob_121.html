@@ -1,0 +1,516 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>validate.predictions</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Summary Statistics of (Cross-)Validation Prediction Errors</h2>
+
+<h3>Description</h3>
+
+<p>Functions to compute and plot summary statistics of prediction errors to
+(cross-)validate fitted spatial linear models by the criteria proposed by
+<cite>Gneiting et al.  (2007)</cite> for assessing probabilistic forecasts.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">validate.predictions(data, pred, se.pred,
+    statistic = c("crps", "pit", "mc", "bs", "st"), ncutoff = NULL)
+
+## S3 method for class 'cv.georob'
+plot(x,
+    type = c("sc", "lgn.sc", "ta", "qq", "hist.pit", "ecdf.pit", "mc", "bs"),
+    smooth = TRUE, span = 2/3, ncutoff = NULL, add = FALSE,
+    col, pch, lty, main, xlab, ylab, ...)
+
+## S3 method for class 'cv.georob'
+print(x, digits = max(3, getOption("digits") - 3), ...)
+
+## S3 method for class 'cv.georob'
+summary(object, se = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a numeric vector with observations about a response
+(mandatory argument).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pred</code></td>
+<td>
+<p>a numeric vector with predictions for the response (mandatory
+argument).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.pred</code></td>
+<td>
+<p>a numeric vector with prediction standard errors
+(mandatory argument).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>statistic</code></td>
+<td>
+<p>a character keyword defining what statistic of the
+prediction errors should be computed.
+Possible values are (see <em>Details</em>):
+</p>
+
+<ul>
+<li> <p><code>"crps"</code>: continuous ranked probability score (default),
+</p>
+</li>
+<li> <p><code>"pit"</code>: probability integral transform,
+</p>
+</li>
+<li> <p><code>"mc"</code>: average predictive distribution (marginal
+calibration),
+</p>
+</li>
+<li> <p><code>"bs"</code>: Brier score,
+</p>
+</li>
+<li> <p><code>"st"</code>: mean and dispersion statistics of (standardized)
+prediction errors.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncutoff</code></td>
+<td>
+<p>a positive integer (<code class="reqn">N</code>) giving the number of quantiles,
+for which CDFs are evaluated (<code>type = "mc"</code>), or the number of
+thresholds for which the Brier score is computed (<code>type = "bs"</code>),
+see <em>Details</em> (default: <code>min(500, length(data))</code>).</p>
+</td>
+</tr>
+</table>
+<table>
+<tr style="vertical-align: top;">
+<td><code>x, object</code></td>
+<td>
+<p>objects of class <code>cv.georob</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>a positive integer indicating the number of decimal digits to print.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>a character keyword defining what type of plot is created by the
+<code>plot.cv.georob</code>.  Possible values are:
+</p>
+
+<ul>
+<li> <p><code>"sc"</code>: a scatter-plot of the (possibly log-transformed) response
+vs.  the respective predictions (default).
+</p>
+</li>
+<li> <p><code>"lgn.sc"</code>: a scatter-plot of the untransformed response
+against back-<br> transformed predictions of the log-transformed response.
+</p>
+</li>
+<li> <p><code>"ta"</code>: Tukey-Anscombe plot (plot of standardized prediction
+errors vs. predictions).
+</p>
+</li>
+<li> <p><code>"qq"</code>: normal QQ plot of standardized prediction errors.
+</p>
+</li>
+<li> <p><code>"hist.pit"</code>: histogram of probability integral transform, see
+<em>Details</em>.
+</p>
+</li>
+<li> <p><code>"ecdf.pit"</code>: empirical CDF of probability integral
+transform, see <em>Details</em>.
+</p>
+</li>
+<li> <p><code>"mc"</code>: a marginal calibration plot, see <em>Details</em>,
+</p>
+</li>
+<li> <p><code>"bs"</code>: a plot of Brier score vs. threshold, see
+<em>Details</em>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smooth</code></td>
+<td>
+<p>a logical scalar controlling whether scatter plots of data
+vs.  predictions should be smoothed by
+<code>loess.smooth</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>span</code></td>
+<td>
+<p>a numeric with the smoothness parameter for loess (see
+<code>loess.smooth</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>add</code></td>
+<td>
+<p>a logical scalar controlling whether the current high-level plot is
+added to an existing graphics without cleaning the frame before (default:
+<code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>main, xlab, ylab</code></td>
+<td>
+<p>title and axes labels of plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col, pch, lty</code></td>
+<td>
+<p>color, symbol and line type.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se</code></td>
+<td>
+<p>a logical scalar controlling if the standard errors of the
+averaged continuous ranked probability score and of the mean and
+dispersion statistics of the prediction errors (see <em>Details</em>) are
+computed from the respective values of the <code class="reqn">K</code>
+cross-validation subsets (default: <code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments passed to the methods.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>validate.predictions</code> computes the items required to evaluate (and
+plot) the diagnostic criteria proposed by <cite>Gneiting et al. (2007)</cite> for
+assessing the <em>calibration</em> and the <em>sharpness</em> of
+probabilistic predictions of (cross-)validation data.  To this aim,
+<code>validate.predictions</code> uses the assumption that the prediction
+errors
+<code class="reqn">Y(\boldsymbol{s})-\widehat{Y}(\boldsymbol{s})</code>
+follow normal distributions with zero mean and standard deviations equal
+to the Kriging standard errors.  This assumption is an approximation if
+the errors <code class="reqn">\varepsilon</code> come from a long-tailed
+distribution.  Furthermore, for the time being, the Kriging variance of
+the <em>response</em> <code class="reqn">Y</code> is approximated by adding the estimated
+nugget <code class="reqn">\widehat{\tau}^2</code> to the Kriging variance of the
+signal <code class="reqn">Z</code>.  This approximation likely underestimates the mean
+squared prediction error of the response if the errors come from a
+long-tailed distribution.  Hence, for robust Kriging, the standard errors of
+the (cross-)validation errors are likely too small.
+</p>
+<p>Notwithstanding these difficulties and imperfections, <code>validate.predictions</code> computes
+</p>
+
+<ul>
+<li>
+<p> the <em>probability integral transform</em> (PIT),
+</p>
+<p style="text-align: center;"><code class="reqn">\mathrm{PIT}_i = F_i(y_i),</code>
+</p>
+
+<p>where <code class="reqn">F_i(y_i)</code> denotes the (plug-in) predictive CDF evaluated at
+<code class="reqn">y_i</code>, the value of the <code class="reqn">i</code>th (cross-)validation datum,
+</p>
+</li>
+<li>
+<p> the <em>average predictive CDF</em> (plug-in)
+</p>
+<p style="text-align: center;"><code class="reqn">\bar{F}_n(y)=1/n \sum_{i=1}^n F_i(y),</code>
+</p>
+
+<p>where <code class="reqn">n</code> is the number of (cross-)validation observations and the
+<code class="reqn">F_i</code> are evaluated at <code class="reqn">N</code> quantiles equal to the set of
+distinct <code class="reqn">y_i</code> (or a subset of size <code class="reqn">N</code> of them),
+</p>
+</li>
+<li>
+<p> the <em>Brier Score</em> (plug-in)
+</p>
+<p style="text-align: center;"><code class="reqn">\mathrm{BS}(y) = 1/n \sum_{i=1}^n \left(F_i(y) - I(y_i \leq y) \right)^2,</code>
+</p>
+
+<p>where <code class="reqn">I(x)</code> is the indicator function for the event <code class="reqn">x</code>, and
+the Brier score is again evaluated at the unique values of the (cross-)validation
+observations (or a subset of size <code class="reqn">N</code> of them),
+</p>
+</li>
+<li>
+<p> the <em>averaged continuous ranked probability score</em>, CRPS, a
+strictly proper scoring criterion to rank predictions, which is related
+to the Brier score by
+</p>
+<p style="text-align: center;"><code class="reqn">\mathrm{CRPS} = \int_{-\infty}^\infty \mathrm{BS}(y) \,dy.</code>
+</p>
+
+</li>
+</ul>
+<p><cite>Gneiting et al. (2007)</cite> proposed the following plots to validate
+probabilistic predictions:
+</p>
+
+<ul>
+<li>
+<p> A histogram (or a plot of the empirical CDF) of the PIT values.
+For ideal predictions, with observed coverages of prediction intervals
+matching nominal coverages, the PIT values have an uniform
+distribution.
+</p>
+</li>
+<li>
+<p> Plots of <code class="reqn">\bar{F}_n(y)</code> and of the empirical CDF of
+the data, say <code class="reqn">\widehat{G}_n(y)</code>, and of their
+difference, <code class="reqn">\bar{F}_n(y)-\widehat{G}_n(y)</code>
+vs <code class="reqn">y</code>.  The forecasts are said to be <em>marginally calibrated</em>
+if <code class="reqn">\bar{F}_n(y)</code> and <code class="reqn">\widehat{G}_n(y)</code>
+match.
+</p>
+</li>
+<li>
+<p> A plot of <code class="reqn">\mathrm{BS}(y)</code> vs.  <code class="reqn">y</code>.  Probabilistic
+predictions are said to be <em>sharp</em> if the area under this curve,
+which equals CRPS, is minimized.
+</p>
+</li>
+</ul>
+<p>The <code>plot</code> method for class <code>cv.georob</code> allows to create
+these plots, along with scatter-plots of observations and predictions,
+Tukey-Anscombe and normal QQ plots of the standardized prediction
+errors.
+</p>
+<p><code>summary.cv.georob</code> computes the mean and dispersion statistics
+of the (standardized) prediction errors (by a call to
+<code>validate.prediction</code> with argument <code>statistic = "st"</code>, see
+<em>Value</em>) and the averaged continuous ranked probability score
+(<code>crps</code>).  If present in the <code>cv.georob</code> object, the error
+statistics are also computed for the errors of the unbiasedly
+back-transformed predictions of a log-transformed response.  If <code>se</code>
+is <code>TRUE</code> then these statistics are evaluated separately for the
+<code class="reqn">K</code> cross-validation subsets and the standard errors of the means of
+these statistics are returned as well.
+</p>
+<p>The <code>print</code> method for class <code>cv.georob</code> returns the mean
+and dispersion statistics of the (standardized) prediction errors.
+
+
+
+
+</p>
+
+
+<h3>Value</h3>
+
+<p>Depending on the argument <code>statistic</code>, the function
+<code>validate.predictions</code> returns
+</p>
+
+<ul>
+<li>
+<p> a numeric vector of PIT values if <code>statistic</code> is equal to <code>"pit"</code>,
+</p>
+</li>
+<li>
+<p> a named numeric vector with summary statistics of the
+(standardized) prediction errors if <code>statistic</code> is equal to <code>"st"</code>.  The
+following statistics are computed:
+</p>
+
+<table>
+<tr>
+<td style="text-align: right;">
+      <code>me</code>     </td>
+<td style="text-align: left;"> mean prediction error </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+      <code>mede</code>   </td>
+<td style="text-align: left;"> median prediction error </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+      <code>rmse</code>   </td>
+<td style="text-align: left;"> root mean squared prediction error </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+      <code>made</code>   </td>
+<td style="text-align: left;"> median absolute prediction error </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+      <code>qne</code>    </td>
+<td style="text-align: left;"> Qn dispersion measure of prediction errors
+      (see <code>Qn</code>) </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+      <code>msse</code>   </td>
+<td style="text-align: left;"> mean squared standardized prediction error </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+      <code>medsse</code> </td>
+<td style="text-align: left;"> median squared standardized prediction error </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+    </td>
+</tr>
+</table>
+</li>
+<li>
+<p> a data frame if <code>statistic</code> is equal to <code>"mc"</code> or
+<code>"bs"</code> with the components (see <em>Details</em>):
+</p>
+
+<table>
+<tr>
+<td style="text-align: right;">
+    <code>z</code> </td>
+<td style="text-align: left;"> the sorted unique (cross-)validation
+      observations (or a subset of size
+    <code>ncutoff</code> of them)</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+      <code>ghat</code> </td>
+<td style="text-align: left;"> the empirical CDF of the (cross-)validation
+      observations <code class="reqn">\widehat{G}_n(y)</code>
+</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+    <code>fbar</code> </td>
+<td style="text-align: left;">  the average predictive distribution <code class="reqn">\bar{F}_n(y)</code>
+</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+    <code>bs</code> </td>
+<td style="text-align: left;"> the Brier score <code class="reqn">\mathrm{BS}(y)</code>
+</td>
+</tr>
+<tr>
+<td style="text-align: right;"> </td>
+</tr>
+</table>
+</li>
+</ul>
+<p>The method <code>print.cv.georob</code> invisibly returns the object unchanged.
+</p>
+<p>The method <code>summary.cv.georob</code> returns an object of class
+<code>summary.cv.georob</code> which is a list with 3 components:
+</p>
+
+<ul>
+<li> <p><code>st</code> a numeric vector with summary statistics of the
+(standardized) prediction errors of the possibly log-transformed
+response, see output of function <code>validate.predictions</code> for
+argument <code>statistic = "st"</code> above.
+</p>
+</li>
+<li> <p><code>crps</code> the value of the continuous ranked probability score.
+</p>
+</li>
+<li> <p><code>st.lgn</code> a numeric vector with summary statistics of the
+(standardized) prediction errors of the back-transformed response if
+argument <code>lgn = TRUE</code> and <code>NULL</code> otherwise.
+</p>
+</li>
+</ul>
+<p>There is a <code>print</code> method for objects of class <code>summary.cv.georob</code>
+which invisibly returns the object unchanged.
+</p>
+<p>The method <code>plot.georob</code> is called for its side effects and
+invisibly returns <code>NULL</code>.
+</p>
+
+
+
+
+
+
+<h3>Author(s)</h3>
+
+<p>Andreas Papritz <a href="mailto:papritz@retired.ethz.ch">papritz@retired.ethz.ch</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Gneiting, T., Balabdaoui, F. and Raftery, A. E.(2007) Probabilistic
+forecasts, calibration and sharpness.  <em>Journal of the Royal
+Statistical Society Series B</em> <b>69</b>, 243–268,<br><a href="https://doi.org/10.1111/j.1467-9868.2007.00587.x">doi:10.1111/j.1467-9868.2007.00587.x</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>georob</code> for (robust) fitting of spatial linear models;
+</p>
+<p><code>cv.georob</code> for assessing the goodness of a fit by <code>georob</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## define number of cores for parallel computations
+if(interactive()) ncpu &lt;- 10L else ncpu &lt;- 1L
+
+data(meuse)
+
+r.logzn &lt;- georob(log(zinc) ~ sqrt(dist), data = meuse, locations = ~ x + y,
+  variogram.model = "RMexp",
+  param = c(variance = 0.15, nugget = 0.05, scale = 200),
+  tuning.psi = 1000)
+
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  r.logzn.cv.1 &lt;- cv(r.logzn, seed = 1, lgn = TRUE, ncores = 1, verbose = 1)
+
+  r.logzn.cv.2 &lt;- cv(r.logzn, formula = .~. + ffreq, seed = 1, lgn = TRUE,
+      ncores = ncpu)
+
+  summary(r.logzn.cv.1, se = TRUE)
+  summary(r.logzn.cv.2, se = TRUE)
+
+  op &lt;- par(mfrow = c(2,2))
+  plot(r.logzn.cv.1, type = "lgn.sc")
+  plot(r.logzn.cv.2, type = "lgn.sc", add = TRUE, col = "red")
+  abline(0, 1, lty= "dotted")
+  plot(r.logzn.cv.1, type = "ta")
+  plot(r.logzn.cv.2, type = "ta", add = TRUE, col = "red")
+  abline(h=0, lty= "dotted")
+  plot(r.logzn.cv.2, type = "mc", col = "red")
+  plot(r.logzn.cv.1, type = "bs")
+  plot(r.logzn.cv.2, type = "bs", add = TRUE, col = "red")
+  legend("topright", lty = 1, col = c("black", "red"), bty = "n",
+      legend = c("log(Zn) ~ sqrt(dist)", "log(Zn) ~ sqrt(dist) + ffreq"))
+  par(op)
+}
+</code></pre>
+
+
+</div>

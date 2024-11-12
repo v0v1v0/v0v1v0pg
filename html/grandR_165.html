@@ -1,0 +1,169 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>SimulateReadsForSample</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulate metabolic labeling - nucleotide conversion RNA-seq data.</h2>
+
+<h3>Description</h3>
+
+<p>This function takes a vector of <em>true</em> relative abundances and NTRs, and then simulates
+(i) read counts per gene and (ii) 4sU incorporation and conversion events. Subsequently, it
+uses the same approach as implemented in the GRAND-SLAM 2.0 software (Juerges et al., Bioinformatics 2018)
+to estimate the NTR from these simulated data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">SimulateReadsForSample(
+  num.reads = 2e+07,
+  rel.abundance = setNames(rlnorm(10000, meanlog = 4.5, sdlog = 1), paste0("Gene",
+    1:10000)),
+  ntr = setNames(rbeta(10000, 1.5, 3), paste0("Gene", 1:10000)),
+  dispersion = 0.05,
+  beta.approx = FALSE,
+  conversion.reads = FALSE,
+  u.content = 0.25,
+  u.content.sd = 0.05,
+  read.length = 75,
+  p.old = 1e-04,
+  p.new = 0.04,
+  p.new.fit = p.new,
+  seed = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>num.reads</code></td>
+<td>
+<p>the total amount of reads for simulation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rel.abundance</code></td>
+<td>
+<p>named (according to genes) vector of the true relative abundances. Is divided by its sum.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ntr</code></td>
+<td>
+<p>vector of true NTRs</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dispersion</code></td>
+<td>
+<p>vector of dispersion parameters (should best be estimated by DESeq2)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.approx</code></td>
+<td>
+<p>should the beta approximation of the NTR posterior be computed?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conversion.reads</code></td>
+<td>
+<p>also output the number of reads with conversion</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>u.content</code></td>
+<td>
+<p>the relative frequency of uridines in the reads</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>u.content.sd</code></td>
+<td>
+<p>the standard deviation of the u content</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>read.length</code></td>
+<td>
+<p>the read length for simulation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.old</code></td>
+<td>
+<p>the probability for a conversion in reads originating from old RNA</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.new</code></td>
+<td>
+<p>the probability for a conversion in reads originating from new RNA</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.new.fit</code></td>
+<td>
+<p>the probability for a conversion in reads originating from new RNA that is used for fitting (to simulate bias in the estimation of p.new)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>seed value for the random number generator (set to make it deterministic!)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The simulation proceeds as follows:
+</p>
+
+<ol>
+<li>
+<p> Draw for each gene the number of reads from a negative binomial distribution parametrized with the relative abundances x read number and the dispersion parameter
+</p>
+</li>
+<li>
+<p> For each gene: Draw for each read the number of uridines according to a beta binomial distribution for the given read length
+(the beta prior is parametrized to match the u.content and u.content.sd parameters)
+</p>
+</li>
+<li>
+<p> For each read: Draw the number of conversions according to the binomial mixture model of GRAND-SLAM
+(parametrized with p_old, p_new, the gene specific NTR and the read specific number of uridines)
+</p>
+</li>
+<li>
+<p> Estimate the NTR by using the GRAND-SLAM approach
+</p>
+</li>
+</ol>
+<h3>Value</h3>
+
+<p>a matrix containing, per column, the simulated counts, the simulated NTRs,
+(potentially the shape parameters of the beta distribution approximation,) and the true relative frequencies and ntrs
+</p>
+
+
+<h3>See Also</h3>
+
+<p>SimulateTimeCourse
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">SimulateReadsForSample(num.reads = 10000,rel.abundance = rep(1,5),ntr=0.9)
+SimulateReadsForSample(num.reads = 10000,rel.abundance = rep(1,5),ntr=0.9,seed=1337)
+SimulateReadsForSample(num.reads = 10000,rel.abundance = rep(1,5),ntr=0.9,seed=1337)
+# the second and third matrix should be equal, the first should be distinct
+
+</code></pre>
+
+
+</div>

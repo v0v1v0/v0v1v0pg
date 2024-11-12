@@ -1,0 +1,157 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>grade.parse</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Parse Input</h2>
+
+<h3>Description</h3>
+
+<p>Parse input, returning either <code>NULL</code>  or a vector of the values.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">grade.isscalar(x, usena=FALSE, useinf=FALSE, quiet=TRUE)
+
+grade.parse(ans, useeval=TRUE, usena=FALSE, useinf=FALSE, quiet=TRUE)
+grade.parseset(ans, useeval=TRUE, usena=FALSE, useinf=FALSE, quiet=TRUE)
+grade.parsechunk(ans, useeval=TRUE, usena=FALSE, useinf=FALSE, quiet=TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>argument for grade.isscalar to check</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ans</code></td>
+<td>
+<p>input to parse.  Can be a <code>string</code> or a vector</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useeval</code></td>
+<td>
+<p><code>TRUE</code> or <code>FALSE</code> indicates whether or not to use 'eval' on strings</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>usena</code></td>
+<td>
+<p><code>TRUE</code> or <code>FALSE</code> indicating whether or not <code>NA</code> is an accepted value</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useinf</code></td>
+<td>
+<p><code>TRUE</code> or <code>FALSE</code> indicating whether or not <code>Inf</code> and <code>-Inf</code> are accepted values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p><code>TRUE</code> or <code>FALSE</code>.  If <code>TRUE</code> there are more warning messages when checks fail.  Can be helpful for debugging.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>grade.isscalar</code> checks to see if x is a finite numeric scalar
+(vector of length 1).  If <code>usena=TRUE</code>, <code>NA</code> is also
+accepted. If <code>useinf=TRUE</code>, <code>Inf</code> and <code>-Inf</code> are also
+accepted. 
+</p>
+<p>Input to the <code>grade.parse</code> functions can be a string or a vector.  
+<code>grade.parsechunk</code> will only return scalars, the other two will
+return a vector.  All three check return values using
+<code>grade.isscalar</code> on each element.
+</p>
+<p><code>grade.parse</code> delegates <code>character</code> types to either
+<code>grade.parsechunk</code> or <code>grade.parseset</code>.  If the string
+contains any of the characters '[', ']', '(', ')', or ',' the string is
+sent to <code>grade.parseset</code>.  Otherwise it is sent to
+<code>grade.parsechunk</code>.
+</p>
+<p>If <code>x</code> is a <code>character</code>, <code>grade.parsechunk</code> checks for
+any of the forbidden characters '[', ']', '(', ')', or ','.  If any are
+found <code>grade.parsechunk</code> refuses to evaluate the string.
+</p>
+<p>If <code>x</code> is a <code>character</code>, <code>grade.parsechunk</code> makes sure
+that it <em>looks</em> like a vector or set.  I.e. it starts with an open
+bracket or parenthesis and ends with a close bracket or parenthesis.  No
+other brackets or parenthesis are allowed.  The middle is expected to be
+a comma delimited list.  See the examples for more clarification.
+</p>
+<p>If <code>useeval=TRUE</code>, text elements are evaluated using
+<code>eval</code>.  If <code>useeval=FALSE</code> text elements are coerced
+using <code>as.numeric</code>.  <code>eval</code> is more forgiving to input,
+i.e. <code>eval</code> of text input '1/2' returns <code>.25</code>, but
+<code>as.numeric</code> of text '1/2' returns <code>NA</code>.  However, <code>eval</code>
+does leave an opening for unchecked code to be run in R.  Text
+containing parenthesis or brackets is not put into either <code>eval</code> or
+<code>as.numeric</code> by the <code>grade.parse</code> functions, but there is
+still a risk.  If you are concerned, set <code>useeval=FALSE</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>grade.parse</code> and <code>grade.parseset</code> returns either a vector
+of the values, or <code>NULL</code> if the input was not valid.
+</p>
+<p><code>grade.parsechunk</code> returns either a single value, or <code>NULL</code>
+if the input was not valid.
+</p>
+<p><code>grade.isscalar</code> returns <code>TRUE</code> if <code>x</code> is a scalar
+(vector of length 1), <code>FALSE</code> otherwise.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The <code>grade</code> main page contains a discussion of the
+common parameters <code>correctans, studentans, useeval, usena,
+    useinf, quiet</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>grade</code>
+<code>grade.set</code>
+<code>grade.number</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">grade.parse("[1, 2, 3]") # returns c(1,2,3)
+grade.parse("[NA, 1, 2]") # returns NULL
+grade.parse("[NA, 1, 2]", usena=TRUE) # returns c(NA, 1, 2)
+grade.parse("[pi]") # returns 3.141....
+grade.parse("[pi]", useeval=FALSE) # returns NULL
+
+grade.parsechunk("1") # 1
+grade.parsechunk(",1") # NULL
+grade.parsechunk("[1]", quiet=FALSE) # NULL, with error message
+
+grade.parseset("[1,2,3]") # c(1,2,3)
+
+grade.isscalar(1) # TRUE
+grade.isscalar(c(1,2)) # FALSE
+grade.isscalar(NA) # FALSE
+grade.isscalar(NA, usena=TRUE) # TRUE
+grade.isscalar(Inf) # FALSE
+grade.isscalar(Inf, useinf=TRUE) # TRUE
+</code></pre>
+
+
+</div>

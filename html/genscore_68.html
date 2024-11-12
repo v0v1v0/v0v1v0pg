@@ -1,0 +1,118 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>test_lambda_bounds2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Searches for a tight bound for <code class="reqn">\lambda_{\boldsymbol{K}}</code> that gives the empty or complete graph starting from a given lambda</h2>
+
+<h3>Description</h3>
+
+<p>Searches for the smallest lambda that gives the empty graph (if <code>lower == FALSE</code>) or the largest that gives the complete graph (if <code>lower == TRUE</code>) starting from the given lambda.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">test_lambda_bounds2(
+  elts,
+  symmetric,
+  lambda_ratio = Inf,
+  lower = TRUE,
+  verbose = TRUE,
+  tol = 1e-06,
+  maxit = 10000,
+  lambda_start = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>elts</code></td>
+<td>
+<p>A list, elements necessary for calculations returned by get_elts().</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>symmetric</code></td>
+<td>
+<p>A string. If equals <code>"symmetric"</code>, estimates the minimizer <code class="reqn">\mathbf{K}</code> over all symmetric matrices; if <code>"and"</code> or <code>"or"</code>, use the "and"/"or" rule to get the support</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda_ratio</code></td>
+<td>
+<p>A positive number (or <code>Inf</code>), the fixed ratio <code class="reqn">\lambda_{\mathbf{K}}</code> and <code class="reqn">\lambda_{\boldsymbol{\eta}}</code>, if <code class="reqn">\lambda_{\boldsymbol{\eta}}\neq 0</code> (non-profiled) in the non-centered setting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>A boolean. If <code>TRUE</code>, finds the largest possible lambda that gives the complete graph (a <code class="reqn">lower</code> bound). If <code>FALSE</code>, finds the smallest possible lambda that gives the empty graph (an <code class="reqn">upper</code> bound).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Optional.  A boolean. If <code>TRUE</code>, prints out the lambda value at each iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>Optional. A number, the tolerance parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>Optional. A positive integer, the maximum number of iterations in model fitting for each lambda.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda_start</code></td>
+<td>
+<p>Optional. A number, the starting point for searching. If <code>NULL</code>, set to <code>1e-4</code> if <code>lower == TRUE</code>, or <code>1</code> if <code>lower == FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function calls <code>test_lambda_bounds</code> three times with <code>step</code> set to <code>10</code>, <code>10^(1/4)</code>, <code>10^(1/16)</code>, respectively.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A number, the best lambda that produces the desired number of edges. <code>1e-10</code> or <code>1e15</code> is returned if out of bound.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Examples are shown for Gaussian truncated to R+^p only. For other distributions
+#   on other types of domains, please refer to \code{gen()} or \code{get_elts()}, as the
+#   way to call this function (\code{test_lambda_bounds2()}) is exactly the same in those cases.
+n &lt;- 50
+p &lt;- 30
+domain &lt;- make_domain("R+", p=p)
+mu &lt;- rep(0, p)
+K &lt;- diag(p)
+x &lt;- tmvtnorm::rtmvnorm(n, mean = mu, sigma = solve(K),
+       lower = rep(0, p), upper = rep(Inf, p), algorithm = "gibbs",
+       burn.in.samples = 100, thinning = 10)
+h_hp &lt;- get_h_hp("min_pow", 1, 3)
+dm &lt;- 1 + (1-1/(1+4*exp(1)*max(6*log(p)/n, sqrt(6*log(p)/n))))
+elts_gauss_np &lt;- get_elts(h_hp, x, setting="gaussian", domain=domain,
+                centered=FALSE, profiled=FALSE, diag=dm)
+test_lambda_bounds2(elts_gauss_np, "symmetric", lambda_ratio=2,
+     lower=TRUE, verbose=TRUE, lambda_start=NULL)
+test_lambda_bounds2(elts_gauss_np, "symmetric", lambda_ratio=2,
+     lower=FALSE, verbose=TRUE, lambda_start=1.0)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,100 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ClassifyGenes</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Build the type column for the gene info table.</h2>
+
+<h3>Description</h3>
+
+<p>Returns a function to be used as <code>classify.genes</code> parameter for <code>ReadGRAND</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ClassifyGenes(
+  ...,
+  use.default = TRUE,
+  drop.levels = TRUE,
+  name.unknown = "Unknown"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional functions to define types (see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use.default</code></td>
+<td>
+<p>if TRUE, use the default type inference (priority after the user defined ones); see details</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drop.levels</code></td>
+<td>
+<p>if TRUE, drop unused types from the factor that is generated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name.unknown</code></td>
+<td>
+<p>the type to be used for all genes where no type was identified</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function returns a function. Usually, you do not use it yourself but <code>ClassifyGenes</code> is usually as <code>classify.genes</code> parameter
+for  <code>ReadGRAND</code> to build the <em>Type</em> column in the <code>GeneInfo</code> table. See the example
+to see how to use it directly.
+</p>
+<p>Each ... parameter must be a function that receives the gene info table and must return a logical vector, indicating for each row
+in the gene info table, whether it matches to a specific type. The name of the parameter is used as the type name.
+</p>
+<p>If a gene matches to multiple type, the first function returning TRUE for a row in the table is used.
+</p>
+<p>By default, this function will recognize mitochondrial genes (MT prefix of the gene symbol), ERCC spike-ins,
+and Ensembl gene identifiers (which it will call "cellular"). These three are the last functions to be checked (in case a user defined type via ...) also
+matches to, e.g., an Ensembl gene).
+</p>
+
+
+<h3>Value</h3>
+
+<p>a function that takes the original GeneInfo table and adds the Type column
+</p>
+
+
+<h3>See Also</h3>
+
+<p>ReadGRAND
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+viral.genes &lt;- c('ORF3a','E','M','ORF6','ORF7a','ORF7b','ORF8','N','ORF10','ORF1ab','S')
+sars &lt;- ReadGRAND(system.file("extdata", "sars.tsv.gz", package = "grandR"),
+                  design=c("Cell",Design$dur.4sU,Design$Replicate),
+                  classify.genes=ClassifyGenes(`SARS-CoV-2`=
+                             function(gene.info) gene.info$Symbol %in% viral.genes),
+                  verbose=TRUE)
+table(GeneInfo(sars)$Type)
+
+fun&lt;-ClassifyGenes(viral=function(gene.info) gene.info$Symbol %in% viral.genes)
+table(fun(GeneInfo(sars)))
+
+</code></pre>
+
+
+</div>

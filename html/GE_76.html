@@ -1,0 +1,212 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemIntertemporal_TimeCircle_2_2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some Examples of a 2-by-2 Time Circle Equilibrium Model</h2>
+
+<h3>Description</h3>
+
+<p>Some examples of a 2-by-2 (intertemporal) time circle equilibrium model.
+In a time circle model, the economy borrows some resources from the outside in the beginning,
+and will repay it after the economy ends.
+</p>
+<p>In these examples, there is an np-period-lived consumer maximizing intertemporal utility,
+and there is a type of firm which produces from period 1 to np.
+There are two commodities, i.e. product and labor.
+Suppose the firm can borrow some product from outside in the first period and return them in the (np+1)-th period.
+And the supply of product in the first period can be regarded as the output of the firm in the (np+1)-th period.
+Hence the product supply in the first period is an endogenous variable.
+Suppose that the amount returned is zeta times the amount borrowed.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemIntertemporal_TimeCircle_2_2(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>See Also</h3>
+
+
+<p><code>gemOLG_TimeCircle</code>
+
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### an example with a Cobb-Douglas intertemporal utility function
+np &lt;- 5 # the number of economic periods, firms.
+gr &lt;- 0 # the growth rate of the labor supply
+zeta &lt;- 1.25 # the ratio of repayments to loans
+# zeta &lt;- (1 + gr)^np
+Gamma.beta &lt;- 1 # the subjective discount factor
+
+n &lt;- 2 * np # the number of commodity kinds
+m &lt;- np + 1 # the number of agent kinds
+
+names.commodity &lt;- c(paste0("prod", 1:np), paste0("lab", 1:np))
+names.agent &lt;- c(paste0("firm", 1:np), "consumer")
+
+# the exogenous supply matrix.
+S0Exg &lt;- matrix(NA, n, m, dimnames = list(names.commodity, names.agent))
+S0Exg[paste0("lab", 1:np), "consumer"] &lt;- 100 * (1 + gr)^(0:(np - 1)) # the supply of labor
+
+# the output coefficient matrix.
+B &lt;- matrix(0, n, m, dimnames = list(names.commodity, names.agent))
+for (k in 1:(np - 1)) {
+  B[paste0("prod", k + 1), paste0("firm", k)] &lt;- 1
+}
+B["prod1", paste0("firm", np)] &lt;- 1 / zeta
+
+dstl.firm &lt;- list()
+for (k in 1:np) {
+  dstl.firm[[k]] &lt;- node_new(
+    "prod",
+    type = "CD", alpha = 2, beta = c(0.5, 0.5),
+    paste0("lab", k), paste0("prod", k)
+  )
+}
+
+dst.consumer &lt;- node_new(
+  "util",
+  type = "CD", alpha = 1, beta = prop.table(Gamma.beta^(1:np)),
+  paste0("prod", 1:np)
+)
+
+ge &lt;- sdm2(
+  A = c(dstl.firm, dst.consumer),
+  B = B,
+  S0Exg = S0Exg,
+  names.commodity = names.commodity,
+  names.agent = names.agent,
+  numeraire = "prod1",
+  ts = TRUE
+)
+
+ge$p
+ge$z
+ge$D
+ge$S
+ge$DV
+ge$SV
+
+## an example with a Leontief intertemporal utility function
+dst.consumer &lt;- node_new(
+  "util",
+  type = "Leontief", a = rep(1, np),
+  paste0("prod", 1:np)
+)
+
+ge2 &lt;- sdm2(
+  A = c(dstl.firm, dst.consumer),
+  B = B,
+  S0Exg = S0Exg,
+  names.commodity = names.commodity,
+  names.agent = names.agent,
+  numeraire = "lab1",
+  ts = TRUE
+)
+
+ge2$p
+ge2$z
+ge2$D
+ge2$S
+ge2$DV
+ge2$SV
+
+## Use a mean-value policy function to accelerate convergence.
+ge3 &lt;- sdm2(
+  A = c(dstl.firm, dst.consumer),
+  B = B,
+  S0Exg = S0Exg,
+  names.commodity = c(paste0("prod", 1:np), paste0("lab", 1:np)),
+  names.agent = c(paste0("firm", 1:np), "consumer"),
+  numeraire = "lab1",
+  ts = TRUE,
+  policy = makePolicyMeanValue(30)
+)
+
+#### an example with a linear intertemporal utility function (e.g. beta1 * x1 + beta2 * x2)
+## The demand structure of the consumer will be adjusted sluggishly to accelerate convergence.
+np &lt;- 5 # the number of economic periods, firms.
+rho &lt;- 0.9 # the subjective discount factor
+
+beta.consumer &lt;- rep(rho^(0:(np - 1)))
+zeta &lt;- (1 / rho)^np
+
+n &lt;- 2 * np # the number of commodity kinds
+m &lt;- np + 1 # the number of agent kinds
+
+names.commodity &lt;- c(paste0("prod", 1:np), paste0("lab", 1:np))
+names.agent &lt;- c(paste0("firm", 1:np), "consumer")
+
+# the exogenous supply matrix.
+S0Exg &lt;- matrix(NA, n, m, dimnames = list(names.commodity, names.agent))
+S0Exg[paste0("lab", 1:np), "consumer"] &lt;- 100 # the supply of labor
+
+# the output coefficient matrix.
+B &lt;- matrix(0, n, m, dimnames = list(names.commodity, names.agent))
+for (k in 1:(np - 1)) {
+  B[paste0("prod", k + 1), paste0("firm", k)] &lt;- 1
+}
+B["prod1", paste0("firm", np)] &lt;- 1 / zeta
+
+dstl.firm &lt;- list()
+for (k in 1:np) {
+  dstl.firm[[k]] &lt;- node_new(
+    "prod",
+    type = "CD", alpha = 2, beta = c(0.5, 0.5),
+    paste0("lab", k), paste0("prod", k)
+  )
+}
+
+dst.consumer &lt;- node_new(
+  "util",
+  type = "FUNC",
+  last.a = rep(1, np),
+  func = function(p) {
+    value.marginal.utility &lt;- beta.consumer / p
+    ratio &lt;- value.marginal.utility / mean(value.marginal.utility)
+    a &lt;- dst.consumer$last.a
+    a &lt;- prop.table(a * ratio_adjust(ratio, 0.15))
+    dst.consumer$last.a &lt;- a
+    a
+  },
+  paste0("prod", 1:np)
+)
+
+ge &lt;- sdm2(
+  A = c(dstl.firm, dst.consumer),
+  B = B,
+  S0Exg = S0Exg,
+  names.commodity = names.commodity,
+  names.agent = names.agent,
+  numeraire = "lab1",
+  ts = TRUE,
+  priceAdjustmentVelocity = 0.1
+)
+
+ge$p
+ge$z
+ge$D
+ge$S
+growth_rate(ge$p[1:np])
+growth_rate(ge$p[(np + 1):(2 * np)])
+
+</code></pre>
+
+
+</div>

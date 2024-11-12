@@ -1,0 +1,273 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>readAxivity</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Function to read .cwa-format files as produced by the accelerometer named 'Axivity'
+</h2>
+
+<h3>Description</h3>
+
+<p>For reading .cwa-format data with the Axivity AX3 and AX6 sensors.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  readAxivity(filename, start = 0, end = 0, progressBar = FALSE, 
+    desiredtz = "", configtz = c(), interpolationType=1, loadbattery = FALSE,
+    header = NULL, frequency_tol = 0.1, maxAllowedCorruptBlocks = 20)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>filename</code></td>
+<td>
+
+<p>filename (required) is name of cwa file to read
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+
+<p>non-negative integer which is a cwa file block number.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>end</code></td>
+<td>
+
+<p>non-negative integer which is a cwa file block number.
+End must be not be less than start.
+If end is less or equal to start, then there is no data read.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progressBar</code></td>
+<td>
+
+<p>Is trigger to switch on/off the text progress bar. If progressBar
+is TRUE then the function displays the progress bar but it works
+slightly slower
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>desiredtz</code></td>
+<td>
+
+<p>Desired timezone, a character with timezone database name.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>configtz</code></td>
+<td>
+
+<p>Timezone in which the accelerometer was configured. 
+Only use this argument if the timezone of configuration and timezone
+in which recording took place are different.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interpolationType</code></td>
+<td>
+
+<p>Integer to indicate type of interpolation to be used, 1=linear, 2=nearest neighbour.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loadbattery</code></td>
+<td>
+
+<p>Boolean to indicate whether battery voltage should be loaded
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>header</code></td>
+<td>
+
+<p>Header to be reused if it was extracted earlier
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>frequency_tol</code></td>
+<td>
+
+<p>Numeric value representing the tolerance for frequency bias expressed
+as a fraction of the expected sampling frequency. For example, 0.10 indicates
+that we accept the sampling frequency configured at 100 Hertz to vary between
+90 and 110 Hertz. If this condition is not met the data will be imputed with
+a constant value and the start and end time will be logged in the QClog output object.
+Regardless of the setting the function will always log instances when frequency 
+differs by more than 5%, but if this is less than frequency_tol the block will
+not be imputed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxAllowedCorruptBlocks</code></td>
+<td>
+
+<p>Max number of consecutive blocks with a failed checksum that we'll tolerate.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+
+<ul>
+<li> <p><code>data</code> dataframe with data from start inclusive till end exclusive.
+If start == end then data section of final structure is empty.
+</p>
+
+<ul>
+<li>
+<p> timestamp in numeric format
+</p>
+</li>
+<li>
+<p> gx gyroscope x-axis (only available in AX6)
+</p>
+</li>
+<li>
+<p> gy gyroscope y-axis (only available in AX6)
+</p>
+</li>
+<li>
+<p> gz gyroscope z-axis (only available in AX6)
+</p>
+</li>
+<li>
+<p> x accelerometer x-axis
+</p>
+</li>
+<li>
+<p> y accelerometer y-axis
+</p>
+</li>
+<li>
+<p> z accelerometer z-axis
+</p>
+</li>
+<li>
+<p> temperature in Celsius (only recorded once per block)
+</p>
+</li>
+<li>
+<p> battery one value per block (only recorded once per block)
+</p>
+</li>
+<li>
+<p> light in LUX on (only recorded once per block)
+</p>
+</li>
+</ul>
+</li>
+<li> <p><code>header</code> file header. list of header information:
+</p>
+
+<ul>
+<li>
+<p> uniqueSerialCode is unque serial code of used device
+</p>
+</li>
+<li>
+<p> frequency is measurement frequency. All data will be resampled for this 
+frequency
+</p>
+</li>
+<li>
+<p> start is timestamp in numeric form. To get text representation it is
+enough to use as.POSIXct(start, origin = "1970-01-01", tz=desiredtz)
+</p>
+</li>
+<li>
+<p> device is "Axivity"
+</p>
+</li>
+<li>
+<p> firmwareVersion
+</p>
+</li>
+<li>
+<p> blocks is number of datablocks with 80 or 120 raw observations in each.
+</p>
+</li>
+</ul>
+</li>
+<li> <p><code>QClog</code> dataframe with log of integrity checks on each block including:
+</p>
+
+<ul>
+<li>
+<p> checksum_pass Boolean to indicate whether checksum was zero.
+</p>
+</li>
+<li>
+<p> blockID_previous ID for previous block
+</p>
+</li>
+<li>
+<p> blockID_current ID for current block
+</p>
+</li>
+<li>
+<p> start_previous numeric start time of previous block
+</p>
+</li>
+<li>
+<p> start_current numeric start time of current block
+</p>
+</li>
+<li>
+<p> blockLengthSeconds length of previous block
+</p>
+</li>
+<li>
+<p> frequency_blockheader frequency derived from block header
+</p>
+</li>
+<li>
+<p> frequency_observed frequency as observed
+</p>
+</li>
+<li>
+<p> imputed Boolean to indicate whether this block was inputed
+</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Evgeny Mirkes &lt;em322@leicester.ac.uk&gt;
+Lena Kushleyeva
+Vincent van Hees &lt;v.vanhees@accelting.com&gt;
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">  
+    cwafile  = system.file("testfiles/ax3_testfile.cwa", package = "GGIRread")[1]
+    AX3 = readAxivity(filename = cwafile, desiredtz = "Europe/Berlin", start = 1, end = 2)
+  
+</code></pre>
+
+
+</div>

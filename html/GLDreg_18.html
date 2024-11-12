@@ -1,0 +1,229 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GLD.lm.full</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+This function fits a GLD regression linear model and conducts simulations to 
+display the statistical properties of estimated coefficients
+</h2>
+
+<h3>Description</h3>
+
+<p>The function is an extension of <code>GLD.lm</code> and defaults to
+1000 simulation runs, coefficients and statistical properties of coefficients
+can be plotted as part of the output.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GLD.lm.full(formula, data, param, maxit = 20000, fun, method = "Nelder-Mead", 
+range = c(0.01, 0.99), n.simu = 1000, summary.plot = TRUE, init = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+
+<p>A symbolic expression of the model to be fitted, similar to the formula
+argument in <code>lm</code>, see <code>formula</code> for more information
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>Dataset containing variables of the model
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+
+<p>Can be "rs", "fmkl" or "fkml"
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+
+<p>Maximum number of iterations for numerical optimisation 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fun</code></td>
+<td>
+
+<p>If param="fmkl" or "fkml", this can be one of <code>fun.RMFMKL.ml.m</code>, 
+<code>fun.RMFMKL.ml</code>, for maximum
+likelihood estimation (*.ml.m is a faster implementation of *.ml) and 
+<code>fun.RMFMKL.lm</code> for L moment matching.
+</p>
+<p>If param="rs", this can be one of <code>fun.RPRS.ml.m</code>, 
+<code>fun.RPRS.ml</code>, for maximum
+likelihood estimation (*.ml.m is a faster implementation of *.ml) and 
+<code>fun.RPRS.lm</code> for L moment matching.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+
+<p>Defaults to "Nelder-Mead" algorithm, can also be "SANN" but this is a lot slower
+and may not as good
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>range</code></td>
+<td>
+
+<p>The is the quantile range to plot the QQ plot, defaults to 0.01 and 0.99 to
+avoid potential problems with extreme values of GLD which might be -Inf or Inf.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.simu</code></td>
+<td>
+
+<p>Number of times to repeat the simulation runs, defaults to 1000.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>summary.plot</code></td>
+<td>
+
+<p>Whether to plot the coefficients graphically, defaults to TRUE.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+
+<p>Choose a different set of initial values to start the optimisation process. This
+can either be full set of parameters including GLD parameter estimates, or it
+can just be the coefficient estimates of the regression model. 
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function usually takes some time to run, as it involves refitting the 
+GLD regression model many times, the progress of the simulation is outputted
+to the R screen, so users can guage the progress of the computation.
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>[[1]]</code></td>
+<td>
+<p>Output of <code>GLD.lm</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>[[2]]</code></td>
+<td>
+<p>A matrix showing the bias adjustment, coefficents of the model,
+parameters of GLD and whether the result converged at each run</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>[[3]]</code></td>
+<td>
+<p>Adjusted simulation result so that the empirical mean of 
+coefficients is the same as the estimated parameters obtained in 
+<code>GLD.lm</code></p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Steve Su
+</p>
+
+
+<h3>References</h3>
+
+<p>Su (2015) "Flexible Parametric Quantile Regression Model" Statistics &amp;
+Computing  May 2015, Volume 25, Issue 3, pp 635-650
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GLD.lm</code>, <code>GLD.quantreg</code>,  
+<code>summaryGraphics.gld.lm</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Dummy example
+
+## Create dataset
+
+set.seed(10)
+
+x&lt;-rnorm(200,3,2)
+y&lt;-3*x+rnorm(200)
+
+dat&lt;-data.frame(y,x)
+
+## Fit FKML GLD regression with 3 simulations
+
+fit&lt;-GLD.lm.full(y~x,data=dat,fun=fun.RMFMKL.ml.m,param="fkml",n.simu=3)
+
+## Not run: 
+## Extract the Engel dataset 
+
+library(quantreg)
+data(engel)
+
+## Fit a full GLD regression
+
+engel.fit.full&lt;-GLD.lm.full(foodexp~income,data=engel,param="fmkl",
+fun=fun.RMFMKL.ml.m)
+
+## Extract the mammals dataset 
+library(MASS)
+
+## Fit a full GLD regression
+
+mammals.fit.full&lt;-GLD.lm.full(log(brain)~log(body),data=mammals,param="fmkl",
+fun=fun.RMFMKL.ml.m)
+
+## Using quantile regression coefficients as starting values
+library(quantreg)
+
+mammals.fit1.full&lt;-GLD.lm.full(log(brain)~log(body),data=mammals,param="fmkl",
+fun=fun.RMFMKL.ml.m, init=rq(log(brain)~log(body),data=mammals)$coeff)
+
+## Using the result of mammals.fit.full as initial values
+
+mammals.fit2.full&lt;-GLD.lm.full(log(brain)~log(body),data=mammals,param="fmkl",
+fun=fun.RMFMKL.ml.m, init=mammals.fit1.full[[1]][[3]])
+
+## End(Not run)
+</code></pre>
+
+
+</div>

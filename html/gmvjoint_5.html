@@ -1,0 +1,202 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>dynPred</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Dynamic predictions for survival sub-model in a multivariate joint model.</h2>
+
+<h3>Description</h3>
+
+<p>Calculates individualised conditional survival probabilities for subjects
+during a period of follow-up using a <code>joint</code> model fit along with requisite longitudinal 
+process history. 
+</p>
+<p><strong>Note</strong> that this function is largely designed for use within the ROC function
+which assesses discriminatory power of the joint model, however it <em>does</em> function
+by itself with proper use of its arguments.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">dynPred(
+  data,
+  id,
+  fit,
+  u = NULL,
+  nsim = 200,
+  progress = TRUE,
+  scale = NULL,
+  df = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>the data to which the original <code>joint</code> model was fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>subject identifier, i.e. for which subject is the conditional survival probabilities 
+desired?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>a joint model fit by the  <code>joint</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>u</code></td>
+<td>
+<p>a numeric <code>vector</code> of candidate follow-up times for which a survival probability 
+should be calculated. Note that the first item <code>u[1]</code> denotes the start of the "window"
+and is dropped from calculations. If <code>u=NULL</code> (the default), then the probability of 
+surviving all failure times after the <code>id</code>'s final longitudinal <code>time</code> is calculated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>how many Monte Carlo simulations should be carried out? Defaults to 
+<code>nsim=200</code>. First-order estimates are calculated if <code>nsim=0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress</code></td>
+<td>
+<p>a logical, if <code>progress=TRUE</code> (the default) then a progress bar displaying
+the current percentage of simulations have been completed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>numeric scales the variance-covariance parameter in the proposal distribution for 
+the Metropolis-Hastings algorithm. Defaults to <code>scale = NULL</code> which doesn't scale the
+variance term at all. Users are encouraged to experiment with values here; this parameter
+controls the acceptance rate of the MH scheme.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>numeric denotes the degrees of freedom of the proposed <code class="reqn">t</code> distribution on
+the random effects; <code>df=4</code> is suggested and is the default.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Dynamic predictions for the time-to-event process based on information available
+on the subject's longitudinal process up to given time <code class="reqn">t</code> are calculated by Monte Carlo
+simulation outlined in Rizopoulos (2011). For a subject last observed at time <code class="reqn">t</code>, the 
+probability that they survive until future time <code class="reqn">u</code> is
+</p>
+<p style="text-align: center;"><code class="reqn">
+  Pr(T_i \ge u | T \ge t; \boldsymbol{Y}_i, \boldsymbol{b}_i; \boldsymbol{\Omega}) \approx
+  \frac{S(u|\hat{\boldsymbol{b}}_i; \boldsymbol{\Omega})}
+  {S(t|\hat{\boldsymbol{b}}_i; \boldsymbol{\Omega})}
+</code>
+</p>
+
+<p>where <code class="reqn">T_i</code> is the true failure time for subject <code class="reqn">i</code>, <code class="reqn">\boldsymbol{Y}_i</code> their
+longitudinal measurements up to time <code class="reqn">t</code>, and <code class="reqn">S()</code> the survival function.
+</p>
+<p><code class="reqn">\boldsymbol{\Omega}</code> is drawn from the multivariate normal distribution with mean
+<code class="reqn">\hat{\boldsymbol{\Omega}}</code> and its variance taken from a fitted <code>joint</code> object.
+<code class="reqn">\hat{\boldsymbol{b}}</code> is drawn from the <code class="reqn">t</code> distribution by means of a
+Metropolis-Hastings algorithm with <code>nsim</code> iterations.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class <code>dynPred</code> which consists of three items: </p>
+
+<dl>
+<dt><code>pi</code></dt>
+<dd>
+<p>A <code>data.frame</code> which contains each candidate failure time (supplied by
+<code>u</code>), with the mean, median and 2.5% and 97.5% quantiles of probability of survival 
+until this failure time.</p>
+</dd>
+<dt><code>pi.raw</code></dt>
+<dd>
+<p>A <code>matrix</code> of with <code>nsim</code> rows and <code>length(u)</code> columns,
+each row represents the <code class="reqn">l</code>th conditional survival probability of survival each <code>u</code>
+survival time. This is largely for debugging purposes.</p>
+</dd>
+<dt>MH.accept</dt>
+<dd>
+<p>The acceptance rate of the Metropolis-Hastings algorithm on the random
+effects.</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>James Murray (<a href="mailto:j.murray7@ncl.ac.uk">j.murray7@ncl.ac.uk</a>).
+</p>
+
+
+<h3>References</h3>
+
+<p>Bernhardt PW, Zhang D and Wang HJ. A fast EM Algorithm for Fitting Joint Models of a Binary 
+Response to Multiple Longitudinal Covariates Subject to Detection Limits. 
+<em>Computational Statistics and Data Analysis</em> 2015; <strong>85</strong>; 37–53
+</p>
+<p>Rizopoulos D. Dynamic predictions and prospective accuracy in joint models
+for longitudinal and time-to-event data. <em>Biometrics</em> 2011;
+<strong>67</strong>: 819–829.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>ROC</code> and <code>plot.dynPred</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(PBC)
+PBC$serBilir &lt;- log(PBC$serBilir)
+# Focus in on id 81, who fails at around 7 years of follow-up. \code{dynPred} allows us to
+# infer how the model believes their survival probability would've progressed (ignoring the
+# true outcome at start time).
+# Univariate -----------------------------------------------------------
+long.formulas &lt;- list(serBilir ~ drug * time + (1 + time|id))
+surv.formula &lt;- Surv(survtime, status) ~ drug
+family &lt;- list('gaussian')
+fit &lt;- joint(long.formulas, surv.formula, PBC, family)
+preds &lt;- dynPred(PBC, id = 81, fit = fit, u = NULL, nsim = 200,
+                 scale = 2)
+preds
+plot(preds)
+# Bivariate ------------------------------------------------------------
+# Does introduction of albumin affect conditional survival probability?
+long.formulas &lt;- list(
+  serBilir ~ drug * time + I(time^2) + (1 + time + I(time^2)|id),
+  albumin ~ drug * time + (1 + time|id)
+)
+fit &lt;- joint(long.formulas, surv.formula, data = PBC, family = list("gaussian", "gaussian"))
+bi.preds &lt;- dynPred(PBC, id = 81, fit = fit, u = NULL, nsim = 200, 
+                    scale = fit$coeffs$D/sqrt(fit$ModelInfo$n))
+bi.preds
+plot(bi.preds) # Appears to level-off dramatically; perhaps indicative of this id's albumin
+               # levels, or acceleration in serBilir trajectory around 8.5 years.
+
+</code></pre>
+
+
+</div>

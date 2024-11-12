@@ -1,0 +1,218 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>KMconstrainedSparse</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+K-means over sparse data input with constraints on cluster weights
+</h2>
+
+<h3>Description</h3>
+
+<p>Multithreaded weighted Minkowski and spherical K-means via Lloyd's algorithm over sparse representation of data given cluster size (weight) constraints.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">KMconstrainedSparse(
+  X,
+  d,
+  centroid,
+  Xw = rep(1, length(X)),
+  clusterWeightUB = rep(length(X) + 1, length(centroid)),
+  minkP = 2,
+  convergenceTail = 5L,
+  tailConvergedRelaErr = 1e-04,
+  maxIter = 100L,
+  maxCore = 7L,
+  paraSortInplaceMerge = FALSE,
+  verbose = TRUE
+  )
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>A list of size <code>N</code>, the number of observations. <code>X[[i]]</code> is a 2-column data frame. The 1st column is a sorted <strong>integer vector</strong> of the indexes of nonzero dimensions. Values in these dimensions are stored in the 2nd column as a <strong>numeric vector</strong>. Internally the algorithm sets a 32-bit <em>int</em> pointer to the beginning of the 1st column and a 64-bit <em>double</em> pointer to the beginning of the 2nd column, so it is critical that the input has the correct type.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+
+<p>An integer. The dimensionality of <code>X</code>. <code>d</code> MUST be no less than the maximum of all index vectors in <code>X</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centroid</code></td>
+<td>
+
+<p>A list of size <code>K</code>, the number of clusters. <code>centroid[[i]]</code> can be in dense or sparse representation. If dense, a numeric vector of size <code>d</code>. If sparse, a 2-column data frame in the same sense as <code>X[[i]]</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Xw</code></td>
+<td>
+
+<p>A numeric vector of size <code>N</code>. <code>Xw[i]</code> is the weight on observation <code>X[[i]]</code>. Users should normalize <code>Xw</code> such that the elements sum up to <code>N</code>. Default uniform weights for all observations.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clusterWeightUB</code></td>
+<td>
+
+<p>An integer vector of size <code>K</code>. The upper bound of weight for each cluster. If <code>Xw</code> are all 1s, <code>clusterWeightUB</code> upper-bound cluster sizes.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minkP</code></td>
+<td>
+
+<p>A numeric value or a character string. If numeric, <code>minkP</code> is the power <code>p</code> in the definition of Minkowski distance. If character string, <code>"max"</code> implies Chebyshev distance, <code>"cosine"</code> implies cosine dissimilarity. Default 2.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convergenceTail</code></td>
+<td>
+
+<p>An integer. The algorithm may end up with "cyclical convergence" due to the size / weight constraints, that is, every few iterations produce the same clustering. If the cost (total in-cluster distance) of each of the last <code>convergenceTail</code> iterations has a relative difference less than <code>tailConvergedRelaErr</code> against the cost from the prior iteration, the program stops.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tailConvergedRelaErr</code></td>
+<td>
+
+<p>A numeric value, explained in <code>convergenceTail</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxIter</code></td>
+<td>
+
+<p>An integer. The maximal number of iterations. Default 100.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxCore</code></td>
+<td>
+
+<p>An integer. The maximal number of threads to invoke. No more than the total number of logical processors on machine. Default 7.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>paraSortInplaceMerge</code></td>
+<td>
+
+<p>A boolean value. <code>TRUE</code> let the algorithm call <code>std::inplace_merge()</code> (<code>std</code> refers to C++ STL namespace) instead of <code>std::merge()</code> for parallel-sorting the observation-centroid distances. In-place merge is slower but requires no extra memory.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>A boolean value. <code>TRUE</code> prints progress.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>See details for <code>KMconstrained()</code> and <code>KM()</code>
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of size <code>K</code>, the number of clusters. Each element is a list of 3 vectors:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>centroid </code></td>
+<td>
+<p>a numeric vector of size <code>d</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clusterMember </code></td>
+<td>
+<p>an integer vector of indexes of elements grouped to <code>centroid</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>member2centroidDistance </code></td>
+<td>
+<p>a numeric vector of the same size of <code>clusterMember</code>. The <code>i</code>th element is the Minkowski distance or cosine dissimilarity from <code>centroid</code> to the <code>clusterMember[i]</code>th observation in <code>X</code>.</p>
+</td>
+</tr>
+</table>
+<p>Empty <code>clusterMember</code> implies empty cluster.
+</p>
+
+
+<h3>Note</h3>
+
+<p>Although rarely happens, divergence of K-means with non-Euclidean distance <code>minkP != 2</code> measure is still a theoretical possibility. Bounding the cluster weights / sizes increases the chance of divergence.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">N = 5000L # Number of points.
+d = 500L # Dimensionality.
+K = 50L # Number of clusters.
+
+
+# Create a data matrix, about 95% of which are zeros.
+dat = matrix(unlist(lapply(1L : N, function(x)
+{
+  tmp = numeric(d)
+  # Nonzero entries.
+  Nnz = as.integer(max(1, d * runif(1, 0, 0.05)))
+  tmp[sample(d, Nnz)] = runif(Nnz) + rnorm(Nnz)
+  tmp
+})), nrow = d); gc()
+
+
+# Convert to sparse representation.
+# GMKMcharlie::d2s() is equivalent.
+sparsedat = apply(dat, 2, function(x)
+{
+  nonz = which(x != 0)
+  list(nonz, x[nonz])
+}); gc()
+
+
+centroidInd = sample(length(sparsedat), K)
+
+
+# Test speed using sparse representation.
+sparseCentroid = sparsedat[centroidInd]
+# Size upper bounds vary in [N / K * 1.5, N / K * 2]
+sizeConstraints = as.integer(round(runif(K, N / K * 1.5, N / K * 2)))
+system.time({sparseRst = GMKMcharlie::KMconstrainedSparse(
+  X = sparsedat, d = d, centroid = sparseCentroid,
+  clusterWeightUB = sizeConstraints,
+  tailConvergedRelaErr = 1e-6,
+  maxIter = 100, minkP = 2, maxCore = 2, verbose = TRUE)})
+</code></pre>
+
+
+</div>

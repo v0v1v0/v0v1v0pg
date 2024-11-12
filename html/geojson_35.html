@@ -1,0 +1,203 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ndgeo</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Read and write newline-delimited GeoJSON (GeoJSON text sequences)</h2>
+
+<h3>Description</h3>
+
+<p>There are various flavors of newline-delimited GeoJSON, all of which
+we aim to handle here. See Details for more.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ndgeo_write(x, file, sep = "\n")
+
+## Default S3 method:
+ndgeo_write(x, file, sep = "\n")
+
+## S3 method for class 'geofeaturecollection'
+ndgeo_write(x, file, sep = "\n")
+
+## S3 method for class 'geofeature'
+ndgeo_write(x, file, sep = "\n")
+
+ndgeo_read(txt, pagesize = 500, verbose = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>input, an object of class <code>geojson</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>(character) a file. not a connection. required.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sep</code></td>
+<td>
+<p>(character) a character separator to use in <code>writeLines()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>txt</code></td>
+<td>
+<p>text, a file, or a url. required.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pagesize</code></td>
+<td>
+<p>(integer) number of lines to read/write from/to the
+connection per iteration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>(logical) print messages. default: <code>TRUE</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+<ul>
+<li> <p><code>ndgeo_write</code>: writes <span class="pkg">geojson</span> package types as
+newline-delimited GeoJSON to a file
+</p>
+</li>
+<li> <p><code>ndgeo_read</code>: reads newline-delimited GeoJSON from a string,
+file, or URL into the appropriate geojson type
+</p>
+</li>
+</ul>
+<p>As an alternative to <code>ndgeo_read</code>, you can simply use
+<code>jsonlite::stream_in()</code> to convert newline-delimited GeoJSON
+to a data.frame
+</p>
+
+
+<h3>Value</h3>
+
+<p>a <code>geojson</code> class object
+</p>
+
+
+<h3>Note</h3>
+
+<p><strong>IMPORTANT</strong>: <code>ngeo_read</code> for now only handles lines of geojson
+in your file that are either features or geometry objects (e.g., point,
+multipoint, polygon, multipolygon, linestring, multilinestring)
+</p>
+
+
+<h3>References</h3>
+
+<p>Newline-delimited JSON has a few flavors.
+The only difference between ndjson <a href="http://ndjson.org/">http://ndjson.org/</a> and
+JSON Lines <a href="https://jsonlines.org/">https://jsonlines.org/</a> I can tell is that the former
+requires UTF-8 encoding, while the latter does not.
+</p>
+<p>GeoJSON text sequences has a specification found at
+<a href="https://datatracker.ietf.org/doc/html/rfc8142">https://datatracker.ietf.org/doc/html/rfc8142</a>. The spec states that:
+</p>
+
+<ul>
+<li>
+<p> a GeoJSON text sequence is any number of GeoJSON RFC7946 texts
+</p>
+</li>
+<li>
+<p> each line encoded in UTF-8 RFC3629
+</p>
+</li>
+<li>
+<p> each line preceded by one ASCII RFC20 record separator (RS; "0x1e")
+character
+</p>
+</li>
+<li>
+<p> each line followed by a line feed (LF)
+</p>
+</li>
+<li>
+<p> each JSON text MUST contain a single GeoJSON object as defined in RFC7946
+</p>
+</li>
+</ul>
+<p>See also the GeoJSON specification <a href="https://datatracker.ietf.org/doc/html/rfc7946">https://datatracker.ietf.org/doc/html/rfc7946</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># featurecollection
+## write
+file &lt;- system.file("examples", 'featurecollection2.geojson',
+  package = "geojson")
+str &lt;- paste0(readLines(file), collapse = " ")
+(x &lt;- featurecollection(str))
+outfile &lt;- tempfile(fileext = ".geojson")
+ndgeo_write(x, outfile)
+readLines(outfile)
+jsonlite::stream_in(file(outfile))
+## read
+ndgeo_read(outfile)
+unlink(outfile)
+
+# read from an existing file
+## GeoJSON objects all of same type: Feature
+file &lt;- system.file("examples", 'ndgeojson1.json', package = "geojson")
+ndgeo_read(file)
+## GeoJSON objects all of same type: Point
+file &lt;- system.file("examples", 'ndgeojson2.json', package = "geojson")
+ndgeo_read(file)
+## GeoJSON objects of mixed type: Point, and Feature
+file &lt;- system.file("examples", 'ndgeojson3.json', package = "geojson")
+ndgeo_read(file)
+
+## Not run: 
+# read from a file
+url &lt;- "https://raw.githubusercontent.com/ropensci/geojson/main/inst/examples/ndgeojson1.json"
+f &lt;- tempfile(fileext = ".geojsonl")
+download.file(url, f)
+x &lt;- ndgeo_read(f)
+x
+unlink(f)
+
+# read from a URL
+url &lt;- "https://raw.githubusercontent.com/ropensci/geojson/main/inst/examples/ndgeojson1.json"
+x &lt;- ndgeo_read(url)
+x
+
+# geojson text sequences from file
+file &lt;- system.file("examples", 'featurecollection2.geojson',
+  package = "geojson")
+str &lt;- paste0(readLines(file), collapse = " ")
+x &lt;- featurecollection(str)
+outfile &lt;- tempfile(fileext = ".geojson")
+ndgeo_write(x, outfile, sep = "\u001e\n")
+con &lt;- file(outfile)
+readLines(con)
+close(con)
+ndgeo_read(outfile)
+unlink(outfile)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

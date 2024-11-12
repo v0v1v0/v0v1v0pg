@@ -1,0 +1,166 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tab_stubhead</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Add label text to the stubhead</h2>
+
+<h3>Description</h3>
+
+<p>We can add a label to the stubhead of a <strong>gt</strong> table with <code>tab_stubhead()</code>.
+The stubhead is the lone part of the table that is positioned left of the
+column labels, and above the stub. If a stub does not exist, then there is no
+stubhead (so no visible change will be made when using this function in that
+case). We have the flexibility to use Markdown formatting for the stubhead
+label via the <code>md()</code> helper function. Furthermore, if the table is intended
+for HTML output, we can use HTML inside of <code>html()</code> for the stubhead label.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tab_stubhead(data, label)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p><em>The gt table data object</em>
+</p>
+<p><code style="white-space: pre;">⁠obj:&lt;gt_tbl&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>This is the <strong>gt</strong> table object that is commonly created through use of the
+<code>gt()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>label</code></td>
+<td>
+<p><em>Stubhead label text</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>The text to be used as the stubhead label. We can optionally use <code>md()</code> or
+<code>html()</code> to style the text as Markdown or to retain HTML elements in the
+text.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>gt_tbl</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<p>Using a small subset of the <code>gtcars</code> dataset, we can create a <strong>gt</strong> table
+with row labels. Since we have row labels in the stub (via use of
+<code>rowname_col = "model"</code> in the <code>gt()</code> function call) we have a stubhead, so,
+let's add a stubhead label (<code>"car"</code>) with <code>tab_stubhead()</code> to
+describe what's in the stub.
+</p>
+<div class="sourceCode r"><pre>gtcars |&gt;
+  dplyr::select(model, year, hp, trq) |&gt;
+  dplyr::slice(1:5) |&gt;
+  gt(rowname_col = "model") |&gt;
+  tab_stubhead(label = "car")
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_tab_stubhead_1.png" alt="This image of a table was generated from the first code example in the `tab_stubhead()` help file." style="width:100%;"><p>The stuhead can contain all sorts of interesting content. How about an icon
+for a car? We can make this happen with help from the <strong>fontawesome</strong>
+package.
+</p>
+<div class="sourceCode r"><pre>gtcars |&gt;
+  dplyr::select(model, year, hp, trq) |&gt;
+  dplyr::slice(1:5) |&gt;
+  gt(rowname_col = "model") |&gt;
+  tab_stubhead(label = fontawesome::fa("car"))
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_tab_stubhead_2.png" alt="This image of a table was generated from the second code example in the `tab_stubhead()` help file." style="width:100%;"><p>If the stub is two columns wide (made possible by using
+<code>row_group_as_column = TRUE</code> in the <code>gt()</code> statement), the stubhead will be a
+merged cell atop those two stub columns representing the row group and the
+row label. Here's an example of that type of situation in a table that uses
+the <code>peeps</code> dataset.
+</p>
+<div class="sourceCode r"><pre>peeps |&gt;
+  dplyr::filter(country %in% c("POL", "DEU")) |&gt;
+  dplyr::group_by(country) |&gt;
+  dplyr::filter(dplyr::row_number() %in% 1:5) |&gt;
+  dplyr::ungroup() |&gt;
+  dplyr::mutate(name = paste0(toupper(name_family), ", ", name_given)) |&gt;
+  dplyr::select(name, address, city, postcode, country) |&gt;
+  gt(
+    rowname_col = "name",
+    groupname_col = "country",
+    row_group_as_column = TRUE
+  ) |&gt;
+  tab_stubhead(label = "Country Code / Person") |&gt;
+  tab_style(
+    style = cell_text(transform = "capitalize"),
+    locations = cells_column_labels()
+  )
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_tab_stubhead_3.png" alt="This image of a table was generated from the third code example in the `tab_stubhead()` help file." style="width:100%;"><p>The stubhead cell and its text can be styled using <code>tab_style()</code> with
+<code>cells_stubhead()</code>. In this example, using the <code>reactions</code> dataset, we
+style the stubhead label so that it is vertically centered with text that is
+highly emboldened.
+</p>
+<div class="sourceCode r"><pre>reactions |&gt;
+  dplyr::filter(cmpd_type == "nitrophenol") |&gt;
+  dplyr::select(cmpd_name, OH_k298, Cl_k298) |&gt;
+  dplyr::filter(!(is.na(OH_k298) &amp; is.na(Cl_k298))) |&gt;
+  gt(rowname_col = "cmpd_name") |&gt;
+  tab_spanner(
+    label = "Rate constant at 298 K, in {{cm^3 molecules^-1 s^-1}}",
+    columns = ends_with("k298")
+  ) |&gt;
+  tab_stubhead(label = "Nitrophenol Compound") |&gt;
+  fmt_scientific() |&gt;
+  sub_missing() |&gt;
+  cols_label_with(fn = function(x) sub("_k298", "", x)) |&gt;
+  cols_width(everything() ~ px(200)) |&gt;
+  tab_style(
+    style = cell_text(v_align = "middle", weight = "800"),
+    locations = cells_stubhead()
+  )
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_tab_stubhead_4.png" alt="This image of a table was generated from the fourth code example in the `tab_stubhead()` help file." style="width:100%;"><h3>Function ID</h3>
+
+<p>2-5
+</p>
+
+
+<h3>Function Introduced</h3>
+
+<p><code>v0.2.0.5</code> (March 31, 2020)
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other part creation/modification functions: 
+<code>tab_caption()</code>,
+<code>tab_footnote()</code>,
+<code>tab_header()</code>,
+<code>tab_info()</code>,
+<code>tab_options()</code>,
+<code>tab_row_group()</code>,
+<code>tab_source_note()</code>,
+<code>tab_spanner()</code>,
+<code>tab_spanner_delim()</code>,
+<code>tab_stub_indent()</code>,
+<code>tab_style()</code>,
+<code>tab_style_body()</code>
+</p>
+
+
+</div>

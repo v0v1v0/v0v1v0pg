@@ -1,0 +1,436 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>zeroalt</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Zero-Altered Regression Models to deal with Zero-Excess in Count Data</h2>
+
+<h3>Description</h3>
+
+<p>Allows to fit a zero-altered (Poisson or negative binomial) regression model to deal with zero-excess in count data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">zeroalt(
+  formula,
+  data,
+  offset,
+  subset,
+  na.action = na.omit(),
+  weights,
+  family = "poi(log)",
+  zero.link = c("logit", "probit", "cloglog", "cauchit", "log"),
+  reltol = 1e-13,
+  start = list(counts = NULL, zeros = NULL),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>a <code>Formula</code> expression of the form <code>response ~ x1 + x2 + ...| z1 + z2 + ...</code>,
+which is a symbolic description of the linear predictors of the models to be fitted to
+<code class="reqn">\mu</code> and <code class="reqn">\pi</code>, respectively.    See Formula documentation. If a formula
+of the form <code>response ~ x1 + x2 + ...</code> is supplied, the same regressors are
+employed in both components. This is equivalent to <code>response ~ x1 + x2 + ...| x1 + x2 + ...</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>an (optional) <code>data frame</code> in which to look for variables involved in the <code>formula</code> expression,
+as well as for variables specified in the arguments <code>weights</code> and <code>subset</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>this can be used to specify an <em>a priori</em> known component to be included in the linear predictor during fitting. This should be <code>NULL</code> or a numeric vector of length equal to the number of cases.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>an (optional) vector specifying a subset of observations to be used in the fitting process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>a function which indicates what should happen when the data contain NAs. By default <code>na.action</code> is set to <code>na.omit()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>an (optional) vector of positive "prior weights" to be used in the fitting process. The length of
+<code>weights</code> should be the same as the number of observations. As default, <code>weights</code> is set to a vector of 1s.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>an (optional) character string that allows you to specify the distribution
+to describe the response variable, as well as the link function to be used in
+the model for <code class="reqn">\mu</code>. The following distributions are supported:
+(zero-altered) negative binomial I ("nb1"), (zero-altered) negative binomial II
+("nb2"), (zero-altered) negative binomial ("nbf"), and (zero-altered) poisson
+("poi"). Link functions are the same as those available in Poisson models via
+glm. See family documentation. As default, <code>family</code> is set to
+be Poisson with log link.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zero.link</code></td>
+<td>
+<p>an (optional) character string which allows to specify the link function to be used in the model for <code class="reqn">\pi</code>.
+Link functions available are the same than those available in binomial models via glm. See family documentation.
+As default, <code>zero.link</code> is set to "logit".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reltol</code></td>
+<td>
+<p>an (optional) positive value which represents the <em>relative convergence tolerance</em> for the BFGS method in optim.
+As default, <code>reltol</code> is set to 1e-13.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>an (optional) list with two components named "counts" and "zeros", which allows to specify the starting values to be used in the
+iterative process to obtain the estimates of the parameters in the linear predictors of the models for <code class="reqn">\mu</code>
+and <code class="reqn">\pi</code>, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments passed to or from other methods.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The zero-altered count distributions, also called <em>hurdle models</em>, may be obtained as the mixture between
+a zero-truncated count distribution and the Bernoulli distribution. Indeed, if <code class="reqn">Y</code> is a count random variable
+such that <code class="reqn">Y|\nu=1</code> is 0 with probability 1
+and <code class="reqn">Y|\nu=0</code> ~ ZTP<code class="reqn">(\mu)</code>, where <code class="reqn">\nu</code> ~ Bernoulli<code class="reqn">(\pi)</code>, then
+<code class="reqn">Y</code> is distributed according to the Zero-Altered Poisson distribution, denoted here as
+ZAP<code class="reqn">(\mu,\pi)</code>.
+</p>
+<p>Similarly, if <code class="reqn">Y</code> is a count random variable such that <code class="reqn">Y|\nu=1</code> is 0 with probability 1
+and <code class="reqn">Y|\nu=0</code> ~ ZTNB<code class="reqn">(\mu,\phi,\tau)</code>, where <code class="reqn">\nu</code> ~ Bernoulli<code class="reqn">(\pi)</code>, then
+<code class="reqn">Y</code> is distributed according to the Zero-Altered Negative Binomial distribution, denoted here as
+ZANB<code class="reqn">(\mu,\phi,\tau,\pi)</code>. The Zero-Altered Negative Binomial I <code class="reqn">(\mu,\phi,\pi)</code> and
+Zero-Altered Negative Binomial II <code class="reqn">(\mu,\phi,\pi)</code> distributions are special cases of ZANB when
+<code class="reqn">\tau=0</code> and <code class="reqn">\tau=-1</code>, respectively.
+</p>
+<p>The "counts" model may be expressed as <code class="reqn">g(\mu_i)=x_i^{\top}\beta</code> for <code class="reqn">i=1,\ldots,n</code>, where
+<code class="reqn">g(\cdot)</code> is the link function specified at the argument <code>family</code>. Similarly, the "zeros" model may
+be expressed as <code class="reqn">h(\pi_i)=z_i^{\top}\gamma</code> for <code class="reqn">i=1,\ldots,n</code>, where <code class="reqn">h(\cdot)</code> is the
+link function specified at the argument <code>zero.link</code>. Parameter estimation is
+performed using the maximum likelihood method. The parameter vector <code class="reqn">\gamma</code> is
+estimated by applying the routine glm.fit, where a binary-response model
+(<code class="reqn">1</code> or "success" if <code>response</code>=0 and <code class="reqn">0</code> or "fail" if <code>response</code>&gt;0)
+is fitted. Then, the rest of the model parameters are estimated by maximizing the
+log-likelihood function based on the zero-truncated count distribution through the
+BFGS method available in the routine optim. The accuracy and speed of the BFGS
+method are increased because the call to the routine optim is performed using
+the analytical instead of the numerical derivatives. The variance-covariance matrix
+estimate is obtained as being minus the inverse of the (analytical) hessian matrix
+evaluated at the parameter estimates and the observed data.
+A set of standard extractor functions for fitted model objects is available for objects
+of class  <em>zeroinflation</em>, including methods to the generic functions such as
+print, summary, model.matrix, estequa,
+coef, vcov, logLik, fitted, confint, AIC, BIC and
+predict. In addition, the model fitted to the	data may be assessed using functions such as
+anova.zeroinflation, residuals.zeroinflation, dfbeta.zeroinflation,
+cooks.distance.zeroinflation and envelope.zeroinflation.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class  <em>zeroinflation</em> in which the main results of the model fitted to the data are stored, i.e., a list with components including
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+<code>coefficients</code> </td>
+<td style="text-align: left;"> a list with elements "counts" and "zeros" containing the parameter estimates</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+                    </td>
+<td style="text-align: left;"> from the respective models,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>fitted.values</code>
+</td>
+<td style="text-align: left;"> a list with elements "counts" and "zeros" containing the estimates of <code class="reqn">\mu_1,\ldots,\mu_n</code>
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+                    </td>
+<td style="text-align: left;"> and <code class="reqn">\pi_1,\ldots,\pi_n</code>, respectively,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>start</code>        </td>
+<td style="text-align: left;"> a vector containing the starting values for all parameters in the model,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>prior.weights</code>
+</td>
+<td style="text-align: left;"> a vector containing the case weights used,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>offset</code>       </td>
+<td style="text-align: left;"> a list with elements "counts" and "zeros" containing the offset vectors, if any, </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+                    </td>
+<td style="text-align: left;"> from the respective models,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>terms</code>        </td>
+<td style="text-align: left;"> a list with elements "counts", "zeros" and "full" containing the terms objects for </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+                    </td>
+<td style="text-align: left;"> the respective models,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>loglik</code>       </td>
+<td style="text-align: left;"> the value of the log-likelihood function avaliated at the parameter estimates and</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+                    </td>
+<td style="text-align: left;"> the observed data,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>estfun</code>       </td>
+<td style="text-align: left;"> a list with elements "counts" and "zeros" containing the estimating functions </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+                    </td>
+<td style="text-align: left;"> evaluated at the parameter estimates and the observed data for the respective models,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>formula</code>      </td>
+<td style="text-align: left;"> the formula,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>levels</code>       </td>
+<td style="text-align: left;"> the levels of the categorical regressors,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>contrasts</code>    </td>
+<td style="text-align: left;"> a list with elements "counts" and "zeros" containing the contrasts corresponding</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+                    </td>
+<td style="text-align: left;"> to levels from the respective models,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>converged</code>    </td>
+<td style="text-align: left;"> a logical indicating successful convergence,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>model</code>        </td>
+<td style="text-align: left;"> the full model frame,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>y</code>            </td>
+<td style="text-align: left;"> the response count vector,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>family</code>       </td>
+<td style="text-align: left;"> a list with elements "counts" and "zeros" containing the family objects used</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+                    </td>
+<td style="text-align: left;">  in the respective models,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>linear.predictors</code> </td>
+<td style="text-align: left;">  a list with elements "counts" and "zeros" containing the estimates of </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+                         </td>
+<td style="text-align: left;">  <code class="reqn">g(\mu_1),\ldots,g(\mu_n)</code> and <code class="reqn">h(\pi_1),\ldots,h(\pi_n)</code>, respectively,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>R</code>            </td>
+<td style="text-align: left;"> a matrix with the Cholesky decomposition of the inverse of the variance-covariance</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+                    </td>
+<td style="text-align: left;"> matrix of all parameters in the model,</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+<td style="text-align: left;"> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>call</code>         </td>
+<td style="text-align: left;"> the original function call.</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Cameron A.C., Trivedi P.K. (1998) <em>Regression Analysis of Count Data</em>. New York:
+Cambridge University Press.
+</p>
+<p>Mullahy J. (1986) Specification and Testing of Some Modified Count Data Models. <em>Journal of
+Econometrics</em> 33, 341–365.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>overglm, zeroinf
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">####### Example 1: Roots Produced by the Columnar Apple Cultivar Trajan
+data(Trajan)
+fit1 &lt;- zeroalt(roots ~ photoperiod, family="nbf(log)", zero.link="logit", data=Trajan)
+summary(fit1)
+
+####### Example 2: Self diagnozed ear infections in swimmers
+data(swimmers)
+fit2 &lt;- zeroalt(infections ~ frequency | location, family="nb1(log)", data=swimmers)
+summary(fit2)
+
+####### Example 3: Article production by graduate students in biochemistry PhD programs
+bioChemists &lt;- pscl::bioChemists
+fit3 &lt;- zeroalt(art ~ fem + kid5 + ment, family="nb1(log)", data = bioChemists)
+summary(fit3)
+
+</code></pre>
+
+
+</div>

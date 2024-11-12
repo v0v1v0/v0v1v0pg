@@ -1,0 +1,396 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get_elts</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>The function wrapper to get the elements necessary for calculations for all settings.</h2>
+
+<h3>Description</h3>
+
+<p>The function wrapper to get the elements necessary for calculations for all settings.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get_elts(
+  h_hp,
+  x,
+  setting,
+  domain,
+  centered = TRUE,
+  profiled_if_noncenter = TRUE,
+  scale = "",
+  diagonal_multiplier = 1,
+  use_C = TRUE,
+  tol = .Machine$double.eps^0.5,
+  unif_dist = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>h_hp</code></td>
+<td>
+<p>A function that returns a list containing <code>hx=h(x)</code> (element-wise) and <code>hpx=hp(x)</code> (element-wise derivative of <code class="reqn">h</code>) when applied to a vector or a matrix <code>x</code>, both of which has the same shape as <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An <code>n</code> by <code>p</code> matrix, the data matrix, where <code>n</code> is the sample size and <code>p</code> the dimension.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>setting</code></td>
+<td>
+<p>A string that indicates the distribution type, must be one of <code>"exp"</code>, <code>"gamma"</code>, <code>"gaussian"</code>, <code>"log_log"</code>, <code>"log_log_sum0"</code>, or of the form <code>"ab_NUM1_NUM2"</code>, where <code>NUM1</code> is the <code>a</code> value and <code>NUM2</code> is the <code>b</code> value, and <code>NUM1</code> and <code>NUM2</code> must be integers or two integers separated by "/", e.g. "ab_2_2", "ab_2_5/4" or "ab_2/3_1/2". If <code>domain$type == "simplex"</code>, only <code>"log_log"</code> and <code>"log_log_sum0"</code> are supported, and on the other hand <code>"log_log_sum0"</code> is supported for <code>domain$type == "simplex"</code> only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>domain</code></td>
+<td>
+<p>A list returned from <code>make_domain()</code> that represents the domain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centered</code></td>
+<td>
+<p>A boolean, whether in the centered setting(assume <code class="reqn">\boldsymbol{\mu}=\boldsymbol{\eta}=0</code>) or not. Default to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>profiled_if_noncenter</code></td>
+<td>
+<p>A boolean, whether in the profiled setting (<code class="reqn">\lambda_{\boldsymbol{\eta}}=0</code>) if non-centered. Parameter ignored if <code>centered=TRUE</code>. Default to <code>TRUE</code>. Can only be <code>FALSE</code> if <code>setting == "log_log_sum0" &amp;&amp; centered == FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>A string indicating the scaling method. If contains <code>"sd"</code>, columns are scaled by standard deviation; if contains <code>"norm"</code>, columns are scaled by l2 norm; if contains <code>"center"</code> and <code>setting == "gaussian" &amp;&amp; domain$type == "R"</code>, columns are centered to have mean zero. Default to <code>"norm"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>diagonal_multiplier</code></td>
+<td>
+<p>A number &gt;= 1, the diagonal multiplier.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_C</code></td>
+<td>
+<p>Optional. A boolean, use C (<code>TRUE</code>) or R (<code>FALSE</code>) functions for computation. Default to <code>TRUE</code>. Ignored if <code>setting == "gaussian" &amp;&amp; domain$type == "R"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>Optional. A positive number. If <code>setting != "gaussian" || domain$type != "R"</code>, function stops if any entry if smaller than -tol, and all entries between -tol and 0 are set to tol, for numerical stability and to avoid violating the assumption that <code class="reqn">h(\mathbf{x})&gt;0</code> almost surely.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unif_dist</code></td>
+<td>
+<p>Optional, defaults to <code>NULL</code>. If not <code>NULL</code>, <code>h_hp</code> must be <code>NULL</code> and <code>unif_dist(x)</code> must return a list containing <code>"g0"</code> of length <code>nrow(x)</code> and <code>"g0d"</code> of dimension <code>dim(x)</code>, representing the l2 distance and the gradient of the l2 distance to the boundary: the true l2 distance function to the boundary is used for all coordinates in place of h_of_dist; see "Estimating Density Models with Complex Truncation Boundaries" by Liu et al, 2019. That is, <code class="reqn">(h_j\circ \phi_j)(x_i)</code> in the score-matching loss is replaced by <code class="reqn">g_0(x_i)</code>, the l2 distance of xi to the boundary of the domain.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Computes the <code class="reqn">\boldsymbol{\Gamma}</code> matrix and the <code class="reqn">\boldsymbol{g}</code> vector for generalized score matching.
+</p>
+<p>Here, <code class="reqn">\boldsymbol{\Gamma}</code> is block-diagonal, and in the non-profiled non-centered setting, the <code class="reqn">j</code>-th block is composed of <code class="reqn">\boldsymbol{\Gamma}_{\mathbf{KK},j}</code>, <code class="reqn">\boldsymbol{\Gamma}_{\mathbf{K}\boldsymbol{\eta},j}</code> and its transpose, and finally <code class="reqn">\boldsymbol{\Gamma}_{\boldsymbol{\eta\eta},j}</code>. In the centered case, only <code class="reqn">\boldsymbol{\Gamma}_{\mathbf{KK},j}</code> is computed. In the profiled non-centered case, </p>
+<p style="text-align: center;"><code class="reqn">\boldsymbol{\Gamma}_{j}\equiv\boldsymbol{\Gamma}_{\mathbf{KK},j}-\boldsymbol{\Gamma}_{\mathbf{K}\boldsymbol{\eta},j}\boldsymbol{\Gamma}_{\boldsymbol{\eta}\boldsymbol{\eta},j}^{-1}\boldsymbol{\Gamma}_{\mathbf{K}\boldsymbol{\eta}}^{\top}.</code>
+</p>
+
+<p>Similarly, in the non-profiled non-centered setting, <code class="reqn">\boldsymbol{g}</code> can be partitioned <code class="reqn">p</code> parts, each with a <code class="reqn">p</code>-vector <code class="reqn">\boldsymbol{g}_{\mathbf{K},j}</code> and a scalar <code class="reqn">g_{\boldsymbol{\eta},j}</code>. In the centered setting, only <code class="reqn">\boldsymbol{g}_{\mathbf{K},j}</code> is needed. In the profiled non-centered case, </p>
+<p style="text-align: center;"><code class="reqn">\boldsymbol{g}_j\equiv\boldsymbol{g}_{\mathbf{K},j}-\boldsymbol{\Gamma}_{\mathbf{K}\boldsymbol{\eta},j}\boldsymbol{\Gamma}_{\boldsymbol{\eta\eta},j}^{-1}g_{\boldsymbol{\eta},j}.</code>
+</p>
+
+<p>The formulae for the pieces above are
+</p>
+<p style="text-align: center;"><code class="reqn">\boldsymbol{\Gamma}_{\mathbf{KK},j}\equiv\frac{1}{n}\sum_{i=1}^nh\left(X_j^{(i)}\right){X_j^{(i)}}^{2a-2}{\boldsymbol{X}^{(i)}}^a{{\boldsymbol{X}^{(i)}}^a}^{\top},</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\boldsymbol{\Gamma}_{\mathbf{K}\boldsymbol{\eta},j}\equiv-\frac{1}{n}\sum_{i=1}^nh\left(X_j^{(i)}\right){X_j^{(i)}}^{a+b-2}{\boldsymbol{X}^{(i)}}^a,</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\boldsymbol{\Gamma}_{\boldsymbol{\eta\eta},j}\equiv\frac{1}{n}\sum_{i=1}^nh\left(X_j^{(i)}\right){X_j^{(i)}}^{2b-2},</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\boldsymbol{g}_{\mathbf{K},j}\equiv\frac{1}{n}\sum_{i=1}^n\left(h'\left(X_j^{(i)}\right){X_j^{(i)}}^{a-1}+(a-1)h\left(X_j^{(i)}\right){X_j^{(i)}}^{a-2}\right){\boldsymbol{X}^{(i)}}^a+ah\left(X_j^{(i)}\right){X_j^{(i)}}^{2a-2}\boldsymbol{e}_{j,p},</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\boldsymbol{g}_{\boldsymbol{\eta},j}\equiv\frac{1}{n}\sum_{i=1}^n-h'\left(X_j^{(i)}\right){X_j^{(i)}}^{b-1}-(b-1)h\left(X_j^{(i)}\right){X_j^{(i)}}^{b-2},</code>
+</p>
+
+<p>where <code class="reqn">\boldsymbol{e}_{j,p}</code> is the <code class="reqn">p</code>-vector with 1 at the <code class="reqn">j</code>-th position and 0 elsewhere.
+</p>
+<p>In the profiled non-centered setting, the function also returns <code class="reqn">t_1</code> and <code class="reqn">t_2</code> defined as
+</p>
+<p style="text-align: center;"><code class="reqn">\boldsymbol{t}_1\equiv\boldsymbol{\Gamma}_{\boldsymbol{\eta\eta}}^{-1}\boldsymbol{g}_{\boldsymbol{\eta}},\quad\boldsymbol{t}_2\equiv\boldsymbol{\Gamma}_{\boldsymbol{\eta\eta}}^{-1}\boldsymbol{\Gamma}_{\mathbf{K}\boldsymbol{\eta}}^{\top},</code>
+</p>
+
+<p>so that <code class="reqn">\hat{\boldsymbol{\eta}}=\boldsymbol{t}_1-\boldsymbol{t}_2\mathrm{vec}(\hat{\mathbf{K}}).</code>
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list that contains the elements necessary for estimation.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The sample size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>The dimension.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centered</code></td>
+<td>
+<p>The centered setting or not. Same as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>The scaling method. Same as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>diagonal_multiplier</code></td>
+<td>
+<p>The diagonal multiplier. Same as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>diagonals_with_multiplier</code></td>
+<td>
+<p>A vector that contains the diagonal entries of <code class="reqn">\boldsymbol{\Gamma}</code> after applying the multiplier.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>domain_type</code></td>
+<td>
+<p>The domain type. Same as domain$type in the input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>setting</code></td>
+<td>
+<p>The setting. Same as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g_K</code></td>
+<td>
+<p>The <code class="reqn">\boldsymbol{g}</code> vector. In the non-profiled non-centered setting, this is the <code class="reqn">\boldsymbol{g}</code> sub-vector corresponding to <code class="reqn">\mathbf{K}</code>. A <code class="reqn">p^2</code>-vector. Not returned if <code>setting == "gaussian" &amp;&amp; domain$type == "R"</code> since it is just <code class="reqn">diag(p)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gamma_K</code></td>
+<td>
+<p>The <code class="reqn">\boldsymbol{\Gamma}</code> matrix with no diagonal multiplier. In the non-profiled non-centered setting, this is the <code class="reqn">\boldsymbol{\Gamma}</code> sub-matrix corresponding to <code class="reqn">\mathbf{K}</code>. A vector of length <code class="reqn">p^2</code> if <code>setting == "gaussian" &amp;&amp; domain$type == "R"</code> or <code class="reqn">p^3</code> otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g_eta</code></td>
+<td>
+<p>Returned in the non-profiled non-centered setting. The <code class="reqn">\boldsymbol{g}</code> sub-vector corresponding to <code class="reqn">\boldsymbol{\eta}</code>. A <code class="reqn">p</code>-vector. Not returned if <code>setting == "gaussian" &amp;&amp; domain$type == "R"</code> since it is just <code class="reqn">numeric(p)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gamma_K_eta</code></td>
+<td>
+<p>Returned in the non-profiled non-centered setting. The <code class="reqn">\boldsymbol{\Gamma}</code> sub-matrix corresponding to interaction between <code class="reqn">\mathbf{K}</code> and <code class="reqn">\boldsymbol{\eta}</code>. If <code>setting == "gaussian" &amp;&amp; domain$type == "R"</code>, returns a vector of length <code class="reqn">p</code>, or <code class="reqn">p^2</code> otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gamma_eta</code></td>
+<td>
+<p>Returned in the non-profiled non-centered setting. The <code class="reqn">\boldsymbol{\Gamma}</code> sub-matrix corresponding to <code class="reqn">\boldsymbol{\eta}</code>. A <code class="reqn">p</code>-vector. Not returned if <code>setting == "gaussian" &amp;&amp; domain$type == "R"</code> since it is just <code>rep(1,p)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t1,t2</code></td>
+<td>
+<p>Returned in the profiled non-centered setting, where the <code class="reqn">\boldsymbol{\eta}</code> estimate can be retrieved from <code class="reqn">\boldsymbol{t_1}-\boldsymbol{t_2}\hat{\mathbf{K}}</code> after appropriate resizing.</p>
+</td>
+</tr>
+</table>
+<p>If <code>domain$type == "simplex", the following are also returned.</code>
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Gamma_K_jp</code></td>
+<td>
+<p>A matrix of size <code>p</code> by <code>p(p-1)</code>. The <code>(j-1)*p+1</code> through <code>j*p</code> columns represent the interaction matrix between the <code>j</code>-th column and the <code>m</code>-th column of <code>K</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gamma_Kj_etap</code></td>
+<td>
+<p>Non-centered only. A matrix of size <code>p</code> by <code>p(p-1)</code>. The <code>j</code>-th column represents the interaction between the <code>j</code>-th column of <code>K</code> and <code>eta[p]</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gamma_Kp_etaj</code></td>
+<td>
+<p>Non-centered only. A matrix of size <code>p</code> by <code>p(p-1)</code>. The <code>j</code>-th column represents the interaction between the <code>p</code>-th column of <code>K</code> and <code>eta[j]</code>. Note that it is equal to <code>Gamma_Kj_etap</code> if <code>setting</code> does not contain substring <code>"sum0"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gamma_eta_jp</code></td>
+<td>
+<p>Non-centered only. A vector of size <code>p-1</code>. The <code>j</code>-th component represents the interaction between <code>eta[j]</code> and <code>eta[p]</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">n &lt;- 30
+p &lt;- 10
+eta &lt;- rep(0, p)
+K &lt;- diag(p)
+dm &lt;- 1 + (1-1/(1+4*exp(1)*max(6*log(p)/n, sqrt(6*log(p)/n))))
+
+# Gaussian on R^p:
+domain &lt;- make_domain("R", p=p)
+x &lt;- mvtnorm::rmvnorm(n, mean=solve(K, eta), sigma=solve(K))
+# Equivalently:
+
+x2 &lt;- gen(n, setting="gaussian", abs=FALSE, eta=eta, K=K, domain=domain, finite_infinity=100, 
+        xinit=NULL, burn_in=1000, thinning=100, verbose=FALSE)
+
+elts &lt;- get_elts(NULL, x, "gaussian", domain, centered=TRUE, scale="norm", diag=dm)
+elts &lt;- get_elts(NULL, x, "gaussian", domain, FALSE, profiled=FALSE, scale="sd", diag=dm)
+
+# Gaussian on R_+^p:
+domain &lt;- make_domain("R+", p=p)
+x &lt;- tmvtnorm::rtmvnorm(n, mean = solve(K, eta), sigma = solve(K),
+       lower = rep(0, p), upper = rep(Inf, p), algorithm = "gibbs",
+       burn.in.samples = 100, thinning = 10)
+# Equivalently:
+
+x2 &lt;- gen(n, setting="gaussian", abs=FALSE, eta=eta, K=K, domain=domain,
+       finite_infinity=100, xinit=NULL, burn_in=1000, thinning=100, verbose=FALSE)
+
+h_hp &lt;- get_h_hp("min_pow", 1, 3)
+elts &lt;- get_elts(h_hp, x, "gaussian", domain, centered=TRUE, scale="norm", diag=dm)
+
+# Gaussian on sum(x^2) &gt; 1 &amp;&amp; sum(x^(1/3)) &gt; 1 with x allowed to be negative
+domain &lt;- make_domain("polynomial", p=p, rule="1 &amp;&amp; 2",
+       ineqs=list(list("expression"="sum(x^2)&gt;1", abs=FALSE, nonnegative=FALSE),
+                      list("expression"="sum(x^(1/3))&gt;1", abs=FALSE, nonnegative=FALSE)))
+xinit &lt;- rep(sqrt(2/p), p)
+x &lt;- gen(n, setting="gaussian", abs=FALSE, eta=eta, K=K, domain=domain, finite_infinity=100, 
+       xinit=xinit, seed=2, burn_in=1000, thinning=100, verbose=FALSE)
+h_hp &lt;- get_h_hp("min_pow", 1, 3)
+elts &lt;- get_elts(h_hp, x, "gaussian", domain, centered=FALSE,
+       profiled_if_noncenter=TRUE, scale="", diag=dm)
+
+# exp on ([0, 1] v [2,3])^p
+domain &lt;- make_domain("uniform", p=p, lefts=c(0,2), rights=c(1,3))
+x &lt;- gen(n, setting="exp", abs=FALSE, eta=eta, K=K, domain=domain,
+       xinit=NULL, seed=2, burn_in=1000, thinning=100, verbose=FALSE)
+h_hp &lt;- get_h_hp("min_pow", 1.5, 3)
+elts &lt;- get_elts(h_hp, x, "exp", domain, centered=TRUE, scale="", diag=dm)
+elts &lt;- get_elts(h_hp, x, "exp", domain, centered=FALSE,
+       profiled_if_noncenter=FALSE, scale="", diag=dm)
+
+# gamma on {x1 &gt; 1 &amp;&amp; log(1.3) &lt; x2 &lt; 1 &amp;&amp; x3 &gt; log(1.3) &amp;&amp; ... &amp;&amp; xp &gt; log(1.3)}
+domain &lt;- make_domain("polynomial", p=p, rule="1 &amp;&amp; 2 &amp;&amp; 3",
+       ineqs=list(list("expression"="x1&gt;1", abs=FALSE, nonnegative=TRUE),
+                      list("expression"="x2&lt;1", abs=FALSE, nonnegative=TRUE),
+                      list("expression"="exp(x)&gt;1.3", abs=FALSE, nonnegative=TRUE)))
+set.seed(1)
+xinit &lt;- c(1.5, 0.5, abs(stats::rnorm(p-2))+log(1.3))
+x &lt;- gen(n, setting="gamma", abs=FALSE, eta=eta, K=K, domain=domain, finite_infinity=100, 
+       xinit=xinit, seed=2, burn_in=1000, thinning=100, verbose=FALSE)
+h_hp &lt;- get_h_hp("min_pow", 1.5, 3)
+elts &lt;- get_elts(h_hp, x, "gamma", domain, centered=TRUE, scale="", diag=dm)
+elts &lt;- get_elts(h_hp, x, "gamma", domain, centered=FALSE,
+       profiled_if_noncenter=FALSE, scale="", diag=dm)
+
+# a0.6_b0.7 on {x in R_+^p: sum(log(x))&lt;2 || (x1^(2/3)-1.3x2^(-3)&lt;1 &amp;&amp; exp(x1)+2.3*x2&gt;2)}
+domain &lt;- make_domain("polynomial", p=p, rule="1 || (2 &amp;&amp; 3)",
+       ineqs=list(list("expression"="sum(log(x))&lt;2", abs=FALSE, nonnegative=TRUE),
+                      list("expression"="x1^(2/3)-1.3x2^(-3)&lt;1", abs=FALSE, nonnegative=TRUE),
+                      list("expression"="exp(x1)+2.3*x2^2&gt;2", abs=FALSE, nonnegative=TRUE)))
+xinit &lt;- rep(1, p)
+x &lt;- gen(n, setting="ab_3/5_7/10", abs=FALSE, eta=eta, K=K, domain=domain, finite_infinity=100, 
+       xinit=xinit, seed=2, burn_in=1000, thinning=100, verbose=FALSE)
+h_hp &lt;- get_h_hp("min_pow", 1.4, 3)
+elts &lt;- get_elts(h_hp, x, "ab_3/5_7/10", domain, centered=TRUE, scale="", diag=dm)
+elts &lt;- get_elts(h_hp, x, "ab_3/5_7/10", domain, centered=FALSE,
+       profiled_if_noncenter=TRUE, scale="", diag=dm)
+
+# log_log model on {x in R_+^p: sum_j j * xj &lt;= 1}
+domain &lt;- make_domain("polynomial", p=p,
+       ineqs=list(list("expression"=paste(paste(sapply(1:p,
+                           function(j){paste(j, "x", j, sep="")}), collapse="+"), "&lt;1"),
+                     abs=FALSE, nonnegative=TRUE)))
+x &lt;- gen(n, setting="log_log", abs=FALSE, eta=eta, K=K, domain=domain,
+       finite_infinity=100, xinit=NULL, seed=2, burn_in=1000, thinning=100,
+       verbose=FALSE)
+h_hp &lt;- get_h_hp("min_pow", 2, 3)
+elts &lt;- get_elts(h_hp, x, "log_log", domain, centered=TRUE, scale="", diag=dm)
+elts &lt;- get_elts(h_hp, x, "log_log", domain, centered=FALSE,
+       profiled_if_noncenter=FALSE, scale="", diag=dm)
+# Example of using the uniform distance function to boundary as in Liu (2019)
+g0 &lt;- function(x) {
+       row_min &lt;- apply(x, 1, min)
+       row_which_min &lt;- apply(x, 1, which.min)
+       dist_to_sum_boundary &lt;- apply(x, 1, function(xx){
+                   (1 - sum(1:p * xx)) / sqrt(p*(p+1)*(2*p+1)/6)})
+       grad_sum_boundary &lt;- -(1:p) / sqrt(p*(p+1)*(2*p+1)/6)
+       g0 &lt;- pmin(row_min, dist_to_sum_boundary)
+       g0d &lt;- t(sapply(1:nrow(x), function(i){
+          if (row_min[i] &lt; dist_to_sum_boundary[i]){
+             tmp &lt;- numeric(ncol(x)); tmp[row_which_min[i]] &lt;- 1
+          } else {tmp &lt;- grad_sum_boundary}
+          tmp
+       }))
+       list("g0"=g0, "g0d"=g0d)
+}
+elts &lt;- get_elts(NULL, x, "exp", domain, centered=TRUE, profiled_if_noncenter=FALSE,
+       scale="", diag=dm, unif_dist=g0)
+
+# log_log_sum0 model on the simplex with K having row and column sums 0 (Aitchison model)
+domain &lt;- make_domain("simplex", p=p)
+K &lt;- -cov_cons("band", p=p, spars=3, eig=1)
+diag(K) &lt;- diag(K) - rowSums(K) # So that rowSums(K) == colSums(K) == 0
+eigen(K)$val[(p-1):p] # Make sure K has one 0 and p-1 positive eigenvalues
+x &lt;- gen(n, setting="log_log_sum0", abs=FALSE, eta=eta, K=K, domain=domain,
+       xinit=NULL, seed=2, burn_in=1000, thinning=100, verbose=FALSE)
+h_hp &lt;- get_h_hp("min_pow", 2, 3)
+h_hp_dx &lt;- h_of_dist(h_hp, x, domain) # h and h' applied to distance from x to boundary
+
+# Does not assume K has 0 row and column sums
+elts_simplex_0 &lt;- get_elts(h_hp, x, "log_log", domain, centered=TRUE, profiled=FALSE,
+       scale="", diag=1.5)
+
+# If want K to have row sums and column sums equal to 0 (Aitchison); estimate off-diagonals only
+elts_simplex_1 &lt;- get_elts(h_hp, x, "log_log_sum0", domain, centered=FALSE,
+       profiled=FALSE, scale="", diag=1.5)
+# All entries corresponding to the diagonals of K should be 0:
+max(abs(sapply(1:p, function(j){c(elts_simplex_1$Gamma_K[j, (j-1)*p+1:p],
+       elts_simplex_1$Gamma_K[, (j-1)*p+j])})))
+max(abs(diag(elts_simplex_1$Gamma_K_eta)))
+max(abs(diag(matrix(elts_simplex_1$g_K, nrow=p))))
+</code></pre>
+
+
+</div>

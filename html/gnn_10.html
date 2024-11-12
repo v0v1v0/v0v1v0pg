@@ -1,0 +1,242 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>find_box</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Box Numbers (Multivariate) Points Fall Into</h2>
+
+<h3>Description</h3>
+
+<p>Finding the numbers of boxes that given (multivariate) points fall
+into (the default is similar to <code>findInterval()</code> but
+other methods are provided, too).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">find_box(x, endpoints = NULL,
+         method = c("per.dim", "lexicographic", "nested", "diagonal"),
+         rightmost.closed = TRUE, left.open = TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p><code class="reqn">(n, d)</code>-matrix containing <code class="reqn">n</code>
+<code class="reqn">d</code>-dimensional data points, <code class="reqn">n \ge 1</code>,
+<code class="reqn">d \ge 1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>endpoints</code></td>
+<td>
+<p><code class="reqn">d</code>-<code>list</code> containing
+numeric vectors of endpoints of the intervals in each dimension
+(each of the <code class="reqn">d</code> elements is an argument <code>vec</code>
+as required by <code>findInterval()</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p><code>character</code> string indicating the
+method to be used. Available are:
+</p>
+
+<dl>
+<dt><code>"per.dim"</code></dt>
+<dd>
+<p>the default. Each row <code>x[i,]</code>
+of <code>x</code> produces <code class="reqn">d</code> numbers, where the <code class="reqn">j</code>th
+indicates in which interval <code>x[i,j]</code> falls. This is
+essentially <code>findInterval()</code> applied to the <code class="reqn">d</code>
+coordinate samples (the columns of <code>x</code>).
+</p>
+</dd>
+<dt><code>"lexicographic"</code></dt>
+<dd>
+<p>Each row <code>x[i,]</code> produces one
+number, indicating in which box <code>x[i,]</code> falls
+if all <em>nonempty</em> boxes are numbered consecutively
+in lexicographic order.</p>
+</dd>
+<dt><code>"nested"</code></dt>
+<dd>
+<p>Each row <code>x[i,]</code> produces one
+number, indicating in which box <code>x[i,]</code> falls along
+the <code class="reqn">d</code>-dimensional diagonal in a nested way,
+with a non-nested middle part if the number of interval
+endpoints per dimension is even
+(note that this method requires all elements of
+<code>endpoints</code> to have the same length, so that the
+diagonal is well-defined).</p>
+</dd>
+<dt><code>"diagonal"</code></dt>
+<dd>
+<p>Each row <code>x[i,]</code> produces one
+number, indicating in which box <code>x[i,]</code> falls along
+the <code class="reqn">d</code>-dimensional diagonal
+(note that this method requires all elements of
+<code>endpoints</code> to have the same length, so that the
+diagonal is well-defined).</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rightmost.closed</code></td>
+<td>
+<p>see <code>findInterval()</code> (note
+the different default here).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>left.open</code></td>
+<td>
+<p>see <code>findInterval()</code> (note
+the different default here).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments passed to the underlying
+<code>findInterval()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The box numbers can be used, for example, to color points; see the
+examples below.
+</p>
+
+
+<h3>Value</h3>
+
+
+<dl>
+<dt><code>"per.dim"</code></dt>
+<dd>
+<p><code class="reqn">(n,d)</code>-matrix of box numbers per
+dimension.</p>
+</dd>
+<dt>
+<code>"lexicographic"</code>, <code>"nested"</code>, <code>"diagonal"</code>
+</dt>
+<dd>
+<p><code class="reqn">n</code>-vector with box numbers.</p>
+</dd>
+</dl>
+<p>Note that, as <code>findInterval()</code>, <code class="reqn">0</code> means ‘in no box’.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Marius Hofert
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Example data
+n &lt;- 1000
+d &lt;- 2
+set.seed(271)
+U &lt;- matrix(runif(n * d), ncol = d) # (n, d)-matrix of data (here: in [0,1]^d)
+
+
+### 1 Basic example calls ######################################################
+
+## Define endpoints and evaluate for different methods
+epts &lt;- seq(0, 1, by = 1/5) # 5 boxes per dimension
+find_box(U, endpoints = epts)[1:10,] # default "per.dim" (first 10 points only)
+boxes.lexi &lt;- find_box(U, endpoints = epts, method = "lexicographic")
+boxes.nest &lt;- find_box(U, endpoints = epts, method = "nested")
+boxes.diag &lt;- find_box(U, endpoints = epts, method = "diagonal")
+
+## Special cases
+## First row of U (n = 1)
+U[1,] # ~= (0.25, 0.14)
+stopifnot(find_box(U[1, 1:2], endpoints = epts) == c(2, 1))
+stopifnot(find_box(U[1, 1:2], endpoints = epts, method = "lexicographic") == 1)
+## Note concerning the last line: It's 1 because all other boxes are empty
+stopifnot(find_box(U[1, 1:2], endpoints = epts, method = "nested") == 2)
+stopifnot(find_box(U[1, 1:2], endpoints = epts, method = "diagonal") == 0)
+## Single number U[1,1] (d = 1)
+U[1,1] # ~= 0.25
+stopifnot(find_box(U[1,1], endpoints = epts) == 2)
+stopifnot(find_box(U[1,1], endpoints = epts, method = "lexicographic") == 1)
+stopifnot(find_box(U[1,1], endpoints = epts, method = "nested") == 2)
+stopifnot(find_box(U[1,1], endpoints = epts, method = "diagonal") == 2)
+
+
+### 2 Coloring points in lexicographic ordering ################################
+
+## Define color palette
+library(RColorBrewer)
+basecols &lt;- c("#000000", brewer.pal(8, name = "Dark2")[c(8,7,3,1,5,4,2,6)])
+mypal &lt;- function(n) rep_len(basecols, length.out = n)
+
+## Colors
+ncols &lt;- diff(range(boxes.lexi)) + 1 # maximal number of colors needed
+palette(mypal(ncols)) # set palette according to maximum number of colors needed
+
+
+## Boxes of equal size
+boxes.lexi &lt;- find_box(U, endpoints = epts, method = "lexicographic")
+cols &lt;- if(min(boxes.lexi) == 0) boxes.lexi + 1 else boxes.lexi
+plot(U, pch = 20, xlab = expression(U[1]), ylab = expression(U[2]), col = cols)
+abline(v = epts, h = epts, col = "gray50") # guides
+
+## Boxes of different sizes and numbers
+epts. &lt;- list(seq(0.2, 1, by = 1/5), seq(1/3, 1, by = 1/3))
+boxes.lexi &lt;- find_box(U, endpoints = epts., method = "lexicographic")
+cols &lt;- if(min(boxes.lexi) == 0) boxes.lexi + 1 else boxes.lexi
+plot(U, pch = 20, xlab = expression(U[1]), ylab = expression(U[2]), col = cols)
+abline(v = epts.[[1]], h = epts.[[2]], col = "gray50")
+
+
+### 3 Coloring points along the diagonal in a nested way #######################
+
+## Boxes of equal size (with 'middle' part)
+boxes.nest &lt;- find_box(U, endpoints = epts, method = "nested")
+cols &lt;- if(min(boxes.nest) == 0) boxes.nest + 1 else boxes.nest # color numbers
+plot(U, pch = 20, xlab = expression(U[1]), ylab = expression(U[2]), col = cols)
+abline(v = epts, h = epts, col = "gray50") # guides
+
+## Boxes of different sizes (without 'middle' part; have to be the same number of
+## boxes per dimension, otherwise there is no obvious 'diagonal')
+epts. &lt;- lapply(1:d, function(j) c(0, 0.1, 0.3, 0.6, 1)) # 4 boxes per dimension
+boxes.nest &lt;- find_box(U, endpoints = epts., method = "nested")
+cols &lt;- if(min(boxes.nest) == 0) boxes.nest + 1 else boxes.nest # color numbers
+plot(U, pch = 20, xlab = expression(U[1]), ylab = expression(U[2]), col = cols)
+abline(v = epts.[[1]], h = epts.[[2]], col = "gray50") # guides
+
+
+### 4 Coloring points along the diagonal #######################################
+
+## Boxes of equal size
+boxes.diag &lt;- find_box(U, endpoints = epts, method = "diagonal")
+cols &lt;- if(min(boxes.diag) == 0) boxes.diag + 1 else boxes.diag # color numbers
+plot(U, pch = 20, xlab = expression(U[1]), ylab = expression(U[2]), col = cols)
+abline(v = epts, h = epts, col = "gray50") # guides
+
+## Boxes of different sizes (have to be the same number of
+## boxes per dimension, otherwise there is no obvious 'diagonal')
+epts. &lt;- lapply(1:d, function(j) c(0, 0.05, 0.1, 0.3, 0.6, 1))
+boxes.diag &lt;- find_box(U, endpoints = epts., method = "diagonal")
+cols &lt;- if(min(boxes.diag) == 0) boxes.diag + 1 else boxes.diag # color numbers
+plot(U, pch = 20, xlab = expression(U[1]), ylab = expression(U[2]), col = cols)
+abline(v = epts.[[1]], h = epts.[[2]], col = "gray50") # guides
+</code></pre>
+
+
+</div>

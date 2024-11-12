@@ -1,0 +1,234 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sshzd2d</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimating 2-D Hazard Function Using Smoothing Splines</h2>
+
+<h3>Description</h3>
+
+<p>Estimate 2-D hazard function using smoothing spline ANOVA models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sshzd2d(formula1, formula2, symmetry=FALSE, data, alpha=1.4,
+        weights=NULL, subset=NULL, id.basis=NULL, nbasis=NULL, seed=NULL,
+        prec=1e-7, maxiter=30, skip.iter=FALSE)
+
+sshzd2d1(formula1, formula2, symmetry=FALSE, data, alpha=1.4,
+         weights=NULL, subset=NULL, rho="marginal",
+         id.basis=NULL, nbasis=NULL, seed=NULL, prec=1e-7, maxiter=30,
+         skip.iter=FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula1</code></td>
+<td>
+<p>Description of the hazard model to be fit on the
+first axis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula2</code></td>
+<td>
+<p>Description of the hazard model to be fit on the
+second axis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>symmetry</code></td>
+<td>
+<p>Flag indicating whether to enforce symmetry of the
+two axes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame containing the variables in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Parameter defining cross-validation scores for smoothing
+parameter selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Optional vector of counts for duplicated data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>Optional vector specifying a subset of observations
+to be used in the fitting process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id.basis</code></td>
+<td>
+<p>Index of observations to be used as "knots."</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbasis</code></td>
+<td>
+<p>Number of "knots" to be used.  Ignored when
+<code>id.basis</code> is specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Seed to be used for the random generation of "knots."
+Ignored when <code>id.basis</code> is specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prec</code></td>
+<td>
+<p>Precision requirement for internal iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiter</code></td>
+<td>
+<p>Maximum number of iterations allowed for
+internal iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>skip.iter</code></td>
+<td>
+<p>Flag indicating whether to use initial values of
+theta and skip theta iteration in marginal hazard estimation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>Choice of rho function for sshzd2d1: <code>"marginal"</code> or
+<code>"weibull"</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The 2-D survival function is expressed as
+<code class="reqn">S(t1,t2)=C(S1(t1),S2(t2))</code>, where <code class="reqn">S1(t1)</code>, <code class="reqn">S2(t2)</code>
+are marginal survival functions and <code class="reqn">C(u1,u2)</code> is a 2-D copula.
+The marginal survival functions are estimated via the marginal
+hazards as in <code>sshzd</code>, and the copula is estimated
+nonparametrically by calling <code>sscopu2</code>.
+</p>
+<p>When <code>symmetry=TRUE</code>, a common marginal survial function
+S1(t)=S2(t) is estimated, and a symmetric copula is estimated such
+that <code class="reqn">C(u1,u2)=C(u2,u1)</code>.
+</p>
+<p>Covariates can be incorporated in the marginal hazard models as in
+<code>sshzd</code>, including parametric terms via <code>partial</code>
+and frailty terms via <code>random</code>.  Arguments <code>formula1</code> and
+<code>formula2</code> are typically model formulas of the same form as the
+argument <code>formula</code> in <code>sshzd</code>, but when
+<code>partial</code> or <code>random</code> are needed, <code>formula1</code> and
+<code>formula2</code> should be lists with model formulas as the first
+elements and <code>partial</code>/<code>random</code> as named elements; when
+necessary, variable configurations (that are done via argument
+<code>type</code> in <code>sshzd</code>) should also be entered as named
+elements of lists <code>formula1</code>/<code>formula2</code>.
+</p>
+<p>When <code>symmetry=TRUE</code>, parallel model formulas must be
+consistent of each other, such as
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>formula1=list(Surv(t1,d1)~t1*u1,partial=~z1,random=~1|id1)</code>
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>formula2=list(Surv(t2,d2)~t2*u2,partial=~z2,random=~1|id2)</code>
+    </td>
+</tr>
+</table>
+<p>where pairs <code>t1</code>-<code>t2</code>, <code>d2</code>-<code>d2</code> respectively
+are different elements in <code>data</code>, pairs <code>u1</code>-<code>u2</code>,
+<code>z1</code>-<code>z2</code> respectively may or may not be different
+elements in <code>data</code>, and factors <code>id1</code> and <code>id2</code>
+are typically the same but at least should have the same levels.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>sshzd2d</code> and <code>sshzd2d1</code> return a list object of class
+<code>"sshzd2d"</code>.
+</p>
+<p><code>hzdrate.sshzd2d</code> can be used to evaluate the estimated
+2-D hazard function.  <code>survexp.sshzd2d</code> can be used to
+calculate estimated survival functions.
+</p>
+
+
+<h3>Note</h3>
+
+<p><code>sshzd2d1</code> executes faster than <code>sshzd2d</code>, but often at
+the cost of performance degradation.
+</p>
+<p>The results may vary from run to run.  For consistency, specify
+<code>id.basis</code> or set <code>seed</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Chong Gu, <a href="mailto:chong@stat.purdue.edu">chong@stat.purdue.edu</a></p>
+
+
+<h3>References</h3>
+
+<p>Gu, C. (2015), Hazard estimation with bivariate survival data and
+copula density estimation. <em>Journal of Computational and
+Graphical Statistics</em>, <b>24</b>, 1053-1073.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## THE FOLLOWING EXAMPLE IS TIME-CONSUMING
+## Not run: 
+data(DiaRet)
+## Common proportional hazard model on the margins
+fit &lt;- sshzd2d(Surv(time1,status1)~time1+trt1*type,
+               Surv(time2,status2)~time2+trt2*type,
+               data=DiaRet,symmetry=TRUE)
+## Evaluate fitted survival and hazard functions
+time &lt;- cbind(c(50,70),c(70,70))
+cova &lt;- data.frame(trt1=as.factor(c(1,1)),trt2=as.factor(c(1,0)),
+                   type=as.factor(c("juvenile","adult")))
+survexp.sshzd2d(fit,time,cov=cova)
+hzdrate.sshzd2d(fit,time,cov=cova)
+## Association between margins: Kendall's tau and Spearman's rho
+summary(fit$copu)
+## Clean up
+rm(DiaRet,fit,time,cova)
+dev.off()
+
+## End(Not run)
+</code></pre>
+
+
+</div>

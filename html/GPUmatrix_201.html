@@ -1,0 +1,401 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GPUglm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting Generalized Linear Models using GPUmatrix objects</h2>
+
+<h3>Description</h3>
+
+<p>These functions mimic the functions <code>speedglm</code> and <code>speedglm.wfit</code> of the library 'speedglm' to compute on gpu.matrix-class objects. At the same time, these functions mimic the functions <code>glm</code>, and <code>glm.fit</code> from the library 'stats' to compute on large data sets.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">glm.fit.GPU(x, y, intercept = TRUE, weights = NULL, family =
+                   gaussian(), start = NULL, etastart = NULL, mustart =
+                   NULL, offset = NULL, acc = 1e-08, maxit = 25, k = 2,
+                   sparse = NULL, trace = FALSE, dtype = "float64", device =
+                   NULL, type = NULL, ...)
+
+GPUglm(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<p>As mentioned in the description, these functions mimic <code>speedglm</code>, so almost every parameter does too. There is only three new parameters explained below.
+</p>
+<p>The common parameters with <code>speedglm</code>:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>the same as <code>speedglm</code>: the design matrix of dimension <code>n*p</code> where <code>n</code> is the number of observations and <code>p</code> is the number of features. <code>x</code> can be either a 'matrix', 'Matrix' or 'gpu.matrix-class' object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>the same as <code>speedglm</code>: a vector of <code>n</code> observations. <code>y</code> can be either a 'matrix', 'Matrix' or 'gpu.matrix-class' object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>the same as <code>speedglm</code>: Logical. If first column of <code>x</code> should be consider as 'intercept' (default) or not. Notice that seting this parameter TRUE or FALSE will not change the design matrix used to fit the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>the same as <code>speedglm</code>: an optional vector of ‘prior weights’ to be used in the fitting process. Should be NULL (default) or a numeric vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>the same as <code>speedglm</code>: a description of the error distribution and link function to be used in the model. For <code>glm.fit.GPU</code> this can be a character string naming a family function, a family function or the result of a call to a family function. (See <code>family</code> for details of family functions.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>the same as <code>speedglm</code>: starting values for the parameters in the linear prediction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>etastart</code></td>
+<td>
+<p>the same as <code>speedglm</code>: starting values for the linear predictor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mustart</code></td>
+<td>
+<p>the same as <code>speedglm</code>: starting values for the vector of means.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>the same as <code>speedglm</code>: this can be used to specify an a priori known component to be included in the linear predictor during fitting. This should be NULL or a numeric vector of length equal to the number of cases. One or more <code>offset</code> terms can be included in the formula instead or as well, and if more than one is specified their sum is used. See <code>model.offset</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>acc</code></td>
+<td>
+<p>the same as <code>speedglm</code>: tolerance to be used for the estimation (by default equal to: 1e-08).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>the same as <code>speedglm</code>: maximum number of iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>the same as <code>speedglm</code>: numeric, the penalty per parameter to be used; the default k = 2 is the classical AIC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sparse</code></td>
+<td>
+<p>if matrix <code>x</code> is desired to be treated as sparse. Not yet implemented.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>If the user wants to see the development of the iterations. By default FALSE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>For <code>GPUglm</code>: arguments to be used to form the default control argument if it is not supplied directly.</p>
+</td>
+</tr>
+</table>
+<p>The <code>glm.fit.GPU</code> function internally initialises matrices of the 'GPUmatrix' class by calling the <code>gpu.matrix</code> function. The following parameters correspond to this function:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>dtype</code></td>
+<td>
+<p>parameter of the function <code>gpu.matrix</code>: "data type. User can indicate "float64", "float32" or "int" for "int64"." By default it is set to 'float64'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>device</code></td>
+<td>
+<p>parameter of the function <code>gpu.matrix</code>:"It indicates the device to load cuda. If not indicated, 'device' will be set to 'cuda' if it is available."</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>parameter of the function <code>gpu.matrix</code>: "If gpu.matrix is 'torch' (by default if type is NULL) or "tensorflow"."</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>GPUglm</code> function internally calls the <code>glm</code> function by selecting <code>glm.fit.GPU</code> as the method. The input parameters of the <code>GPUglm</code> function are equivalent to those of the <code>glm</code> function.
+</p>
+<p>If the gpu.matrix-class object(s) are stored on the GPU, then the operations will be performed on the GPU. See <code>gpu.matrix</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Both <code>glmGPU</code>, and <code>glm.fit.GPU</code> returns an object of class "GPUglm". This object can be treated as a list. This object mimics the output of the function <code>speedglm</code>:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p>the estimated coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logLik</code></td>
+<td>
+<p>the log likelihood of the fitted model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>the number of iterations of IWLS used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>the maximal value of tolerance reached.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>the maximal value of tolerance reached.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+<p>the link function used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>the degrees of freedom of the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>XTX</code></td>
+<td>
+<p>the product X'X (weighted, if the case).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dispersion</code></td>
+<td>
+<p>the estimated dispersion parameter of the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ok</code></td>
+<td>
+<p>the set of column indeces of the model matrix where the model has been fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rank</code></td>
+<td>
+<p>the rank of the model matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RSS</code></td>
+<td>
+<p>the estimated residual sum of squares of the fitted model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>TODO</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aic</code></td>
+<td>
+<p>the estimated Akaike Information Criterion.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>he model offset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sparse</code></td>
+<td>
+<p>a logical value which indicates if the model matrix is sparse.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deviance</code></td>
+<td>
+<p>the estimated deviance of the fitted model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nulldf</code></td>
+<td>
+<p>the degrees of freedom of the null model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nulldev</code></td>
+<td>
+<p>the estimated deviance of the null model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ngoodobs</code></td>
+<td>
+<p>the number of non-zero weighted observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>the number of observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>a logical value which indicates if an intercept has been used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convergence</code></td>
+<td>
+<p>a logical value which indicates if convergence was reached.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms</code></td>
+<td>
+<p>the terms object used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the matched call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlevels</code></td>
+<td>
+<p>(where relevant) a record of the levels of the factors used in fitting.</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p>See also: <code>speedglm</code> and <code>glm</code>.
+</p>
+<p>Also of interest may be the function <code>LR_GradientConjugate_gpumatrix</code> for logistic regression.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+## Not run: 
+require(MASS,quietly = TRUE)
+require(stats,quietly = TRUE)
+
+# linear model (example taken from 'glm'):
+
+utils::data(anorexia, package = "MASS")
+anorex_glm &lt;- glm(Postwt ~ Prewt + Treat + offset(Prewt),
+                  family = gaussian(), data = anorexia)
+summary(anorex_glm)
+
+#Using GPUglm:
+anorex_GPUglm &lt;- GPUglm(Postwt ~ Prewt + Treat + offset(Prewt),
+                        family = gaussian, data = anorexia)
+summary(anorex_GPUglm)
+
+#linear model using glm.fit.gpu
+x &lt;- model.matrix(~Treat+Prewt,data=anorexia)
+y &lt;- as.matrix(anorexia$Postwt)
+s1_glm &lt;- glm.fit(x=x,y=y)
+s1_gpu &lt;- glm.fit.GPU(x=x,y=y)
+
+s1_glm$coefficients
+s1_gpu$coefficients
+
+
+# poisson (example taken from 'glm'):
+counts &lt;- c(18,17,15,20,10,20,25,13,12)
+outcome &lt;- gl(3,1,9)
+treatment &lt;- gl(3,3)
+glm.D93 &lt;- glm(counts ~ outcome + treatment, family = poisson())
+summary(glm.D93)
+
+gpu.glm.D93 &lt;- GPUglm(counts ~ outcome + treatment, family = poisson())
+summary(gpu.glm.D93)
+
+#logistic:
+data(menarche)
+glm.out &lt;- glm(cbind(Menarche, Total-Menarche) ~ Age, family=binomial(), data=menarche)
+summary(glm.out)
+
+glm.out_gpu &lt;- GPUglm(cbind(Menarche, Total-Menarche) ~ Age, family=binomial(), data=menarche)
+summary(glm.out_gpu)
+
+#can be also called using glm.fit.gpu:
+new_menarche &lt;- data.frame(Age=rep(menarche$Age,menarche$Total))
+observations &lt;- c()
+for(i in 1:nrow(menarche)){
+  observations &lt;- c(observations,rep(c(0,1),c(menarche$Total[i]-menarche$Menarche[i],
+                                              menarche$Menarche[i])))
+}
+new_menarche$observations &lt;- observations
+x &lt;- model.matrix(~Age,data=new_menarche)
+head(new_menarche)
+glm.fit_gpu &lt;- glm.fit.GPU(x=x,y=new_menarche$observations, family=binomial())
+summary(glm.fit_gpu)
+
+#GPUmatrix package also include the function 'LR_GradientConjugate_gpumatrix'
+lr_gran_sol &lt;- LR_GradientConjugate_gpumatrix(X = x,y = observations)
+
+#check results
+glm.out$coefficients
+glm.out_gpu$coefficients
+glm.fit_gpu$coefficients
+lr_gran_sol
+
+## End(Not run)
+
+
+</code></pre>
+
+
+</div>

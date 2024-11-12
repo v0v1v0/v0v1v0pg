@@ -1,0 +1,184 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>profile.glmmTMB</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute likelihood profiles for a fitted model</h2>
+
+<h3>Description</h3>
+
+<p>Compute likelihood profiles for a fitted model
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'glmmTMB'
+profile(
+  fitted,
+  parm = NULL,
+  level_max = 0.99,
+  npts = 8,
+  stepfac = 1/4,
+  stderr = NULL,
+  trace = FALSE,
+  parallel = c("no", "multicore", "snow"),
+  ncpus = getOption("profile.ncpus", 1L),
+  cl = NULL,
+  ...
+)
+
+## S3 method for class 'profile.glmmTMB'
+confint(object, parm = NULL, level = 0.95, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fitted</code></td>
+<td>
+<p>a fitted <code>glmmTMB</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parm</code></td>
+<td>
+<p>which parameters to profile, specified
+</p>
+
+<ul>
+<li>
+<p> by index (position)
+</p>
+</li>
+<li>
+<p> by name (matching the row/column names of <code>vcov(object,full=TRUE)</code>)
+</p>
+</li>
+<li>
+<p> as <code>"theta_"</code> (random-effects variance-covariance parameters) or <code>"beta_"</code> (conditional and zero-inflation parameters)
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level_max</code></td>
+<td>
+<p>maximum confidence interval target for profile</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>npts</code></td>
+<td>
+<p>target number of points in (each half of) the profile (<em>approximate</em>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stepfac</code></td>
+<td>
+<p>initial step factor (fraction of estimated standard deviation)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stderr</code></td>
+<td>
+<p>standard errors to use as a scaling factor when picking step
+sizes to compute the profile; by default (if <code>stderr</code> is
+<code>NULL</code>, or <code>NA</code> for a particular element),
+uses the estimated (Wald) standard errors of the parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>print tracing information? If <code>trace=FALSE</code> or 0,
+no tracing; if <code>trace=1</code>, print names of parameters currently
+being profiled; if <code>trace&gt;1</code>, turn on tracing for the
+underlying <code>tmbprofile</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>method (if any) for parallel computation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncpus</code></td>
+<td>
+<p>number of CPUs/cores to use for parallel computation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl</code></td>
+<td>
+<p>cluster to use for parallel computation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments passed to <code>tmbprofile</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>a fitted profile (<code>profile.glmmTMB</code>) object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>confidence level</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Fits natural splines separately to the points from each half of the profile for each
+specified parameter (i.e., values above and below the MLE), then finds the inverse functions
+to estimate the endpoints of the confidence interval
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>profile.glmmTMB</code>, which is also a
+data frame, with columns <code>.par</code> (parameter being profiled),
+<code>.focal</code> (value of focal parameter), value (negative log-likelihood).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+m1 &lt;- glmmTMB(count~ mined + (1|site),
+       zi=~mined, family=poisson, data=Salamanders)
+salamander_prof1 &lt;- profile(m1, parallel="multicore",
+                            ncpus=2, trace=1)
+## testing
+salamander_prof1 &lt;- profile(m1, trace=1,parm=1)
+salamander_prof1M &lt;- profile(m1, trace=1,parm=1, npts = 4)
+salamander_prof2 &lt;- profile(m1, parm="theta_")
+
+
+## End(Not run)
+salamander_prof1 &lt;- readRDS(system.file("example_files","salamander_prof1.rds",package="glmmTMB"))
+if (require("ggplot2")) {
+    ggplot(salamander_prof1,aes(.focal,sqrt(value))) +
+        geom_point() + geom_line()+
+        facet_wrap(~.par,scale="free_x")+
+    geom_hline(yintercept=1.96,linetype=2)
+}
+salamander_prof1 &lt;- readRDS(system.file("example_files","salamander_prof1.rds",package="glmmTMB"))
+confint(salamander_prof1)
+confint(salamander_prof1,level=0.99)
+</code></pre>
+
+
+</div>

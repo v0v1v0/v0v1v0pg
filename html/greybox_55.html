@@ -1,0 +1,225 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.alm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Forecasting using greybox functions</h2>
+
+<h3>Description</h3>
+
+<p>The functions allow producing forecasts based on the provided model and newdata.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'alm'
+predict(object, newdata = NULL, interval = c("none",
+  "confidence", "prediction"), level = 0.95, side = c("both", "upper",
+  "lower"), occurrence = NULL, ...)
+
+## S3 method for class 'greybox'
+predict(object, newdata = NULL, interval = c("none",
+  "confidence", "prediction"), level = 0.95, side = c("both", "upper",
+  "lower"), ...)
+
+## S3 method for class 'scale'
+predict(object, newdata = NULL, interval = c("none",
+  "confidence", "prediction"), level = 0.95, side = c("both", "upper",
+  "lower"), ...)
+
+## S3 method for class 'greybox'
+forecast(object, newdata = NULL, h = NULL, ...)
+
+## S3 method for class 'alm'
+forecast(object, newdata = NULL, h = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>Time series model for which forecasts are required.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>The new data needed in order to produce forecasts.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interval</code></td>
+<td>
+<p>Type of intervals to construct: either "confidence" or
+"prediction". Can be abbreviated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>Confidence level. Defines width of prediction interval.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>side</code></td>
+<td>
+<p>What type of interval to produce: <code>"both"</code> - produces both
+lower and upper bounds of the interval, <code>"upper"</code> - upper only, <code>"lower"</code>
+- respectively lower only. In the <code>"both"</code> case the probability is split into
+two parts: ((1-level)/2, (1+level)/2). When <code>"upper"</code> is specified, then
+the intervals for (0, level) are constructed Finally, with <code>"lower"</code> the interval
+for (1-level, 1) is returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>occurrence</code></td>
+<td>
+<p>If occurrence was provided, then a user can provide a vector of future
+values via this variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed to <code>vcov</code> function (see coef.alm
+for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h</code></td>
+<td>
+<p>The forecast horizon.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>predict</code> produces predictions for the provided model and <code>newdata</code>. If
+<code>newdata</code> is not provided, then the data from the model is extracted and the
+fitted values are reproduced. This might be useful when confidence / prediction
+intervals are needed for the in-sample values.
+</p>
+<p><code>forecast</code> function produces forecasts for <code>h</code> steps ahead. There are four
+scenarios in this function:
+</p>
+
+<ol>
+<li>
+<p> If the <code>newdata</code> is  not provided, then it will produce forecasts of the
+explanatory variables to the horizon <code>h</code> (using <code>es</code> from smooth package
+or using Naive if <code>smooth</code> is not installed) and use them as <code>newdata</code>.
+</p>
+</li>
+<li>
+<p> If <code>h</code> and <code>newdata</code> are provided, then the number of rows to use
+will be regulated by <code>h</code>.
+</p>
+</li>
+<li>
+<p> If <code>h</code> is <code>NULL</code>, then it is set equal to the number of rows in
+<code>newdata</code>.
+</p>
+</li>
+<li>
+<p> If both <code>h</code> and <code>newdata</code> are not provided, then it will use the
+data from the model itself, reproducing the fitted values.
+</p>
+</li>
+</ol>
+<p>After forming the <code>newdata</code> the <code>forecast</code> function calls for
+<code>predict</code>, so you can provide parameters <code>interval</code>, <code>level</code> and
+<code>side</code> in the call for <code>forecast</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>predict.greybox()</code> returns object of class "predict.greybox",
+which contains:
+</p>
+
+<ul>
+<li> <p><code>model</code> - the estimated model.
+</p>
+</li>
+<li> <p><code>mean</code> - the expected values.
+</p>
+</li>
+<li> <p><code>fitted</code> - fitted values of the model.
+</p>
+</li>
+<li> <p><code>lower</code> - lower bound of prediction / confidence intervals.
+</p>
+</li>
+<li> <p><code>upper</code> - upper bound of prediction / confidence intervals.
+</p>
+</li>
+<li> <p><code>level</code> - confidence level.
+</p>
+</li>
+<li> <p><code>newdata</code> - the data provided in the call to the function.
+</p>
+</li>
+<li> <p><code>variances</code> - conditional variance for the holdout sample.
+In case of <code>interval="prediction"</code> includes variance of the error.
+</p>
+</li>
+</ul>
+<p><code>predict.alm()</code> is based on <code>predict.greybox()</code> and returns
+object of class "predict.alm", which in addition contains:
+</p>
+
+<ul>
+<li> <p><code>location</code> - the location parameter of the distribution.
+</p>
+</li>
+<li> <p><code>scale</code> - the scale parameter of the distribution.
+</p>
+</li>
+<li> <p><code>distribution</code> - name of the fitted distribution.
+</p>
+</li>
+</ul>
+<p><code>forecast()</code> functions return the same "predict.alm" and
+"predict.greybox" classes, with the same set of output variables.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Ivan Svetunkov, <a href="mailto:ivan@svetunkov.ru">ivan@svetunkov.ru</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>predict.lm
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+xreg &lt;- cbind(rlaplace(100,10,3),rnorm(100,50,5))
+xreg &lt;- cbind(100+0.5*xreg[,1]-0.75*xreg[,2]+rlaplace(100,0,3),xreg,rnorm(100,300,10))
+colnames(xreg) &lt;- c("y","x1","x2","Noise")
+inSample &lt;- xreg[1:80,]
+outSample &lt;- xreg[-c(1:80),]
+
+ourModel &lt;- alm(y~x1+x2, inSample, distribution="dlaplace")
+
+predict(ourModel,outSample)
+predict(ourModel,outSample,interval="c")
+
+plot(predict(ourModel,outSample,interval="p"))
+plot(forecast(ourModel,h=10,interval="p"))
+
+</code></pre>
+
+
+</div>

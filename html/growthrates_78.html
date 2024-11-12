@@ -1,0 +1,126 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict,growthrates_fit-method</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Model Predictions for <span class="pkg">growthrates</span> Fits</h2>
+
+<h3>Description</h3>
+
+<p>Class-specific methods of package <span class="pkg">growthrates</span> to make predictions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S4 method for signature 'growthrates_fit'
+predict(object, ...)
+
+## S4 method for signature 'smooth.spline_fit'
+predict(object, newdata = NULL, ..., type = c("exponential", "spline"))
+
+## S4 method for signature 'easylinear_fit'
+predict(object, newdata = NULL, ..., type = c("exponential", "no_lag"))
+
+## S4 method for signature 'nonlinear_fit'
+predict(object, newdata, ...)
+
+## S4 method for signature 'multiple_fits'
+predict(object, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>name of a 'growthrates' object for which prediction is desired.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments affecting the predictions produced.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>an optional data frame with column 'time' for new time steps with
+which to predict.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>type of predict. Can be <code>'exponential'</code> or <code>'spline'</code> for <code>fit_spline</code>,
+resp. code'exponential' or <code>'no_lag'</code> for <code>fit_easylinear</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The implementation of the predict methods is still experimental and under discussion.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>methods</code>, <code>predict.smooth.spline</code>,
+<code>predict.lm</code>, <code>predict.nls</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(bactgrowth)
+splitted.data &lt;- multisplit(bactgrowth, c("strain", "conc", "replicate"))
+
+## get table from single experiment
+dat &lt;- splitted.data[[1]]
+
+## --- linear fit -----------------------------------------------------------
+fit &lt;- fit_easylinear(dat$time, dat$value)
+
+plot(fit)
+pr &lt;- predict(fit)
+lines(pr[,1:2], col="blue", lwd=2, lty="dashed")
+
+pr &lt;- predict(fit, newdata=list(time=seq(2, 6, .1)), type="no_lag")
+lines(pr[,1:2], col="magenta")
+
+
+## --- spline fit -----------------------------------------------------------
+fit1 &lt;- fit_spline(dat$time, dat$value, spar=0.5)
+coef(fit1)
+summary(fit1)
+
+plot(fit1)
+pr &lt;- predict(fit1)
+lines(pr[,1:2], lwd=2, col="blue", lty="dashed")
+pr &lt;- predict(fit1, newdata=list(time=2:10), type="spline")
+lines(pr[,1:2], lwd=2, col="cyan")
+
+
+## --- nonlinear fit --------------------------------------------------------
+dat &lt;- splitted.data[["T:0:2"]]
+
+p   &lt;- c(y0 = 0.02, mumax = .5, K = 0.05, h0 = 1)
+fit2 &lt;- fit_growthmodel(grow_baranyi, p=p, time=dat$time, y=dat$value)
+
+## prediction for given data
+predict(fit2)
+
+## prediction for new data
+pr &lt;- predict(fit2, newdata=data.frame(time=seq(0, 50, 0.1)))
+
+plot(fit2, xlim=c(0, 50))
+lines(pr[, c("time", "y")], lty="dashed", col="red")
+</code></pre>
+
+
+</div>

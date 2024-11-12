@@ -1,0 +1,116 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fitTMB</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Optimize TMB models and package results, modularly</h2>
+
+<h3>Description</h3>
+
+<p>These functions (called internally by <code>glmmTMB</code>) perform
+the actual model optimization, after all of the appropriate structures
+have been set up (<code>fitTMB</code>), and finalize the model after
+optimization (<code>finalizeTMB</code>). It can be useful to run <code>glmmTMB</code> with
+<code>doFit=FALSE</code>, adjust the components as required, and then
+finish the fitting process with <code>fitTMB</code> (however, it is the
+user's responsibility to make sure that any modifications
+create an internally consistent final fitted object).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fitTMB(TMBStruc, doOptim = TRUE)
+
+finalizeTMB(TMBStruc, obj, fit, h = NULL, data.tmb.old = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>TMBStruc</code></td>
+<td>
+<p>a list containing lots of stuff ...</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>doOptim</code></td>
+<td>
+<p>logical; do optimization? If FALSE, return TMB object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obj</code></td>
+<td>
+<p>object created by <code>fitTMB(., doOptim = FALSE)</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>a fitted object returned from <code>nlminb</code>, or more generally
+a similar list (i.e. containing elements <code>par</code>, <code>objective</code>, <code>convergence</code>,
+<code>message</code>, <code>iterations</code>, <code>evaluations</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h</code></td>
+<td>
+<p>Hessian matrix for fit, if computed in previous step</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data.tmb.old</code></td>
+<td>
+<p>stored TMB data, if computed in previous step</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">## 1. regular (non-modular) model fit:
+m0 &lt;- glmmTMB(count ~ mined + (1|site),
+             family=poisson, data=Salamanders)
+## 2. the equivalent fit, done modularly:
+##  a. 
+m1 &lt;- glmmTMB(count ~ mined + (1|site),
+             family=poisson, data=Salamanders,
+             doFit = FALSE)
+## result is a list of elements (data to be passed to TMB,
+## random effects structures, etc.) needed to fit the model
+names(m1)
+## b. The next step calls TMB to set up the automatic differentiation
+## machinery
+m2 &lt;- fitTMB(m1, doOptim = FALSE)
+## The result includes initial parameter values, objective function
+## (fn), gradient function (gr), etc.
+names(m2)
+## Optionally, one could choose to 
+## modify the components of m1$env$data at this point ...
+## updating the TMB structure as follows may be necessary:
+m2 &lt;- with(m2$env,
+               TMB::MakeADFun(data,
+                               parameters,
+                               map = map,
+                               random = random,
+                               silent = silent,
+                               DLL = "glmmTMB"))
+## c. Use the starting values, objective function, and gradient
+## function set up in the previous step to do the nonlinear optimization
+m3 &lt;- with(m2, nlminb(par, objective = fn, gr = gr))
+## the resulting object contains the fitted parameters, value of
+## the objective function, information on convergence, etc.
+names(m3)
+## d. The last step is to combine the information from the previous
+## three steps into a \code{glmmTMB} object that is equivalent to
+## the original fit
+m4 &lt;- finalizeTMB(m1, m2, m3)
+m4$call$doFit &lt;- NULL ## adjust 'call' element to match
+all.equal(m0, m4)
+</code></pre>
+
+
+</div>

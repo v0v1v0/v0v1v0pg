@@ -1,0 +1,271 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GPvam</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fitting the Generalized and Variable Persistence Models
+</h2>
+
+<h3>Description</h3>
+
+<p>An EM algorithm, Karl et al. (2013) &lt;doi:10.1016/j.csda.2012.10.004&gt;, is used to estimate the generalized, variable, and complete persistence models, Mariano et al. (2010) &lt;doi:10.3102/1076998609346967&gt;. These are multiple-membership linear mixed models with teachers modeled as "G-side" effects and students modeled with either "G-side" or "R-side" effects.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GPvam(vam_data, fixed_effects = formula(~as.factor(year) + 0), 
+   student.side = "R", persistence="GP", max.iter.EM = 1000, tol1 = 1e-07, 
+   hessian = FALSE, hes.method = "simple", REML = FALSE, verbose = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>vam_data</code></td>
+<td>
+
+<p>a data frame that contains at least a column "y" containing the student scores, a 
+column "student" containing unique student ID's, a column "teacher" containing the 
+teacher ID's, and a column "year" which contains the year (or semester, etc.) of the time period. The "y" and "year" variables needs to be numeric. If other variables are to be included 
+as fixed effects, they should also be included in vam_data. See 'Note' for further discussion.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed_effects</code></td>
+<td>
+
+<p>an object of class <code>formula</code> describing the structure of the fixed effects. Categorical variables
+should be wrapped in an <code>as.factor</code> statement.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>student.side</code></td>
+<td>
+
+<p>a character. Choices are "G" or "R". See section 'Details'.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>persistence</code></td>
+<td>
+
+<p>a character. Choices are "GP", "rGP", "VP", "CP", or "ZP". Only "GP" is currently 
+compatible with student.side="G". See section 'Details'.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.iter.EM</code></td>
+<td>
+
+<p>the maximum number of EM iterations
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol1</code></td>
+<td>
+
+<p>convergence tolerance for EM algorithm. The convergence criterion is specified under 'Details'.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian</code></td>
+<td>
+
+<p>logical indicating whether the Hessian of the variance parameters (and persistence parameters for persistence="VP") should be calculated after convergence of the EM algorithm. Standard errors for the fixed and EBLUPs are calculated by default.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hes.method</code></td>
+<td>
+
+<p>a character string indicating the method of numerical differentiation used
+to calculate the Hessian of the variance parameters. Options are "simple" or "richardson".
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>REML</code></td>
+<td>
+
+<p>logical indicating whether REML estimation should be used instead of ML estimation. Only currently compatible with persistence = CP, VP, or ZP.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>logical. If TRUE, model information will be printed at each iteration.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The design for the random teacher effects according to the generalized persistence model
+of Mariano et al. (2010) is built into the function. The model includes correlated current- and
+future-year effects for each teacher. By setting <code>student.side="R"</code>, the intra-student correlation is 
+modeled via an unstructured, block-diagonal error covariance matrix, as specified by Mariano et al. (2010). Setting 
+<code>student.side="G"</code> keeps the same teacher structure, but models intra-student correlation via 
+random student effects. This is similar to the model used by McCaffrey and Lockwood (2011), and is appropriate when the testing 
+scale is the same across years. In this case, the error covariance matrix is diagonal, although a separate variance is calculated for each year.
+From a computational perspective, the model estimating the R-side student effects has better scalability properties, although the G-side function is faster (Karl et al. 2012).
+</p>
+<p>The <code>persistence</code> option determines the type of persistence effects that are modeled. The generalized persistence model ("GP") is described above. When <code>student.side="R"</code>, other models for teacher persistence are available. The reduced GP model  ("rGP", Karl et al. 2012) combines each teacher's future year effects from the GP model into a single effect. The variable persistence model ("VP") assumes that teacher effects in future years are multiples of their effect in the current year (Lockwood et al. 2007). The multipliers in the VP model are called persistence parameters, and are estimated. By contrast, the complete ("CP") and zero ("ZP") persistence models fix the persistence parameters at 1 and 0, respectively (Lockwood et al. 2007). 
+</p>
+<p>Convergence is declared when <code class="reqn">(l_k-l_{k-1})/l_k &lt; 1E-07</code>, where <code class="reqn">l_k</code> is the log-likelihood 
+at iteration <code class="reqn">k</code>.
+</p>
+<p>The model is estimated via an EM algorithm. For details, see Karl et al. (2012). The model was estimated through Bayesian computation in Mariano et al. (2010).
+</p>
+<p>Note: When student.side="R" is selected, the first few iterations of the EM algorithm will take longer than subsequent iterations. This is a result of the hybrid gradient-ascent/Newton-Raphson method used in the M-step for the R matrix in the first two iterations (Karl et al. 2012).
+</p>
+<p><b>Program run time and memory requirements:</b>
+The data file GPvam.benchmark that is included with the package contains runtime and peak memory requirements for different persistence settings, using simulated data sets with different values for number of years, number of teachers per year, and number of students per teacher. These have been multiplied to show the total number of teachers in the data set, as well as the total number of students. With student.side="R", the persistence="GP" model is most sensitive to increases in the size of the data set. With student.side="G", the memory requirements increase exponentially with the number of students and teachers, and that model should not be considered scalable to extremely large data sets.
+</p>
+<p>All of these benchmarks were performed with Hessian=TRUE. Calculation of the Hessian accounts for anywhere from 20% to 75% of those run times. Unless the standard errors of the variance components are needed, leaving Hessian=FALSE will lead to a faster run time with smaller memory requirements.
+</p>
+
+
+<h3>Value</h3>
+
+<p>GPvam returns an object of class <code>GPvam</code>
+</p>
+<p>An object of class <code>GPvam</code> is a list containing the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>loglik</code></td>
+<td>
+<p>the maximized log-likelihood at convergence of the EM algorithm</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>teach.effects</code></td>
+<td>
+<p>a data frame containing the predicted teacher effects and standard errors</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameters</code></td>
+<td>
+<p>a matrix of estimated model parameters and standard errors</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Hessian</code></td>
+<td>
+<p>if requested, the Hessian of the variance parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R_i</code></td>
+<td>
+<p>(only when <code>student_side</code> is set to 'R') a matrix containing the error covariance matrix of a student</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>teach.cov</code></td>
+<td>
+<p>a list containing the unique blocks of the covariance matrix of teacher effects</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mresid</code></td>
+<td>
+<p>a vector of the raw marginal residuals</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cresid</code></td>
+<td>
+<p>a vector of the raw conditional residuals</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sresid</code></td>
+<td>
+<p>a vector of the scaled conditional residuals</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yhat</code></td>
+<td>
+<p>a vector of the predicted values</p>
+</td>
+</tr>
+</table>
+<p>The function  <code>summary</code> provides a summary of the results. This includes the estimated model parameters and standard errors, along with the correlation matrices corresponding to the estimated correlation matrices. Summary information about scaled and raw residuals is reported.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The model assumes that each teacher teaches only one year. If, for example, a teacher teaches in years 1 and 2, his/her first year performance is modeled independently of the second year performance.
+To keep these effects separate, the progam appends "(year i)" to each teacher name, where i is the year in which the teacher taught.
+</p>
+<p>The <code>fixed_effects</code> argument of <code>GPvam</code> utilizes the functionality of R's <code>formula</code> class. In the statement <code>fixed_effects=formula(~as.factor(year)+cont_var+0))</code>, <code>as.factor(year)</code> identifies <code>year</code> as a categorical variable. <code>+0</code> indicates that no intercept is to be fitted, and <code>+cont_var</code> indicates that a seperate effect is to be fitted for the continuous variable "cont_var." An interaction between "year" and "cont_var" could be specified by <code>~as.factor(year)*cont_var+0</code>, or equivalently, <code>~as.factor(year)+cont_var+as.factor(year):cont_var+0</code>. See <code>formula</code> for more details.
+</p>
+<p>When applied to an object of class GPvam, <code>plot.GPvam</code> returns a caterpillar plot for each effect, as well as residual plots.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Andrew Karl <a href="mailto:akarl@asu.edu">akarl@asu.edu</a>, Yan Yang, Sharon Lohr
+</p>
+
+
+<h3>References</h3>
+
+<p>Karl, A., Yang, Y. and Lohr, S. (2013) Efficient Maximum Likelihood Estimation of Multiple Membership Linear Mixed Models, with an Application to Educational Value-Added Assessments <em>Computational Statistics &amp; Data Analysis</em> <b>59</b>, 13–27.  
+</p>
+<p>Karl, A., Yang, Y. and Lohr, S. (2014) Computation of Maximum Likelihood Estimates for Multiresponse Generalized Linear Mixed Models with Non-nested, Correlated Random Effects <em>Computational Statistics &amp; Data Analysis</em> <b>73</b>, 146–162.
+</p>
+<p>Karl, A., Yang, Y. and Lohr, S. (2014) A Correlated Random Effects Model for Nonignorable Missing Data in Value-Added Assessment of Teacher Effects <em>Journal of Educational and Behavioral Statistics</em> <b>38</b>, 577–603.
+</p>
+<p>Lockwood, J., McCaffrey, D., Mariano, L., Setodji, C. (2007) Bayesian Methods for Scalable Multivariate Value-Added Assesment. <em>Journal of Educational and Behavioral Statistics</em> <b>32</b>, 125–150.
+</p>
+<p>Mariano, L., McCaffrey, D. and Lockwood, J. (2010) A Model for Teacher Effects From Longitudinal Data Without Assuming Vertical Scaling. <em>Journal of Educational and Behavioral Statistics</em> <b>35</b>, 
+253–279.
+</p>
+<p>McCaffrey, D. and Lockwood, J. (2011) Missing Data in Value-Added Modeling of Teacher Effects," <em>Annals of Applied Statistics</em> <b>5</b>, 773–797
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plot.GPvam</code>,
+<code>summary.GPvam</code>,
+<code>vam_data</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(vam_data)
+GPvam(vam_data,student.side="R",persistence="CP",
+fixed_effects=formula(~as.factor(year)+cont_var+0),verbose=TRUE,max.iter.EM=1)
+
+result &lt;- GPvam(vam_data,student.side="R",persistence="VP",
+fixed_effects=formula(~as.factor(year)+cont_var+0),verbose=TRUE)
+ summary(result)
+
+ plot(result)
+
+</code></pre>
+
+
+</div>

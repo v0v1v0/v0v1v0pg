@@ -1,0 +1,183 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>SuppressFewContributors</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Few contributors suppression</h2>
+
+<h3>Description</h3>
+
+<p>This function provides functionality for suppressing volume tables based on
+the few contributors rule (<code>NContributorsRule</code>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">SuppressFewContributors(
+  data,
+  maxN,
+  numVar = NULL,
+  dimVar = NULL,
+  hierarchies = NULL,
+  formula = NULL,
+  contributorVar = NULL,
+  removeCodes = character(0),
+  remove0 = TRUE,
+  candidatesVar = NULL,
+  ...,
+  spec = PackageSpecs("fewContributorsSpec")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Input data as a data frame</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxN</code></td>
+<td>
+<p>Suppression parameter. Cells with frequency <code style="white-space: pre;">⁠&lt;= maxN⁠</code> are set as primary suppressed.
+Using the default <code>primary</code> function, <code>maxN</code> is by default set to <code>3</code>. See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numVar</code></td>
+<td>
+<p>Numerical variable to be aggregated.
+Any <code>candidatesVar</code> that is specified and
+not included in <code>numVar</code> will be aggregated accordingly.
+Additionally, if <code>remove0</code> is specified as a variable name and it is
+not included in <code>numVar</code>, it will also be aggregated accordingly.
+See parameters <code>candidatesVar</code> and <code>remove0</code> below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dimVar</code></td>
+<td>
+<p>The main dimensional variables and additional aggregating variables. This parameter can be  useful when hierarchies and formula are unspecified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hierarchies</code></td>
+<td>
+<p>List of hierarchies, which can be converted by <code>AutoHierarchies</code>.
+Thus, the variables can also be coded by <code>"rowFactor"</code> or <code>""</code>, which correspond to using the categories in the data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A model formula</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contributorVar</code></td>
+<td>
+<p>Extra variables to be used as grouping elements when counting contributors.
+Typically, the variable contains the contributor IDs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>removeCodes</code></td>
+<td>
+<p>Vector of codes to be omitted when counting contributors.
+With empty <code>contributorVar</code> row indices are assumed
+and conversion to integer is performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remove0</code></td>
+<td>
+<p>When set to <code>TRUE</code> (default), data rows in which the first <code>numVar</code> (if any) is zero
+are excluded from the count of contributors.
+Alternatively, <code>remove0</code> can be specified as one or more variable names.
+In this case, all data rows with a zero in any of the specified variables
+are omitted from the contributor count.
+Specifying <code>remove0</code> as variable name(s) is useful for avoiding warning when there
+are multiple <code>numVar</code> variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>candidatesVar</code></td>
+<td>
+<p>Variable to be used in the candidate function to prioritize cells for
+publication and thus not suppression.
+The first <code>numVar</code> variable will be used if it is not specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments to be passed to the supplied functions and to <code>ModelMatrix</code> (such as <code>inputInOutput</code> and <code>removeEmpty</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spec</code></td>
+<td>
+<p><code>NULL</code> or a named list of arguments that will act as default values.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>data.frame containing aggregated data and supppression information.
+Columns <code>nRule</code> and <code>nAll</code> contain the number of contributors.
+In the former, <code>removeCodes</code> is taken into account.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">num &lt;- c(100,
+         90, 10,
+         80, 20,
+         70, 30,
+         50, 25, 25,
+         40, 20, 20, 20,
+         25, 25, 25, 25)
+v1 &lt;- c("v1",
+        rep(c("v2", "v3", "v4"), each = 2),
+        rep("v5", 3),
+        rep(c("v6", "v7"), each = 4))
+sweight &lt;- c(1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1)
+d &lt;- data.frame(v1 = v1, num = num, sweight = sweight)
+
+SuppressFewContributors(d, formula = ~v1, maxN = 1, numVar = "num")
+SuppressFewContributors(d, formula = ~v1, maxN = 2, numVar = "num")
+SuppressFewContributors(d, formula = ~v1, maxN = 3, numVar = "num")
+
+
+d2 &lt;- SSBtoolsData("d2")[-5]
+set.seed(123)
+d2$v &lt;- round(rnorm(nrow(d2))^2, 1)
+d2$family_id &lt;- round(2*as.integer(factor(d2$region)) + runif(nrow(d2)))
+
+# Hierarchical region variables are detected automatically -&gt; same output column
+SuppressFewContributors(data = d2, maxN = 2, numVar = "v", contributorVar = "family_id",
+                      dimVar = c("region", "county", "k_group"))
+
+# Formula. Hierarchical variables still detected automatically.
+# And codes 1:9 not counted 
+SuppressFewContributors(data = d2, maxN = 1, numVar = "v", contributorVar = "family_id",
+                      formula = ~main_income * k_group + region + county - k_group,
+                      removeCodes = 1:9)
+
+# With hierarchies created manually
+ml &lt;- data.frame(levels = c("@", "@@", "@@@", "@@@", "@@@", "@@"), 
+        codes = c("Total", "not_assistance", "other", "pensions", "wages", "assistance"))
+SuppressFewContributors(data = d2, maxN = 2, numVar = "v", contributorVar = "family_id",
+                      hierarchies = list(main_income = ml, k_group = "Total_Norway"))
+                      
+                      
+</code></pre>
+
+
+</div>

@@ -1,0 +1,216 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gbm.valuemap</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Decision Support Tool that generates (Marine) Protected Area options using
+species predicted abundance maps</h2>
+
+<h3>Description</h3>
+
+<p>Scales response variable data, maps a user-defined explanatory variable to be
+avoided, e.g. fishing effort, combines them into a map showing areas to
+preferentially close. Bpa, the precautionary biomass required to protect the
+spawning stock, is used to calculate MPA size. MPA is then grown to add
+subsequent species starting from the most conservationally at-risk species,
+resulting in one MPA map per species, and a multicolour MPA map of all.
+All maps list the percentage of the avoid-variables total that is overlapped
+by the MPA in the map legend.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gbm.valuemap(
+  dbase,
+  loncolno = 1,
+  latcolno = 2,
+  goodcols,
+  badcols,
+  conservecol = NULL,
+  plotthis = c("good", "bad", "both", "close"),
+  maploops = c("Combo", "Biomass", "Effort", "Conservation"),
+  savedir = tempdir(),
+  savethis = TRUE,
+  HRMSY = 0.15,
+  goodweight = NULL,
+  badweight = NULL,
+  m = 1,
+  alerts = TRUE,
+  BnW = TRUE,
+  shape = NULL,
+  pngtype = c("cairo-png", "quartz", "Xlib"),
+  byxport = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dbase</code></td>
+<td>
+<p>Data.frame to load. Expects Lon, Lat &amp; data columns: predicted
+abundances, fishing effort etc. E.g.: Abundance_Preds_All.csv from gbm.auto.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loncolno</code></td>
+<td>
+<p>Column number in dbase which has longitudes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>latcolno</code></td>
+<td>
+<p>Column number in dbase which has latitudes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>goodcols</code></td>
+<td>
+<p>Which column numbers are abundances (where higher = better)?
+List them in order of highest conservation importance first e.g. c(3,1,2,4).
+Either numeric column number or quoted character column name.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>badcols</code></td>
+<td>
+<p>Which col no.s are 'negative' e.g. fishing (where higher =
+worse)? Either numeric column number or quoted character column name.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conservecol</code></td>
+<td>
+<p>Conservation column, from gbm.cons.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plotthis</code></td>
+<td>
+<p>Vector of variable types to plot. Delete any,or all w/ NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maploops</code></td>
+<td>
+<p>Vector of sort loops to run. See Dedman et al 2017 "Towards a
+flexible Decision Support Tool for MSY-based Marine Protected Area design
+for skates and rays";
+https://academic.oup.com/icesjms/article/74/2/576/2669563 . All 4 options
+create a total MPA which conserves Bpa, but in different ways: Biomass
+closes areas of high biomass first. Effort closes areas of high fisheries
+area last. Combo strikes a balance between the two, and you can change the
+default 1:1 balance with goodweight and badweight parameters. Conservation
+uses the output of gbm.cons to prioritise closure of areas of high
+conservation value, which may not be identical to areas of highest biomass.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>savedir</code></td>
+<td>
+<p>Save outputs to a temporary directory (default) else change to
+current directory e.g. "/home/me/folder". Do not use getwd() here.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>savethis</code></td>
+<td>
+<p>Export all data as csv?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>HRMSY</code></td>
+<td>
+<p>Maximum percent of each goodcols stock which can be removed
+yearly, as decimal (0.15 = 15 pct). Must protect remainder: 1-HRMSY. Single
+number or vector. If vector, same order as goodcols. Required.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>goodweight</code></td>
+<td>
+<p>Single/vector weighting multiple(s) for goodcols array.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>badweight</code></td>
+<td>
+<p>Ditto for badcols array.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m</code></td>
+<td>
+<p>Multiplication factor for Bpa units. 1000 to convert tonnes to
+kilos, 0.001 kilos to tonnes. Assumedly the same for all goodcols.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alerts</code></td>
+<td>
+<p>Play sounds to mark progress steps.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BnW</code></td>
+<td>
+<p>Also produce greyscale images for print publications.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shape</code></td>
+<td>
+<p>Set coastline shapefile, else uses British Isles. Generate your
+own with gbm.basemap.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pngtype</code></td>
+<td>
+<p>File-type for png files, alternatively try "quartz" on Mac.
+Choose one.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>byxport</code></td>
+<td>
+<p>Dummy param for package testing for CRAN, ignore.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Optional terms for gbm.map.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Bpa is the volume of biomass under the 2D abundance surface e.g. predabund
+from gbm.auto. B (biomass), * HRMSY (Fmsy proportion) = Bpa. You may be able
+to get Fmsy from stock asssessments etc.
+maploops: explain concept of biomass vs effort, combo in the middle (default
+weighting 1:1 can change with good/badweight), and Conservation from gbm.cons.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Species abundance, abundance vs avoid variable, and MPA maps per
+species and sort type, in b&amp;w if set. CSVs of all maps if set.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Simon Dedman, <a href="mailto:simondedman@gmail.com">simondedman@gmail.com</a>
+</p>
+
+
+</div>

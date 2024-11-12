@@ -1,0 +1,204 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>policyMarketClearingPrice</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Market-Clearing-Price Policy Function</h2>
+
+<h3>Description</h3>
+
+<p>This policy is to make the market clear every period.
+In this case, the path of the economy is the spot market clearing path (alias instantaneous equilibrium path).
+Generally, this function is passed to the function sdm2 as an argument to compute the spot market clearing path.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">policyMarketClearingPrice(time, A, state, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>the current time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A</code></td>
+<td>
+<p>a demand structure tree list (i.e. dstl, see demand_coefficient), a demand coefficient n-by-m matrix (alias demand structure matrix) or a function A(state) which returns an n-by-m matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>state</code></td>
+<td>
+<p>the current state.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>optional arguments to be passed to the function sdm2.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list consisting of p, S and B which specify the prices, supplies and supply coefficient matrix after adjustment.
+</p>
+
+
+<h3>References</h3>
+
+<p>LI Wu (2019, ISBN: 9787521804225) General Equilibrium and Structural Dynamics: Perspectives of New Structural Economics. Beijing: Economic Science Press. (In Chinese)
+</p>
+<p>Grandmont, J.M. (1977). Temporary General Equilibrium Theory. Econometrica 45, 535-572.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>CGE::iep and <code>sdm2</code>, <code>gemTemporaryEquilibriumPath</code>.
+The market clearing prices are the prices with a stickiness value equal to zero.
+Therefore, this function can actually be replaced by <code>makePolicyStickyPrice</code> in the calculation.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### an iep of the example (see Table 2.1 and 2.2) of the canonical dynamic
+#### macroeconomic general equilibrium model in Torres (2016).
+ge &lt;- gemCanonicalDynamicMacroeconomic_3_2(
+  policy.price = policyMarketClearingPrice,
+  ts = TRUE,
+  maxIteration = 1,
+  numberOfPeriods = 50,
+  z0 = c(0.5, 1)
+)
+
+par(mfrow = c(1, 2))
+matplot(ge$ts.z, type = "o", pch = 20)
+matplot(ge$ts.p, type = "o", pch = 20)
+
+#### the same as above
+ge &lt;- gemCanonicalDynamicMacroeconomic_3_2(
+  policy.price = makePolicyStickyPrice(stickiness = 0),
+  ts = TRUE,
+  maxIteration = 1,
+  numberOfPeriods = 50,
+  z0 = c(0.5, 1)
+)
+
+par(mfrow = c(1, 2))
+matplot(ge$ts.z, type = "o", pch = 20)
+matplot(ge$ts.p, type = "o", pch = 20)
+
+#### TFP shock in the economy above (see Torres, 2016, section 2.8).
+numberOfPeriods &lt;- 200
+
+discount.factor &lt;- 0.97
+depreciation.rate &lt;- 0.06
+beta1.firm &lt;- 0.35
+return.rate &lt;- 1 / discount.factor - 1
+
+set.seed(1)
+alpha.shock &lt;- rep(1, 100)
+alpha.shock[101] &lt;- exp(0.01)
+for (t in 102:numberOfPeriods) {
+  alpha.shock[t] &lt;- exp(0.95 * log(alpha.shock[t - 1]))
+}
+
+policyTechnologyChange &lt;- function(time, A) {
+  A[[1]]$func &lt;- function(p) {
+    result &lt;- CD_A(
+      alpha.shock[time], rbind(beta1.firm, 1 - beta1.firm, 0),
+      c(p[1] * (return.rate + depreciation.rate), p[2:3])
+    )
+    result[3] &lt;- p[1] * result[1] * return.rate / p[3]
+    result
+  }
+}
+
+InitialEndowments &lt;- {
+  tmp &lt;- matrix(0, 3, 2)
+  tmp[1, 1] &lt;- tmp[2, 2] &lt;- tmp[3, 2] &lt;- 1
+  tmp
+}
+
+ge &lt;- gemCanonicalDynamicMacroeconomic_3_2(
+  policy.supply = makePolicySupply(InitialEndowments),
+  policy.technology = policyTechnologyChange,
+  policy.price = policyMarketClearingPrice,
+  ts = TRUE,
+  maxIteration = 1,
+  numberOfPeriods = 200
+)
+
+c &lt;- ge$A[1, 2] * ge$ts.z[, 2] # consumption
+par(mfrow = c(2, 2))
+matplot(ge$ts.z, type = "l")
+x &lt;- 100:140
+plot(x, ge$ts.z[x, 1] / ge$ts.z[x[1], 1], type = "o", pch = 20)
+plot(x, ge$ts.z[x, 2] / ge$ts.z[x[1], 2], type = "o", pch = 20)
+plot(x, c[x] / c[x[1]], type = "o", pch = 20)
+
+#### an iep of example 7.2 (a monetary economy) in Li (2019). See CGE::Example7.2.
+interest.rate &lt;- 0.25
+dst.firm &lt;- node_new("cc", #composite commodity
+                     type = "FIN",
+                     rate = c(1, interest.rate),
+                     "cc1", "money"
+)
+node_set(dst.firm, "cc1",
+         type = "CD", alpha = 1, beta = c(0.5, 0.5),
+         "wheat", "labor"
+)
+
+dst.laborer &lt;- Clone(dst.firm)
+dst.money.lender &lt;- Clone(dst.firm)
+
+dstl &lt;- list(dst.firm, dst.laborer, dst.money.lender)
+
+B &lt;- matrix(0, 3, 3)
+B[1, 1] &lt;- 1
+
+S0Exg &lt;- matrix(NA, 3, 3)
+S0Exg[2, 2] &lt;- 100
+S0Exg[3, 3] &lt;- 100
+
+InitialEndowments &lt;- {
+  tmp &lt;- matrix(0, 3, 3)
+  tmp[1, 1] &lt;- 10
+  tmp[2, 2] &lt;- tmp[3, 3] &lt;- 100
+  tmp
+}
+
+ge &lt;- sdm2(
+  A = dstl, B = B, S0Exg = S0Exg,
+  names.commodity = c("wheat", "labor", "money"),
+  names.agent = c("firm", "laborer", "money.lender"),
+  numeraire = c(money = interest.rate),
+  numberOfPeriods = 20,
+  maxIteration = 1,
+  ts = TRUE,
+  policy = list(
+    makePolicySupply(S = InitialEndowments),
+    policyMarketClearingPrice
+  )
+)
+
+par(mfrow = c(1, 2))
+matplot(ge$ts.z, type = "o", pch = 20)
+matplot(ge$ts.p, type = "o", pch = 20)
+
+</code></pre>
+
+
+</div>

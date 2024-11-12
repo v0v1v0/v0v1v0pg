@@ -1,0 +1,206 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gen</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Random data generator from general <code>a</code>-<code>b</code> distributions with general domain types, assuming a and b are rational numbers.</h2>
+
+<h3>Description</h3>
+
+<p>Random data generator from general <code>a</code>-<code>b</code> graphs with general domain types using adaptive rejection metropolis sampling (ARMS). x^(0/0) treated as log(x) and x^(n/0) as exp(x) for n non-zero. Density only guaranteed to be a proper density when 2*a &gt; b &gt;= 0 or when a = b = 0.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gen(
+  n,
+  setting,
+  abs,
+  eta,
+  K,
+  domain,
+  finite_infinity = NULL,
+  xinit = NULL,
+  seed = NULL,
+  burn_in = 1000,
+  thinning = 100,
+  verbose = TRUE,
+  remove_outofbound = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>An integer, number of observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>setting</code></td>
+<td>
+<p>A string that indicates the distribution type, must be one of <code>"exp"</code>, <code>"gamma"</code>, <code>"gaussian"</code>, <code>"log_log"</code>, <code>"log_log_sum0"</code>, or of the form <code>"ab_NUM1_NUM2"</code>, where <code>NUM1</code> is the <code>a</code> value and <code>NUM2</code> is the <code>b</code> value, and <code>NUM1</code> and <code>NUM2</code> must be integers or two integers separated by "/", e.g. "ab_2_2", "ab_2_5/4" or "ab_2/3_1/2".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>abs</code></td>
+<td>
+<p>A boolean. If TRUE, density is rewritten as f(|x|), i.e. with |x|^(a_numer/a_denom) and |x|^(b_numer/b_denom)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta</code></td>
+<td>
+<p>A vector, the linear part in the distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>A square matrix, the interaction matrix. There should exist some C &gt; 0 such that </p>
+<p style="text-align: center;"><code class="reqn">{\boldsymbol{x}^a}^{\top}\mathbf{K}{\boldsymbol{x}}^a/({\boldsymbol{x}^a}^{\top}{\boldsymbol{x}}^a) &gt;= C</code>
+</p>
+<p> for all x in the domain (i.e. <code>K</code> is positive definite if <code>domain$type == "R"</code> and <code>K</code> is co-positive if <code>domain$type == "R+"</code>.). If <code>a_numer == a_denom == b_numer == b_denom == 0 &amp;&amp; domain$type == "simplex"</code>, K can also have all row and column sums equal to 0 but have all but one eigenvalues (0) positive.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>domain</code></td>
+<td>
+<p>A list returned from <code>make_domain()</code> that represents the domain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>finite_infinity</code></td>
+<td>
+<p>A finite positive number. <code>Inf</code> in actual generation will be truncated to <code>finite_infinity</code> if applicable. Although the code will adaptively increase <code>finite_infinity</code>, the user should set it to a large number initially so that <code>abs(x) &gt; finite_infinity</code> with very small probability.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xinit</code></td>
+<td>
+<p>Optional. A <code>p</code>-vector, an initial point in the domain. If the domain is defined by more than one ineq or by one ineq containing negative coefficients, this must be provided. In the unlikely case where the function fails to automatically generate an initial point this should also be provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Optional. A number, the seed for the random generator.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burn_in</code></td>
+<td>
+<p>Optional. A positive integer, the number of burn-in samples in ARMS to be discarded, meaning that samples from the first <code>burn_in</code> x <code>thinning</code> iterations will be discarded.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thinning</code></td>
+<td>
+<p>Optional. A positive integer, thinning factor in ARMS. Samples are taken at iteration steps <code class="reqn">(\mathrm{burn\_in}+1)\times\mathrm{thinning}</code>, ..., <code class="reqn">(\mathrm{burn\_in}+n)\times\mathrm{thinning}</code>. Default to <code>100</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Optional. A boolean. If <code>TRUE</code>, prints a progress bar showing the progress. Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remove_outofbound</code></td>
+<td>
+<p>Optional. A logical, defaults to <code>TRUE</code>. If <code>TRUE</code>, a test whether each sample lies inside the domain will be done, which may take a while for larger sample sizes, and rows that do not lie in the domain will be removed (may happen for <code>domain$type == "polynomial"</code> with more than 1 ineq and an OR ("|") in <code>domain$rule</code>.).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>NOTE: For polynomial domains with many ineqs and a rule containing "OR" ("|"), not all samples generated are guaranteed to be inside the domain. It is thus recommended to set <code>remove_outofbound</code> to <code>TRUE</code> and rerun the function with new initial points until the desired number of in-bound samples have been generated.
+</p>
+<p>Randomly generates <code>n</code> samples from the <code>p</code>-variate <code>a</code>-<code>b</code> distributions with parameters <code class="reqn">\boldsymbol{\eta}</code> and <code class="reqn">\mathbf{K}</code>, where <code>p</code> is the length of <code class="reqn">\boldsymbol{\eta}</code> or the dimension of the square matrix <code class="reqn">\mathbf{K}</code>.
+</p>
+<p>Letting <code>a=a_numer/a_denom</code> and <code>b=b_numer/b_denom</code>, the <code>a</code>-<code>b</code> distribution is proportional to
+</p>
+<p style="text-align: center;"><code class="reqn">\exp\left(-\frac{1}{2a}{\boldsymbol{x}^a}^{\top}\mathbf{K}{\boldsymbol{x}}^a+\boldsymbol{\eta}^{\top}\frac{\boldsymbol{x}^b-\mathbf{1}_p}{b}\right)</code>
+</p>
+<p>.
+Note that <code>x^(0/0)</code> is understood as <code>log(x)</code>, and <code>x^(n/0)</code> with nonzero <code>n</code> is <code>exp(n*x)</code>, and in both cases the <code>a</code> and <code>b</code> in the denominators in the density are treated as 1.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An <code class="reqn">n\times p</code> matrix of samples, where <code class="reqn">p</code> is the length of <code>eta</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">n &lt;- 20
+p &lt;- 10
+eta &lt;- rep(0, p)
+K &lt;- diag(p)
+dm &lt;- 1 + (1-1/(1+4*exp(1)*max(6*log(p)/n, sqrt(6*log(p)/n))))
+
+# Gaussian on sum(x^2) &gt; 10 &amp;&amp; sum(x^(1/3)) &gt; 10 with x allowed to be negative
+domain &lt;- make_domain("polynomial", p=p, rule="1 &amp;&amp; 2",
+       ineqs=list(list("expression"="sum(x^2)&gt;10", abs=FALSE, nonnegative=FALSE),
+                      list("expression"="sum(x^(1/3))&gt;10", abs=FALSE, nonnegative=FALSE)))
+xinit &lt;- rep(sqrt(20/p), p)
+x &lt;- gen(n, setting="gaussian", abs=FALSE, eta=eta,  K=K, domain=domain, finite_infinity=100, 
+       xinit=xinit, seed=2, burn_in=500, thinning=100, verbose=FALSE)
+
+# exp on ([0, 1] v [2,3])^p
+domain &lt;- make_domain("uniform", p=p, lefts=c(0,2), rights=c(1,3))
+x &lt;- gen(n, setting="exp", abs=FALSE, eta=eta, K=K, domain=domain, xinit=NULL, 
+       seed=2, burn_in=500, thinning=100, verbose=TRUE)
+
+# gamma on {x1 &gt; 1 &amp;&amp; log(1.3) &lt; x2 &lt; 1 &amp;&amp; x3 &gt; log(1.3) &amp;&amp; ... &amp;&amp; xp &gt; log(1.3)}
+domain &lt;- make_domain("polynomial", p=p, rule="1 &amp;&amp; 2 &amp;&amp; 3",
+       ineqs=list(list("expression"="x1&gt;1", abs=FALSE, nonnegative=TRUE),
+                      list("expression"="x2&lt;1", abs=FALSE, nonnegative=TRUE),
+                      list("expression"="exp(x)&gt;1.3", abs=FALSE, nonnegative=FALSE)))
+set.seed(1)
+xinit &lt;- c(1.5, 0.5, abs(stats::rnorm(p-2))+log(1.3))
+x &lt;- gen(n, setting="gamma", abs=FALSE, eta=eta, K=K, domain=domain, finite_infinity=100, 
+       xinit=xinit, seed=2, burn_in=500, thinning=100, verbose=FALSE)
+
+# a0.6_b0.7 on {x in R_+^p: sum(log(x))&lt;2 || (x1^(2/3)-1.3x2^(-3)&lt;1 &amp;&amp; exp(x1)+2.3*x2&gt;2)}
+domain &lt;- make_domain("polynomial", p=p, rule="1 || (2 &amp;&amp; 3)",
+       ineqs=list(list("expression"="sum(log(x))&lt;2", abs=FALSE, nonnegative=TRUE),
+                      list("expression"="x1^(2/3)-1.3x2^(-3)&lt;1", abs=FALSE, nonnegative=TRUE),
+                      list("expression"="exp(x1)+2.3*x2^2&gt;2", abs=FALSE, nonnegative=TRUE)))
+xinit &lt;- rep(1, p)
+x &lt;- gen(n, setting="ab_3/5_7/10", abs=FALSE, eta=eta, K=K, domain=domain, finite_infinity=1e4, 
+       xinit=xinit, seed=2, burn_in=500, thinning=100, verbose=FALSE)
+
+# log_log model exp(-log(x) %*% K %*% log(x)/2 + eta %*% log(x)) on {x in R_+^p: sum_j j * xj &lt;= 1}
+domain &lt;- make_domain("polynomial", p=p,
+       ineqs=list(list("expression"=paste(paste(sapply(1:p,
+                           function(j){paste(j, "x", j, sep="")}), collapse="+"), "&lt;1"),
+                     abs=FALSE, nonnegative=TRUE)))
+x &lt;- gen(n, setting="log_log", abs=FALSE, eta=eta, K=K, domain=domain, finite_infinity=100, 
+       xinit=NULL, seed=2, burn_in=500, thinning=100, verbose=FALSE)
+
+# log_log model on the simplex with K having row and column sums 0 (Aitchison model)
+domain &lt;- make_domain("simplex", p=p)
+K &lt;- -cov_cons("band", p=p, spars=3, eig=1)
+diag(K) &lt;- diag(K) - rowSums(K) # So that rowSums(K) == colSums(K) == 0
+eigen(K)$val[(p-1):p] # Make sure K has one 0 and p-1 positive eigenvalues
+x &lt;- gen(n, setting="log_log_sum0", abs=FALSE, eta=eta, K=K, domain=domain, xinit=NULL, 
+       seed=2, burn_in=500, thinning=100, verbose=FALSE)
+
+# Gumbel_Gumbel model exp(-exp(2x) %*% K %*% exp(2x)/2 + eta %*% exp(-3x)) on {sum(|x|) &lt; 1}
+domain &lt;- make_domain("polynomial", p=p,
+       ineqs=list(list("expression"="sum(x)&lt;1", abs=TRUE, nonnegative=FALSE)))
+K &lt;- diag(p)
+x &lt;- gen(n, setting="ab_2/0_-3/0", abs=FALSE, eta=eta, K=K, domain=domain, finite_infinity=100, 
+       xinit=NULL, seed=2, burn_in=500, thinning=100, verbose=FALSE)
+</code></pre>
+
+
+</div>

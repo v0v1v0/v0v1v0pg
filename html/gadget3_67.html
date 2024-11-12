@@ -1,0 +1,147 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>stock_areas</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gadget3 stock area dimensions</h2>
+
+<h3>Description</h3>
+
+<p>Add area dimensions to g3_stock classes
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">g3_areas(area_names)
+
+g3s_livesonareas(inner_stock, areas)
+
+g3s_areagroup(inner_stock, areagroups)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>area_names</code></td>
+<td>
+
+<p>A character vector of area names to use in the model
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inner_stock</code></td>
+<td>
+
+<p>A <code>g3_stock</code> that we extend with an area dimension
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>areas</code></td>
+<td>
+
+<p>A vector of numeric areas that the stock is part of
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>areagroups</code></td>
+<td>
+
+<p>A list mapping names to vectors of numeric areas the stock is part of
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>g3s_livesonareas</code> breaks up a stock by area.
+Within a model, areas are only referred to by integer, however if these are named
+then that name will be used for report output.
+</p>
+<p>Each area will be defined as a variable in your model as <code>area_x</code>,
+allowing you to use names in formulas, e.g. <code>run_f = quote( area == area_x )</code>.
+</p>
+<p><code>g3_areas</code> is a helper to map a set of names to an integer
+</p>
+<p>Inside a model each area will only be referred to by integer.
+</p>
+<p><code>g3s_areagroup</code> allows areas to be combined, this is mostly used internally
+by <code>g3l_catchdistribution</code>.
+</p>
+
+
+<h3>Value</h3>
+
+
+
+<h4>g3_areas</h4>
+
+<p>A named integer vector, assigning each of <var>area_names</var> a number.
+</p>
+
+
+
+<h4>g3s_livesonareas</h4>
+
+<p>A <code>g3_stock</code> with an additional 'area' dimension.
+</p>
+<p>When iterating over the stock, iterate over each area in turn,
+<var>area</var> will be set to the current integer area.
+</p>
+<p>When intersecting with another stock, only do anything if
+<var>area</var> is also part of our list of areas.
+</p>
+
+
+
+<h4>g3s_areagroup</h4>
+
+<p>A <code>g3_stock</code> with an additional 'area' dimension.
+</p>
+<p>When iterating over the stock, iterate over each areagroup in turn,
+<var>area</var> will be set to the first area in the group.
+</p>
+<p>When intersecting with another stock, only do anything if
+<var>area</var> is part of one of the groups.
+</p>
+
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+# Make a lookup so we can refer to areas by name
+area_names &lt;- g3_areas(c('a', 'b', 'c', 'd', 'e'))
+stopifnot(area_names == c(a=1, b=2, c=3, d=4, e=5))
+
+# Define a stock with 3 lengthgroups and 3 areas
+stock &lt;- g3_stock('name', c(1, 10, 100)) %&gt;%
+    g3s_livesonareas(area_names[c('a', 'b', 'c')])
+
+# Area variables will be defined, so you can refer to them in formulas:
+g3a_migrate(stock, g3_parameterized("migrate_spring"),
+    run_f = ~area == area_b &amp;&amp; cur_step == 2)
+
+# Use stock_instance to see what the array would look like
+g3_stock_instance(stock)
+
+# Define a stock that groups areas into "north" and "south"
+stock &lt;- g3_stock('name', c(1, 10, 100)) %&gt;%
+    g3s_areagroup(list(
+        north = area_names[c('a', 'b', 'c')],
+        south = area_names[c('d', 'e')]))
+
+# Use stock_instance to see what the array would look like
+g3_stock_instance(stock)
+</code></pre>
+
+
+</div>

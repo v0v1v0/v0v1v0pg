@@ -1,0 +1,187 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ghap.ibd</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Estimation of IBD sharing
+</h2>
+
+<h3>Description</h3>
+
+<p>This function estimates the same IBD statistics computed by plink's 'genome' option.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ghap.ibd(object, pairlist, freq, mafcut=0.05,
+         refsize=10000, batchsize=NULL,
+         ncores=1, verbose=TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+
+<p>A valid GHap object (phase or plink).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pairlist</code></td>
+<td>
+
+<p>A dataframe containing columns ID1 and ID2 specifying the pairs of individual ids to compare.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>freq</code></td>
+<td>
+
+<p>A named numeric vector with (A1) allele frequencies computed in a reference sample.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mafcut</code></td>
+<td>
+
+<p>A numeric value specifying the minor allele frequency threshold for IBD calculations (default = 0.05).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>refsize</code></td>
+<td>
+
+<p>A numeric value representing the reference sample size used in allele frequncy calculations. If not specified, a large reference sample is assumed (default = 10000)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>batchsize</code></td>
+<td>
+
+<p>A numeric value controlling the number of variants to be processed at a time (default = nalleles/10).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+
+<p>A numeric value specifying the number of cores to be used in parallel computations (default = 1).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>A logical value specfying whether log messages should be printed (default = TRUE).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function implements plink's method-of-moments for IBD estimation. Although not as efficient as plink's implementation, our function allows the user to restrict calculations to specific individual pairs, as well as ground all computations on allele frequencies obtained from a reference population. This is useful for routine pedigree confirmation, since a smaller set of indviduals and comparisons are typically targeted in these situations. The original –genome flag in plink not only performs all possible comparisons given a set of individuals, but also estimates allele frequencies on-the-fly, which may be unreliable if the number of individuals is small. We still recommend using plink for large problems, such as all pairwise comparisons from thousands of individuals, because it is more efficient. Nevertheless, we offer a more convenient alternative for the validation of smaller pedigrees in routine analyses where a lookup table of allele frequencies is available and maintained from a large reference population.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A dataframe with columns:
+POP1 = Population of individual 1<br>
+ID1 = Name of individual 1<br>
+POP2 = Population of individual 2<br>
+ID2 = Name of individual 2<br>
+IBS0 = Variant sites where ID1 and ID2 share no identical alleles<br>
+IBS1 = Variant sites where ID1 and ID2 share 1 identical allele<br>
+IBS2 = Variant sites where ID1 and ID2 share 2 identical alleles<br>
+PERC = IBS2/(IBS0+IBS1+IBS2) [proportion of identical genotypes]<br>
+DST = (IBS2 + 0.5*IBS1)/(IBS0+IBS1+IBS2) [proportion of shared alleles]<br>
+Z0 = Proportion of the genome where ID1 and ID2 share no alleles IBD<br>
+Z1 = Proportion of the genome where ID1 and ID2 share 1 allele IBD<br>
+Z2 = Proportion of the genome where ID1 and ID2 share 2 alleles IBD<br>
+PI_HAT = Z2 + 0.5*Z1 (proportion of IBD alleles shared between ID1 and ID2)
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Yuri Tani Utsunomiya &lt;ytutsunomiya@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>C. C. Chang et al. Second-generation PLINK: rising to the challenge of larger and richer datasets. Gigascience. 2015. 4, 7.
+S. Purcell et al. PLINK: a tool set for whole-genome association and population-based linkage analyses. Am. J. Hum. Genet. 2007. 81, 559-575.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# #### DO NOT RUN IF NOT NECESSARY ###
+# 
+# # Copy plink data in the current working directory
+# exfiles &lt;- ghap.makefile(dataset = "example",
+#                          format = "plink",
+#                          verbose = TRUE)
+# file.copy(from = exfiles, to = "./")
+# 
+# # Copy metadata in the current working directory
+# exfiles &lt;- ghap.makefile(dataset = "example",
+#                          format = "meta",
+#                          verbose = TRUE)
+# file.copy(from = exfiles, to = "./")
+# 
+# # Load plink data
+# plink &lt;- ghap.loadplink("example")
+# 
+# # Load pedigree data
+# ped &lt;- read.table(file = "example.pedigree", header=T)
+# 
+# ### RUN ###
+# 
+# # Subset individuals from the pure1 population
+# pure1 &lt;- plink$id[which(plink$pop == "Pure1")]
+# plink &lt;- ghap.subset(object = plink, ids = pure1, variants = plink$marker)
+# 
+# # Subset markers with MAF &gt; 0.05
+# freq &lt;- ghap.freq(plink)
+# mkr &lt;- names(freq)[which(freq &gt; 0.05)]
+# plink &lt;- ghap.subset(object = plink, ids = pure1, variants = mkr)
+# 
+# # Compute A1 allele frequencies
+# p &lt;- ghap.freq(plink, type = "A1")
+# 
+# # Compute IBD statistics for individual 1
+# pairlist &lt;- data.frame(ID1 = pure1[1], ID2 = pure1[-1])
+# ibd &lt;- ghap.ibd(object = plink, pairlist = pairlist, freq = p,
+#                 refsize = length(pure1))
+# 
+# # Predict relationships for individual 1
+# # 1 = parent-offspring
+# # 3 = other types of relationship
+# # 4 = unrelated
+# rel &lt;- ghap.relfind(ibdpairs = ibd)
+# table(rel$REL)
+# 
+# # Confirm with pedigree
+# toprel &lt;- rel$ID2[which(rel$REL == 1)]
+# ped[which(ped$id %in% toprel &amp; ped$dam == pure1[1]),]
+
+</code></pre>
+
+
+</div>

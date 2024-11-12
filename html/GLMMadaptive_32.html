@@ -1,0 +1,486 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mixed_model</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Generalized Linear Mixed Effects Models
+</h2>
+
+<h3>Description</h3>
+
+<p>Fits generalized linear mixed effects models under maximum likelihood using adaptive 
+Gaussian quadrature.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mixed_model(fixed, random, data, family, weights = NULL,
+  na.action = na.exclude, zi_fixed = NULL, zi_random = NULL, 
+  penalized = FALSE, n_phis = NULL, initial_values = NULL, 
+  control = list(), ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fixed</code></td>
+<td>
+<p>a formula for the fixed-effects part of the model, including the outcome.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>random</code></td>
+<td>
+<p>a formula for the random-effects part of the model. This should only contain
+the right-hand side part, e.g., <code>~ time | id</code>, where <code>time</code> is a variable,
+and <code>id</code> the grouping factor. When the symbol <code>||</code> is used in the definition
+of this argument (instead of <code>|</code>), then the covariance matrix of the random 
+effects is assumed to be diagonal.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a data.frame containing the variables required in <code>fixed</code> and 
+<code>random</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>a <code>family</code> object specifying the type of the repeatedly measured response 
+variable, e.g., <code>binomial()</code> or <code>poisson()</code>. The function also allows for 
+user-defined family objects, but with specific extra components; see the example
+is <code>negative.binomial</code> for more details. Contrary to the standard 
+practice in model fitting R functions with a <code>family</code> argument 
+(e.g., <code>glm</code>) in which the default
+family is <code>gaussian()</code>, in <code>mixed_model()</code> no default is provided. If the
+users wish to fit a mixed model for a Gaussian outcome, this could be done with 
+function <code>lme()</code> from the <b>nlme</b> package or function <code>lmer()</code> from the
+<b>lme4</b> package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>a numeric vector of weights. These are simple multipliers on the 
+log-likelihood contributions of each group/cluster, i.e., we presume that there are multiple 
+replicates of each group/cluster denoted by the weights. The length of 'weights' need to
+be equal to the number of independent groups/clusters in the data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>what to do with missing values in <code>data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zi_fixed, zi_random</code></td>
+<td>
+<p>formulas for the fixed and random effects of the zero inflated 
+part.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalized</code></td>
+<td>
+<p>logical or a list. If logical and equal to <code>FALSE</code>, then no penalty
+is used. If logical and equal to <code>TRUE</code>, for the fixed effects a Student's-t 
+penalty/prior with mean 0, scale equal to 1 and 3 degrees of freedom is used. If a
+list, then it is expected to have the components <code>pen_mu</code>, <code>pen_sigma</code> and
+<code>pen_df</code>, denoting the mean, scale and degrees of freedom of the Student's-t 
+penalty/prior for the fixed effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_phis</code></td>
+<td>
+<p>a numeric scalar; in case the family corresponds to a distribution that has extra 
+(dispersion/shape) parameters, you need to specify how many extra parameters are needed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial_values</code></td>
+<td>
+<p>a list of initial values. This can have up to three components, 
+namely,
+</p>
+
+<dl>
+<dt>betas</dt>
+<dd>
+<p>a numeric vector of fixed effects. This can also be 
+<code>family</code> object. In this case initial values for the fixed effects 
+will be calculated by using <code>glm</code> to the data ignoring the 
+correlations in the repeated measurements. For example, for a negative binomial
+response outcome, we could set <code>betas = poisson()</code>.</p>
+</dd>
+<dt>D</dt>
+<dd>
+<p>a numeric matrix denoting the covariance matrix of the random effects.</p>
+</dd>
+<dt>phis</dt>
+<dd>
+<p>a numeric vector for the extra (dispersion/shape) parameters.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>a list with the following components:
+</p>
+
+<dl>
+<dt>iter_EM</dt>
+<dd>
+<p>numeric scalar denoting the number of EM iterations; default is 30.</p>
+</dd>
+<dt>iter_qN_outer</dt>
+<dd>
+<p>numeric scalar denoting the number of outer iterations during 
+the quasi-Newton phase; default is 15. In each outer iteration the locations 
+of the quadrature points are updated.</p>
+</dd>
+<dt>iter_qN</dt>
+<dd>
+<p>numeric scalar denoting the starting number of iterations for the 
+quasi-Newton; default is 10.</p>
+</dd>
+<dt>iter_qN_incr</dt>
+<dd>
+<p>numeric scalar denoting the increment in <code>iter_qN</code> for
+each outer iteration; default is 10.</p>
+</dd>
+<dt>optimizer</dt>
+<dd>
+<p>character string denoting the optimizer to be used; available 
+options are <code>"optim"</code> (default), <code>"nlminb"</code> and 
+<code>"optimParallel"</code>, the last option implemented in the 
+<b>optimParallel</b> package.</p>
+</dd>
+<dt>optim_method</dt>
+<dd>
+<p>character string denoting the type of <code>optim</code> 
+algorithm to be used when <code>optimizer = "optim"</code>; default is the BFGS 
+algorithm.</p>
+</dd>
+<dt>parscale_betas</dt>
+<dd>
+<p>the control argument <code>parscale</code> of <code>optim</code> for
+the fixed-effects; default is 0.1.</p>
+</dd>
+<dt>parscale_D</dt>
+<dd>
+<p>the control argument <code>parscale</code> of <code>optim</code> for
+the unique element of the covariance matrix of the random effects; default is 
+0.01.</p>
+</dd>
+<dt>parscale_phis</dt>
+<dd>
+<p>the control argument <code>parscale</code> of <code>optim</code> for
+the extra (dispersion/shape) parameters; default is 0.01.</p>
+</dd>
+<dt>tol1, tol2, tol3</dt>
+<dd>
+<p>numeric scalars controlling tolerances for declaring 
+convergence; <code>tol1</code> and <code>tol2</code> are for checking convergence in 
+successive parameter values; <code>tol3</code> is similar to <code>reltop</code> of 
+<code>optim</code>; default values are <code>1e-03</code>, <code>1e-04</code>, and 
+<code>1e-08</code>, respectively.</p>
+</dd>
+<dt>numeric_deriv</dt>
+<dd>
+<p>character string denoting the type of numerical derivatives
+to be used. Options are <code>"fd"</code> for forward differences, and <code>cd</code>
+for central difference; default is <code>"fd"</code>.</p>
+</dd>
+<dt>nAGQ</dt>
+<dd>
+<p>numeric scalar denoting the number of quadrature points; default is 
+11 when the number of random effects is one or two, and 7 otherwise.</p>
+</dd>
+<dt>update_GH_every</dt>
+<dd>
+<p>numeric scalar denoting every how many iterations to 
+update the quadrature points during the EM-phase; default is 10.</p>
+</dd>
+<dt>max_coef_value</dt>
+<dd>
+<p>numeric scalar denoting the maximum allowable value for the
+fixed effects coefficients during the optimization; default is 10.</p>
+</dd>
+<dt>max_phis_value</dt>
+<dd>
+<p>numeric scalar denoting the maximum allowable value for the
+shape/dispersion parameter of the negative binomial distribution during the 
+optimization; default is <code>exp(10)</code>.</p>
+</dd>
+<dt>verbose</dt>
+<dd>
+<p>logical; print information during the optimization phase; default 
+is <code>FALSE</code>.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments passed to <code>control</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><b>General:</b> The <code>mixed_model()</code> function fits mixed effects models in which the
+integrals over the random effects in the definition of the marginal log-likelihood cannot
+be solved analytically and need to be approximated. The function works under the 
+assumption of normally distributed random effects with mean zero and variance-covariance
+matrix <code class="reqn">D</code>. These integrals are approximated numerically using an adaptive 
+Gauss-Hermite quadrature rule. Using the control argument <code>nAGQ</code>, the user can 
+specify the number of quadrature points used in the approximation.
+</p>
+<p><b>User-defined family:</b> The user can define its own family object; for an example, 
+see the help page of <code>negative.binomial</code>.
+</p>
+<p><b>Optimization:</b> A hybrid approach is used, starting with <code>iter_EM</code> iterations
+and unless convergence was achieved it continuous with a direct optimization of the 
+log-likelihood using function <code>optim</code> and the algorithm specified by 
+<code>optim_method</code>. For stability and speed, the derivative of the log-likelihood with 
+respect to the parameters are internally programmed.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>"MixMod"</code> with components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p>a numeric vector with the estimated fixed effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>phis</code></td>
+<td>
+<p>a numeric vector with the estimated extra parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>D</code></td>
+<td>
+<p>a numeric matrix denoting the estimated covariance matrix of the random effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>post_modes</code></td>
+<td>
+<p>a numeric matrix with the empirical Bayes estimates of the random effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>post_vars</code></td>
+<td>
+<p>a list of numeric matrices with the posterior variances of the random effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logLik</code></td>
+<td>
+<p>a numeric scalar denoting the log-likelihood value at the end of the 
+optimization procedure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Hessian</code></td>
+<td>
+<p>a numeric matrix denoting the Hessian matrix at the end of the optimization 
+procedure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>converged</code></td>
+<td>
+<p>a logical indicating whether convergence was attained.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a copy of the <code>data</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>a copy of the grouping variable from <code>data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id_name</code></td>
+<td>
+<p>a character string with the name of the grouping variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Terms</code></td>
+<td>
+<p>a list with two terms components, <code>termsX</code> derived from the <code>fixed</code>
+argument, and <code>termsZ</code> derived from the <code>random</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model_frames</code></td>
+<td>
+<p>a list with two model.frame components, <code>mfX</code> derived from the 
+<code>fixed</code> argument, and <code>mfZ</code> derived from the <code>random</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>a copy of the (user-specific) <code>control</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Funs</code></td>
+<td>
+<p>a list of functions used in the optimization procedure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>a copy of the <code>family</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the matched call.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Dimitris Rizopoulos <a href="mailto:d.rizopoulos@erasmusmc.nl">d.rizopoulos@erasmusmc.nl</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>methods.MixMod</code>,
+<code>effectPlotData</code>,
+<code>marginal_coefs</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># simulate some data
+set.seed(123L)
+n &lt;- 200
+K &lt;- 15
+t.max &lt;- 25
+
+betas &lt;- c(-2.13, -0.25, 0.24, -0.05)
+D &lt;- matrix(0, 2, 2)
+D[1:2, 1:2] &lt;- c(0.48, -0.08, -0.08, 0.18)
+
+times &lt;- c(replicate(n, c(0, sort(runif(K-1, 0, t.max)))))
+group &lt;- sample(rep(0:1, each = n/2))
+DF &lt;- data.frame(year = times, group = factor(rep(group, each = K)))
+X &lt;- model.matrix(~ group * year, data = DF)
+Z &lt;- model.matrix(~ year, data = DF)
+
+b &lt;- cbind(rnorm(n, sd = sqrt(D[1, 1])), rnorm(n, sd = sqrt(D[2, 2])))
+id &lt;- rep(1:n, each = K)
+eta.y &lt;- as.vector(X %*% betas + rowSums(Z * b[id, ]))
+DF$y &lt;- rbinom(n * K, 1, plogis(eta.y))
+DF$id &lt;- factor(id)
+
+################################################
+
+fm1 &lt;- mixed_model(fixed = y ~ year * group, random = ~ 1 | id, data = DF,
+                   family = binomial())
+
+# fixed effects
+fixef(fm1)
+
+# random effects
+head(ranef(fm1))
+
+# detailed output
+summary(fm1)
+
+# fitted values for the 'mean subject', i.e., with
+# random effects values equal to 0
+head(fitted(fm1, type = "mean_subject"))
+
+# fitted values for the conditioning on the estimated random effects
+head(fitted(fm1, type = "subject_specific"))
+
+##############
+
+fm2 &lt;- mixed_model(fixed = y ~ year, random = ~ 1 | id, data = DF,
+                   family = binomial())
+
+# likelihood ratio test between the two models
+anova(fm2, fm1)
+
+# the same hypothesis but with a Wald test
+anova(fm1, L = rbind(c(0, 0, 1, 0), c(0, 0, 0, 1)))
+
+##############
+
+# An effects plot for the mean subject (i.e., with random effects equal to 0)
+nDF &lt;- with(DF, expand.grid(year = seq(min(year), max(year), length.out = 15),
+    group = levels(group)))
+    
+plot_data &lt;- effectPlotData(fm2, nDF)
+
+require("lattice")
+xyplot(pred + low + upp ~ year | group, data = plot_data,
+       type = "l", lty = c(1, 2, 2), col = c(2, 1, 1), lwd = 2,
+       xlab = "Follow-up time", ylab = "log odds")
+
+expit &lt;- function (x) exp(x) / (1 + exp(x))
+xyplot(expit(pred) + expit(low) + expit(upp) ~ year | group, data = plot_data,
+       type = "l", lty = c(1, 2, 2), col = c(2, 1, 1), lwd = 2,
+       xlab = "Follow-up time", ylab = "Probabilities")
+
+# An effects plots for the marginal probabilities
+plot_data_m &lt;- effectPlotData(fm2, nDF, marginal = TRUE, cores = 1L)
+
+expit &lt;- function (x) exp(x) / (1 + exp(x))
+xyplot(expit(pred) + expit(low) + expit(upp) ~ year | group, data = plot_data_m,
+       type = "l", lty = c(1, 2, 2), col = c(2, 1, 1), lwd = 2,
+       xlab = "Follow-up time", ylab = "Probabilities")
+
+##############
+
+# include random slopes
+fm1_slp &lt;- update(fm1, random = ~ year | id)
+
+# increase the number of quadrature points to 15
+fm1_slp_q15 &lt;- update(fm1_slp, nAGQ = 15)
+
+# a diagonal covariance matrix for the random effects
+fm1_slp_diag &lt;- update(fm1, random = ~ year || id)
+
+anova(fm1_slp_diag, fm1_slp)
+
+</code></pre>
+
+
+</div>

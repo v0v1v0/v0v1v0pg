@@ -1,0 +1,279 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bagging.pltr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+bagging pltr models
+</h2>
+
+<h3>Description</h3>
+
+<p>bagging procedure to agregate several PLTR models for accurate prediction and variable selection
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bagging.pltr(xdata, Y.name, X.names, G.names, family = "binomial", 
+args.rpart,epsi = 0.001, iterMax = 5, iterMin = 3, LB = FALSE, 
+args.parallel = list(numWorkers = 1),
+Bag = 20, Pred_Data = data.frame(), verbose = TRUE, doprune = FALSE
+, thresshold = seq(0, 1, by = 0.1))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>xdata</code></td>
+<td>
+
+<p>the learning data frame 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y.name</code></td>
+<td>
+
+<p>the name  of the binary dependent variable
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X.names</code></td>
+<td>
+
+<p>the names of independent variables to consider in the linear part of the glm and as offset in the tree part
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>G.names</code></td>
+<td>
+
+<p>the names of independent variables to consider in the tree part of the hybrid glm.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+
+<p>the glm family considered depending on the type of the dependent variable (only the binomial family works in this function for the moment) .
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>args.rpart</code></td>
+<td>
+
+<p>a list of options that control details of the rpart algorithm. <code>minbucket</code>: the minimum number of observations in any terminal &lt;leaf&gt; node; <code>cp</code>: complexity parameter (Any split that does not decrease the overall lack of fit by a factor of cp is not attempted); <code>maxdepth</code>:  the maximum depth of any node of the final tree, with the root node counted as depth 0. ...
+See <code>rpart.control</code> for further details
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epsi</code></td>
+<td>
+
+<p>a treshold value  to check the convergence of the algorithm
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterMax</code></td>
+<td>
+
+<p>the maximal number of iteration to consider
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterMin</code></td>
+<td>
+
+<p>the minimum number of iteration to consider
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LB</code></td>
+<td>
+
+<p>a binary indicator with values TRUE or FALSE indicating weither the loading is balanced or not in the parallel computing. It is nevertheless useless on a windows platform. See <code>mclapply</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>args.parallel</code></td>
+<td>
+
+<p>a list of two elements containing the number of workers and the type of parallelization to achieve see <code>mclapply</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Bag</code></td>
+<td>
+
+<p>The number of Bagging samples to consider
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Pred_Data</code></td>
+<td>
+
+<p>An optional data frame to validate the bagging procedure (the test dataset)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical; TRUE for printing progress during the computation (helpful for debugging)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>doprune</code></td>
+<td>
+
+<p>a binary indicator with values TRUE or FALSE indicating weither the set of trees in the bagging procedure are pruned (by a <code>BIC</code> procedure) or not</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thresshold</code></td>
+<td>
+<p>a vector of numerical values between 0 and 1 used as thresshold values for the computation of the OOB error rate</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p> For the Bagging procedure, it is mendatory to set <code>maxcompete = 0</code> and <code>maxsurrogate = 0</code> within the rpart arguments. This will ensured the correct calculation of the  importance of variables.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with eleven elements
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>IND_OOB </code></td>
+<td>
+<p>A list of length <code>Bag</code> containing the Out Of Bag (OOB) individuals for each PLTR model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>EOOB </code></td>
+<td>
+<p>The vector of OOB errors of the bagging procedure for each thresshold value. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>OOB_ERRORS_PBP </code></td>
+<td>
+<p>A matrix with <code>Bag</code> columns and <code>thresshold</code> rows containing  OOB error of each PLTR model in the bagging sequence for each thresshold value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>OOB_ERROR_PBP </code></td>
+<td>
+<p>A vector containing the mean of <code>OOB_ERRORS_PBP</code> for each thresshold value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Tree_BAG </code></td>
+<td>
+<p>A list of length <code>Bag</code> containing the bagging trees</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Glm_BAG </code></td>
+<td>
+<p>A list of length <code>Bag</code> containing the bagging pltr model; could be helpfull for prediction on new features.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LOST</code></td>
+<td>
+<p>The 0, 1  lost matrix for OOB observations at each thresshold value</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>TEST </code></td>
+<td>
+<p>A value of <code>NULL</code> if <code>Pred_Data</code> is not available. A list of three elements otherwise: <code>PRED_ERROR</code>: the estimated error of the Bagging procedure on the test sample for each thresshold value; <code>PRED_IND</code>: A list of length the length of the thresshold vector, each element containing a matrix with the prediction of the testing data individuals using each  PLTR model of the bagging sequence (column by column); <code>FINAL_PRED_IND</code>: A list  containing the final prediction of each individual of the testing data by the bagging procedure (the modal prediction) for each thresshold value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Var_IMP</code></td>
+<td>
+<p>A numeric vector containing the relative variable importance of the bagging procedure</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Timediff</code></td>
+<td>
+<p>The execution time of the bagging  procedure</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CUT</code></td>
+<td>
+<p>The thresshold value used inside the bagging procedure</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Cyprien Mbogning
+</p>
+
+
+<h3>References</h3>
+
+<p>Mbogning, C., Perdry, H., Broet, P.: A Bagged partially linear tree-based regression procedure for prediction and variable selection. Human Heredity (To appear) (2015)
+</p>
+<p>Leo Breiman:  Bagging Predictors. Machine Learning, 24, 123-140 (1996)
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>predict_bagg.pltr</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+##load the data set
+
+data(burn)
+
+## set the parameters 
+
+args.rpart &lt;- list(minbucket = 10, maxdepth = 4, cp = 0, maxsurrogate = 0)
+family &lt;- "binomial"
+Y.name &lt;- "D2"
+X.names &lt;- "Z2"
+G.names &lt;- c('Z1','Z3','Z4','Z5','Z6','Z7','Z8','Z9','Z10','Z11')
+args.parallel = list(numWorkers = 1)
+                     
+## Bagging a set of basic unprunned pltr predictors
+
+Bag.burn &lt;-  bagging.pltr(burn, Y.name, X.names, G.names, family, 
+             args.rpart,epsi = 0.01, iterMax = 4, iterMin = 3, 
+             Bag = 20, verbose = FALSE, doprune = FALSE)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

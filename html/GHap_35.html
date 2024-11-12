@@ -1,0 +1,185 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ghap.profile</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Genomic profile
+</h2>
+
+<h3>Description</h3>
+
+<p>Given a data.frame of user-defined marker or haplotype allele scores, compute individual genomic profiles.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ghap.profile(object, score, only.active.samples = TRUE,
+             batchsize = NULL, ncores = 1, verbose = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+
+<p>A valid GHap object (phase, haplo or plink).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>score</code></td>
+<td>
+
+<p>For HapAlleles (to use with GHap.haplo objects), the columns should be: BLOCK, CHR, BP1, BP2, ALLELE, SCORE, CENTER and SCALE. In the case of markers, the columns are: MARKER, CHR, BP, ALLELE, SCORE, CENTER and SCALE.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>only.active.samples</code></td>
+<td>
+
+<p>A logical value specifying whether calculations should be reported only for active samples (default = TRUE).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>batchsize</code></td>
+<td>
+
+<p>A numeric value controlling the number of HapAlleles or markers to be processed at a time (default = n/10).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+
+<p>A numeric value specifying the number of cores to be used in parallel computing (default = 1).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>A logical value specfying whether log messages should be printed (default = TRUE).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The profile for each individual is calculated as sum(b*(x-c)/s), where x is a vector of number of copies of a reference allele, c is a constant to center the genotypes (taken from the CENTER column of the score dataframe), s is a constant to scale the genotypes (taken from the SCALE column of the score dataframe), and b is a vector of user-defined scores for each reference allele (taken from the SCORE column of the score dataframe). If no centering or scaling is required, the user can set the CENTER and SCALE columns to 0 and 1, respectively. By default, if scores are provided for only a subset of the HapAlleles or markers, the absent scores will be set to zero. If the input genomic data is a GHap.phase or GHap.plink object, the ALLELE column in the data frame is used as a guide to keep track of the direction of the scores. The default coding in GHap is A0/A0 = 0, A0|A1 = A1|A0 = 1 and A1/A1 = 2. For each marker where the declared allele is A0 instead of A1, that coding is flipped to A0/A0 = 2, A0|A1 = A1|A0 = 1 and A1/A1 = 1 so the profile is computed in the correct direction. Therefore, the user must be careful regarding the allele order, as well as the centering and scaling for each marker, since profiling is allele-oriented. This function has the same spirit as the profiling routine implemented in the <em>score</em> option in PLINK (Purcell et al., 2007; Chang et al., 2015).
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function returns a data.frame with the following columns:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>POP</code></td>
+<td>
+
+<p>Population ID.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ID</code></td>
+<td>
+
+<p>Individual name.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PROFILE</code></td>
+<td>
+
+<p>Individual profile.
+</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Yuri Tani Utsunomiya &lt;ytutsunomiya@gmail.com&gt;<br>
+Marco Milanesi &lt;marco.milanesi.mm@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>C. C. Chang et al. Second-generation PLINK: rising to the challenge of larger and richer datasets. Gigascience. 2015. 4, 7.
+</p>
+<p>S. Purcell et al. PLINK: a tool set for whole-genome association and population-based linkage analyses. Am. J. Hum. Genet. 2007. 81, 559-575.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# #### DO NOT RUN IF NOT NECESSARY ###
+# 
+# # Copy plink data in the current working directory
+# exfiles &lt;- ghap.makefile(dataset = "example",
+#                          format = "plink",
+#                          verbose = TRUE)
+# file.copy(from = exfiles, to = "./")
+# 
+# # Copy metadata in the current working directory
+# exfiles &lt;- ghap.makefile(dataset = "example",
+#                          format = "meta",
+#                          verbose = TRUE)
+# file.copy(from = exfiles, to = "./")
+# 
+# # Load plink data
+# plink &lt;- ghap.loadplink("example")
+# 
+# # Load phenotype and pedigree data
+# df &lt;- read.table(file = "example.phenotypes", header=T)
+# 
+# ### RUN ###
+# 
+# # Subset individuals from the pure1 population
+# pure1 &lt;- plink$id[which(plink$pop == "Pure1")]
+# plink &lt;- ghap.subset(object = plink, ids = pure1, variants = plink$marker)
+# 
+# # Subset markers with MAF &gt; 0.05
+# freq &lt;- ghap.freq(plink)
+# mkr &lt;- names(freq)[which(freq &gt; 0.05)]
+# plink &lt;- ghap.subset(object = plink, ids = pure1, variants = mkr)
+# 
+# # Compute genomic relationship matrix
+# # Induce sparsity to help with matrix inversion
+# K &lt;- ghap.kinship(plink, sparsity = 0.01)
+# 
+# # Fit mixed model
+# df$rep &lt;- df$id
+# model &lt;- ghap.lmm(formula = pheno ~ 1 + (1|id) + (1|rep),
+#                   data = df,
+#                   covmat = list(id = K, rep = NULL))
+# refblup &lt;- model$random$id$Estimate
+# names(refblup) &lt;- rownames(model$random$id)
+# 
+# # Convert blup of individuals into blup of variants
+# mkrblup &lt;- ghap.varblup(object = plink,
+#                         gebv = refblup,
+#                         covmat = K)
+# 
+# # Build GEBVs from variant effects and compare predictions
+# gebv &lt;- ghap.profile(object = plink, score = mkrblup)
+# plot(gebv$SCORE, refblup); abline(0,1)
+
+</code></pre>
+
+
+</div>

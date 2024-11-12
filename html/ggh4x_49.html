@@ -1,0 +1,197 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>help_secondary</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Secondary axis helper</h2>
+
+<h3>Description</h3>
+
+<p>The purpose of this function is to construct a secondary axis with a
+projection function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">help_secondary(
+  data = NULL,
+  primary = c(0, 1),
+  secondary = c(0, 1),
+  method = c("range", "max", "fit", "ccf", "sortfit"),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A <code>data.frame</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>primary, secondary</code></td>
+<td>
+<p>An expression that is evaluated in the context of
+the <code>data</code> argument. These can be symbols for column names or plain
+expressions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>One of the following: </p>
+
+<dl>
+<dt><code>"range"</code></dt>
+<dd>
+<p>Causes the ranges of <code>primary</code> and <code>secondary</code> data to
+overlap completely.</p>
+</dd>
+<dt><code>"max"</code></dt>
+<dd>
+<p>Causes the maxima of <code>primary</code> and <code>secondary</code> data to
+coincide.</p>
+</dd>
+<dt><code>"fit"</code></dt>
+<dd>
+<p>Uses the coefficients of <code>lm(primary ~ secondary)</code> to make
+the axes fit.</p>
+</dd>
+<dt><code>"ccf"</code></dt>
+<dd>
+<p>Uses the lag at which maximum cross-correlation occurs to
+then align the data by truncation. The aligned data is then passed to the
+<code>"fit"</code> method.</p>
+</dd>
+<dt><code>"sortfit"</code></dt>
+<dd>
+<p>Sorts the both <code>primary</code> and <code>secondary</code> independently
+before passing these on to the <code>"fit"</code> method.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Arguments passed on to <code>ggplot2::sec_axis</code>
+</p>
+
+<dl>
+<dt><code>name</code></dt>
+<dd>
+<p>The name of the secondary axis</p>
+</dd>
+<dt><code>breaks</code></dt>
+<dd>
+<p>One of:
+</p>
+
+<ul>
+<li> <p><code>NULL</code> for no breaks
+</p>
+</li>
+<li> <p><code>waiver()</code> for the default breaks computed by the transformation object
+</p>
+</li>
+<li>
+<p> A numeric vector of positions
+</p>
+</li>
+<li>
+<p> A function that takes the limits as input and returns breaks as output
+</p>
+</li>
+</ul>
+</dd>
+<dt><code>labels</code></dt>
+<dd>
+<p>One of:
+</p>
+
+<ul>
+<li> <p><code>NULL</code> for no labels
+</p>
+</li>
+<li> <p><code>waiver()</code> for the default labels computed by the transformation object
+</p>
+</li>
+<li>
+<p> A character vector giving labels (must be same length as <code>breaks</code>)
+</p>
+</li>
+<li>
+<p> A function that takes the breaks as input and returns labels as output
+</p>
+</li>
+</ul>
+</dd>
+<dt><code>guide</code></dt>
+<dd>
+<p>A position guide that will be used to render
+the axis on the plot. Usually this is <code>guide_axis()</code>.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The intent is to run this function before starting a plot. The
+output of the function is a secondary axis wherein the <code>trans</code> argument of
+<code>sec_axis()</code> is populated by an appropriate transformation. In addition,
+the output also contains a <code>output$proj()</code> function that helps transform the
+secondary data.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An <code>AxisSecondary</code> ggproto object with a <code>proj</code> method for projecting
+secondary data.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Run the secondary axis helper
+sec &lt;- help_secondary(economics, primary = unemploy, secondary = psavert)
+
+# Making primary plot
+p &lt;- ggplot(economics, aes(date)) +
+  geom_line(aes(y = unemploy), colour = "blue")
+
+# For the secondary data, later we use the `proj` function from the helper
+p &lt;- p + geom_line(aes(y = sec$proj(psavert)), colour = "red")
+
+# We feed the scale the secondary axis
+p + scale_y_continuous(sec.axis = sec)
+
+# Setup cross-correlated data
+set.seed(42)
+n &lt;- 100
+lag &lt;- 20
+dat &lt;- cumsum(rnorm(n + lag))
+df &lt;- data.frame(
+  x = seq_len(n),
+  y1 = head(dat, n),
+  y2 = 10 + tail(dat, n) * 5 # offset and scale y2
+)
+# Choosing the cross-correlation function method.
+sec &lt;- help_secondary(df, y1, y2, method = "ccf")
+
+ggplot(df, aes(x)) +
+  geom_line(aes(y = y1), colour = "blue") +
+  geom_line(aes(y = sec$proj(y2)), colour = "red") +
+  scale_y_continuous(sec.axis = sec)
+</code></pre>
+
+
+</div>

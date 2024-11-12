@@ -1,0 +1,267 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>set_optim_params</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Set parameters for estimation of the covariance parameters</h2>
+
+<h3>Description</h3>
+
+<p>Set parameters for optimization of the covariance parameters of a <code>GPModel</code>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">set_optim_params(gp_model, params = list())
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>gp_model</code></td>
+<td>
+<p>A <code>GPModel</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>params</code></td>
+<td>
+<p>A <code>list</code> with parameters for the estimation / optimization
+</p>
+
+<ul>
+<li>
+<p>optimizer_cov: <code>string</code> (default = "lbfgs"). 
+Optimizer used for estimating covariance parameters. 
+Options: "gradient_descent", "lbfgs", "fisher_scoring", "newton", "nelder_mead", "adam".
+If there are additional auxiliary parameters for non-Gaussian likelihoods, 
+'optimizer_cov' is also used for those 
+</p>
+</li>
+<li>
+<p>optimizer_coef: <code>string</code> (default = "wls" for Gaussian likelihoods and "lbfgs" for other likelihoods). 
+Optimizer used for estimating linear regression coefficients, if there are any 
+(for the GPBoost algorithm there are usually none). 
+Options: "gradient_descent", "lbfgs", "wls", "nelder_mead", "adam". Gradient descent steps are done simultaneously 
+with gradient descent steps for the covariance parameters. 
+"wls" refers to doing coordinate descent for the regression coefficients using weighted least squares.
+If 'optimizer_cov' is set to "nelder_mead", "lbfgs", or "adam", 
+'optimizer_coef' is automatically also set to the same value.
+</p>
+</li>
+<li>
+<p>maxit: <code>integer</code> (default = 1000). 
+Maximal number of iterations for optimization algorithm 
+</p>
+</li>
+<li>
+<p>delta_rel_conv: <code>numeric</code> (default = 1E-6 except for "nelder_mead" for which the default is 1E-8). 
+Convergence tolerance. The algorithm stops if the relative change 
+in either the (approximate) log-likelihood or the parameters is below this value. 
+For "adam", the L2 norm of the gradient is used instead of the relative change in the log-likelihood. 
+If &lt; 0, internal default values are used 
+</p>
+</li>
+<li>
+<p>convergence_criterion: <code>string</code> (default = "relative_change_in_log_likelihood"). 
+The convergence criterion used for terminating the optimization algorithm.
+Options: "relative_change_in_log_likelihood" or "relative_change_in_parameters" 
+</p>
+</li>
+<li>
+<p>init_coef: <code>vector</code> with <code>numeric</code> elements (default = NULL). 
+Initial values for the regression coefficients (if there are any, can be NULL) 
+</p>
+</li>
+<li>
+<p>init_cov_pars: <code>vector</code> with <code>numeric</code> elements (default = NULL). 
+Initial values for covariance parameters of Gaussian process and 
+random effects (can be NULL). The order it the same as the order 
+of the parameters in the summary function: first is the error variance 
+(only for "gaussian" likelihood), next follow the variances of the 
+grouped random effects (if there are any, in the order provided in 'group_data'), 
+and then follow the marginal variance and the range of the Gaussian process. 
+If there are multiple Gaussian processes, then the variances and ranges follow alternatingly.
+If 'init_cov_pars = NULL', an internal choice is used that depends on the 
+likelihood and the random effects type and covariance function. 
+If you select the option 'trace = TRUE' in the 'params' argument, 
+you will see the first initial covariance parameters in iteration 0. 
+</p>
+</li>
+<li>
+<p>lr_coef: <code>numeric</code> (default = 0.1). 
+Learning rate for fixed effect regression coefficients if gradient descent is used 
+</p>
+</li>
+<li>
+<p>lr_cov: <code>numeric</code> (default = 0.1 for "gradient_descent" and 1. otherwise). 
+Initial learning rate for covariance parameters if a gradient-based optimization method is used 
+</p>
+
+<ul>
+<li>
+<p>If lr_cov &lt; 0, internal default values are used (0.1 for "gradient_descent" and 1. otherwise) 
+</p>
+</li>
+<li>
+<p>If there are additional auxiliary parameters for non-Gaussian likelihoods, 
+'lr_cov' is also used for those 
+</p>
+</li>
+<li>
+<p>For "lbfgs", this is divided by the norm of the gradient in the first iteration </p>
+</li>
+</ul>
+</li>
+<li>
+<p>use_nesterov_acc: <code>boolean</code> (default = TRUE). 
+If TRUE Nesterov acceleration is used.
+This is used only for gradient descent 
+</p>
+</li>
+<li>
+<p>acc_rate_coef: <code>numeric</code> (default = 0.5). 
+Acceleration rate for regression coefficients (if there are any) 
+for Nesterov acceleration 
+</p>
+</li>
+<li>
+<p>acc_rate_cov: <code>numeric</code> (default = 0.5). 
+Acceleration rate for covariance parameters for Nesterov acceleration 
+</p>
+</li>
+<li>
+<p>momentum_offset: <code>integer</code> (Default = 2). 
+Number of iterations for which no momentum is applied in the beginning.
+</p>
+</li>
+<li>
+<p>trace: <code>boolean</code> (default = FALSE). 
+If TRUE, information on the progress of the parameter
+optimization is printed
+</p>
+</li>
+<li>
+<p>std_dev: <code>boolean</code> (default = TRUE). 
+If TRUE, approximate standard deviations are calculated for the covariance and linear regression parameters 
+(= square root of diagonal of the inverse Fisher information for Gaussian likelihoods and 
+square root of diagonal of a numerically approximated inverse Hessian for non-Gaussian likelihoods) 
+</p>
+</li>
+<li>
+<p>init_aux_pars: <code>vector</code> with <code>numeric</code> elements (default = NULL). 
+Initial values for additional parameters for non-Gaussian likelihoods 
+(e.g., shape parameter of a gamma or negative_binomial likelihood) 
+</p>
+</li>
+<li>
+<p>estimate_aux_pars: <code>boolean</code> (default = TRUE). 
+If TRUE, additional parameters for non-Gaussian likelihoods 
+are also estimated (e.g., shape parameter of a gamma or negative_binomial likelihood) 
+</p>
+</li>
+<li>
+<p>cg_max_num_it: <code>integer</code> (default = 1000). 
+Maximal number of iterations for conjugate gradient algorithms 
+</p>
+</li>
+<li>
+<p>cg_max_num_it_tridiag: <code>integer</code> (default = 1000). 
+Maximal number of iterations for conjugate gradient algorithm 
+when being run as Lanczos algorithm for tridiagonalization 
+</p>
+</li>
+<li>
+<p>cg_delta_conv: <code>numeric</code> (default = 1E-2).
+Tolerance level for L2 norm of residuals for checking convergence 
+in conjugate gradient algorithm when being used for parameter estimation 
+</p>
+</li>
+<li>
+<p>num_rand_vec_trace: <code>integer</code> (default = 50). 
+Number of random vectors (e.g., Rademacher) for stochastic approximation of the trace of a matrix 
+</p>
+</li>
+<li>
+<p>reuse_rand_vec_trace: <code>boolean</code> (default = TRUE). 
+If true, random vectors (e.g., Rademacher) for stochastic approximations 
+of the trace of a matrix are sampled only once at the beginning of 
+the parameter estimation and reused in later trace approximations.
+Otherwise they are sampled every time a trace is calculated 
+</p>
+</li>
+<li>
+<p>seed_rand_vec_trace: <code>integer</code> (default = 1). 
+Seed number to generate random vectors (e.g., Rademacher) 
+</p>
+</li>
+<li>
+<p>piv_chol_rank: <code>integer</code> (default = 50). 
+Rank of the pivoted Cholesky decomposition used as 
+preconditioner in conjugate gradient algorithms 
+</p>
+</li>
+<li>
+<p>cg_preconditioner_type: <code>string</code>.
+Type of preconditioner used for conjugate gradient algorithms.
+</p>
+
+<ul>
+<li>
+<p> Options for non-Gaussian likelihoods and gp_approx = "vecchia": 
+</p>
+
+<ul><li>
+<p>"Sigma_inv_plus_BtWB" (= default): (B^T * (D^-1 + W) * B) as preconditioner for inverting (B^T * D^-1 * B + W), 
+where B^T * D^-1 * B approx= Sigma^-1 
+</p>
+</li></ul>
+</li>
+<li>
+<p>"piv_chol_on_Sigma": (Lk * Lk^T + W^-1) as preconditioner for inverting (B^-1 * D * B^-T + W^-1), 
+where Lk is a low-rank pivoted Cholesky approximation for Sigma and B^-1 * D * B^-T approx= Sigma 
+</p>
+</li>
+<li>
+<p> Options for likelihood = "gaussian" and gp_approx = "full_scale_tapering": 
+</p>
+
+<ul>
+<li>
+<p>"predictive_process_plus_diagonal" (= default): predictive process preconditiioner 
+</p>
+</li>
+<li>
+<p>"none": no preconditioner 
+</p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Fabio Sigrist
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(GPBoost_data, package = "gpboost")
+gp_model &lt;- GPModel(group_data = group_data, likelihood="gaussian")
+set_optim_params(gp_model, params=list(optimizer_cov="nelder_mead"))
+
+
+</code></pre>
+
+
+</div>

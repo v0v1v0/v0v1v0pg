@@ -1,0 +1,134 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>expected_time</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict time at which a targeted event count is achieved</h2>
+
+<h3>Description</h3>
+
+<p><code>expected_time()</code> is made to match input format with <code>ahr()</code> and to solve for the
+time at which the expected accumulated events is equal to an input target.
+Enrollment and failure rate distributions are specified as follows.
+The piecewise exponential distribution allows a simple method to specify a distribution
+and enrollment pattern
+where the enrollment, failure and dropout rates changes over time.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">expected_time(
+  enroll_rate = define_enroll_rate(duration = c(2, 2, 10), rate = c(3, 6, 9) * 5),
+  fail_rate = define_fail_rate(stratum = "All", duration = c(3, 100), fail_rate =
+    log(2)/c(9, 18), hr = c(0.9, 0.6), dropout_rate = rep(0.001, 2)),
+  target_event = 150,
+  ratio = 1,
+  interval = c(0.01, 100)
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>enroll_rate</code></td>
+<td>
+<p>An <code>enroll_rate</code> data frame with or without stratum
+created by <code>define_enroll_rate()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fail_rate</code></td>
+<td>
+<p>A <code>fail_rate</code> data frame with or without stratum
+created by <code>define_fail_rate()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>target_event</code></td>
+<td>
+<p>The targeted number of events to be achieved.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ratio</code></td>
+<td>
+<p>Experimental:Control randomization ratio.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interval</code></td>
+<td>
+<p>An interval that is presumed to include the time at which
+expected event count is equal to <code>target_event</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A data frame with <code>Time</code> (computed to match events in <code>target_event</code>),
+<code>AHR</code> (average hazard ratio), <code>Events</code> (<code>target_event</code> input),
+<code>info</code> (information under given scenarios), and <code>info0</code>
+(information under related null hypothesis) for each value of
+<code>total_duration</code> input.
+</p>
+
+
+<h3>Specification</h3>
+
+
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Example 1 ----
+# default
+
+expected_time()
+
+
+# Example 2 ----
+# check that result matches a finding using AHR()
+# Start by deriving an expected event count
+enroll_rate &lt;- define_enroll_rate(duration = c(2, 2, 10), rate = c(3, 6, 9) * 5)
+fail_rate &lt;- define_fail_rate(
+  duration = c(3, 100),
+  fail_rate = log(2) / c(9, 18),
+  hr = c(.9, .6),
+  dropout_rate = .001
+)
+total_duration &lt;- 20
+xx &lt;- ahr(enroll_rate, fail_rate, total_duration)
+xx
+
+# Next we check that the function confirms the timing of the final analysis.
+
+expected_time(enroll_rate, fail_rate,
+  target_event = xx$event, interval = c(.5, 1.5) * xx$time
+)
+
+
+# Example 3 ----
+# In this example, we verify `expected_time()` by `ahr()`.
+
+x &lt;- ahr(
+  enroll_rate = enroll_rate, fail_rate = fail_rate,
+  ratio = 1, total_duration = 20
+)
+
+cat("The number of events by 20 months is ", x$event, ".\n")
+
+y &lt;- expected_time(
+  enroll_rate = enroll_rate, fail_rate = fail_rate,
+  ratio = 1, target_event = x$event
+)
+
+cat("The time to get ", x$event, " is ", y$time, "months.\n")
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,198 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>credentials_user_oauth2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get an OAuth token for a user</h2>
+
+<h3>Description</h3>
+
+<p>Consults the token cache for a suitable OAuth token and, if
+unsuccessful, gets a token via the browser flow. A cached token is suitable
+if it's compatible with the user's request in this sense:
+</p>
+
+<ul>
+<li>
+<p> OAuth client must be same.
+</p>
+</li>
+<li>
+<p> Scopes must be same.
+</p>
+</li>
+<li>
+<p> Email, if provided, must be same. If specified email is a glob pattern
+like <code>"*@example.com"</code>, email matching is done at the domain level.
+</p>
+</li>
+</ul>
+<p>gargle is very conservative about using OAuth tokens discovered in the user's
+cache and will generally seek interactive confirmation. Therefore, in a
+non-interactive setting, it's important to explicitly specify the <code>"email"</code>
+of the target account or to explicitly authorize automatic discovery. See
+<code>gargle2.0_token()</code>, which this function wraps, for more. Non-interactive use
+also suggests it might be time to use a service account token or workload identity federation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">credentials_user_oauth2(
+  scopes = NULL,
+  client = gargle_client(),
+  package = "gargle",
+  ...,
+  app = deprecated()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>scopes</code></td>
+<td>
+<p>A character vector of scopes to request. Pick from those listed
+at <a href="https://developers.google.com/identity/protocols/oauth2/scopes">https://developers.google.com/identity/protocols/oauth2/scopes</a>.
+</p>
+<p>For certain token flows, the
+<code>"https://www.googleapis.com/auth/userinfo.email"</code> scope is unconditionally
+included. This grants permission to retrieve the email address associated
+with a token; gargle uses this to index cached OAuth tokens. This grants no
+permission to view or send email and is generally considered a low-value
+scope.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>client</code></td>
+<td>
+<p>A Google OAuth client, preferably constructed via
+<code>gargle_oauth_client_from_json()</code>, which returns an instance of
+<code>gargle_oauth_client</code>. For backwards compatibility, for a limited time,
+gargle will still accept an "OAuth app" created with <code>httr::oauth_app()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>package</code></td>
+<td>
+<p>Name of the package requesting a token. Used in messages.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Arguments passed on to <code>gargle2.0_token</code>
+</p>
+
+<dl>
+<dt><code>email</code></dt>
+<dd>
+<p>Optional. If specified, <code>email</code> can take several different
+forms:
+</p>
+
+<ul>
+<li> <p><code>"jane@gmail.com"</code>, i.e. an actual email address. This allows the user to
+target a specific Google identity. If specified, this is used for token
+lookup, i.e. to determine if a suitable token is already available in the
+cache. If no such token is found, <code>email</code> is used to pre-select the targeted
+Google identity in the OAuth chooser. (Note, however, that the email
+associated with a token when it's cached is always determined from the token
+itself, never from this argument).
+</p>
+</li>
+<li> <p><code>"*@example.com"</code>, i.e. a domain-only glob pattern. This can be helpful if
+you need code that "just works" for both <code>alice@example.com</code> and
+<code>bob@example.com</code>.
+</p>
+</li>
+<li> <p><code>TRUE</code> means that you are approving email auto-discovery. If exactly one
+matching token is found in the cache, it will be used.
+</p>
+</li>
+<li> <p><code>FALSE</code> or <code>NA</code> mean that you want to ignore the token cache and force a
+new OAuth dance in the browser.
+</p>
+</li>
+</ul>
+<p>Defaults to the option named <code>"gargle_oauth_email"</code>, retrieved by
+<code>gargle_oauth_email()</code> (unless a wrapper package implements different
+default behavior).</p>
+</dd>
+<dt><code>use_oob</code></dt>
+<dd>
+<p>Whether to use out-of-band authentication (or, perhaps, a
+variant implemented by gargle and known as "pseudo-OOB") when first
+acquiring the token. Defaults to the value returned by
+<code>gargle_oob_default()</code>. Note that (pseudo-)OOB auth only affects
+the initial OAuth dance. If we retrieve (and possibly refresh) a
+cached token, <code>use_oob</code> has no effect.
+</p>
+<p>If the OAuth client is provided implicitly by a wrapper package, its type
+probably defaults to the value returned by
+<code>gargle_oauth_client_type()</code>. You can take control of the client
+type by setting <code>options(gargle_oauth_client_type = "web")</code> or
+<code>options(gargle_oauth_client_type = "installed")</code>.</p>
+</dd>
+<dt><code>cache</code></dt>
+<dd>
+<p>Specifies the OAuth token cache. Defaults to the option named
+<code>"gargle_oauth_cache"</code>, retrieved via <code>gargle_oauth_cache()</code>.</p>
+</dd>
+<dt><code>credentials</code></dt>
+<dd>
+<p>Advanced use only: allows you to completely customise
+token generation.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>app</code></td>
+<td>
+<p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated"><img src="../help/figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Replaced by the <code>client</code>
+argument.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A Gargle2.0 token.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other credential functions: 
+<code>credentials_app_default()</code>,
+<code>credentials_byo_oauth2()</code>,
+<code>credentials_external_account()</code>,
+<code>credentials_gce()</code>,
+<code>credentials_service_account()</code>,
+<code>token_fetch()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# Drive scope, built-in gargle demo client
+scopes &lt;- "https://www.googleapis.com/auth/drive"
+credentials_user_oauth2(scopes, client = gargle_client())
+
+# bring your own client
+client &lt;- gargle_oauth_client_from_json(
+  path = "/path/to/the/JSON/you/downloaded/from/gcp/console.json",
+  name = "my-nifty-oauth-client"
+)
+credentials_user_oauth2(scopes, client)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

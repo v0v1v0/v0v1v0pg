@@ -1,0 +1,135 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get_row_index</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get underlying row index for gt tables</h2>
+
+<h3>Description</h3>
+
+<p>Provides underlying row index for grouped or ungrouped
+<code>gt</code> tables. In some cases the visual representation of specific rows is
+inconsistent with the "row number" so this function provides the final
+output index for subsetting or targetting rows.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get_row_index(gt_object)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>gt_object</code></td>
+<td>
+<p>an existing gt table</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>a vector of row indices
+</p>
+
+
+<h3>Examples</h3>
+
+
+
+<h4>Create a helper function</h4>
+
+<p>This helper functions lets us be a bit more efficient when showing the row
+numbers/colors.
+</p>
+<div class="sourceCode r"><pre>library(gt)
+
+row_sty &lt;- function(tab, row){
+
+  OkabeIto &lt;- c("#E69F00", "#56B4E9", "#009E73", "#F0E442",
+                "#0072B2", "#D55E00", "#CC79A7", "#999999")
+  tab %&gt;%
+    tab_style(
+      cell_fill(color = OkabeIto[row]),
+      locations = cells_body(rows = row)
+    )
+}
+</pre></div>
+
+
+
+<h4>Randomize the data</h4>
+
+<p>We will randomly sample the data to get it in a specific order.
+</p>
+<div class="sourceCode r"><pre>set.seed(37)
+df &lt;- mtcars %&gt;%
+  dplyr::group_by(cyl) %&gt;%
+  dplyr::slice_sample(n = 2) %&gt;%
+  dplyr::ungroup() %&gt;%
+  dplyr::slice_sample(n = 6) %&gt;%
+  dplyr::mutate(row_id = dplyr::row_number(), .before = 1)
+
+#&gt; df
+#&gt; A tibble: 6 × 12
+#&gt; row_id  mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb
+#&gt; &lt;int&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+#&gt;   1    10.4   8    472    205  2.93  5.25  18.0     0     0     3     4
+#&gt;   2    18.1   6    225    105  2.76  3.46  20.2     1     0     3     1
+#&gt;   3    21.4   6    258    110  3.08  3.22  19.4     1     0     3     1
+#&gt;   4    13.3   8    350    245  3.73  3.84  15.4     0     0     3     4
+#&gt;   5    33.9   4     71.1  65   4.22  1.84  19.9     1     1     4     1
+#&gt;   6    22.8   4    108    93   3.85  2.32  18.6     1     1     4     1
+</pre></div>
+
+
+
+<h4>Ungrouped data</h4>
+
+<p>Ungrouped data works just fine, and the row indices are identical between
+the visual representation and the output.
+</p>
+<div class="sourceCode r"><pre>gt(df) %&gt;%
+  row_sty(1) %&gt;%
+  row_sty(3) %&gt;%
+  row_sty(5)
+</pre></div>
+<p><img src="../help/figures/ungrouped-tab.png" width="40%" alt="ungrouped-tab.png"></p>
+
+
+
+<h4>Grouped data</h4>
+
+<p>However, for grouped data, the row indices are representative of the underlying
+data before grouping, leading to some potential confusion.
+</p>
+<div class="sourceCode r"><pre>tab2 &lt;- gt(df, groupname_col = "cyl")
+
+tab2 %&gt;%
+  row_sty(1) %&gt;% ## actually row 1
+  row_sty(3) %&gt;% ## actually row 5
+  row_sty(5)     ## actually row 2
+</pre></div>
+<p><img src="../help/figures/grouped-tab.png" width="40%" alt="grouped-tab.png"></p>
+<p>The <code>get_row_index()</code> function gives ability to create an index of the final
+output, so you can reference specific rows by number.
+</p>
+<div class="sourceCode r"><pre>tab_index &lt;- get_row_index(tab2)
+
+tab2 %&gt;%
+  row_sty(4) %&gt;% ## wrong row, actually row 6 visually
+  row_sty(tab_index[4]) ## correct row, actually row 4
+</pre></div>
+<p><img src="../help/figures/grouped-tab-row4.png" width="40%" alt="grouped-tab-row4.png"></p>
+<div class="sourceCode r"><pre>tab2 %&gt;%
+  row_sty(tab_index[1]) %&gt;%
+  row_sty(tab_index[3]) %&gt;%
+  row_sty(tab_index[5])
+</pre></div>
+<p><img src="../help/figures/grouped-tab-index.png" width="40%" alt="grouped-tab-index.png"></p>
+
+
+
+</div>

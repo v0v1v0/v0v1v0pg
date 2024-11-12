@@ -1,0 +1,246 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>association.test</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Association Test </h2>
+
+<h3>Description</h3>
+
+<p> Association tests between phenotype and SNPs. </p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R"> 
+association.test(x, Y = x@ped$pheno, X = matrix(1, nrow(x)),
+                 method = c("lm", "lmm"), response = c("quantitative", "binary"), 
+                 test = c("score", "wald", "lrt"), K, eigenK, beg = 1, 
+                 end = ncol(x), p = 0, tol = .Machine$double.eps^0.25, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> A <code>bed.matrix</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p> The phenotype vector. Default is the column (<code>pheno</code>) of <code>x@ped</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p> A covariable matrix. The default is a column vector of ones, to include an intercept in the model </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p> Method to use: <code>"lm"</code> for (generalized) linear model, and <code>"lmm"</code> for (generalized) linear mixed model </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response</code></td>
+<td>
+<p> Is <code>"Y"</code> a quantitative or a binary phenotype?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test</code></td>
+<td>
+<p> Which test to use. For binary phenotypes, <code>test = "score"</code> is mandatory</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p> A Genetic Relationship Matrix (as produced by <code>GRM</code>), or a list of such matrices. For <code>test = "score"</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eigenK</code></td>
+<td>
+<p> Eigen decomposition of the Genetic Relationship Matrix (as produced by the function <code>eigen</code>). 
+For <code>test = "wald"</code> or <code>"lrt"</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beg</code></td>
+<td>
+<p> Index of the first SNP tested for association </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>end</code></td>
+<td>
+<p> Index of the last SNP tested for association </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p> Number of Principal Components to include in the model with fixed effect (for <code>test = "wald"</code> or <code>"lrt"</code>) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p> Parameter for the likelihood maximization (as in <code>optimize</code>) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> Additional parameters for <code>lmm.aireml</code> or <code>logistic.mm.aireml</code> (if <code>test = "score"</code>). </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Tests the association between the phenotype and requested SNPs in <code>x</code>.
+</p>
+<p>If <code>method = "lm"</code> and <code>response = "quantitative"</code> are used, a simple linear regression 
+is performed to test each SNP in the considered interval. Precisely, the following model is
+considered for each SNP,
+</p>
+<p style="text-align: center;"><code class="reqn"> Y = (X|PC)\alpha + G\beta + \varepsilon </code>
+</p>
+
+<p>with <code class="reqn"> \varepsilon \sim N(0,\sigma^2 I_n) </code>,
+<code class="reqn">G</code> the genotype vector of the SNP, 
+<code class="reqn">X</code> the covariates matrix, and <code class="reqn">PC</code> the matrix of the first <code class="reqn">p</code> principal components.
+A Wald test is performed, independently of the value of <code>test</code>.
+</p>
+<p>If<code>method = "lm"</code> and <code>response = "binary"</code>, a similar model is used for a logistic 
+regression (Wald test).
+</p>
+<p>If <code>method = "lmm"</code> and <code>response = "quantitative"</code>, the following model in considered for each SNP
+</p>
+<p style="text-align: center;"><code class="reqn"> Y = (X|PC)\alpha + G\beta + \omega + \varepsilon </code>
+</p>
+
+<p>with <code class="reqn"> \omega \sim N(0,\tau K) </code> and <code class="reqn"> \varepsilon \sim N(0,\sigma^2 I_n) </code>.
+<code class="reqn">G</code> is the genotype vector of the SNP, <code class="reqn">K</code> is a Genetic Relationship Matrix (GRM)
+<code class="reqn">X</code> the covariates matrix, and <code class="reqn">PC</code> the matrix of the first <code class="reqn">p</code> principal components.
+</p>
+<p>If <code>test = "score"</code>, all parameters are estimated with the same procedure as in 
+<code>lmm.aireml</code> and the argument <code>K</code> is used to specify the GRM matrix (or a list of GRM
+matrices for inclusion of several random effects in the model). If <code>p</code> is positive, the paramater <code>eigenK</code>
+needs to be given as well.
+For Wald and LRT tests the procedure used is the same as in <code>lmm.diago</code> and <code>eigenK</code> is used to 
+specify the GRM matrix.
+</p>
+<p>If <code>method = "lmm"</code> and <code>response = "binary"</code>, the following model in considered for each SNP
+</p>
+<p style="text-align: center;"><code class="reqn"> \mbox{logit}(P[Y=1| X, G, \omega])  = X\alpha + G\beta + \omega</code>
+</p>
+
+<p>with <code class="reqn"> \omega \sim N(0,\tau K) </code>. 
+<code class="reqn">G</code> is the genotype vector of the SNP, <code class="reqn">K</code> is a Genetic Relationship Matrix (GRM),
+<code class="reqn">X</code> the covariable matrix. A score test is performed, independently of the value of <code>test</code>.
+All parameters under null model are estimated with the same procedure as in <code>logistic.mm.aireml</code>.
+In case of convergence problems of the null problem, the user can try several starting values (in particular
+with parameter <code>tau</code>, trying e.g. <code>tau = 0.1</code> or another value).
+It is possible to give a list of matrices in parameter <code>K</code> for inclusion of several random effects in the model.
+If <code>p</code> is positive, the paramater <code>eigenK</code> needs to be given as well.
+</p>
+<p>Note: this function is not multithreaded. Wald test with Linear Mixed Models are computationally intensive, 
+to run a GWAS with such tests consider using <code>association.test.parallel</code> in package <code>gaston.utils</code> 
+(on github). Association tests with dosages can be done with <code>association.test.dosage</code> and 
+<code>association.test.dosage.parallel</code> in the same package.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data frame, giving for each considered SNP, its position, id, alleles, and 
+some of the following columns depending on the values of <code>method</code> and <code>test</code>:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>score</code></td>
+<td>
+<p>Score statistic for each SNP</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h2</code></td>
+<td>
+<p>Estimated value of <code class="reqn">\tau \over {\tau + \sigma^2}</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>Estimated value of <code class="reqn">\beta</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sd</code></td>
+<td>
+<p>Estimated standard deviation of the <code class="reqn">\beta</code> estimation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LRT</code></td>
+<td>
+<p>Value of the Likelihood Ratio Test</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>The corresponding p-value</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+ <p><code>qqplot.pvalues</code>, <code>manhattan</code>,  <code>lmm.diago</code>,  
+<code>lmm.aireml</code>, <code>logistic.mm.aireml</code>, <code>optimize</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Load data
+data(TTN)
+x &lt;- as.bed.matrix(TTN.gen, TTN.fam, TTN.bim)
+standardize(x) &lt;- "p"
+
+# simulate quantitative phenotype with effect of SNP #631
+set.seed(1)
+y &lt;- x %*% c(rep(0,630),0.5,rep(0,ncol(x)-631)) + rnorm(nrow(x))
+
+# association test with linear model 
+test &lt;- association.test(x, y, method="lm", response = "quanti")
+
+# a p-values qq plot
+qqplot.pvalues(test)
+
+# a small Manhattan plot 
+# hihlighting the link between p-values and LD with SNP #631
+lds &lt;- LD(x, 631, c(1,ncol(x)))
+manhattan(test, col = rgb(lds,0,0), pch = 20)
+
+# use y to simulate a binary phenotype
+y1 &lt;- as.numeric(y &gt; mean(y))
+
+# logistic regression
+t_binary &lt;- association.test(x, y1, method = "lm", response = "binary")
+# another small Manhattan plot
+manhattan(t_binary, col = rgb(lds,0,0), pch = 20)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,231 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fmt_bins</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Format column data containing bin/interval information</h2>
+
+<h3>Description</h3>
+
+<p>When using <code>cut()</code> (or other functions that use it in some way)
+you get bins that can look like this: <code>"(0,10]"</code>, <code>"(10,15]"</code>, <code>"(15,20]"</code>,
+<code>"(20,40]"</code>. This interval notation expresses the lower and upper limits of
+each range. The square or round brackets define whether each of the endpoints
+are included in the range (<code>[</code>/<code style="white-space: pre;">⁠]⁠</code> for inclusion, <code>(</code>/<code style="white-space: pre;">⁠)⁠</code> for exclusion).
+Should bins of this sort be present in a table, the <code>fmt_bins()</code> function can
+be used to format that syntax to a form that presents better in a display
+table. It's possible to format the values of the intervals with the <code>fmt</code>
+argument, and, the separator can be modified with the <code>sep</code> argument.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fmt_bins(
+  data,
+  columns = everything(),
+  rows = everything(),
+  sep = "--",
+  fmt = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p><em>The gt table data object</em>
+</p>
+<p><code style="white-space: pre;">⁠obj:&lt;gt_tbl&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>This is the <strong>gt</strong> table object that is commonly created through use of the
+<code>gt()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>columns</code></td>
+<td>
+<p><em>Columns to target</em>
+</p>
+<p><code>&lt;column-targeting expression&gt;</code> // <em>default:</em> <code>everything()</code>
+</p>
+<p>Can either be a series of column names provided in <code>c()</code>, a vector of
+column indices, or a select helper function (e.g. <code>starts_with()</code>,
+<code>ends_with()</code>, <code>contains()</code>, <code>matches()</code>, <code>num_range()</code> and <code>everything()</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rows</code></td>
+<td>
+<p><em>Rows to target</em>
+</p>
+<p><code>&lt;row-targeting expression&gt;</code> // <em>default:</em> <code>everything()</code>
+</p>
+<p>In conjunction with <code>columns</code>, we can specify which of their rows should
+undergo formatting. The default <code>everything()</code> results in all rows in
+<code>columns</code> being formatted. Alternatively, we can supply a vector of row
+captions within <code>c()</code>, a vector of row indices, or a select helper
+function (e.g. <code>starts_with()</code>, <code>ends_with()</code>, <code>contains()</code>, <code>matches()</code>,
+<code>num_range()</code>, and <code>everything()</code>). We can also use expressions to filter
+down to the rows we need (e.g., <code style="white-space: pre;">⁠[colname_1] &gt; 100 &amp; [colname_2] &lt; 50⁠</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sep</code></td>
+<td>
+<p><em>Separator between values</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <em>default:</em> <code>"--"</code>
+</p>
+<p>The separator text that indicates the values are ranged. The default value
+of <code>"--"</code> indicates that an en dash will be used for the range separator.
+Using <code>"---"</code> will be taken to mean that an em dash should be used. Should
+you want these special symbols to be taken literally, they can be supplied
+within <code>base::I()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fmt</code></td>
+<td>
+<p><em>Formatting expressions</em>
+</p>
+<p><code style="white-space: pre;">⁠&lt;single expression&gt;⁠</code> // <em>default:</em> <code>NULL</code> (<code>optional</code>)
+</p>
+<p>An optional formatting expression in formula form. If used, the RHS of <code>~</code>
+should contain a formatting call (e.g.,
+<code style="white-space: pre;">⁠~ fmt_number(., decimals = 3, use_seps = FALSE⁠</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>gt_tbl</code>.
+</p>
+
+
+<h3>Compatibility of formatting function with data values</h3>
+
+<p><code>fmt_bins()</code> is compatible with body cells that are  of the <code>"character"</code> or
+<code>"factor"</code> types. Any other types of body cells are ignored during formatting.
+This is to say that cells of incompatible data types may be targeted, but
+there will be no attempt to format them.
+</p>
+
+
+<h3>Formatting expressions for <code>fmt</code>
+</h3>
+
+<p>We can supply a one-sided (RHS only) expression to <code>fmt</code>, and, several can be
+provided in a list. The expression uses a formatting function (e.g.,
+<code>fmt_number()</code>, <code>fmt_currency()</code>, etc.) and it must contain an initial <code>.</code>
+that stands for the data object. If performing numeric formatting it might
+look something like this:
+</p>
+<p><code>fmt = ~ fmt_number(., decimals = 1, use_seps = FALSE)</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<p>Use the <code>countrypops</code> dataset to create a <strong>gt</strong> table. Before even getting
+to the <code>gt()</code> call, we use <code>cut()</code> in conjunction with <code>scales::breaks_log()</code>
+to create some highly customized bins. Consequently each country's population
+in the 2021 year is assigned to a bin. These bins have a characteristic type
+of formatting that can be used as input to <code>fmt_bins()</code>, and using that
+formatting function allows us to customize the presentation of those ranges.
+For instance, here we are formatting the left and right values of the ranges
+with <code>fmt_integer()</code> (using formula syntax).
+</p>
+<div class="sourceCode r"><pre>countrypops |&gt;
+  dplyr::filter(year == 2021) |&gt;
+  dplyr::select(country_code_2, population) |&gt;
+  dplyr::mutate(population_class = cut(
+    population,
+    breaks = scales::breaks_log(n = 20)(population)
+    )
+  ) |&gt;
+  dplyr::group_by(population_class) |&gt;
+  dplyr::summarize(
+    count = dplyr::n(),
+    countries = paste0(country_code_2, collapse = ",")
+  ) |&gt;
+  dplyr::arrange(desc(population_class)) |&gt;
+  gt() |&gt;
+  fmt_flag(columns = countries) |&gt;
+  fmt_bins(
+    columns = population_class,
+    fmt = ~ fmt_integer(., suffixing = TRUE)
+  ) |&gt;
+  cols_label(
+    population_class = "Population Range",
+    count = "",
+    countries = "Countries"
+  ) |&gt;
+  cols_width(
+    population_class ~ px(150),
+    count ~ px(50)
+  ) |&gt;
+  tab_style(
+    style = cell_text(style = "italic"),
+    locations = cells_body(columns = count)
+  )
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_fmt_bins_1.png" alt="This image of a table was generated from the first code example in the `fmt_bins()` help file." style="width:100%;"><h3>Function ID</h3>
+
+<p>3-17
+</p>
+
+
+<h3>Function Introduced</h3>
+
+<p><code>v0.9.0</code> (Mar 31, 2023)
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other data formatting functions: 
+<code>data_color()</code>,
+<code>fmt()</code>,
+<code>fmt_auto()</code>,
+<code>fmt_bytes()</code>,
+<code>fmt_chem()</code>,
+<code>fmt_country()</code>,
+<code>fmt_currency()</code>,
+<code>fmt_date()</code>,
+<code>fmt_datetime()</code>,
+<code>fmt_duration()</code>,
+<code>fmt_email()</code>,
+<code>fmt_engineering()</code>,
+<code>fmt_flag()</code>,
+<code>fmt_fraction()</code>,
+<code>fmt_icon()</code>,
+<code>fmt_image()</code>,
+<code>fmt_index()</code>,
+<code>fmt_integer()</code>,
+<code>fmt_markdown()</code>,
+<code>fmt_number()</code>,
+<code>fmt_partsper()</code>,
+<code>fmt_passthrough()</code>,
+<code>fmt_percent()</code>,
+<code>fmt_roman()</code>,
+<code>fmt_scientific()</code>,
+<code>fmt_spelled_num()</code>,
+<code>fmt_tf()</code>,
+<code>fmt_time()</code>,
+<code>fmt_units()</code>,
+<code>fmt_url()</code>,
+<code>sub_large_vals()</code>,
+<code>sub_missing()</code>,
+<code>sub_small_vals()</code>,
+<code>sub_values()</code>,
+<code>sub_zero()</code>
+</p>
+
+
+</div>

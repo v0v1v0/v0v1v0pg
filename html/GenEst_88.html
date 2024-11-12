@@ -1,0 +1,128 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>estgGenericSize</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate generic detection probability for multiple carcass classes</h2>
+
+<h3>Description</h3>
+
+<p>Generic g estimation for a combination of SE model and CP
+model under a given search schedule
+</p>
+<p>The g estimated by <code>estgGenericSize</code> is a generic aggregate detection
+probability and represents the probability of detecting a carcass that 
+arrives at a (uniform) random time during the period monitored, for each
+of the possible cell combinations, given the SE and CP models. This 
+is somethat different from the GenEst estimation of g when the purpose 
+is to estimate total mortality (M), in which case the detection 
+probability varies with carcass arrival interval and is difficult to 
+summarize statistically. The <code>estgGeneric</code> estimate is a useful 
+"big picture" summary of detection probability, but would be difficult
+to work with for estimating M with precision.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">estgGenericSize(
+  days,
+  modelSetSize_SE,
+  modelSetSize_CP,
+  modelSizeSelections_SE,
+  modelSizeSelections_CP,
+  nsim = 1000
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>days</code></td>
+<td>
+<p>Search schedule data as a vector of days searched</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modelSetSize_SE</code></td>
+<td>
+<p>Searcher Efficiency model set for multiple sizes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modelSetSize_CP</code></td>
+<td>
+<p>Carcass Persistence model set for multiple sizes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modelSizeSelections_SE</code></td>
+<td>
+<p>vector of SE models to use, one for each 
+size. Size names are required, and names must match those of
+modelSetSize_SE. E.g., 
+<code>c(lrg = "p ~ Visibility; k ~ 1", sml = "p ~ 1; k ~ 1")</code>.
+Model formulas are read as text and must have exact matches among models
+listed in modelSetSize_SE. For example, if one of the
+<code>modelSizeSelections_SE</code> elements is
+<code>lrg = "p ~ Visibility; k ~ 1"</code>, then <code>"p ~ Visibility; k ~ 1"</code>
+must be in <code>names(modelSizeSelections_SE)[["lrg"]]</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modelSizeSelections_CP</code></td>
+<td>
+<p>vector of CP models to use, one for each size</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>the number of simulation draws</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>list of g estimates, with one element in the list corresponding
+to each of the cells from the cross-model combination
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">  data(mock)
+  pkmModsSize &lt;- pkm(formula_p = p ~ HabitatType,
+                   formula_k = k ~ HabitatType, data = mock$SE,
+                   obsCol = c("Search1", "Search2", "Search3", "Search4"),
+                   sizeCol = "Size", allCombos = TRUE)
+  cpmModsSize &lt;- cpm(formula_l = l ~ Visibility,
+                   formula_s = s ~ Visibility, data = mock$CP,
+                   left = "LastPresentDecimalDays",
+                   right = "FirstAbsentDecimalDays",
+                   dist = c("exponential", "lognormal"),
+                   sizeCol = "Size", allCombos = TRUE)
+
+  pkMods &lt;- c("S" = "p ~ 1; k ~ 1", "L" = "p ~ 1; k ~ 1",
+             "M" = "p ~ 1; k ~ 1", "XL" = "p ~ 1; k ~ 1"
+            )
+  cpMods &lt;- c("S" = "dist: exponential; l ~ 1; NULL", 
+              "L" = "dist: exponential; l ~ 1; NULL",
+              "M" = "dist: exponential; l ~ 1; NULL",
+              "XL" = "dist: exponential; l ~ 1; NULL"
+            )
+  avgSS &lt;- averageSS(mock$SS)
+  gsGeneric &lt;- estgGenericSize(nsim = 1000, days = avgSS,
+                 modelSetSize_SE = pkmModsSize,
+                 modelSetSize_CP = cpmModsSize,
+                 modelSizeSelections_SE = pkMods,
+                 modelSizeSelections_CP = cpMods
+               )
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,163 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gp.optim</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A wraper to fit a Gaussian stochastic process model with optimization methods</h2>
+
+<h3>Description</h3>
+
+<p>This function is a wraper to estimate parameters in the GaSP model with different
+choices of estimation methods using numerical optimization methods.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gp.optim(obj, method = "MMLE", opt = NULL, bound = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>obj</code></td>
+<td>
+<p>an <code>S4</code> object gp</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>a string indicating the parameter estimation method:
+</p>
+
+<dl>
+<dt>MPLE</dt>
+<dd>
+<p>This indicates that the <em>maximum profile likelihood estimation</em> 
+(<strong>MPLE</strong>) is used.</p>
+</dd>
+<dt>MMLE</dt>
+<dd>
+<p>This indicates that the <em>maximum marginal likelihood estimation</em> 
+(<strong>MMLE</strong>) is used.</p>
+</dd>
+<dt>MAP</dt>
+<dd>
+<p>This indicates that the marginal/integrated posterior is maximized.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>opt</code></td>
+<td>
+<p>a list of arguments to setup the <code>optim</code> routine. Current implementation uses three arguments: 
+</p>
+
+<dl>
+<dt>method</dt>
+<dd>
+<p>The optimization method: <code>Nelder-Mead</code> or <code>L-BFGS-B</code>.</p>
+</dd>
+<dt>lower</dt>
+<dd>
+<p>The lower bound for parameters.</p>
+</dd>
+<dt>upper</dt>
+<dd>
+<p>The upper bound for parameters.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bound</code></td>
+<td>
+<p>Default value is <code>NULL</code>. Otherwise, it should be a list
+containing the following elements depending on the covariance class:
+</p>
+
+<dl>
+<dt><strong>nugget</strong></dt>
+<dd>
+<p>a list of bounds for the nugget parameter.
+It is a list containing lower bound <strong>lb</strong> and 
+upper bound <strong>ub</strong> with default value 
+<code>list(lb=0, ub=Inf)</code>.</p>
+</dd>
+<dt><strong>range</strong></dt>
+<dd>
+<p>a list of bounds for the range parameter. Tt has default value
+<code>range=list(lb=0, ub=Inf)</code> for the Confluent Hypergeometric covariance, the Matérn covariance, exponential covariance, Gaussian 
+covariance, powered-exponential covariance, and Cauchy covariance. The log of range parameterization
+is used: <code class="reqn">\log(\phi)</code>.</p>
+</dd>
+<dt><strong>tail</strong></dt>
+<dd>
+<p>a list of bounds for the tail decay parameter. It has default value
+<code>list(lb=0, ub=Inf)</code></p>
+</dd>
+</dl>
+<p> for the Confluent Hypergeometric covariance and the Cauchy covariance.
+</p>
+<dl>
+<dt><strong>nu</strong></dt>
+<dd>
+<p>a list of bounds for the smoothness parameter. It has default value 
+<code>list(lb=0, ub=Inf)</code> for the Confluent Hypergeometric covariance and the Matérn covariance.
+when the powered-exponential or Cauchy class 
+is used, it has default value <strong>nu</strong>=<code>list(lb=0, ub=2)</code>. 
+This can be achived by specifying the <strong>lower</strong> bound in <code>opt</code>.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a list of updated <code>gp</code> object <strong>obj</strong> and 
+fitted information <strong>fit</strong>
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Pulong Ma <a href="mailto:mpulong@gmail.com">mpulong@gmail.com</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>GPBayes-package, <code>GaSP</code>, gp, <code>gp.mcmc</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> 
+code = function(x){
+y = (sin(pi*x/5) + 0.2*cos(4*pi*x/5))*(x&lt;=9.6) + (x/10-1)*(x&gt;9.6) 
+return(y)
+}
+n=100
+input = seq(0, 20, length=n)
+XX = seq(0, 20, length=99)
+Ztrue = code(input)
+set.seed(1234)
+output = Ztrue + rnorm(length(Ztrue), sd=0.1)
+obj = gp(formula=~1, output, input, 
+        param=list(range=4, nugget=0.1,nu=2.5),
+        smooth.est=FALSE,
+        cov.model=list(family="matern", form="isotropic"))
+        
+fit.optim = gp.optim(obj, method="MPLE")
+
+
+</code></pre>
+
+
+</div>

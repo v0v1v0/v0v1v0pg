@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>make_distance</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generate Distance Matrix</h2>
+
+<h3>Description</h3>
+
+<p>Compute the distance matrix of using shortest paths of a (directed)
+<code>igraph</code> structure, normalising by the diameter of the network,
+preserving node/column/row names (and direction). This is used to compute the
+simulatted data for <code>generate_expression</code> (when <code>dist = TRUE</code>)
+by <code>make_sigma_mat_dist_graph</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">make_distance_graph(graph, directed = FALSE, absolute = FALSE)
+
+make_distance_adjmat(mat, directed = FALSE, absolute = FALSE)
+
+make_distance_comm(mat, directed = FALSE, absolute = FALSE)
+
+make_distance_laplacian(mat, directed = FALSE, absolute = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>graph</code></td>
+<td>
+<p>An <code>igraph</code> object. May be directed or weighted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>directed</code></td>
+<td>
+<p>logical. Whether directed information is passed to the distance matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>absolute</code></td>
+<td>
+<p>logical. Whether distances are scaled as the absolute difference
+from the diameter (maximum possible). Defaults to TRUE. The alternative is to
+calculate a relative difference from the diameter for a geometric decay in distance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mat</code></td>
+<td>
+<p>precomputed adjacency or commonlink matrix.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A numeric matrix of values in the range [0, 1] where higher values are closer in the network
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Tom Kelly <a href="mailto:tom.kelly@riken.jp">tom.kelly@riken.jp</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>See also <code>generate_expression</code> for computing the simulated data,
+<code>make_sigma</code> for computing the Sigma (<code class="reqn">\Sigma</code>) matrix,
+<code>make_state</code> for resolving inhibiting states.
+</p>
+<p>See also <code>plot_directed</code> for plotting graphs or 
+<code>heatmap.2</code> for plotting matrices.
+</p>
+<p>See also <code>make_laplacian</code>, <code>make_commonlink</code>, 
+or <code>make_adjmatrix</code> for computing input matrices.
+</p>
+<p>See also <code>igraph</code> for handling graph objects.
+</p>
+<p>Other graphsim functions: 
+<code>generate_expression()</code>,
+<code>make_adjmatrix</code>,
+<code>make_commonlink</code>,
+<code>make_laplacian</code>,
+<code>make_sigma</code>,
+<code>make_state</code>,
+<code>plot_directed()</code>
+</p>
+<p>Other generate simulated expression functions: 
+<code>generate_expression()</code>,
+<code>make_sigma</code>,
+<code>make_state</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# construct a synthetic graph module
+library("igraph")
+graph_test_edges &lt;- rbind(c("A", "B"), c("B", "C"), c("B", "D"))
+graph_test &lt;- graph.edgelist(graph_test_edges, directed = TRUE)
+
+# compute adjacency matrix for toy example
+adjacency_matrix &lt;- make_adjmatrix_graph(graph_test)
+# compute nodes with relationships between nodes (geometrically decreasing by default)
+distance_matrix_geom &lt;- make_distance_adjmat(adjacency_matrix)
+distance_matrix_geom
+
+# compute nodes with relationships between nodes (arithmetically decreasing)
+distance_matrix_abs &lt;- make_distance_adjmat(adjacency_matrix, absolute = TRUE)
+distance_matrix_abs
+
+# compute Laplacian matrix
+laplacian_matrix &lt;- make_laplacian_graph(graph_test)
+# compute distances from Laplacian
+distance_matrix &lt;- make_distance_laplacian(laplacian_matrix)
+
+# construct a synthetic graph network
+graph_structure_edges &lt;- rbind(c("A", "C"), c("B", "C"), c("C", "D"), c("D", "E"),
+                               c("D", "F"), c("F", "G"), c("F", "I"), c("H", "I"))
+graph_structure &lt;- graph.edgelist(graph_structure_edges, directed = TRUE)
+# compute adjacency matrix for toy network
+graph_structure_adjacency_matrix &lt;- make_adjmatrix_graph(graph_structure)
+# compute nodes with relationships between nodes (geometrically decreasing by default)
+graph_structure_distance_matrix_geom &lt;- make_distance_adjmat(graph_structure_adjacency_matrix)
+graph_structure_distance_matrix_geom
+# visualise matrix
+library("gplots")
+heatmap.2(graph_structure_distance_matrix_geom, scale = "none", trace = "none",
+          col = colorpanel(50, "white", "red"))
+# compute nodes with relationships between nodes (arithmetically decreasing)
+graph_structure_distance_matrix_abs &lt;- make_distance_adjmat(graph_structure_adjacency_matrix,
+                                                            absolute = TRUE)
+graph_structure_distance_matrix_abs
+# visualise matrix
+library("gplots")
+heatmap.2(graph_structure_distance_matrix_abs,
+          scale = "none", trace = "none",
+          col = colorpanel(50, "white", "red"))
+          
+# import graph from package for reactome pathway
+# TGF-\eqn{\Beta} receptor signaling activates SMADs (R-HSA-2173789)
+TGFBeta_Smad_graph &lt;- identity(TGFBeta_Smad_graph)
+# compute nodes with relationships between nodes (geometrically decreasing by default)
+TGFBeta_Smad_adjacency_matrix &lt;- make_adjmatrix_graph(TGFBeta_Smad_graph)
+TGFBeta_Smad_distance_matrix_geom &lt;- make_distance_adjmat(TGFBeta_Smad_adjacency_matrix)
+# visualise matrix
+library("gplots")
+heatmap.2(TGFBeta_Smad_distance_matrix_geom, scale = "none", trace = "none",
+          col = colorpanel(50, "white", "red"))
+# compute nodes with relationships between nodes (arithmetically decreasing)
+TGFBeta_Smad_distance_matrix_abs &lt;- make_distance_adjmat(TGFBeta_Smad_adjacency_matrix,
+                        absolute = TRUE)
+# visualise matrix
+library("gplots")
+heatmap.2(TGFBeta_Smad_distance_matrix_abs, scale = "none", trace = "none",
+          col = colorpanel(50, "white", "red"))
+
+</code></pre>
+
+
+</div>

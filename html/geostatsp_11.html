@@ -1,0 +1,288 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>glgm-methods</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Generalized Linear Geostatistical Models
+</h2>
+
+<h3>Description</h3>
+
+<p>Fits a generalized linear geostatistical model or a log-Gaussian Cox process
+using <code>inla</code> </p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S4 method for signature 'ANY,ANY,ANY,ANY'
+glgm(formula, data,  grid, covariates, buffer=0, shape=1, prior, ...) 
+## S4 method for signature 'formula,SpatRaster,ANY,ANY'
+glgm(formula, data,  grid, covariates, buffer=0, shape=1, prior, ...) 
+## S4 method for signature 'formula,SpatVector,ANY,ANY'
+glgm(formula, data,  grid, covariates, buffer=0, shape=1, prior, ...) 
+## S4 method for signature 'formula,data.frame,SpatRaster,data.frame'
+glgm(formula, data,  grid, covariates, buffer=0, shape=1, prior, ...) 
+lgcp(formula=NULL, data,  grid, covariates=NULL, border, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>An object of class <code> SpatVector</code> containing the data.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+<p>Either an integer giving the number of cells in the x direction, or a raster object which 
+will be used for the spatial random effect.  If the cells in the raster are not square, the resolution in the y direction 
+will be adjusted to make it so.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariates</code></td>
+<td>
+<p>Either a single raster, a list of rasters or a raster stack containing covariate values used when 
+making spatial predictions.  Names of the raster layers or list elements correspond to names in the formula.  If
+a covariate is missing from the data object it will be extracted from the rasters.  Defaults to <code>NULL</code> for an 
+intercept-only model.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Model formula, defaults to a linear combination of each of the layers in the <code>covariates</code> object.   
+The spatial random effect should not be supplied but the default 
+can be overridden with a 
+<code> f(space,..)</code> term. For <code>glgm</code> the response variable defaults to the first variable in the <code>data</code> object, and
+<code>formula</code> can be an integer or character string specifying the response variable.  For <code>lgcp</code>, the formula
+should be one-sided.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>list with elements named <code>range</code>, <code>sd</code>, <code>sdObs</code>.  See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shape</code></td>
+<td>
+<p>Shape parameter for the Matern correlation function, must be 1 or 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>buffer</code></td>
+<td>
+<p>Extra space padded around the data bounding box to reduce edge effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>border</code></td>
+<td>
+<p>boundary of the region on which an LGCP is defined, passed to <code>mask</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional options passed to  
+<code>inla</code>in the <code>INLA</code>package </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function performs Bayesian inference for generalized linear geostatistical models with INLA.  The Markov random field
+approximation on a regular lattice is used for the spatial random effect.  The range parameter is the distance at which 
+the correlation is 0.13, or
+</p>
+<p style="text-align: center;"><code class="reqn">cov[U(s+h), U(s)] = (2^{1-\nu}/Gamma(\nu))  d^\nu besselK(d, \nu) </code>
+</p>
+ 
+<p style="text-align: center;"><code class="reqn">d= |h| \sqrt{8 \nu}/range</code>
+</p>
+
+<p>where <code class="reqn">\nu</code> is the shape parameter. The range parameter produced by <code>glgm</code> multiplies the range parameter from <code>INLA</code> by the cell size.
+</p>
+<p>Elements of <code>prior</code> can be named <code>range</code>, <code>sd</code>, or <code>sdObs</code>.  Elements can consist of: 
+</p>
+
+<ul>
+<li>
+<p> a single value giving the prior median for penalized complexity priors (exponential on the sd or 1/range).
+</p>
+</li>
+<li>
+<p> a vector <code>c(u=a, alpha=b)</code> giving an quantile and probability for pc priors.  For standard deviations alpha is an upper quantile, for the range parameter b = pr(1/range &gt; 1/a).
+</p>
+</li>
+<li>
+<p> a vector <code>c(lower=a, upper=b)</code> giving a 0.025 and 0.975 quantiles for the sd or range.
+</p>
+</li>
+<li>
+<p> a list of the form <code>list(prior='loggamma', param=c(1,2))</code> passed directly to inla.
+</p>
+</li>
+<li>
+<p> a two-column matrix of prior densities for the sd or range.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>A list with two components named  <code>inla</code>, <code>raster</code>, and <code>parameters</code>.  <code>inla</code> contains the results of the call to the
+<code>inla</code> function.  <code>raster</code> is a raster stack with the following layers:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>random.</code></td>
+<td>
+<p>mean, sd, X0.0??quant: Posterior mean, standard deviation, and quantiles of the random effect</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predict.</code></td>
+<td>
+<p>mean, sd, X0.0??quant: same for linear predictors, on the link scale</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predict.exp</code></td>
+<td>
+<p>posterior mean of the exponential of the linear predictor</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predict.invlogit</code></td>
+<td>
+<p>Only supplied if a binomial response variable was used.</p>
+</td>
+</tr>
+</table>
+<p><code>parameters</code> contains a list with elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>summary</code></td>
+<td>
+<p>a table with parameter estimates and posterior quantiles</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>range, sd</code></td>
+<td>
+<p>prior and posterior distributions of range and standard deviations</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>inla</code>in the <code>INLA</code>package, 
+<a href="https://www.r-inla.org">https://www.r-inla.org</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# geostatistical model for the swiss rainfall data
+
+if(requireNamespace("INLA", quietly=TRUE) ) {
+  INLA::inla.setOption(num.threads=2)
+  # not all versions of INLA support blas.num.threads
+  try(INLA::inla.setOption(blas.num.threads=2), silent=TRUE)
+} 
+
+require("geostatsp")
+data("swissRain")
+swissRain = unwrap(swissRain)
+swissAltitude = unwrap(swissAltitude)
+swissBorder = unwrap(swissBorder)
+
+swissRain$lograin = log(swissRain$rain)
+swissFit =  glgm(formula="lograin", data=swissRain, 
+	grid=30, 
+	covariates=swissAltitude, family="gaussian", 
+	buffer=2000,
+	prior = list(sd=1, range=100*1000, sdObs = 2),
+	control.inla = list(strategy='gaussian')
+	)
+
+if(!is.null(swissFit$parameters) ) {
+	
+	swissExc = excProb(swissFit, threshold=log(25))
+
+	swissExcRE = excProb(swissFit$inla$marginals.random$space, 
+		log(1.5),template=swissFit$raster)
+
+	swissFit$parameters$summary
+
+	matplot(
+		swissFit$parameters$range$postK[,'x'],
+		swissFit$parameters$range$postK[,c('y','prior')],
+		type="l", lty=1, xlim = c(0, 1000),
+		xlab = 'km', ylab='dens')
+	legend('topright', lty=1, col=1:2, legend=c('post','prior'))
+
+	plot(swissFit$raster[["predict.exp"]]) 
+
+	mycol = c("green","yellow","orange","red")
+	mybreaks = c(0, 0.2, 0.8, 0.95, 1)
+	plot(swissBorder)
+	plot(swissExc, breaks=mybreaks, col=mycol,add=TRUE,legend=FALSE)
+	plot(swissBorder, add=TRUE)
+	legend("topleft",legend=mybreaks, fill=c(NA,mycol))
+
+
+	plot(swissBorder)
+	plot(swissExcRE, breaks=mybreaks, col=mycol,add=TRUE,legend=FALSE)
+	plot(swissBorder, add=TRUE)
+	legend("topleft",legend=mybreaks, fill=c(NA,mycol))
+}
+
+		
+
+
+# a log-Gaussian Cox process example
+
+myPoints = vect(cbind(rbeta(100,2,2), rbeta(100,3,4)))
+
+
+mycov = rast(matrix(rbinom(100, 1, 0.5), 10, 10), extent=ext(0, 1, 0, 1))
+names(mycov)="x1"
+
+
+if(requireNamespace("INLA", quietly=TRUE) ) {
+  INLA::inla.setOption(num.threads=2)
+  # not all versions of INLA support blas.num.threads
+  try(INLA::inla.setOption(blas.num.threads=2), silent=TRUE)
+}
+
+res = lgcp(
+	formula=~factor(x1),
+	data=myPoints, 
+	grid=squareRaster(ext(0,1,0,1), 20), covariates=mycov,
+	prior=list(sd=c(0.9, 1.1), range=c(0.4, 0.41),
+	control.inla = list(strategy='gaussian'), verbose=TRUE)
+)
+if(length(res$parameters)) {  
+	plot(res$raster[["predict.exp"]])
+	plot(myPoints,add=TRUE,col="#0000FF30",cex=0.5)
+}
+
+</code></pre>
+
+
+</div>

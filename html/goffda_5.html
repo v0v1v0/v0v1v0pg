@@ -1,0 +1,447 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cv_glmnet</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting of regularized linear models</h2>
+
+<h3>Description</h3>
+
+<p>Convenience function for fitting multivariate linear models
+with multivariate response by relying on <code>cv.glmnet</code>
+from the <code>glmnet-package</code>. The function fits the
+multivariate linear model
+</p>
+<p style="text-align: center;"><code class="reqn">\mathbf{Y} = \mathbf{X}\mathbf{B} + \mathbf{E},</code>
+</p>
+
+<p>where <code class="reqn">\mathbf{X}</code> is a <code class="reqn">p</code>-dimensional vector,
+<code class="reqn">\mathbf{Y}</code> and <code class="reqn">\mathbf{E}</code> are two
+<code class="reqn">q</code>-dimensional vectors, and <code class="reqn">\mathbf{B}</code> is a
+<code class="reqn">p\times q</code> matrix.
+</p>
+<p>If <code class="reqn">\mathbf{X}</code> and <code class="reqn">\mathbf{Y}</code> are <em>centered</em>
+(i.e., have zero-mean columns), the function estimates <code class="reqn">\mathbf{B}</code>
+by solving, for the sample
+<code class="reqn">(\mathbf{X}_1, \mathbf{Y}_1), \ldots, (\mathbf{X}_n, \mathbf{Y}_n)</code>, the elastic-net optimization problem
+</p>
+<p style="text-align: center;"><code class="reqn">
+\min_{\mathbf{B}\in R^{q \times p}}
+\frac{1}{2n}\sum_{i=1}^n
+\|\mathbf{Y}_i-\mathbf{X}_i\mathbf{B}\|^2 +
+\lambda\left[(1-\alpha)\|\mathbf{B}\|_\mathrm{F}^2 / 2 +
+\alpha \sum_{j=1}^p \|\mathbf{B}_j\|_2\right],
+</code>
+</p>
+
+<p>where <code class="reqn">\|\mathbf{B}\|_\mathrm{F}</code> stands for
+the Frobenious norm of the matrix <code class="reqn">\mathbf{B}</code> and
+<code class="reqn">\|\mathbf{B}_j\|_2</code> for the Euclidean norm
+of the <code class="reqn">j</code>-th <em>row</em> of <code class="reqn">\mathbf{B}</code>. The choice
+<code class="reqn">\alpha = 0</code> in the elastic-net penalization corresponds to ridge
+regression, whereas <code class="reqn">\alpha = 1</code> yields a lasso-type estimator.
+The unpenalized least-squares estimator is obtained with <code class="reqn">\lambda = 0</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cv_glmnet(x, y, alpha = c("lasso", "ridge")[1], lambda = NULL,
+  intercept = TRUE, thresh = 1e-10, cv_1se = TRUE, cv_nlambda = 50,
+  cv_folds = NULL, cv_grouped = FALSE, cv_lambda = 10^seq(2, -3,
+  length.out = cv_nlambda), cv_second = TRUE, cv_tol_second = 0.025,
+  cv_log10_exp = c(-0.5, 3), cv_thresh = 1e-05, cv_parallel = FALSE,
+  cv_verbose = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>input matrix of size <code>c(n, p)</code>, or a vector of length
+<code>n</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>response matrix of size <code>c(n, q)</code>, or a vector of
+length <code>n</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>elastic net mixing argument in <code>glmnet</code>,
+with <code class="reqn">0 \le \alpha \le 1</code>. Alternatively, a character string indicating
+whether the <code>"ridge"</code> (<code class="reqn">\alpha = 0</code>) or <code>"lasso"</code>
+(<code class="reqn">\alpha = 1</code>) fit is to be performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>scalar giving the regularization parameter <code class="reqn">\lambda</code>. If
+<code>NULL</code> (default), the optimal <code class="reqn">\lambda</code> is searched by
+cross-validation. If <code>lambda</code> is provided, then cross-validation is
+skipped and the fit is performed for the given <code>lambda</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>flag passed to the <code>intercept</code> argument in
+<code>glmnet</code> to indicate if the intercept should be fitted
+(default; does not assume that the data is centered) or set to zero
+(the optimization problem above is solved as-is). Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thresh</code></td>
+<td>
+<p>convergence threshold of the coordinate descending algorithm,
+passed to the <code>thresh</code> argument in <code>glmnet</code>.
+Defaults to <code>1e-10</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv_1se</code></td>
+<td>
+<p>shall the <em>optimal</em> lambda be the <code>lambda.1se</code>, as
+returned by <code>cv.glmnet</code>? This favors sparser fits. If
+<code>FALSE</code>, then the optimal lambda is <code>lambda.min</code>, the minimizer
+of the cross-validation loss. Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv_nlambda</code></td>
+<td>
+<p>the length of the sequence of <code class="reqn">\lambda</code> values,
+passed to the <code>nlambda</code> argument in <code>cv.glmnet</code>
+for the cross-validation search. Defaults to <code>50</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv_folds</code></td>
+<td>
+<p>number of folds to perform cross-validation. If
+<code>NULL</code> (the default), then<br><code>cv_folds &lt;- n</code> internally,
+that is, leave-one-out cross-validation is performed. Passed to the
+<code>nfolds</code> argument in <code>cv.glmnet</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv_grouped</code></td>
+<td>
+<p>passed to the <code>grouped</code> argument in
+<code>cv.glmnet</code>. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv_lambda</code></td>
+<td>
+<p>passed to the <code>lambda</code> argument in
+<code>cv.glmnet</code>. Defaults to<br><code>10^seq(2, -3, length.out = cv_nlambda)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv_second</code></td>
+<td>
+<p>flag to perform a second cross-validation search if the
+optimal <code class="reqn">\lambda</code> was found at the extremes of the first <code class="reqn">\lambda</code>
+sequence (indicating that the minimum may not be reliable). Defaults to
+<code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv_tol_second</code></td>
+<td>
+<p>tolerance for performing a second search if
+<code>second = TRUE</code>. If the minimum is found at the
+<code>100 * cv_tol_second</code> lower/upper percentile of search interval, then
+the search interval is expanded for a second search. Defaults to
+<code>0.025</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv_log10_exp</code></td>
+<td>
+<p>expansion of the <code class="reqn">\lambda</code> sequence if the minimum
+is found close to its <em>upper</em> extreme. If that is the case, the
+sequence for the is set as <code>10^(log10(lambda_min) + cv_log10_exp)</code>,
+where <code>lambda_min</code> is the minimum obtained in the first sequence. If
+the minimum is found close to the lower extreme of the sequence, then
+<code>-rev(cv_log10_exp)</code> is considered. Defaults to <code>c(-0.5, 5)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv_thresh</code></td>
+<td>
+<p>convergence threshold used during cross-validation in
+<code>cv.glmnet</code>. Defaults to <code>1e-5</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv_parallel</code></td>
+<td>
+<p>passed to the <code>parallel</code> argument in
+<code>cv.glmnet</code>. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv_verbose</code></td>
+<td>
+<p>flag to display information about the cross-validation
+search with plots and messages. More useful if <code>second = TRUE</code>.
+Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further parameters to be passed to <code>glmnet</code>
+to perform the final model fit.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If <code class="reqn">\alpha = 1</code>, then the lasso-type fit shrinks to zero,
+<em>simultaneously</em>, all the elements of certain rows of
+<code class="reqn">\mathbf{B}</code>, thus
+helping the selection of the <code class="reqn">p</code> most influential variables in
+<code class="reqn">\mathbf{X}</code> for explaining/predicting <code class="reqn">\mathbf{Y}</code>.
+</p>
+<p>The function first performs a cross-validation search for the optimal
+<code class="reqn">\lambda</code> if <code>lambda = NULL</code> (using <code>cv_thresh</code> to control
+the convergence threshold). After the optimal penalization parameter is
+determined, a second fit (now with convergence threshold <code>thresh</code>)
+using the default <code class="reqn">\lambda</code> sequence in <code>glmnet</code>
+is performed. The final estimate is obtained via
+<code>predict.glmnet</code> from the optimal <code class="reqn">\lambda</code>
+determined in the first step.
+</p>
+<p>Due to its cross-validatory nature, <code>cv_glmnet</code> can be
+computationally demanding. Approaches for reducing the computation time
+include: considering a smaller number of folds than <code>n</code>, such as
+<code>cv_folds = 10</code> (but will lead to random partitions of the
+data); decrease the tolerance of the coordinate descending
+algorithm by increasing <code>cv_thresh</code>; reducing the number of
+candidate <code class="reqn">\lambda</code> values with <code>nlambda</code>; setting
+<code>second = FALSE</code> to avoid a second cross-validation; or considering
+<code>cv_parallel = TRUE</code> to use a parallel backend (must be registered
+before hand; see examples).
+</p>
+<p>By default, the <code class="reqn">\lambda</code> sequence is used with <em>standardized</em>
+<code class="reqn">\mathbf{X}</code> and <code class="reqn">\mathbf{Y}</code> (both divided by their
+columnwise variances); see <code>glmnet</code> and the
+<code>standardized</code> argument. Therefore, the optimal selected <code class="reqn">\lambda</code>
+value assumes standardization and must be used with care if the variables
+are not standardized. For example, when using the ridge analytical
+solution, a prior change of scale that depends on <code class="reqn">q</code> needs to be done.
+See the examples for the details.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with the following entries:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>beta_hat</code></td>
+<td>
+<p>the estimated <code class="reqn">\mathbf{B}</code>,
+a matrix of size <code>c(p, q)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>the optimal <code class="reqn">\lambda</code> obtained by cross-validation and
+according to <code>cv_1se</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv</code></td>
+<td>
+<p>if <code>lambda = NULL</code>, the result of the cross-validation
+search for the optimal <code class="reqn">\lambda</code>. Otherwise, <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>the <code>glmnet</code> fit, computed with <code>thresh</code> threshold
+and with an automatically chosen <code class="reqn">\lambda</code> sequence.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Eduardo García-Portugués. Initial contributions by Gonzalo
+Álvarez-Pérez.
+</p>
+
+
+<h3>References</h3>
+
+<p>Friedman, J., Hastie, T. and Tibshirani, R. (2010). Regularization paths for
+generalized linear models via coordinate descent. <em>Journal of
+Statistical Software</em>, 33(1):1–22. <a href="https://doi.org/10.18637/jss.v033.i01">doi:10.18637/jss.v033.i01</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Quick example for multivariate linear model with multivariate response
+
+# Simulate data
+n &lt;- 100
+p &lt;- 10; q &lt;- 5
+set.seed(123456)
+x &lt;- matrix(rnorm(n * p, sd = rep(1:p, each = n)), nrow = n, ncol = p)
+e &lt;- matrix(rnorm(n * q, sd = rep(q:1, each = n)), nrow = n, ncol = q)
+beta &lt;- matrix(((1:p - 1) / p)^2, nrow = p, ncol = q)
+y &lt;- x %*% beta + e
+
+# Fit lasso (model with intercept, the default)
+cv_glmnet(x = x, y = y, alpha = "lasso", cv_verbose = TRUE)$beta_hat
+
+## Multivariate linear model with multivariate response
+
+# Simulate data
+n &lt;- 100
+p &lt;- 10; q &lt;- 5
+set.seed(123456)
+x &lt;- matrix(rnorm(n * p, sd = rep(1:p, each = n)), nrow = n, ncol = p)
+e &lt;- matrix(rnorm(n * q, sd = rep(q:1, each = n)), nrow = n, ncol = q)
+beta &lt;- matrix(((1:p - 1) / p)^2, nrow = p, ncol = q)
+y &lt;- x %*% beta + e
+
+# Fit ridge
+cv0 &lt;- cv_glmnet(x = x, y = y, alpha = "ridge", intercept = FALSE,
+                 cv_verbose = TRUE)
+cv0$beta_hat
+
+# Same fit for the chosen lambda
+cv_glmnet(x = x, y = y, alpha = "ridge", lambda = cv0$lambda,
+          intercept = FALSE)$beta_hat
+
+# Fit lasso (model with intercept, the default)
+cv1 &lt;- cv_glmnet(x = x, y = y, alpha = "lasso", cv_verbose = TRUE)
+cv1$beta_hat
+
+# Use cv_1se = FALSE
+cv1_min &lt;- cv_glmnet(x = x, y = y, alpha = "lasso", cv_verbose = TRUE,
+                     cv_1se = FALSE)
+
+# Compare it with ridge analytical solution. Observe the factor in lambda,
+# necessary since lambda is searched for the standardized data. Note also
+# that, differently to the case q = 1, no standardarization with respect to
+# y happens
+sd_x &lt;- apply(x, 2, function(x) sd(x)) * sqrt((n - 1) / n)
+cv_glmnet(x = x, y = y, alpha = "ridge", lambda = cv0$lambda,
+          thresh = 1e-20, intercept = FALSE)$beta_hat
+solve(crossprod(x) + diag(cv0$lambda * sd_x^2 * n)) %*% t(x) %*% y
+
+# If x is standardized, the match between glmnet and usual ridge
+# analytical expression does not require scaling of lambda
+x_std &lt;- scale(x, scale = sd_x, center = TRUE)
+cv_glmnet(x = x_std, y = y, alpha = "ridge", lambda = cv0$lambda,
+          intercept = FALSE, thresh = 1e-20)$beta_hat
+solve(crossprod(x_std) + diag(rep(cv0$lambda * n, p))) %*% t(x_std) %*% y
+
+## Simple linear model
+
+# Simulate data
+n &lt;- 100
+p &lt;- 1; q &lt;- 1
+set.seed(123456)
+x &lt;- matrix(rnorm(n * p), nrow = n, ncol = p)
+e &lt;- matrix(rnorm(n * q), nrow = n, ncol = q)
+beta &lt;- 2
+y &lt;- x * beta + e
+
+# Fit by ridge (model with intercept, the default)
+cv0 &lt;- cv_glmnet(x = x, y = y, alpha = "ridge", cv_verbose = TRUE)
+cv0$beta_hat
+cv0$intercept
+
+# Comparison with linear model with intercept
+lm(y ~ 1 + x)$coefficients
+
+# Fit by ridge (model without intercept)
+cv0 &lt;- cv_glmnet(x = x, y = y, alpha = "ridge", cv_verbose = TRUE,
+                 intercept = FALSE)
+cv0$beta_hat
+
+# Comparison with linear model without intercept
+lm(y ~ 0 + x)$coefficients
+
+# Same fit for the chosen lambda (and without intercept)
+cv_glmnet(x = x, y = y, alpha = "ridge", lambda = cv0$lambda,
+          intercept = FALSE)$beta_hat
+
+# Same for lasso (model with intercept, the default)
+cv1 &lt;- cv_glmnet(x = x, y = y, alpha = "lasso")
+cv1$beta_hat
+
+## Multivariate linear model (p = 3, q = 1)
+
+# Simulate data
+n &lt;- 50
+p &lt;- 10; q &lt;- 1
+set.seed(123456)
+x &lt;- matrix(rnorm(n * p, mean = 1, sd = rep(1:p, each = n)),
+            nrow = n, ncol = p)
+e &lt;- matrix(rnorm(n * q), nrow = n, ncol = q)
+beta &lt;- ((1:p - 1) / p)^2
+y &lt;- x %*% beta + e
+
+# Fit ridge (model without intercept)
+cv0 &lt;- cv_glmnet(x = x, y = y, alpha = "ridge", intercept = FALSE,
+                 cv_verbose = TRUE)
+cv0$beta_hat
+
+# Same fit for the chosen lambda
+cv_glmnet(x = x, y = y, alpha = "ridge", lambda = cv0$lambda,
+          intercept = FALSE)$beta_hat
+
+# Compare it with ridge analytical solution. Observe the factor in lambda,
+# necessary since lambda is searched for the standardized data
+sd_x &lt;- apply(x, 2, function(x) sd(x)) * sqrt((n - 1) / n)
+sd_y &lt;- sd(y) * sqrt((n - 1) / n)
+cv_glmnet(x = x, y = y, alpha = "ridge", lambda = cv0$lambda,
+          intercept = FALSE, thresh = 1e-20)$beta_hat
+solve(crossprod(x) + diag(cv0$lambda * sd_x^2 / sd_y * n)) %*% t(x) %*% y
+
+# If x and y are standardized, the match between glmnet and usual ridge
+# analytical expression does not require scaling of lambda
+x_std &lt;- scale(x, scale = sd_x, center = TRUE)
+y_std &lt;- scale(y, scale = sd_y, center = TRUE)
+cv_glmnet(x = x_std, y = y_std, alpha = "ridge", lambda = cv0$lambda,
+          intercept = FALSE, thresh = 1e-20)$beta_hat
+solve(crossprod(x_std) + diag(rep(cv0$lambda * n, p))) %*% t(x_std) %*% y_std
+
+# Fit lasso (model with intercept, the default)
+cv1 &lt;- cv_glmnet(x = x, y = y, alpha = "lasso", cv_verbose = TRUE)
+cv1$beta_hat
+
+# ## Parallelization
+#
+# # Parallel
+# doMC::registerDoMC(cores = 2)
+# microbenchmark::microbenchmark(
+# cv_glmnet(x = x, y = y, nlambda = 100, cv_parallel = TRUE),
+# cv_glmnet(x = x, y = y, nlambda = 100, cv_parallel = FALSE),
+# times = 10)
+
+</code></pre>
+
+
+</div>

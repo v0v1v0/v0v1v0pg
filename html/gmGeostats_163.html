@@ -1,0 +1,335 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Maf</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generalised diagonalisations
+Calculate several generalized diagonalisations out of a data set and its empirical
+variogram</h2>
+
+<h3>Description</h3>
+
+<p>Generalised diagonalisations
+Calculate several generalized diagonalisations out of a data set and its empirical
+variogram
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">Maf(x, ...)
+
+## S3 method for class 'data.frame'
+Maf(x, vg, i = 2, ...)
+
+## S3 method for class 'rmult'
+Maf(x, vg, i = 2, ...)
+
+## S3 method for class 'aplus'
+Maf(x, vg, i = 2, ...)
+
+## S3 method for class 'rplus'
+Maf(x, vg, i = 2, ...)
+
+## S3 method for class 'ccomp'
+Maf(x, vg, i = 2, ...)
+
+## S3 method for class 'rcomp'
+Maf(x, vg, i = 2, ...)
+
+## S3 method for class 'acomp'
+Maf(x, vg, i = 2, ...)
+
+UWEDGE(x, ...)
+
+## Default S3 method:
+UWEDGE(x, ...)
+
+## S3 method for class 'acomp'
+UWEDGE(x, vg, i = NULL, ...)
+
+## S3 method for class 'rcomp'
+UWEDGE(x, vg, i = NULL, ...)
+
+RJD(x, ...)
+
+## Default S3 method:
+RJD(x, ...)
+
+## S3 method for class 'acomp'
+RJD(x, vg, i = NULL, ...)
+
+## S3 method for class 'rcomp'
+RJD(x, vg, i = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a data set, typically of class "data.frame" or of a compositional class</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>generic functionality arguments</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vg</code></td>
+<td>
+<p>empirical variogram, of a kind fitting to the data provided</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>i</code></td>
+<td>
+<p>a slicer for the variogram, typically this will be one or more indices of
+the lag distance to take. %For other options see codegetEmpVariogramSlice.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object extending <code>c("princomp.CLASSOF(x)",</code>"<code>princomp</code>")
+with classes "<code>genDiag</code>", and an extra class argument depending on the
+diagonalisation method chosen.
+</p>
+<p>Function <code>Maf</code> results carry the extra class "<code>maf</code>", and they correspond
+to minimum/maximum autocorrelation factors (MAF) as proposed by Switzer and Green
+(1984). In this case, the
+slicer is typically just the index of one lag distance (defaults to i=2). MAF
+provides the analytical solution to the joint diagonalisation of two matrices,
+the covariance of increments provided by the slicing and the conventional covariance
+matrix (of the idt transformed values, if appropriate). Resulting factors are ordered
+in decreasing order of spatial continuity, which might produce surprising
+scree-plots for those who are used to see a screeplot of a principal component analysis.
+</p>
+<p>Function <code>UWEDGE</code> (Uniformly Weighted Exhaustive Diagonalization with Gauss
+iterations; Tichavsky and Yeredor, 2009) results carry the extra class "<code>uwedge</code>".
+The function
+is a wrapper on <code>jointDiag::uwedge</code> from package <code>jointDiag</code> (Gouy-Pailler, 2017).
+In this case the
+slicer is typically just a subset of indices of lag distances to consider
+(defaults to the nearest indexes to mininum, maximum and mean lag distances of the
+variogram). UWEDGE iteratively seeks for a pair of matrices (a mixing and a
+demixing matrices) diagonalises the set of matrices <code class="reqn">M_1, M_2, \ldots, M_K</code>
+given, by minimizing the target quantity
+</p>
+<p style="text-align: center;"><code class="reqn">Q_{uwedge}(A, W) = \sum_{k=1}^K Tr[E_k^t\cdot E_k],</code>
+</p>
+
+<p>where <code class="reqn">E_k = (W^t\cdot M_k \cdot W- A\cdot \Lambda_k\cdot A^t)</code> and
+<code class="reqn">\Lambda_k = diag(W^t\cdot M_k \cdot W)</code> is the resulting diagonalized version of
+each matrix. Obtained factors are ordered
+in decreasing order of spatial continuity, which might produce surprising
+scree-plots for those who are used to see a screeplot of a principal component analysis.
+</p>
+<p>Function <code>RJD</code> results carry the extra class "<code>rjd</code>". The function
+is a wrapper on <code>JADE::rjd</code> (Miettinen, Nordhausen and Taskinen, 2017),
+implementing the Rotational joint diagonalisation method (Cardoso and Souloumiac, 1996).
+In this case the
+slicer is typically just a subset of indices of lag distances to consider
+(defaults to the nearest indexes to mininum, maximum and mean lag distances).
+This algorithm also served for quasi-diagonalising a set of matrices as in UWEDGE,
+just that in this case the quantity to minimise is the sum of sequares of all off-diagonal
+elements of <code class="reqn">A^t\cdot M_k\cdot A</code> for all <code class="reqn">k=1, 2, \ldots K</code>.
+</p>
+<p>All these functions produce output mimicking <code>princomp</code>, i.e. with
+elements
+</p>
+
+<dl>
+<dt>sdev</dt>
+<dd>
+<p>contrary to the output in PCA, this contains the square root of the
+metric variance of the predictions obtained for each individual factor; this is the
+quantity needed for <code>screeplot</code> to create plots of explained variance
+by factor</p>
+</dd>
+<dt>loadings</dt>
+<dd>
+<p>matrix of contributions of each (cdt-transformed) original variable to the new factors</p>
+</dd>
+<dt>center</dt>
+<dd>
+<p>center of the data set (eventually, represented through <code>cdt</code>),
+in compositional methods</p>
+</dd>
+<dt>scale</dt>
+<dd>
+<p>the scalings applied to each original variable</p>
+</dd>
+<dt>n.obs</dt>
+<dd>
+<p>number of observations</p>
+</dd>
+<dt>scores</dt>
+<dd>
+<p>the scores of the supplied data on the new factors</p>
+</dd>
+<dt>call</dt>
+<dd>
+<p>the call to the function (attention: it actually may come much later)</p>
+</dd>
+</dl>
+<p>and additionally some of the following arguments, in different order
+</p>
+
+<dl>
+<dt>invLoadings</dt>
+<dd>
+<p>matrix of contributions of each factor onto each original variable</p>
+</dd>
+<dt>Center</dt>
+<dd>
+<p>compositional methods return here the cdt-backtransformed center</p>
+</dd>
+<dt>InvLoadings</dt>
+<dd>
+<p>compositional methods return here the clr-backtransformed inverse loadings, so that
+each column of this matrix can be understood as a composition on itself</p>
+</dd>
+<dt>DownInvLoadings</dt>
+<dd>
+<p>compositional methods return here the clr-backtransformed "minus inverse loadings", so that
+each column of this matrix can be understood as a composition on itself; details in
+<code>princomp.acomp</code> </p>
+</dd>
+<dt>C1, C2</dt>
+<dd>
+<p>Maf returns the two matrices that were diagonalised</p>
+</dd>
+<dt>eigenvalues</dt>
+<dd>
+<p>Maf returns the generalized eigenvalues of the diagonalisation of C1 and C2</p>
+</dd>
+<dt>gof</dt>
+<dd>
+<p>UWEDGE returns the values of the goodness of fit criterion across sweeps</p>
+</dd>
+<dt>diagonalized</dt>
+<dd>
+<p>RJD returns the diagonalized matrices, in an array of (K,D,D)-dimensions, being
+D the number of variables in <code>x</code></p>
+</dd>
+<dt>type</dt>
+<dd>
+<p>a string describing which package and which function was used as a workhorse for
+the calculation</p>
+</dd>
+</dl>
+<p>NOTE: if the arguments you provide to RJD and UWEDGE are not of the appropriate type
+(i.e. data.frames or equivalent) the default method of these functions will just attempt
+to call the basis functions JADE:rjd and JointDiag:uwedge respectively.
+This will be the case if you provide <code>x</code> as a "<code>matrix</code>", or as
+an "<code>array</code>". In those cases, the output will NOT be structured as an extension
+to princomp results; instead they will be native output from those functions.
+</p>
+
+
+<h3>Functions</h3>
+
+
+<ul>
+<li> <p><code>Maf</code>: Generalised diagonalisations
+</p>
+</li>
+<li> <p><code>Maf.rmult</code>: Generalised diagonalisations
+</p>
+</li>
+<li> <p><code>Maf.aplus</code>: Generalised diagonalisations
+</p>
+</li>
+<li> <p><code>Maf.rplus</code>: Generalised diagonalisations
+</p>
+</li>
+<li> <p><code>Maf.ccomp</code>: Generalised diagonalisations
+</p>
+</li>
+<li> <p><code>Maf.rcomp</code>: Generalised diagonalisations
+</p>
+</li>
+<li> <p><code>Maf.acomp</code>: Generalised diagonalisations
+</p>
+</li>
+<li> <p><code>UWEDGE</code>: Generalised diagonalisations
+</p>
+</li>
+<li> <p><code>UWEDGE.default</code>: Generalised diagonalisations
+</p>
+</li>
+<li> <p><code>UWEDGE.acomp</code>: Generalised diagonalisations
+</p>
+</li>
+<li> <p><code>UWEDGE.rcomp</code>: Generalised diagonalisations
+</p>
+</li>
+<li> <p><code>RJD</code>: Generalised diagonalisations
+</p>
+</li>
+<li> <p><code>RJD.default</code>: Generalised diagonalisations
+</p>
+</li>
+<li> <p><code>RJD.acomp</code>: Generalised diagonalisations
+</p>
+</li>
+<li> <p><code>RJD.rcomp</code>: Generalised diagonalisations
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Cardoso, J. K. and Souloumiac A. 1996. Jacobi angles for simultaneous
+diagonalization. SIAM Journal of Matrix Analysis and Applications 17(1), 161-164.
+</p>
+<p>Gouy-Pailler C., 2017. jointDiag: Joint approximate diagonalization of a set of
+square matrices. R package version 0.3. https://CRAN.R-project.org/package=jointDiag
+</p>
+<p>Miettinen J., Nordhausen K., and Taskinen, S., 2017. Blind source separation based
+on Joint diagonalization in R: The packages JADE and BSSasymp. Journal of Statistical
+Software 76(2), 1-31.
+</p>
+<p>Switzer P. and Green A.A., 1984. Min/Max autocorrelation factors for multivariate
+spatial imaging, Stanford University, Palo Alto, USA, 14pp.
+</p>
+<p>Tichavsky, P. and Yeredor, A., 2009. Fast approximate joint diagonalization
+incorporating weight matrices. IEEE Transactions on Signal Processing 57, 878 ??? 891.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other generalised Diagonalisations: 
+<code>coloredBiplot.genDiag()</code>,
+<code>predict.genDiag()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">require("magrittr")
+require("gstat")
+require("compositions")
+data("jura", package="gstat")
+gs = gstat(id="Cd", formula=log(Cd)~1, locations=~Xloc+Yloc, data=jura.pred) %&gt;% 
+gstat(id="Co", formula=log(Cd)~1, locations=~Xloc+Yloc, data=jura.pred) %&gt;% 
+gstat(id="Cr", formula=log(Cr)~1, locations=~Xloc+Yloc, data=jura.pred) %&gt;% 
+gstat(id="Cu", formula=log(Cu)~1, locations=~Xloc+Yloc, data=jura.pred) %&gt;% 
+gstat(id="Ni", formula=log(Ni)~1, locations=~Xloc+Yloc, data=jura.pred) %&gt;% 
+gstat(id="Pb", formula=log(Pb)~1, locations=~Xloc+Yloc, data=jura.pred) %&gt;% 
+gstat(id="Zn", formula=log(Zn)~1, locations=~Xloc+Yloc, data=jura.pred)
+vg = variogram(gs)
+mf = Maf(aplus(jura.pred[, -(1:6)]), vg=vg)
+mf
+mf$loadings
+biplot(mf)
+</code></pre>
+
+
+</div>

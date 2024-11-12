@@ -1,0 +1,166 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>PairwiseDESeq2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Perform Wald tests for differential expression</h2>
+
+<h3>Description</h3>
+
+<p>Apply DESeq2 for comparisons defined in a contrast matrix, requires the DESeq2 package.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">PairwiseDESeq2(
+  data,
+  name.prefix = mode,
+  contrasts,
+  separate = FALSE,
+  mode = "total",
+  slot = "count",
+  normalization = NULL,
+  logFC = FALSE,
+  genes = NULL,
+  verbose = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>the grandR object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name.prefix</code></td>
+<td>
+<p>the prefix for the new analysis name; a dot and the column names of the contrast matrix are appended; can be NULL (then only the contrast matrix names are used)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>contrast matrix that defines all pairwise comparisons, generated using GetContrasts</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>separate</code></td>
+<td>
+<p>model overdispersion separately for all pairwise comparison (TRUE), or fit a single model per gene, and extract contrasts (FALSE)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mode</code></td>
+<td>
+<p>compute LFCs for "total", "new", or "old" RNA</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>slot</code></td>
+<td>
+<p>which slot to use (should be a count slot, not normalized values)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normalization</code></td>
+<td>
+<p>normalize on "total", "new", or "old" (see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logFC</code></td>
+<td>
+<p>compute and add the log2 fold change as well</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>genes</code></td>
+<td>
+<p>restrict analysis to these genes; NULL means all genes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>print status messages?</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>DESeq2 by default performs size factor normalization. When computing differential expression of new RNA,
+it might be sensible to normalize w.r.t. to total RNA, i.e. use the size factors computed from total RNA instead of computed from new RNA.
+This can be accomplished by setting mode to "new", and normalization to "total"!
+</p>
+<p>Normalization can also be a mode.slot! Importantly, do not specify a slot containing normalized values, but specify a slot of unnormalized values
+(which are used to compute the size factors for normalization!) Can also be a numeric vector of size factors with the same length as the data as columns.
+Then each value is divided by the corresponding size factor entry.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a new grandR object including a new analysis table. The columns of the new analysis table are
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>"M"</code></td>
+<td>
+<p>the base mean</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>"S"</code></td>
+<td>
+<p>the log2FoldChange divided by lfcSE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>"P"</code></td>
+<td>
+<p>the Wald test P value</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>"Q"</code></td>
+<td>
+<p>same as P but Benjamini-Hochberg multiple testing corrected</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>"LFC"</code></td>
+<td>
+<p>the log2 fold change (only with the logFC parameter set to TRUE)</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p>LFC,GetContrasts
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+sars &lt;- ReadGRAND(system.file("extdata", "sars.tsv.gz", package = "grandR"),
+                  design=c(Design$Condition,Design$dur.4sU,Design$Replicate))
+sars &lt;- subset(sars,Coldata(sars,Design$dur.4sU)==2)
+sars&lt;-PairwiseDESeq2(sars,mode="total",
+                              contrasts=GetContrasts(sars,contrast=c("Condition","Mock")))
+sars&lt;-PairwiseDESeq2(sars,mode="new",normalization="total",
+                              contrasts=GetContrasts(sars,contrast=c("Condition","Mock")))
+head(GetAnalysisTable(sars,column="Q"))
+
+
+</code></pre>
+
+
+</div>

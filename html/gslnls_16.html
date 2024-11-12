@@ -1,0 +1,318 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gsl_nls_large</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>GSL Large-scale Nonlinear Least Squares fitting</h2>
+
+<h3>Description</h3>
+
+<p>Determine the nonlinear least-squares estimates of the parameters of a large
+nonlinear model system using the <code>gsl_multilarge_nlinear</code> module present in
+the GNU Scientific Library (GSL).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gsl_nls_large(fn, ...)
+
+## S3 method for class 'formula'
+gsl_nls_large(
+  fn,
+  data = parent.frame(),
+  start,
+  algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D", "cgst"),
+  control = gsl_nls_control(),
+  jac,
+  fvv,
+  trace = FALSE,
+  subset,
+  weights,
+  na.action,
+  model = FALSE,
+  ...
+)
+
+## S3 method for class 'function'
+gsl_nls_large(
+  fn,
+  y,
+  start,
+  algorithm = c("lm", "lmaccel", "dogleg", "ddogleg", "subspace2D", "cgst"),
+  control = gsl_nls_control(),
+  jac,
+  fvv,
+  trace = FALSE,
+  weights,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fn</code></td>
+<td>
+<p>a nonlinear model defined either as a two-sided formula including variables and parameters,
+or as a function returning a numeric vector, with first argument the vector of parameters to be estimated.
+See the individual method descriptions below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>an optional data frame in which to evaluate the variables in <code>fn</code> if
+defined as a formula. Can also be a list or an environment, but not a matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>numeric response vector if <code>fn</code> is defined as a function, equal in
+length to the vector returned by evaluation of the function <code>fn</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>a named list or named numeric vector of starting estimates. <code>start</code> is
+only allowed to be missing if <code>fn</code> is a <code>selfStart</code> model. If <code>fn</code>
+is a <code>formula</code>, a naive guess for <code>start</code> is tried, but this should not be relied on.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algorithm</code></td>
+<td>
+<p>character string specifying the algorithm to use. The following choices are supported:
+</p>
+
+<ul>
+<li> <p><code>"lm"</code> Levenberg-Marquardt algorithm (default).
+</p>
+</li>
+<li> <p><code>"lmaccel"</code> Levenberg-Marquardt algorithm with geodesic acceleration.
+Can be faster than <code>"lm"</code> but less stable. Stability is controlled by the
+<code>avmax</code> parameter in <code>control</code>, setting <code>avmax</code> to zero is analogous
+to not using geodesic acceleration.
+</p>
+</li>
+<li> <p><code>"dogleg"</code> Powell's dogleg algorithm.
+</p>
+</li>
+<li> <p><code>"ddogleg"</code> Double dogleg algorithm, an improvement over <code>"dogleg"</code>
+by including information about the Gauss-Newton step while the iteration is still
+far from the minimum.
+</p>
+</li>
+<li> <p><code>"subspace2D"</code> 2D generalization of the dogleg algorithm. This method
+searches a larger subspace for a solution, it can converge more quickly than <code>"dogleg"</code>
+on some problems.
+</p>
+</li>
+<li> <p><code>"cgst"</code> Steihaug-Toint Conjugate Gradient algorithm, a generalization of the dogleg algorithm
+that avoids solving for the Gauss-Newton step directly, instead using an iterative conjugate gradient algorithm.
+The method performs well at points where the Jacobian is singular, and is also suitable for large-scale problems
+where factoring the Jacobian matrix is prohibitively expensive.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>an optional list of control parameters to tune the least squares iterations and multistart algorithm.
+See <code>gsl_nls_control</code> for the available control parameters and their default values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>jac</code></td>
+<td>
+<p>a function returning the <code>n</code> by <code>p</code> dimensional Jacobian matrix of
+the nonlinear model <code>fn</code>, where <code>n</code> is the number of observations and <code>p</code> the
+number of parameters. The first argument must be the vector of parameters of length <code>p</code>.
+Can also be <code>TRUE</code>, in which case <code>jac</code> is derived symbolically with <code>deriv</code>,
+this only works if <code>fn</code> is defined as a (non-selfstarting) formula. If <code>fn</code> is a <code>selfStart</code> model,
+the Jacobian specified in the <code>"gradient"</code> attribute of the self-start model is used instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fvv</code></td>
+<td>
+<p>a function returning an <code>n</code> dimensional vector containing
+the second directional derivatives of the nonlinear model <code>fn</code>, with <code>n</code> the number of observations.
+This argument is only used if geodesic acceleration is enabled (<code>algorithm = "lmaccel"</code>).
+The first argument must be the vector of parameters of length <code>p</code> and the second argument must be the velocity vector
+also of length <code>p</code>. Can also be <code>TRUE</code>, in which case <code>fvv</code> is derived
+symbolically with <code>deriv</code>, this only works if <code>fn</code> is defined as a (non-selfstarting) formula.
+If the model function in <code>fn</code> also returns a <code>"hessian"</code> attribute (similar to the <code>"gradient"</code> attribute
+in a <code>selfStart</code> model), this Hessian matrix is used to evaluate the second directional derivatives instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>logical value indicating if a trace of the iteration progress should be printed.
+Default is <code>FALSE</code>. If <code>TRUE</code>, the residual (weighted) sum-of-squares,
+the squared (Euclidean) norm of the current parameter estimates and the condition number of the Jacobian
+are printed after each iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>an optional vector specifying a subset of observations to be used in the fitting process.
+This argument is only used if <code>fn</code> is defined as a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>an optional numeric vector of (fixed) weights. When present, the objective function is
+weighted least squares.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>a function which indicates what should happen when the data contain <code>NA</code>s. The
+default is set by the <code>na.action</code> setting of <code>options</code>, and is <code>na.fail</code> if that is unset.
+The 'factory-fresh' default is <code>na.omit</code>. Value <code>na.exclude</code> can be useful.
+This argument is only used if <code>fn</code> is defined as a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>a logical value. If <code>TRUE</code>, the model frame is returned as part of the object. Defaults to <code>FALSE</code>.
+This argument is only used if <code>fn</code> is defined as a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments passed to the calls of <code>fn</code>, <code>jac</code> and <code>fvv</code> if
+defined as functions.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>If <code>fn</code> is a <code>formula</code> returns a list object of class <code>nls</code>.
+If <code>fn</code> is a <code>function</code> returns a list object of class <code>gsl_nls</code>.
+See the individual method descriptions for the structures of the returned lists and the generic functions
+applicable to objects of both classes.
+</p>
+
+
+<h3>Methods (by class)</h3>
+
+
+<ul>
+<li> <p><code>gsl_nls_large(formula)</code>: If <code>fn</code> is a <code>formula</code>, the returned list object is of classes <code>gsl_nls</code> and <code>nls</code>.
+Therefore, all generic functions applicable to objects of class <code>nls</code>, such as <code>anova</code>, <code>coef</code>, <code>confint</code>,
+<code>deviance</code>, <code>df.residual</code>, <code>fitted</code>, <code>formula</code>, <code>logLik</code>, <code>nobs</code>, <code>predict</code>, <code>print</code>, <code>profile</code>,
+<code>residuals</code>, <code>summary</code>, <code>vcov</code> and <code>weights</code> are also applicable to the returned list object.
+In addition, a method <code>confintd</code> is available for inference of derived parameters.
+</p>
+</li>
+<li> <p><code>gsl_nls_large(function)</code>: If <code>fn</code> is a <code>function</code>, the first argument must be the vector of parameters and
+the function should return a numeric vector containing the nonlinear model evaluations at
+the provided parameter and predictor or covariate vectors. In addition, the argument <code>y</code>
+needs to contain the numeric vector of observed responses, equal in length to the numeric
+vector returned by <code>fn</code>. The returned list object is (only) of class <code>gsl_nls</code>.
+Although the returned object is not of class <code>nls</code>, the following generic functions remain
+applicable for an object of class <code>gsl_nls</code>: <code>anova</code>, <code>coef</code>, <code>confint</code>, <code>deviance</code>,
+<code>df.residual</code>, <code>fitted</code>, <code>formula</code>, <code>logLik</code>, <code>nobs</code>, <code>predict</code>, <code>print</code>,
+<code>residuals</code>, <code>summary</code>, <code>vcov</code> and <code>weights</code>. In addition, a method <code>confintd</code>
+is available for inference of derived parameters.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>M. Galassi et al., <em>GNU Scientific Library Reference Manual (3rd Ed.)</em>, ISBN 0954612078.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gsl_nls</code>
+</p>
+<p><a href="https://www.gnu.org/software/gsl/doc/html/nls.html">https://www.gnu.org/software/gsl/doc/html/nls.html</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Large NLS example
+# (https://www.gnu.org/software/gsl/doc/html/nls.html#large-nonlinear-least-squares-example)
+
+## number of parameters
+p &lt;- 250
+
+## model function
+f &lt;- function(theta) {
+  c(sqrt(1e-5) * (theta - 1), sum(theta^2) - 0.25)
+}
+
+## jacobian function
+jac &lt;- function(theta) {
+  rbind(diag(sqrt(1e-5), nrow = length(theta)), 2 * t(theta))
+}
+
+## dense Levenberg-Marquardt
+
+gsl_nls_large(
+  fn = f,                       ## model
+  y = rep(0, p + 1),            ## (dummy) responses
+  start = 1:p,                  ## start values
+  algorithm = "lm",             ## algorithm
+  jac = jac,                    ## jacobian
+  control = list(maxiter = 250)
+)
+
+
+## dense Steihaug-Toint conjugate gradient
+
+gsl_nls_large(
+  fn = f,                       ## model
+  y = rep(0, p + 1),            ## (dummy) responses
+  start = 1:p,                  ## start values
+  jac = jac,                    ## jacobian
+  algorithm = "cgst"            ## algorithm
+)
+
+
+## sparse Jacobian function
+jacsp &lt;- function(theta) {
+  rbind(Matrix::Diagonal(x = sqrt(1e-5), n = length(theta)), 2 * t(theta))
+}
+
+## sparse Levenberg-Marquardt
+gsl_nls_large(
+  fn = f,                       ## model
+  y = rep(0, p + 1),            ## (dummy) responses
+  start = 1:p,                  ## start values
+  algorithm = "lm",             ## algorithm
+  jac = jacsp,                  ## sparse jacobian
+  control = list(maxiter = 250)
+)
+
+## sparse Steihaug-Toint conjugate gradient
+gsl_nls_large(
+  fn = f,                       ## model
+  y = rep(0, p + 1),            ## (dummy) responses
+  start = 1:p,                  ## start values
+  jac = jacsp,                  ## sparse jacobian
+  algorithm = "cgst"            ## algorithm
+)
+
+</code></pre>
+
+
+</div>

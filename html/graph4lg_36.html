@@ -1,0 +1,287 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>graphab_metric</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute connectivity metrics from a graph in the Graphab project</h2>
+
+<h3>Description</h3>
+
+<p>The function computes connectivity metrics on a graph from a
+link set in a Graphab project
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">graphab_metric(
+  proj_name,
+  graph,
+  metric,
+  multihab = FALSE,
+  dist = NULL,
+  prob = 0.05,
+  beta = 1,
+  cost_conv = FALSE,
+  return_val = TRUE,
+  proj_path = NULL,
+  alloc_ram = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>proj_name</code></td>
+<td>
+<p>A character string indicating the Graphab project name.
+The project name is also the name of the project directory in which the
+file proj_name.xml is.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>graph</code></td>
+<td>
+<p>A character string indicating the name of the graph on which
+the metric is computed. This graph has been created with Graphab
+or using <code>graphab_graph</code> function and is associated
+with a link set. Only the links present in the graph and their corresponding
+weights will be used in the computation, together with patch areas.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metric</code></td>
+<td>
+<p>A character string indicating the metric which will be computed
+on the graph. This metric can be:</p>
+
+<ul>
+<li>
+<p>A global metric:</p>
+
+<ul>
+<li>
+<p>Probability of Connectivity (<code>metric = 'PC'</code>): Sum of products of
+area of all pairs of patches weighted by their interaction probability,
+divided by the square of the area of the study zone.
+This ratio is the equivalent to the probability that two points randomly
+placed in the study area are connected.
+</p>
+</li>
+<li>
+<p>Equivalent Connectivity (<code>metric = 'EC'</code>): Square root of the
+sum of products of capacity of all pairs of patches weighted by their
+interaction probability. This is the size of a single patch (maximally
+connected) that would provide the same probability of connectivity as the
+actual habitat pattern in the landscape (Saura et al., 2011).
+</p>
+</li>
+<li>
+<p>Integral Index of Connectivity (<code>metric = 'IIC'</code>): For the
+entire graph: product of patch areas divided by the number of links
+between them, the sum is divided by the square of the area of the study
+zone. IIC is built like the PC index but using the inverse of a topological
+distance rather than a negative exponential function of the distance
+based on the link weight.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p>A local metric:</p>
+
+<ul>
+<li>
+<p>Flux (<code>metric = 'F'</code>): For the focal patch i : sum of area
+of patches other than i and weighted according to their minimum distance
+to the focal patch through the graph. This sum is an indicator of the
+potential dispersion from the patch i or, conversely to the patch i
+</p>
+</li>
+<li>
+<p>Betweenness Centrality index (<code>metric = 'BC'</code>): Sum of the
+shortest paths through the focal patch i, each path is weighted by the
+product of the areas of the patches connected and of their interaction
+probability. All possible paths between every pair of patches is
+considered in this computation.
+</p>
+</li>
+<li>
+<p>Interaction Flux (<code>metric = 'IF'</code>): Sum of products of the focal
+patch area with all the other patches, weighted by their interaction
+probability.
+</p>
+</li>
+<li>
+<p>Degree (<code>metric = 'Dg'</code>): Number of edges connected to the
+node i i.e. number of patches connected directly to the patch i.
+</p>
+</li>
+<li>
+<p>Closeness Centrality index (<code>metric = 'CCe'</code>): Mean distance
+from the patch i to all other patches of its component k.
+</p>
+</li>
+<li>
+<p>Current Flux (<code>metric = 'CF'</code>): Sum of currents passing through
+the patch i. <code class="reqn">c_{i}^{j}</code> represents the current through the patch i when
+currents are sent from all patches (except j) to the patch j.
+The patch j is connected to the ground.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p>A delta metric:</p>
+
+<ul><li>
+<p>delta Probability of Connectivity (<code>metric = 'dPC'</code>): Rate of
+variation between the value of PC index and the value of PC' corresponding
+to the removal of the patch i. The value of <code>dPC</code> is decomposed
+into three parts:</p>
+
+<ul>
+<li>
+<p><code class="reqn">dPC_{area}</code> is the variation induced by the area lost after removal;
+</p>
+</li>
+<li>
+<p><code class="reqn">dPC_{flux}</code> is the variation induced by the loss of interaction
+between the patch i and other patches;
+</p>
+</li>
+<li>
+<p><code class="reqn">dPC_{connector}</code> is the variation induced by the modification of
+paths connecting other patches and initially routed through i.
+</p>
+</li>
+</ul>
+</li></ul>
+</li>
+</ul>
+<p>For most metrics, the interaction probability is computed for each pair of
+patches from the path that minimizes the distance d (or the cost) between
+them. It then maximizes <code class="reqn">{e}^{-\alpha d_{ij}}</code> for patches i and j.
+To use patch capacity values different from the patch area, please use
+directly Graphab software.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>multihab</code></td>
+<td>
+<p>A logical (default = FALSE) indicating whether the
+'multihabitat' mode is used when computing the metric. It only applies to
+the following metrics: 'EC', 'F', 'IF' and 'BC'. If TRUE, then the project
+must have been created with the option <code>nomerge=TRUE</code>. It then returns
+several columns with metric values including the decomposition of the
+computation according to the type of habitat of every patch.
+Be careful, this option is in development and we cannot guarantee the
+results are correct.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist</code></td>
+<td>
+<p>A numeric or integer value specifying the distance at which
+dispersal probability is equal to <code>prob</code>. This argument is mandatory
+for weighted metrics (PC, F, IF, BC, dPC, CCe, CF) but not used for others.
+It is used to set <code class="reqn">\alpha</code> for computing dispersal probabilities associated
+with all inter-patch distances such that dispersal probability between
+patches i and j is <code class="reqn">p_{ij}= e^{-\alpha d_{ij}}</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob</code></td>
+<td>
+<p>A numeric or integer value specifying the dispersal probability
+at distance <code>dist</code>. By default, <code>code=0.05</code>. It is used to set
+<code class="reqn">\alpha</code> (see param <code>dist</code> above).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>A numeric or integer value between 0 and 1 specifying the
+exponent associated with patch areas in the computation of metrics
+weighted by patch area. By default, <code>beta=1</code>. When <code>beta=0</code>, patch
+areas do not have any influence in the computation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cost_conv</code></td>
+<td>
+<p>FALSE (default) or TRUE. Logical indicating whether numeric
+<code>dist</code> values are converted from cost-distance into Euclidean distance
+using a log-log linear regression. See also <code>convert_cd</code>
+function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_val</code></td>
+<td>
+<p>Logical (default = TRUE) indicating whether metric values
+are returned in R (TRUE) or only stored in the patch attribute layer (FALSE)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>proj_path</code></td>
+<td>
+<p>(optional) A character string indicating the path to the
+directory that contains the project directory. It should be used when the
+project directory is not in the current working directory. Default is NULL.
+When 'proj_path = NULL', the project directory is equal to <code>getwd()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alloc_ram</code></td>
+<td>
+<p>(optional, default = NULL) Integer or numeric value
+indicating RAM gigabytes allocated to the java process. Increasing this
+value can speed up the computations. Too large values may not be compatible
+with your machine settings.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The metrics are described in Graphab 2.8 manual:
+<a href="https://sourcesup.renater.fr/www/graphab/download/manual-2.8-en.pdf">https://sourcesup.renater.fr/www/graphab/download/manual-2.8-en.pdf</a>
+Graphab software makes possible the computation of other metrics.
+Be careful, when the same metric is computed several times, the option
+<code>return=TRUE</code> is not returning the right columns. In these cases,
+use <code>get_graphab_metric</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If <code>return_val=TRUE</code>, the function returns a <code>data.frame</code>
+with the computed metric values and the corresponding patch ID when the
+metric is local or delta metric, or the numeric value of the global metric.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>P. Savary
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+graphab_metric(proj_name = "grphb_ex",
+               graph = "graph",
+               metric = "PC",
+               dist = 1000,
+               prob = 0.05,
+               beta = 1)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

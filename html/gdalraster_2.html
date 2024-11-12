@@ -1,0 +1,191 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>addFilesInZip</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create/append to a potentially Seek-Optimized ZIP file (SOZip)</h2>
+
+<h3>Description</h3>
+
+<p><code>addFilesInZip()</code> will create new or open existing ZIP file, and
+add one or more compressed files potentially using the seek optimization
+extension. This function is basically a wrapper for <code>CPLAddFileInZip()</code>
+in the GDAL Common Portability Library, but optionally creates a new ZIP
+file first (with <code>CPLCreateZip()</code>). It provides a subset of functionality
+in the GDAL <code>sozip</code> command-line utility
+(<a href="https://gdal.org/programs/sozip.html">https://gdal.org/programs/sozip.html</a>). Requires GDAL &gt;= 3.7.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">addFilesInZip(
+  zip_file,
+  add_files,
+  overwrite = FALSE,
+  full_paths = TRUE,
+  sozip_enabled = NULL,
+  sozip_chunk_size = NULL,
+  sozip_min_file_size = NULL,
+  num_threads = NULL,
+  content_type = NULL,
+  quiet = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>zip_file</code></td>
+<td>
+<p>Filename of the ZIP file. Will be created if it does not
+exist or if <code>overwrite = TRUE</code>. Otherwise will append to an existing file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>add_files</code></td>
+<td>
+<p>Character vector of one or more input filenames to add.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>overwrite</code></td>
+<td>
+<p>Logical scalar. Overwrite the target zip file if it already
+exists.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>full_paths</code></td>
+<td>
+<p>Logical scalar. By default, the full path will be stored
+(relative to the current directory). <code>FALSE</code> to store just the name of a
+saved file (drop the path).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sozip_enabled</code></td>
+<td>
+<p>String. Whether to generate a SOZip index for the file.
+One of <code>"AUTO"</code> (the default), <code>"YES"</code> or <code>"NO"</code> (see Details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sozip_chunk_size</code></td>
+<td>
+<p>The chunk size for a seek-optimized file.
+Defaults to 32768 bytes. The value is specified in bytes, or K and M
+suffix can be used respectively to specify a value in kilo-bytes or
+mega-bytes. Will be coerced to string.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sozip_min_file_size</code></td>
+<td>
+<p>The minimum file size to decide if a file
+should be seek-optimized, in <code>sozip_enabled="AUTO"</code> mode. Defaults to
+1 MB byte. The value is specified in bytes, or K, M or G suffix can be used
+respectively to specify a value in kilo-bytes, mega-bytes or giga-bytes.
+Will be coerced to string.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_threads</code></td>
+<td>
+<p>Number of threads used for SOZip generation. Defaults to
+<code>"ALL_CPUS"</code> or specify an integer value (coerced to string).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>content_type</code></td>
+<td>
+<p>String Content-Type value for the file. This is stored
+as a key-value pair in the extra field extension 'KV' (0x564b) dedicated to
+storing key-value pair metadata.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>Logical scalar. <code>TRUE</code> for quiet mode, no progress messages
+emitted. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A Seek-Optimized ZIP file (SOZip) contains one or more compressed files
+organized and annotated such that a SOZip-aware reader can perform very
+fast random access within the .zip file
+(see <a href="https://github.com/sozip/sozip-spec">https://github.com/sozip/sozip-spec</a>).
+Large compressed files can be accessed directly from SOZip without prior
+decompression. The .zip file is otherwise fully backward compatible.
+</p>
+<p>If <code>sozip_enabled="AUTO"</code> (the default), a file is seek-optimized only if
+its size is above the values of <code>sozip_min_file_size</code> (default 1 MB) and
+<code>sozip_chunk_size</code> (default <code>32768</code>).
+In <code>"YES"</code> mode, all input files will be seek-optimized. In <code>"NO"</code> mode, no
+input files will be seek-optimized. The default can be changed with the
+<code>CPL_SOZIP_ENABLED</code> configuration option.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Logical indicating success (invisible <code>TRUE</code>).
+An error is raised if the operation fails.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The <code>GDAL_NUM_THREADS</code> configuration option can be set to <code>ALL_CPUS</code> or an
+integer value to specify the number of threads to use for SOZip-compressed
+files (see <code>set_config_option()</code>).
+</p>
+<p>SOZip can be validated with:
+</p>
+<div class="sourceCode"><pre>vsi_get_file_metadata(zip_file, domain="ZIP")
+</pre></div>
+<p>where <code>zip_file</code> uses the /vsizip/ prefix.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>vsi_get_file_metadata()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">lcp_file &lt;- system.file("extdata/storm_lake.lcp", package="gdalraster")
+zip_file &lt;- file.path(tempdir(), "storml_lcp.zip")
+
+# Requires GDAL &gt;= 3.7
+if (as.integer(gdal_version()[2]) &gt;= 3070000) {
+  addFilesInZip(zip_file, lcp_file, full_paths=FALSE, sozip_enabled="YES",
+                num_threads=1)
+
+  print("Files in zip archive:")
+  print(unzip(zip_file, list=TRUE))
+
+  # Open with GDAL using Virtual File System handler '/vsizip/'
+  # see: https://gdal.org/user/virtual_file_systems.html#vsizip-zip-archives
+  lcp_in_zip &lt;- file.path("/vsizip", zip_file, "storm_lake.lcp")
+  print("SOZip metadata:")
+  print(vsi_get_file_metadata(lcp_in_zip, domain="ZIP"))
+
+  ds &lt;- new(GDALRaster, lcp_in_zip)
+  ds$info()
+  ds$close()
+
+  vsi_unlink(zip_file)
+}
+</code></pre>
+
+
+</div>

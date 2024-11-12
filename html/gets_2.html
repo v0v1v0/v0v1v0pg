@@ -1,0 +1,262 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>arx</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate an AR-X model with log-ARCH-X errors</h2>
+
+<h3>Description</h3>
+
+<p>Estimation by OLS, two-step OLS if a variance specification is specified: In the first the mean specification (AR-X) is estimated, whereas in the second step the log-variance specification (log-ARCH-X) is estimated.
+</p>
+<p>The AR-X mean specification can contain an intercept, AR-terms, lagged moving averages of the regressand and other conditioning covariates ('X'). The log-variance specification can contain log-ARCH terms, asymmetry or 'leverage' terms, log(EqWMA) where EqWMA is a lagged equally weighted moving average of past squared residuals (a volatility proxy) and other conditioning covariates ('X').
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">arx(y, mc=TRUE, ar=NULL, ewma=NULL, mxreg=NULL, vc=FALSE,
+  arch=NULL, asym=NULL, log.ewma=NULL, vxreg=NULL, zero.adj=NULL,
+  vc.adj=TRUE, vcov.type=c("ordinary", "white", "newey-west"),
+  qstat.options=NULL, normality.JarqueB=FALSE, user.estimator=NULL,
+  user.diagnostics=NULL, tol=1e-07, LAPACK=FALSE, singular.ok=TRUE,
+  plot=NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p><code>numeric</code> vector, time-series or <code>zoo</code> object. Missing values in the beginning and at the end of the series is allowed, as they are removed with the <code>na.trim</code> command</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc</code></td>
+<td>
+<p><code>logical</code>. <code>TRUE</code> (default) includes an intercept in the mean specification, whereas <code>FALSE</code> does not</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ar</code></td>
+<td>
+<p>either <code>NULL</code> (default) or an integer vector, say, <code>c(2,4)</code> or <code>1:4</code>. The AR-lags to include in the mean specification. If <code>NULL</code>, then no lags are included</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ewma</code></td>
+<td>
+<p>either <code>NULL</code> (default) or a <code>list</code> with arguments sent to the <code>eqwma</code> function. In the latter case a lagged moving average of <code>y</code> is included as a regressor</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mxreg</code></td>
+<td>
+<p>either <code>NULL</code> (default) or a numeric vector or matrix, say, a <code>zoo</code> object, of conditioning variables. Note that, if both <code>y</code> and <code>mxreg</code> are <code>zoo</code> objects, then their samples are chosen to match</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vc</code></td>
+<td>
+<p><code>logical</code>. <code>TRUE</code> includes an intercept in the log-variance specification, whereas <code>FALSE</code> (default) does not. If the log-variance specification contains any other item but the log-variance intercept, then vc is set to <code>TRUE</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>arch</code></td>
+<td>
+<p>either <code>NULL</code> (default) or an integer vector, say, <code>c(1,3)</code> or <code>2:5</code>. The log-ARCH lags to include in the log-variance specification</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>asym</code></td>
+<td>
+<p>either <code>NULL</code> (default) or an integer vector, say, <code>c(1)</code> or <code>1:3</code>. The asymmetry (i.e. 'leverage') terms to include in the log-variance specification</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log.ewma</code></td>
+<td>
+<p>either <code>NULL</code> (default) or a vector of the lengths of the volatility proxies, see <code>leqwma</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vxreg</code></td>
+<td>
+<p>either <code>NULL</code> (default) or a numeric vector or matrix, say, a <code>zoo</code> object, of conditioning variables. If both <code>y</code> and <code>mxreg</code> are <code>zoo</code> objects, then their samples are chosen to match. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zero.adj</code></td>
+<td>
+<p><code>NULL</code> (default) or a strictly positive <code>numeric</code> scalar. If <code>NULL</code>, the zeros in the squared residuals are replaced by the 10 percent quantile of the non-zero squared residuals. If <code>zero.adj</code> is a strictly positive <code>numeric</code> scalar, then this value is used to replace the zeros of the squared residuals. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vc.adj</code></td>
+<td>
+<p><code>logical</code>. If <code>TRUE</code> (default), then the log-variance intercept is adjusted by the estimate of E[ln(z^2)], where z is the standardised error. This adjustment is needed for the conditional scale to be equal to the conditional standard deviation. If <code>FALSE</code>, then the log-variance intercept is not adjusted</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov.type</code></td>
+<td>
+<p><code>character</code> vector, "ordinary" (default), "white" or "newey-west". If "ordinary", then the ordinary variance-covariance matrix is used for inference. If "white", then the White (1980) heteroscedasticity-robust matrix is used. If "newey-west", then the Newey and West (1987) heteroscedasticity and autocorrelation-robust matrix is used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>qstat.options</code></td>
+<td>
+<p><code>NULL</code> (default) or an integer vector of length two, say, <code>c(1,1)</code>. The first value sets the lag-order of the AR diagnostic test, whereas the second value sets the lag-order of the ARCH diagnostic test. If <code>NULL</code>, then the two values of the vector are set automatically</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normality.JarqueB</code></td>
+<td>
+<p><code>FALSE</code> (default) or <code>TRUE</code>. If <code>TRUE</code>, then the results of the Jarque and Bera (1980) test for non-normality in the residuals are included in the estimation results. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>user.estimator</code></td>
+<td>
+<p><code>NULL</code> (default) or a <code>list</code> with one entry, <code>name</code>, containing the name of the user-defined estimator. Additional items, if any, are passed on as arguments to the estimator in question </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>user.diagnostics</code></td>
+<td>
+<p><code>NULL</code> (default) or a <code>list</code> with two entries, <code>name</code> and <code>pval</code>, see the <code>user.fun</code> argument in <code>diagnostics</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p><code>numeric</code> value (<code>default = 1e-07</code>). The tolerance for detecting linear dependencies in the columns of the regressors (see <code>qr</code> function). Only used if <code>LAPACK</code> is <code>FALSE</code> (default) and <code>user.estimator</code> is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LAPACK</code></td>
+<td>
+<p><code>logical</code>. If <code>TRUE</code>, then use LAPACK. If <code>FALSE</code> (default), then use LINPACK (see <code>qr</code> function). Only used if <code>user.estimator</code> is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>singular.ok</code></td>
+<td>
+<p><code>logical</code>. If <code>TRUE</code> (default), the regressors are checked for singularity, and the ones causing it are automatically removed. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p><code>NULL</code> or <code>logical</code>. If <code>TRUE</code>, the fitted values and the residuals are plotted. If <code>NULL</code> (default), then the value set by <code>options</code> determines whether a plot is produced or not.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For an overview of the AR-X model with log-ARCH-X errors, see Pretis, Reade and Sucarrat (2018): <a href="https://doi.org/10.18637/jss.v086.i03">doi:10.18637/jss.v086.i03</a>.<br></p>
+<p>The arguments <code>user.estimator</code> and <code>user.diagnostics</code> enables the specification of user-defined estimators and user-defined diagnostics. To this end, the principles of the same arguments in <code>getsFun</code> are followed, see its documentation under "Details", and Sucarrat (2020): <a href="https://journal.r-project.org/archive/2021/RJ-2021-024/">https://journal.r-project.org/archive/2021/RJ-2021-024/</a>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class 'arx'</p>
+
+
+<h3>Author(s)</h3>
+
+
+<table>
+<tr>
+<td style="text-align: left;">
+	Jonas Kurle: </td>
+<td style="text-align: left;"> </td>
+<td style="text-align: left;"> <a href="https://www.jonaskurle.com/">https://www.jonaskurle.com/</a>
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+	Moritz Schwarz: </td>
+<td style="text-align: left;"> </td>
+<td style="text-align: left;">  <a href="https://www.inet.ox.ac.uk/people/moritz-schwarz">https://www.inet.ox.ac.uk/people/moritz-schwarz</a>
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+	Genaro Sucarrat: </td>
+<td style="text-align: left;"> </td>
+<td style="text-align: left;"> <a href="https://www.sucarrat.net/">https://www.sucarrat.net/</a>
+</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>C. Jarque and A. Bera (1980): 'Efficient Tests for Normality, Homoscedasticity and Serial Independence'. Economics Letters 6, pp. 255-259. <a href="https://doi.org/10.1016/0165-1765%2880%2990024-5">doi:10.1016/0165-1765(80)90024-5</a>
+</p>
+<p>Felix Pretis, James Reade and Genaro Sucarrat (2018): 'Automated General-to-Specific (GETS) Regression Modeling and Indicator Saturation for Outliers and Structural Breaks'. Journal of Statistical Software 86, Number 3, pp. 1-44. <a href="https://doi.org/10.18637/jss.v086.i03">doi:10.18637/jss.v086.i03</a>
+</p>
+<p>Genaro Sucarrat (2020): 'User-Specified General-to-Specific and Indicator Saturation Methods'. The R Journal 12:2, pages 388-401. <a href="https://journal.r-project.org/archive/2021/RJ-2021-024/">https://journal.r-project.org/archive/2021/RJ-2021-024/</a>
+</p>
+<p>Halbert White (1980): 'A Heteroskedasticity-Consistent Covariance Matrix Estimator and a Direct Test for Heteroskedasticity', Econometrica 48, pp. 817-838.
+</p>
+<p>Whitney K. Newey and Kenned D. West (1987): 'A Simple, Positive Semi-Definite, Heteroskedasticity and Autocorrelation Consistent Covariance Matrix', Econometrica 55, pp. 703-708.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Extraction functions (mostly S3 methods): <code>coef.arx</code>, <code>ES</code>, <code>fitted.arx</code>, <code>plot.arx</code>, <br><code>print.arx</code>, <code>recursive</code>, <code>residuals.arx</code>, <code>sigma.arx</code>, <code>rsquared</code>,<br><code>summary.arx</code>, <code>VaR</code> and <code>vcov.arx</code><br></p>
+<p>Related functions: <code>getsm</code>, <code>getsv</code>, <code>isat</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">##Simulate from an AR(1):
+set.seed(123)
+y &lt;- arima.sim(list(ar=0.4), 70)
+
+##estimate an AR(2) with intercept:
+arx(y, mc=TRUE, ar=1:2)
+
+##Simulate four independent Gaussian regressors:
+xregs &lt;- matrix(rnorm(4*70), 70, 4)
+
+##estimate an AR(2) with intercept and four conditioning
+##regressors in the mean:
+arx(y, ar=1:2, mxreg=xregs)
+
+##estimate a log-variance specification with a log-ARCH(4)
+##structure:
+arx(y, mc=FALSE, arch=1:4)
+
+##estimate a log-variance specification with a log-ARCH(4)
+##structure and an asymmetry/leverage term:
+arx(y, mc=FALSE, arch=1:4, asym=1)
+
+##estimate a log-variance specification with a log-ARCH(4)
+##structure, an asymmetry or leverage term, a 10-period log(EWMA) as
+##volatility proxy, and the log of the squareds of the conditioning
+##regressors in the log-variance specification:
+arx(y, mc=FALSE,
+  arch=1:4, asym=1, log.ewma=list(length=10), vxreg=log(xregs^2))
+
+##estimate an AR(2) with intercept and four conditioning regressors
+##in the mean, and a log-variance specification with a log-ARCH(4)
+##structure, an asymmetry or leverage term, a 10-period log(EWMA) as
+##volatility proxy, and the log of the squareds of the conditioning
+##regressors in the log-variance specification:
+arx(y, ar=1:2, mxreg=xregs,
+  arch=1:4, asym=1, log.ewma=list(length=10), vxreg=log(xregs^2))
+</code></pre>
+
+
+</div>

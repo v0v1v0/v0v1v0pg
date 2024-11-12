@@ -1,0 +1,125 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>repeatPattern</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create repeated patterns in Bayesian networks</h2>
+
+<h3>Description</h3>
+
+<p>Repeated patterns is a useful model specification
+short cut for Bayesian networks
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">repeatPattern(plist, instances, unlist = TRUE, data = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>plist</code></td>
+<td>
+<p>A list of conditional probability tables. The variable
+names must have the form <code>name[i]</code> and the <code>i</code> will
+be substituted by the values given in <code>instances</code> below.
+See also the <code>data</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>instances</code></td>
+<td>
+<p>A vector of consecutive integers</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unlist</code></td>
+<td>
+<p>If <code>FALSE</code> the result is a list in which each
+element is a copy of <code>plist</code> in which <code>name[i]</code> are
+substituted. If <code>TRUE</code> the result is the result of
+applying <code>unlist()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A two column matrix. The first column is the index /
+name of a node; the second column is the index / name of the
+node's parent.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Søren Højsgaard, <a href="mailto:sorenh@math.aau.dk">sorenh@math.aau.dk</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Søren Højsgaard (2012). Graphical Independence
+Networks with the gRain Package for R. Journal of Statistical
+Software, 46(10), 1-26.
+<a href="https://www.jstatsoft.org/v46/i10/">https://www.jstatsoft.org/v46/i10/</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>grain</code>, <code>compile_cpt</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+yn &lt;- c("yes", "no")
+n &lt;- 3
+
+## Example: Markov chain
+
+x_init  &lt;- cpt(~x0, values=c(1, 9), levels=yn)                  ## p(x0)
+x_trans &lt;- cpt(~x[i]|x[i-1], values=c(1, 99, 2, 98), levels=yn) ## p(x[i]|x[i-1])
+pat     &lt;- list(x_trans)                             
+rep.pat &lt;- repeat_pattern(pat, instances=1:n)
+
+mc &lt;- compile_cpt(c(list(x_init), rep.pat))
+mc
+mc &lt;- mc |&gt; grain()
+
+## Example: Hidden markov model:
+# The x[i]'s are unobserved, the y[i]'s can be observed.
+
+x_init  &lt;- cpt(~x0, values=c(1, 9), levels=yn)                   ##  p(x0)
+x_trans &lt;- cpt(~x[i]|x[i-1], values=c(1, 99, 2, 98), levels=yn)  ##  p(x[i]|x[i-1])
+y_emis  &lt;- cpt(~y[i]|x[i], values=c(10, 90, 20, 80), levels=yn)  ##  p(y[i]|x[i]) 
+
+pat     &lt;- list(x_trans, y_emis) ## Pattern to be repeated
+rep.pat &lt;- repeat_pattern(pat, instances=1:n)
+hmm &lt;- compile_cpt(c(list(x_init), rep.pat)) 
+hmm
+hmm &lt;- hmm |&gt; grain()
+
+## Data-driven variable names
+
+dep &lt;- data.frame(i=c(1, 2, 3, 4, 5, 6, 7, 8),
+                  p=c(0, 1, 2, 2, 3, 3, 4, 4))
+
+x0 &lt;- cpt(~x0, values=c(0.5, 0.5), levels=yn)
+xa &lt;- cpt(~x[i] | x[data[i, "p"]], values=c(1, 9, 2, 8), levels=yn)
+xb &lt;- repeat_pattern(list(xa), instances=1:nrow(dep), data=dep)
+tree &lt;- compile_cpt(c(list(x0), xb))
+tree
+tree &lt;- tree |&gt; grain()
+tree 
+
+</code></pre>
+
+
+</div>

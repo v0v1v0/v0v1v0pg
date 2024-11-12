@@ -1,0 +1,174 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>MDCES_demand</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Modified Displaced CES Demand Function</h2>
+
+<h3>Description</h3>
+
+<p>Compute the modified displaced CES demand function.
+Firstly, the (unmodified) DCES demand vector and the (unmodified) utility level are computed under the given income and prices.
+Secondly, the modified beta and es are computed under the unmodified utility level.
+Finally, the DCES demand vector (namely the modified DCES demand vector) and the utility level
+(namely the modified DCES utility) are computed under the modified beta, the modified es, the given income and prices.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">MDCES_demand(es, beta, xi, w, p, betaMod = NULL, esMod = NULL, detail = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>es</code></td>
+<td>
+<p>the elasticity of substitution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>an n-vector consisting of the marginal expenditure share coefficients (Fullerton, 1989).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xi</code></td>
+<td>
+<p>an n-vector. Each element of xi parameterizes whether
+the particular good is a necessity for the household (Acemoglu, 2009, page 152).
+For example, xi[i] &gt; 0 may mean that the household needs to consume at least a certain amount of good i to survive.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>a scalar indicating the income.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>an n-vector indicating the prices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>betaMod</code></td>
+<td>
+<p>a function with the unmodified utility level u.unmod as the argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>esMod</code></td>
+<td>
+<p>a function with the unmodified utility level u.unmod as the argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>detail</code></td>
+<td>
+<p>If detail==FALSE, the modified demand vector is returned.
+If detail==TRUE, the returned vector consists of the modified demand vector,
+the modified utility, the modified es, the modified beta, the unmodified utility and
+the unmodified demand vector.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Acemoglu, D. (2009, ISBN: 9780691132921) Introduction to Modern Economic Growth. Princeton University Press.
+</p>
+<p>Fullerton, D. (1989) Notes on Displaced CES Functional Forms. Available at: https://works.bepress.com/don_fullerton/39/
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+MDCES_demand(
+  es = 1.7, beta = c(0.9, 0.1), xi = c(12, 48),
+  w = 24, p = c(1, 1 / 400),
+  betaMod = function(u.unmod) {
+    beta2 &lt;- min(0.1, 10 / u.unmod)
+    c(1 - beta2, beta2)
+  },
+  detail = TRUE
+)
+
+#### An example of computing the daily
+#### labor supply at various wage rates.
+result &lt;- c()
+
+for (real.wage in 4:400) {
+  x &lt;- MDCES_demand(
+    es = 1.7, beta = c(0.9, 0.1),
+    xi = c(12, 48), w = 24,
+    p = c(1, 1 / real.wage),
+    betaMod = function(u.unmod) {
+      beta2 &lt;- min(0.1, 10 / u.unmod)
+      c(1 - beta2, beta2)
+    },
+    detail = TRUE
+  )
+
+  lab.supply &lt;- unname(24 - x[1])
+  result &lt;- rbind(
+    result,
+    c(real.wage, lab.supply, x)
+  )
+}
+
+plot(result[, 1:2],
+  type = "o", pch = 20,
+  xlab = "hourly real wage",
+  ylab = "daily labor supply"
+)
+
+#### A 2-by-2 general equilibrium model
+#### with a MDCES demand function
+ge &lt;- sdm2(
+  A = function(state) {
+    a.firm &lt;- CD_A(alpha = 5, Beta = c(0.5, 0.5), state$p)
+    a.consumer &lt;-
+      MDCES_demand(
+        es = 1, beta = c(0.5, 0.5), xi = c(0, 0), w = state$w[2], p = state$p,
+        betaMod = function(u.unmod) {
+          beta2 &lt;- 0.95 * plogis(u.unmod, location = 2, scale = 2)
+          c(1 - beta2, beta2)
+        }
+      )
+    cbind(a.firm, a.consumer)
+  },
+  B = matrix(c(
+    1, 0,
+    0, 0
+  ), 2, 2, TRUE),
+  S0Exg = matrix(c(
+    NA, NA,
+    NA, 1
+  ), 2, 2, TRUE),
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm", "consumer"),
+  numeraire = "lab"
+)
+
+ge$z
+ge$D
+MDCES_demand(
+  es = 1, beta = c(0.5, 0.5), xi = c(0, 0),
+  w = 1, p = ge$p,
+  betaMod = function(u.unmod) {
+    beta2 &lt;- 0.95 * plogis(u.unmod, location = 2, scale = 2)
+    c(1 - beta2, beta2)
+  }
+)
+
+</code></pre>
+
+
+</div>

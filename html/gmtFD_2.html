@@ -1,0 +1,178 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ph_test_statistic</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Pointwise Hotelling's <code class="reqn">T^2</code>-test statistic</h2>
+
+<h3>Description</h3>
+
+<p>The function <code>ph_test_statistic()</code> calculates the pointwise Hotelling's <code class="reqn">T^2</code>-test statistic.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ph_test_statistic(x, h)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a list of <code class="reqn">k</code> elements corresponding to groups. Each element representing a group 
+is a list of <code class="reqn">p</code> elements corresponding to functional variables, and each such element
+(representing a functional variable) is a matrix of size <code class="reqn">n_i\times ntp</code> of descrete observations 
+in design time points. <code class="reqn">ntp</code> denotes a number of design time points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h</code></td>
+<td>
+<p>contrast matrix. For contrast matrices based on Dunnett’s and Tukey’s contrasts, 
+it can be created by the <code>contr_mat()</code> function from the package <code>GFDmcv</code> (see examples).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For details, see the documentation of the <code>gmtFD()</code> function or
+the papers Munko et al. (2023, 2024).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A vector of values of the pointwise Hotelling's <code class="reqn">T^2</code>-test statistic.
+</p>
+
+
+<h3>References</h3>
+
+<p>Dunnett C. (1955) A multiple comparison procedure for comparing several treatments
+with a control. Journal of the American Statistical Association 50, 1096-1121.
+</p>
+<p>Munko M., Ditzhaus M., Pauly M., Smaga L., Zhang J.T. (2023) General multiple tests for functional data. 
+Preprint https://arxiv.org/abs/2306.15259
+</p>
+<p>Munko M., Ditzhaus M., Pauly M., Smaga L. (2024) Multiple comparison procedures for simultaneous inference 
+in functional MANOVA. Preprint https://arxiv.org/abs/2406.01242
+</p>
+<p>Tukey J.W. (1953) The problem of multiple comparisons. Princeton University.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Some of the examples may run some time.
+
+# Canadian weather data set
+# There are three samples of mean temperature and precipitations for
+# fifteen weather stations in Western Canada, another fifteen in Eastern Canada, 
+# and the remaining five in Northern Canada.
+
+# one functional variable - temperature
+library(fda)
+data_set_t &lt;- t(CanadianWeather$dailyAv[,, "Temperature.C"])
+# number of samples
+k &lt;- 3
+# number of variables
+p &lt;- 1
+# preparing data set
+gr_label &lt;- rep(c(1, 2, 3), c(15, 15, 5))
+data_set &lt;- list(list(data_set_t[gr_label == 1, ]),
+                 list(data_set_t[gr_label == 2, ]),
+                 list(data_set_t[gr_label == 3, ]))
+
+# Tukey's contrast matrix
+h_tukey &lt;- GFDmcv::contr_mat(k, type = "Tukey")
+h_tukey_m &lt;- kronecker(h_tukey, diag(p))
+# plots for pointwise Hotelling's T^2-test statistics
+oldpar &lt;- par(mfrow = c(2, 2), mar = c(4, 2, 2, 0.1))
+plot(ph_test_statistic(data_set, h_tukey_m), type = "l",
+     ylim = c(0, max(ph_test_statistic(data_set, h_tukey_m))),
+     main = "Global hypothesis", xlab = "Day")
+plot(ph_test_statistic(data_set, matrix(h_tukey_m[1, ], 1)), type = "l",
+     ylim = c(0, max(ph_test_statistic(data_set, h_tukey_m))),
+     main = "Contrast 1", xlab = "Day")
+plot(ph_test_statistic(data_set, matrix(h_tukey_m[2, ], 1)), type = "l",
+     ylim = c(0, max(ph_test_statistic(data_set, h_tukey_m))),
+     main = "Contrast 2", xlab = "Day")
+plot(ph_test_statistic(data_set, matrix(h_tukey_m[3, ], 1)), type = "l",
+     ylim = c(0, max(ph_test_statistic(data_set, h_tukey_m))),
+     main = "Contrast 3", xlab = "Day")
+par(oldpar)
+
+# Dunnett's contrast matrix
+h_dunnett &lt;- GFDmcv::contr_mat(k, type = "Dunnett")
+h_dunnett_m &lt;- kronecker(h_dunnett, diag(p))
+# plots for pointwise Hotelling's T^2-test statistics
+oldpar &lt;- par(mfrow = c(3, 1), mar = c(4, 2, 2, 0.1))
+plot(ph_test_statistic(data_set, h_dunnett_m), type = "l",
+     ylim = c(0, max(ph_test_statistic(data_set, h_dunnett_m))),
+     main = "Global hypothesis", xlab = "Day")
+plot(ph_test_statistic(data_set, matrix(h_dunnett_m[1, ], 1)), type = "l",
+     ylim = c(0, max(ph_test_statistic(data_set, h_dunnett_m))),
+     main = "Contrast 1", xlab = "Day")
+plot(ph_test_statistic(data_set, matrix(h_dunnett_m[2, ], 1)), type = "l",
+     ylim = c(0, max(ph_test_statistic(data_set, h_dunnett_m))),
+     main = "Contrast 2", xlab = "Day")
+par(oldpar)
+
+# two functional variables - temperature and precipitation
+library(fda)
+data_set_t &lt;- t(CanadianWeather$dailyAv[,, "Temperature.C"])
+data_set_p &lt;- t(CanadianWeather$dailyAv[,, "Precipitation.mm"])
+# number of samples
+k &lt;- 3
+# number of variables
+p &lt;- 2
+# preparing data set
+gr_label &lt;- rep(c(1, 2, 3), c(15, 15, 5))
+data_set &lt;- list(list(data_set_t[gr_label == 1, ], data_set_p[gr_label == 1, ]),
+                 list(data_set_t[gr_label == 2, ], data_set_p[gr_label == 2, ]),
+                 list(data_set_t[gr_label == 3, ], data_set_p[gr_label == 3, ]))
+
+# Tukey's contrast matrix
+h_tukey &lt;- GFDmcv::contr_mat(k, type = "Tukey")
+h_tukey_m &lt;- kronecker(h_tukey, diag(p))
+# plots for pointwise Hotelling's T^2-test statistics
+oldpar &lt;- par(mfrow = c(2, 2), mar = c(4, 2, 2, 0.1))
+plot(ph_test_statistic(data_set, h_tukey_m), type = "l",
+     ylim = c(0, max(ph_test_statistic(data_set, h_tukey_m))),
+     main = "Global hypothesis", xlab = "Day")
+plot(ph_test_statistic(data_set, h_tukey_m[1:2, ]), type = "l",
+     ylim = c(0, max(ph_test_statistic(data_set, h_tukey_m))),
+     main = "Contrast 1", xlab = "Day")
+plot(ph_test_statistic(data_set, h_tukey_m[3:4, ]), type = "l",
+     ylim = c(0, max(ph_test_statistic(data_set, h_tukey_m))),
+     main = "Contrast 2", xlab = "Day")
+plot(ph_test_statistic(data_set, h_tukey_m[5:6, ]), type = "l",
+     ylim = c(0, max(ph_test_statistic(data_set, h_tukey_m))),
+     main = "Contrast 3", xlab = "Day")
+par(oldpar)
+
+# Dunnett's contrast matrix
+h_dunnett &lt;- GFDmcv::contr_mat(k, type = "Dunnett")
+h_dunnett_m &lt;- kronecker(h_dunnett, diag(p))
+# plots for pointwise Hotelling's T^2-test statistics
+oldpar &lt;- par(mfrow = c(3, 1), mar = c(4, 2, 2, 0.1))
+plot(ph_test_statistic(data_set, h_dunnett_m), type = "l",
+     ylim = c(0, max(ph_test_statistic(data_set, h_dunnett_m))),
+     main = "Global hypothesis", xlab = "Day")
+plot(ph_test_statistic(data_set, matrix(h_dunnett_m[1, ], 1)), type = "l",
+     ylim = c(0, max(ph_test_statistic(data_set, h_dunnett_m))),
+     main = "Contrast 1", xlab = "Day")
+plot(ph_test_statistic(data_set, matrix(h_dunnett_m[2, ], 1)), type = "l",
+     ylim = c(0, max(ph_test_statistic(data_set, h_dunnett_m))),
+     main = "Contrast 2", xlab = "Day")
+par(oldpar)
+
+</code></pre>
+
+
+</div>

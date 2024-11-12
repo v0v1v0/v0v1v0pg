@@ -1,0 +1,340 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>causeSum2Panel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Kernel regressions based causal paths in Panel Data.</h2>
+
+<h3>Description</h3>
+
+<p>The algorithm of this function uses an internal function
+fminmax=function(x)min(x)==max(x).
+The subsets mtx2 of the original data da for a specific time or space
+can become degenerate if the columns of mtx2 have no variability.
+The apply function of R is applied to the columns of mtx2 as follows.
+"ap1=apply(mtx2,2,fminmax)." Now, "sumap1=sum(ap1)" counts how many
+columns of the data matrix are degenerate.  We have a degeneracy
+problem only if sumap1 is &gt;1 or =1. For example, the panel consists
+of data on 50 United States and 20 years. Now, consumer price index
+(cpi) data may be common for all states. That is, the min(cpi)
+equals max(cpi) for all states. Then, the variance of cpi is zero,
+and we have degeneracy. When this happens, the regressor cpi should
+not be involved in determining causal paths.
+We identify degeneracy using "fminmax=function(x)min(x)==max(x)"
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">causeSum2Panel(
+  da,
+  fn = causeSummary2NoP,
+  rowfnout,
+  colfnout,
+  fnoutNames,
+  namXs,
+  namXt,
+  namXy,
+  namXc = 0,
+  namXjmtx,
+  chosenTimes = NULL,
+  chosenSpaces = NULL,
+  ylag = 0,
+  verbo = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>da</code></td>
+<td>
+<p>panel dat having a named column for space and time</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fn</code></td>
+<td>
+<p>an R function causeSummary2NoP(mtx)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rowfnout</code></td>
+<td>
+<p>the number of rows output by fn</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colfnout</code></td>
+<td>
+<p>the number of columns output by fn</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fnoutNames</code></td>
+<td>
+<p>the column names of output by fn, for example,
+fnoutNames=c("cause","effect","strength","r","p-val")</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>namXs</code></td>
+<td>
+<p>title of the column in da having the space variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>namXt</code></td>
+<td>
+<p>title of the column in da having the time variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>namXy</code></td>
+<td>
+<p>title of the column in da having the dependent y variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>namXc</code></td>
+<td>
+<p>title(s) of the column(s) in da 
+having control variable(s), default=0 means none specified</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>namXjmtx</code></td>
+<td>
+<p>title(s) of the column(s) in da having regressor(s)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chosenTimes</code></td>
+<td>
+<p>subset of values of time variable chosen for quick
+results, There are NchosenTimes values chosen in the subset.
+default=NULL means all time identifiers in the data are included.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chosenSpaces</code></td>
+<td>
+<p>subset of values of space variable chosen for quick
+results, There are NchosenSpaces values chosen in the subset.
+default=NULL means all space identifiers are included. The degrees
+of freedom for Studentized statistic for Granger causality tests 
+are df=(NchosenSpaces -1).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ylag</code></td>
+<td>
+<p>time lag in Granger causality study of time dimension
+the default ylag=0 is not really zero. It means ylag=
+min(4, round(NchosenTimes/5,0)),
+where NchosenTimes is the length of chosenTimes vector</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbo</code></td>
+<td>
+<p>print detail results along the way, default=FALSE</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>We assume that panel data have space (space=individual region)
+and time (e.g., year) dimensions. We use upper case
+X to denote a common prefix in the panel data.
+Xs =name of the space variable, e.g., state or individual.
+The range of values for s is 1 to nspace.
+Xt =name of the time variable, e.g., year.
+The range of values for t is 1 to ntime.
+Xy =the dependent variable(s) value at time t in state s.
+Since panel data causal analysis can take a long computer time,
+we allow the user to choose subsets of time and space values
+called chosenTimes and chosenSpaces, respectively.
+Various input parameters starting with "nam" specify the names
+of variables in the panel study.
+</p>
+<p>The algorithm calls some function fn(mtx) where mtx is the data matrix,
+and fn is causeSummary2NoP(mtx). The causal paths between (y, xj)
+pairs of variables in mtx are computed following 3 sophisticated
+criteria involving exact stochastic dominance. Type "?causeSummary2"
+on the R console to get details (omitted here for brevity).
+Panel data consist of a time
+series of cross-sections and are also called longitudinal data.
+We provide estimates of causal path directions and strengths
+for both the time-series and cross-sectional
+views of panel data. Since our regressions are kernel type
+with no functional forms, fixed effects for time and space
+are being suppressed when computing the causality.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The causeSum2Panel(.) produces many output matrices and vectors. 
+The first
+"outt" gives a 3-dimensional array of panel causal path output focused on 
+time series for each space value using fixed space value.
+It reports causal path directions, and strengths for (y, xj) pairs.
+The second output array, called
+"outs", gives similar 3D panel causal path output focused on 
+space cross sections using fixed time value.
+The third output matrix called
+"outdif" gives causal paths using Granger causality for each
+pair (y, xj). They are not causal strengths but differences 
+between Rsquare values of two flipped kernel regressions.
+The summary of Granger causality answer is an output matrix called
+grangerAns (first row average of differences in R-squares and
+second row has its test statistic with degrees of freedom n-1),
+and grangerStat for related t-statistic for formal inference.
+based on column means and variances of "outdif". This function
+also produces a matrix summarizing "outt" and "outs" into two-dimensional
+matrices reporting averages of signed strengths as  "strentime"
+and "strenspace", Also, "pearsontime" reports the Pearson
+correlation coefficients for various time values and their average in the
+last column. It determines the overall direction of
+the causal relation between y and xj.
+For example, a negative average correlation means y and xj are negatively
+correlated (xj goes up, y goes down). Similarly, "pearsonspace"
+summarizes "outs" correlations.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The function prints to the screen some summaries of the three
+output matrices. It reports how often a variable is a cause in
+various pairs as time series or as cross sections. It also reports the
+average strengths of causal paths for "outt" and "outs" matrices.
+We compute the difference between two R-square values to find which
+causal direction is more plausible.  This involves kernel regressions
+of y on its own lags and lags of a regressor. Unlike the usual Granger
+causality we estimate better-fitting nonlinear kernel regressions.
+If the averages in "outdif" matrix are negative, the Granger causal
+paths go from y to xj. This may be unexpected when the model assumes
+that y depends on x1 to xp, that is, the causal paths go from xj to y.
+In studying the causal pairs, the function creates mixtures of
+names y and xj. Character vectors containing the mixed names are
+are column names or row names depending on the context. For example,
+the output matrix grangerAns column names help identify the relevant
+regressor name. The first row of the grangerAns matrix has column averages
+of outdiff matrix to help get an overall estimate of the Granger-causal paths.
+The second row of the grangerAns has the Studentized test
+statistic for formal testing of the significance of Granger causal paths.
+Collecting the results for the time dimension strengths with
+suitable sign (negative strength means cause reversal xj-&gt;y) is output
+named strentime.  The corresponding Pearson
+correlations as an output is named pearsontime.
+Collecting the results for the space dimension strengths with
+suitable sign (negative strength means cause reversal xj-&gt;y) is output
+named strenspace.  The corresponding Pearson
+correlations are named pearsonspace. A grand summary of average
+strengths and correlations is output matrix named grandsum.
+It is intended to provide an overall picture of causal paths in Panel
+data. These paths should not be confused with Granger causal paths which
+always involve time lags and causes are presumed to precede effects in time.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Prof. H. D. Vinod, Economics Dept., Fordham University, NY.
+</p>
+
+
+<h3>References</h3>
+
+<p>Vinod, H. D. 'Generalized Correlation and Kernel Causality with
+Applications in Development Economics' in Communications in
+Statistics -Simulation and Computation, 2015,
+<a href="https://doi.org/10.1080/03610918.2015.1122048">doi:10.1080/03610918.2015.1122048</a>
+</p>
+<p>Vinod, H. D. 'New exogeneity tests and causal paths,'
+Chapter 2 in 'Handbook of Statistics: Conceptual Econometrics 
+Using R', Vol.32, co-editors: H. D. Vinod and C.R. Rao. New York:
+North Holland, Elsevier Science Publishers, 2019, pp. 33-64.
+</p>
+<p>Vinod, H. D. Causal Paths and Exogeneity Tests 
+in Generalcorr Package for Air Pollution and Monetary Policy 
+(June 6, 2017). Available at SSRN: 
+<a href="https://www.ssrn.com/abstract=2982128">https://www.ssrn.com/abstract=2982128</a>
+</p>
+<p>Vinod, Hrishikesh D., R Package GeneralCorr 
+Functions for Portfolio Choice 
+(November 11, 2021). Available at SSRN: 
+https://ssrn.com/abstract=3961683
+</p>
+<p>Vinod, Hrishikesh D., Stochastic Dominance 
+Without Tears (January 26, 2021). Available at 
+SSRN: https://ssrn.com/abstract=3773309
+</p>
+
+
+<h3>See Also</h3>
+
+<p>See  <code>causeSummary2</code>
+</p>
+<p>See  <code>causeSummary</code> is subject to trapezoidal approximation.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+## Not run: 
+library(plm);data(Grunfeld)
+options(np.messages=FALSE)
+namXs="firm"
+print("initial values identifying the space variable")
+head(da[,namXs],3)
+print(str(da[,namXs]))
+chosenSpaces=(3:10)                        
+if(is.numeric(da[,namXs])){
+  chosenSpaces=as.numeric(chosenSpaces)}
+if(!is.numeric(da[,namXs])){
+  chosenSpaces=as.character(chosenSpaces)}
+
+namXt="year"
+print("initial values identifying the time variable")
+head(da[,namXt],3)
+print(str(da[,namXt]))
+chosenTimes=1940:1949
+if(is.numeric(da[,namXt])){
+  chosenTimes=as.numeric(chosenTimes)}
+if(!is.numeric(da[,namXt])){
+  chosenTimes=as.character(chosenTimes)}
+
+namXy="inv"
+namXc=0
+namXjmtx=c("value","capital")
+p=length(namXjmtx)
+fn=causeSummary2NoP
+fnout=matrix(NA,nrow=p,ncol=5)
+fnoutNames=c("cause","effect","strength","r","p-val")
+causeSum2Panel(da, fn=causeSummary2NoP,
+               rowfnout=p, colfnout=5, 
+               fnoutNames=c("cause","effect","strength","r","p-val"),
+               namXs=namXs,
+               namXt=namXt,
+               namXy=namXy,
+               namXc=namXc,
+               namXjmtx=namXjmtx,
+               chosenTimes=chosenTimes,
+               chosenSpaces=chosenSpaces,
+               verbo=FALSE)
+
+## End(Not run)
+
+
+</code></pre>
+
+
+</div>

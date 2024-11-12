@@ -1,0 +1,124 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>OxBoatRace</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Oxford-Cambridge Boat Race</h2>
+
+<h3>Description</h3>
+
+<p>Results of the boat race between Oxford and Cambridge from
+1829–2011.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">data(OxBoatRace)</code></pre>
+
+
+<h3>Format</h3>
+
+<p>A data frame containing the following columns:
+</p>
+
+<table>
+<tr>
+<td style="text-align: right;">
+
+  [, 1]</td>
+<td style="text-align: left;"> Year </td>
+<td style="text-align: left;"> Year in which the race occurred. Some years are
+  missing when the race was not run.</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+  [, 2]</td>
+<td style="text-align: left;"> Intercept </td>
+<td style="text-align: left;"> A vector of ones, providing the intercept in
+  the model.</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+  [, 3]</td>
+<td style="text-align: left;"> Camwin </td>
+<td style="text-align: left;"> A binary response, zero for an Oxford win, one
+  for a Cambridge win.</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+  [, 4]</td>
+<td style="text-align: left;"> WinnerWeight </td>
+<td style="text-align: left;"> Weight of winning team's crew.</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+  [, 5]</td>
+<td style="text-align: left;"> LoserWeight </td>
+<td style="text-align: left;"> Weight of losing team's crew.</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+  [, 6]</td>
+<td style="text-align: left;"> Diff </td>
+<td style="text-align: left;"> Difference between winning team's weight and
+  losing team's weight.</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+ </td>
+</tr>
+</table>
+<h3>Source</h3>
+
+<p>Klingenberg, Bernhard (2008) Regression models for binary time series
+with gaps. <em>Computational Statistics &amp; Data Analysis</em>,
+<b>52</b>, 4076–4090.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">### Example with Oxford-Cambridge Boat Race
+data(OxBoatRace)
+
+y1 &lt;- OxBoatRace$Camwin
+n1 &lt;- rep(1, length(OxBoatRace$Year))
+Y &lt;- cbind(y1, n1 - y1)
+X &lt;- cbind(OxBoatRace$Intercept, OxBoatRace$Diff)
+colnames(X) &lt;- c("Intercept", "Weight Diff")
+
+oxcamglm &lt;- glm(Y ~ Diff + I(Diff^2),
+                data = OxBoatRace,
+                family = binomial(link = "logit"), x = TRUE)
+summary(oxcamglm)
+
+X &lt;- oxcamglm$x
+
+glarmamod &lt;- glarma(Y, X, thetaLags = c(1, 2), type = "Bin", method = "NR",
+                    residuals = "Pearson", maxit = 100, grad = 1e-6)
+
+summary(glarmamod)
+likTests(glarmamod)
+
+## Plot Probability of Cambridge win versus Cambridge Weight advantage:
+beta &lt;- coef(glarmamod, "beta")
+par(mfrow = c(1, 1))
+plot(OxBoatRace$Diff, 1 / (1 + exp(-(beta[1] + beta[2] * OxBoatRace$Diff +
+                                       beta[3] * OxBoatRace$Diff^2))),
+     ylab = "Prob", xlab = "Weight Diff")
+title("Probability of Cambridge win \n versus Cambridge weight advantage")
+
+## Residuals and fit plots
+par(mfrow=c(3, 2))
+plot.glarma(glarmamod)
+</code></pre>
+
+
+</div>

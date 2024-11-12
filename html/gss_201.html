@@ -1,0 +1,227 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sscox</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimating Relative Risk Using Smoothing Splines</h2>
+
+<h3>Description</h3>
+
+<p>Estimate relative risk using smoothing spline ANOVA models.  The
+symbolic model specification via <code>formula</code> follows the same
+rules as in <code>lm</code>, but with the response of a special
+form.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sscox(formula, type=NULL, data=list(), weights=NULL, subset,
+      na.action=na.omit, partial=NULL, alpha=1.4, id.basis=NULL,
+      nbasis=NULL, seed=NULL, random=NULL, prec=1e-7, maxiter=30,
+      skip.iter=FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Symbolic description of the model to be fit, where
+the response is of the form <code>Surv(futime,status,start=0)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>List specifying the type of spline for each variable.
+See <code>mkterm</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Optional data frame containing the variables in the
+model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Optional vector of counts for duplicated data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>Optional vector specifying a subset of observations
+to be used in the fitting process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>Function which indicates what should happen when
+the data contain NAs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>partial</code></td>
+<td>
+<p>Optional symbolic description of parametric terms in
+partial spline models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Parameter defining cross-validation score for smoothing
+parameter selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id.basis</code></td>
+<td>
+<p>Index of observations to be used as "knots."</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbasis</code></td>
+<td>
+<p>Number of "knots" to be used.  Ignored when
+<code>id.basis</code> is specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Seed to be used for the random generation of "knots."
+Ignored when <code>id.basis</code> is specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>random</code></td>
+<td>
+<p>Input for parametric random effects (frailty) in
+nonparametric mixed-effect models.  See <code>mkran</code> for
+details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prec</code></td>
+<td>
+<p>Precision requirement for internal iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiter</code></td>
+<td>
+<p>Maximum number of iterations allowed for
+internal iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>skip.iter</code></td>
+<td>
+<p>Flag indicating whether to use initial values of
+theta and skip theta iteration.  See <code>ssanova</code> for
+notes on skipping theta iteration.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A proportional hazard model is assumed, and the relative risk is
+estimated via penalized partial likelihood.  The model specification
+via <code>formula</code> is for the log relative risk.  For example,
+<code>Suve(t,d)~u*v</code> prescribes a model of the form
+</p>
+<p style="text-align: center;"><code class="reqn">
+	log f(u,v) = g_{u}(u) + g_{v}(v) + g_{u,v}(u,v)
+    </code>
+</p>
+
+<p>with the terms denoted by <code>"u"</code>, <code>"v"</code>, and <code>"u:v"</code>;
+relative risk is defined only up to a multiplicative constant, so
+the constant term is not included in the model.
+</p>
+<p><code>sscox</code> takes standard right-censored lifetime data, with
+possible left-truncation and covariates; in
+<code>Surv(futime,status,start=0)~...</code>, <code>futime</code> is the  
+follow-up time, <code>status</code> is the censoring indicator, and
+<code>start</code> is the optional left-truncation time.
+</p>
+<p>Parallel to those in a <code>ssanova</code> object, the model terms
+are sums of unpenalized and penalized terms.  Attached to every
+penalized term there is a smoothing parameter, and the model
+complexity is largely determined by the number of smoothing
+parameters.
+</p>
+<p>The selection of smoothing parameters is through a cross-validation
+mechanism designed for density estimation under biased sampling,
+with a fudge factor <code>alpha</code>; <code>alpha=1</code> is "unbiased" for
+the minimization of Kullback-Leibler loss but may yield severe
+undersmoothing, whereas larger <code>alpha</code> yields smoother
+estimates.
+</p>
+<p>A subset of the observations are selected as "knots."  Unless
+specified via <code>id.basis</code> or <code>nbasis</code>, the number of
+"knots" <code class="reqn">q</code> is determined by <code class="reqn">max(30,10n^{2/9})</code>, which is
+appropriate for the default cubic splines for numerical vectors.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>sscox</code> returns a list object of class <code>"sscox"</code>.
+</p>
+<p>The method <code>predict.sscox</code> can be used to evaluate the
+fits at arbitrary points along with standard errors.  The method
+<code>project.sscox</code> can be used to calculate the
+Kullback-Leibler projection for model selection.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The function <code>Surv(futime,status,start=0)</code> is defined and
+parsed inside <code>sscox</code>, not quite the same as the one in the
+<code>survival</code> package.  The estimation is invariant of monotone
+transformations of time.
+</p>
+<p>The results may vary from run to run.  For consistency, specify
+<code>id.basis</code> or set <code>seed</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Gu, C. (2013), <em>Smoothing Spline ANOVA Models (2nd Ed)</em>.  New
+York: Springer-Verlag.
+</p>
+<p>Gu, C. (2014), Smoothing Spline ANOVA Models: R Package gss.
+<em>Journal of Statistical Software</em>, 58(5), 1-25. URL
+http://www.jstatsoft.org/v58/i05/.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Relative Risk
+data(stan)
+fit.rr &lt;- sscox(Surv(futime,status)~age,data=stan)
+est.rr &lt;- predict(fit.rr,data.frame(age=c(35,40)),se=TRUE)
+## Base Hazard
+risk &lt;- predict(fit.rr,stan)
+fit.bh &lt;- sshzd(Surv(futime,status)~futime,data=stan,offset=log(risk))
+tt &lt;- seq(0,max(stan$futime),length=51)
+est.bh &lt;- hzdcurve.sshzd(fit.bh,tt,se=TRUE)
+## Clean up
+## Not run: rm(stan,fit.rr,est.rr,risk,fit.bh,tt,est.bh)
+</code></pre>
+
+
+</div>

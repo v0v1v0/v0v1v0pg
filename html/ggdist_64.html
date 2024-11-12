@@ -1,0 +1,632 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>geom_slabinterval</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Slab + point + interval meta-geom</h2>
+
+<h3>Description</h3>
+
+<p>This meta-geom supports drawing combinations of functions (as slabs, aka ridge plots or joy plots), points, and
+intervals. It acts as a meta-geom for many other <span class="pkg">ggdist</span> geoms that are wrappers around this geom, including
+eye plots, half-eye plots, CCDF barplots, and point+multiple interval plots, and supports both horizontal and
+vertical orientations, dodging (via the <code>position</code> argument), and relative justification of slabs with their
+corresponding intervals.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">geom_slabinterval(
+  mapping = NULL,
+  data = NULL,
+  stat = "identity",
+  position = "identity",
+  ...,
+  orientation = NA,
+  normalize = "all",
+  fill_type = "segments",
+  interval_size_domain = c(1, 6),
+  interval_size_range = c(0.6, 1.4),
+  fatten_point = 1.8,
+  arrow = NULL,
+  show_slab = TRUE,
+  show_point = TRUE,
+  show_interval = TRUE,
+  subguide = "none",
+  na.rm = FALSE,
+  show.legend = NA,
+  inherit.aes = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mapping</code></td>
+<td>
+<p>Set of aesthetic mappings created by <code>aes()</code>. If specified and
+<code>inherit.aes = TRUE</code> (the default), it is combined with the default mapping
+at the top level of the plot. You must supply <code>mapping</code> if there is no plot
+mapping.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The data to be displayed in this layer. There are three
+options:
+</p>
+<p>If <code>NULL</code>, the default, the data is inherited from the plot
+data as specified in the call to <code>ggplot()</code>.
+</p>
+<p>A <code>data.frame</code>, or other object, will override the plot
+data. All objects will be fortified to produce a data frame. See
+<code>fortify()</code> for which variables will be created.
+</p>
+<p>A <code>function</code> will be called with a single argument,
+the plot data. The return value must be a <code>data.frame</code>, and
+will be used as the layer data. A <code>function</code> can be created
+from a <code>formula</code> (e.g. <code>~ head(.x, 10)</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stat</code></td>
+<td>
+<p>The statistical transformation to use on the data for this
+layer, either as a <code>ggproto</code> <code>Geom</code> subclass or as a string naming the
+stat stripped of the <code>stat_</code> prefix (e.g. <code>"count"</code> rather than
+<code>"stat_count"</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>position</code></td>
+<td>
+<p>Position adjustment, either as a string, or the result of a call to a position adjustment function.
+Setting this equal to <code>"dodge"</code> (<code>position_dodge()</code>) or <code>"dodgejust"</code> (<code>position_dodgejust()</code>) can be useful if
+you have overlapping geometries.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed to <code>layer()</code>. These are often aesthetics, used to set an aesthetic
+to a fixed value, like <code>colour = "red"</code> or <code>linewidth = 3</code> (see <strong>Aesthetics</strong>, below). They may also be
+parameters to the paired geom/stat.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>orientation</code></td>
+<td>
+<p>Whether this geom is drawn horizontally or vertically. One of:
+</p>
+
+<ul>
+<li> <p><code>NA</code> (default): automatically detect the orientation based on how the aesthetics
+are assigned. Automatic detection works most of the time.
+</p>
+</li>
+<li> <p><code>"horizontal"</code> (or <code>"y"</code>): draw horizontally, using the <code>y</code> aesthetic to identify different
+groups. For each group, uses the <code>x</code>, <code>xmin</code>, <code>xmax</code>, and <code>thickness</code> aesthetics to
+draw points, intervals, and slabs.
+</p>
+</li>
+<li> <p><code>"vertical"</code> (or <code>"x"</code>): draw vertically, using the <code>x</code> aesthetic to identify different
+groups. For each group, uses the <code>y</code>, <code>ymin</code>, <code>ymax</code>, and <code>thickness</code> aesthetics to
+draw points, intervals, and slabs.
+</p>
+</li>
+</ul>
+<p>For compatibility with the base ggplot naming scheme for <code>orientation</code>, <code>"x"</code> can be used as an alias
+for <code>"vertical"</code> and <code>"y"</code> as an alias for <code>"horizontal"</code> (<span class="pkg">ggdist</span> had an <code>orientation</code> parameter
+before base ggplot did, hence the discrepancy).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normalize</code></td>
+<td>
+<p>How to normalize heights of functions input to the <code>thickness</code> aesthetic. One of:
+</p>
+
+<ul>
+<li> <p><code>"all"</code>: normalize so that the maximum height across all data is <code>1</code>.
+</p>
+</li>
+<li> <p><code>"panels"</code>: normalize within panels so that the maximum height in each panel is <code>1</code>.
+</p>
+</li>
+<li> <p><code>"xy"</code>: normalize within the x/y axis opposite the <code>orientation</code> of this geom so
+that the maximum height at each value of the opposite axis is <code>1</code>.
+</p>
+</li>
+<li> <p><code>"groups"</code>: normalize within values of the opposite axis and within each
+group so that the maximum height in each group is <code>1</code>.
+</p>
+</li>
+<li> <p><code>"none"</code>: values are taken as is with no normalization (this should probably
+only be used with functions whose values are in [0,1], such as CDFs).
+</p>
+</li>
+</ul>
+<p>For a comprehensive discussion and examples of slab scaling and normalization, see the
+<a href="https://mjskay.github.io/ggdist/articles/thickness.html"><code>thickness</code> scale article</a>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fill_type</code></td>
+<td>
+<p>What type of fill to use when the fill color or alpha varies within a slab. One of:
+</p>
+
+<ul>
+<li> <p><code>"segments"</code>: breaks up the slab geometry into segments for each unique combination of fill color and
+alpha value. This approach is supported by all graphics devices and works well for sharp cutoff values,
+but can give ugly results if a large number of unique fill colors are being used (as in gradients,
+like in <code>stat_gradientinterval()</code>).
+</p>
+</li>
+<li> <p><code>"gradient"</code>: a <code>grid::linearGradient()</code> is used to create a smooth gradient fill. This works well for
+large numbers of unique fill colors, but requires R &gt;= 4.1 and is not yet supported on all graphics devices.
+As of this writing, the <code>png()</code> graphics device with <code>type = "cairo"</code>, the <code>svg()</code> device, the <code>pdf()</code>
+device, and the <code>ragg::agg_png()</code> devices are known to support this option. On R &lt; 4.1, this option
+will fall back to <code>fill_type = "segments"</code> with a message.
+</p>
+</li>
+<li> <p><code>"auto"</code>: attempts to use <code>fill_type = "gradient"</code> if support for it can be auto-detected. On R &gt;= 4.2,
+support for gradients can be auto-detected on some graphics devices; if support is not detected, this
+option will fall back to <code>fill_type = "segments"</code> (in case of a false negative, <code>fill_type = "gradient"</code>
+can be set explicitly). On R &lt; 4.2, support for gradients cannot be auto-detected, so this will always
+fall back to <code>fill_type = "segments"</code>, in which case you can set <code>fill_type = "gradient"</code> explicitly
+if you are using a graphics device that support gradients.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interval_size_domain</code></td>
+<td>
+<p>A length-2 numeric vector giving the minimum and maximum of the values of the <code>size</code> and <code>linewidth</code> aesthetics
+that will be translated into actual sizes for intervals drawn according to <code>interval_size_range</code> (see the
+documentation for that argument.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interval_size_range</code></td>
+<td>
+<p>A length-2 numeric vector. This geom scales the raw size aesthetic values when drawing interval and point
+sizes, as they tend to be too thick when using the default settings of <code>scale_size_continuous()</code>, which give
+sizes with a range of <code>c(1, 6)</code>. The <code>interval_size_domain</code> value indicates the input domain of raw size
+values (typically this should be equal to the value of the <code>range</code> argument of the <code>scale_size_continuous()</code>
+function), and <code>interval_size_range</code> indicates the desired output range of the size values (the min and max of
+the actual sizes used to draw intervals). Most of the time it is not recommended to change the value of this
+argument, as it may result in strange scaling of legends; this argument is a holdover from earlier versions
+that did not have size aesthetics targeting the point and interval separately. If you want to adjust the
+size of the interval or points separately, you can also use the <code>linewidth</code> or <code>point_size</code>
+aesthetics; see sub-geometry-scales.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fatten_point</code></td>
+<td>
+<p>A multiplicative factor used to adjust the size of the point relative to the size of the
+thickest interval line. If you wish to specify point sizes directly, you can also use the <code>point_size</code>
+aesthetic and <code>scale_point_size_continuous()</code> or <code>scale_point_size_discrete()</code>; sizes
+specified with that aesthetic will not be adjusted using <code>fatten_point</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>arrow</code></td>
+<td>
+<p><code>grid::arrow()</code> giving the arrow heads to use on the interval, or <code>NULL</code> for no arrows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show_slab</code></td>
+<td>
+<p>Should the slab portion of the geom be drawn?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show_point</code></td>
+<td>
+<p>Should the point portion of the geom be drawn?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show_interval</code></td>
+<td>
+<p>Should the interval portion of the geom be drawn?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subguide</code></td>
+<td>
+<p>Sub-guide used to annotate the <code>thickness</code> scale. One of:
+</p>
+
+<ul>
+<li>
+<p> A function that takes a <code>scale</code> argument giving a ggplot2::Scale
+object and an <code>orientation</code> argument giving the orientation of the
+geometry and then returns a grid::grob that will draw the axis
+annotation, such as <code>subguide_axis()</code> (to draw a traditional axis) or
+<code>subguide_none()</code> (to draw no annotation). See <code>subguide_axis()</code>
+for a list of possibilities and examples.
+</p>
+</li>
+<li>
+<p> A string giving the name of such a function when prefixed
+with <code>"subguide"</code>; e.g. <code>"axis"</code> or <code>"none"</code>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.rm</code></td>
+<td>
+<p>If <code>FALSE</code>, the default, missing values are removed with a warning. If <code>TRUE</code>, missing
+values are silently removed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show.legend</code></td>
+<td>
+<p>logical. Should this layer be included in the legends?
+<code>NA</code>, the default, includes if any aesthetics are mapped.
+<code>FALSE</code> never includes, and <code>TRUE</code> always includes.
+It can also be a named logical vector to finely select the aesthetics to
+display.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inherit.aes</code></td>
+<td>
+<p>If <code>FALSE</code>, overrides the default aesthetics,
+rather than combining with them. This is most useful for helper functions
+that define both data and aesthetics and shouldn't inherit behaviour from
+the default plot specification, e.g. <code>borders()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>geom_slabinterval()</code> is a flexible meta-geom that you can use directly or through a variety of "shortcut"
+geoms that represent useful combinations of the various parameters of this geom. In many cases you will want to
+use the shortcut geoms instead as they create more useful mnemonic primitives, such as eye plots,
+half-eye plots, point+interval plots, or CCDF barplots.
+</p>
+<p>The <em>slab</em> portion of the geom is much like a ridge or "joy" plot: it represents the value of a function
+scaled to fit between values on the <code>x</code> or <code>y</code> axis (depending on the value of <code>orientation</code>). Values of
+the functions are specified using the <code>thickness</code> aesthetic and are scaled to fit into <code>scale</code>
+times the distance between points on the relevant axis. E.g., if <code>orientation</code> is <code>"horizontal"</code>,
+<code>scale</code> is <code>0.9</code>, and <code>y</code> is a discrete variable, then the <code>thickness</code> aesthetic specifies the
+value of some function of <code>x</code> that is drawn for every <code>y</code> value and scaled to fit into <code>0.9</code> times
+the distance between points on the <code>y</code> axis.
+</p>
+<p>For the <em>interval</em> portion of the geom, <code>x</code> and <code>y</code> aesthetics specify the location of the
+point, and <code>ymin</code>/<code>ymax</code> or <code>xmin</code>/<code>xmax</code> (depending on the value of <code>orientation</code>)
+specify the endpoints of the interval. A scaling factor for interval line width and point size is applied
+through the <code>interval_size_domain</code>, <code>interval_size_range</code>, and <code>fatten_point</code> parameters.
+These scaling factors are designed to give multiple uncertainty intervals reasonable
+scaling at the default settings for <code>scale_size_continuous()</code>.
+</p>
+<p>As a combination geom, this geom expects a <code>datatype</code> aesthetic specifying which part of the geom a given
+row in the input data corresponds to: <code>"slab"</code> or <code>"interval"</code>. However, specifying this aesthetic
+manually is typically only necessary if you use this geom directly; the numerous wrapper geoms will
+usually set this aesthetic for you as needed, and their use is recommended unless you have a very custom
+use case.
+</p>
+<p>Wrapper geoms include:
+</p>
+
+<ul>
+<li> <p><code>geom_pointinterval()</code>
+</p>
+</li>
+<li> <p><code>geom_interval()</code>
+</p>
+</li>
+<li> <p><code>geom_slab()</code>
+</p>
+</li>
+</ul>
+<p>In addition, the <code>stat_slabinterval()</code> family of stats uses geoms from the
+<code>geom_slabinterval()</code> family, and is often easier to use than using these geoms
+directly. Typically, the <code style="white-space: pre;">⁠geom_*⁠</code> versions are meant for use with already-summarized data (such as intervals) and the
+<code style="white-space: pre;">⁠stat_*⁠</code> versions are summarize the data themselves (usually draws from a distribution) to produce the geom.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A ggplot2::Geom representing a slab or combined slab+interval geometry which can
+be added to a <code>ggplot()</code> object.
+</p>
+
+
+<h3>Aesthetics</h3>
+
+<p>The slab+interval <code>stat</code>s and <code>geom</code>s have a wide variety of aesthetics that control
+the appearance of their three sub-geometries: the <strong>slab</strong>, the <strong>point</strong>, and
+the <strong>interval</strong>.
+</p>
+<p><strong>Positional aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>x</code>: x position of the geometry
+</p>
+</li>
+<li>
+<p><code>y</code>: y position of the geometry
+</p>
+</li>
+</ul>
+<p><strong>Slab-specific aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>thickness</code>: The thickness of the slab at each <code>x</code> value (if <code>orientation = "horizontal"</code>) or
+<code>y</code> value (if <code>orientation = "vertical"</code>) of the slab.
+</p>
+</li>
+<li>
+<p><code>side</code>: Which side to place the slab on. <code>"topright"</code>, <code>"top"</code>, and <code>"right"</code> are synonyms
+which cause the slab to be drawn on the top or the right depending on if <code>orientation</code> is <code>"horizontal"</code>
+or <code>"vertical"</code>. <code>"bottomleft"</code>, <code>"bottom"</code>, and <code>"left"</code> are synonyms which cause the slab
+to be drawn on the bottom or the left depending on if <code>orientation</code> is <code>"horizontal"</code> or
+<code>"vertical"</code>. <code>"topleft"</code> causes the slab to be drawn on the top or the left, and <code>"bottomright"</code>
+causes the slab to be drawn on the bottom or the right. <code>"both"</code> draws the slab mirrored on both
+sides (as in a violin plot).
+</p>
+</li>
+<li>
+<p><code>scale</code>: What proportion of the region allocated to this geom to use to draw the slab. If <code>scale = 1</code>,
+slabs that use the maximum range will just touch each other. Default is <code>0.9</code> to leave some space
+between adjacent slabs. For a comprehensive discussion and examples of slab scaling and normalization,
+see the <a href="https://mjskay.github.io/ggdist/articles/thickness.html"><code>thickness</code> scale article</a>.
+</p>
+</li>
+<li>
+<p><code>justification</code>: Justification of the interval relative to the slab, where <code>0</code> indicates bottom/left
+justification and <code>1</code> indicates top/right justification (depending on <code>orientation</code>). If <code>justification</code>
+is <code>NULL</code> (the default), then it is set automatically based on the value of <code>side</code>: when <code>side</code> is
+<code>"top"</code>/<code>"right"</code> <code>justification</code> is set to <code>0</code>, when <code>side</code> is <code>"bottom"</code>/<code>"left"</code>
+<code>justification</code> is set to <code>1</code>, and when <code>side</code> is <code>"both"</code> <code>justification</code> is set to 0.5.
+</p>
+</li>
+<li>
+<p><code>datatype</code>: When using composite geoms directly without a <code>stat</code> (e.g. <code>geom_slabinterval()</code>), <code>datatype</code> is used to
+indicate which part of the geom a row in the data targets: rows with <code>datatype = "slab"</code> target the
+slab portion of the geometry and rows with <code>datatype = "interval"</code> target the interval portion of
+the geometry. This is set automatically when using ggdist <code>stat</code>s.
+</p>
+</li>
+</ul>
+<p><strong>Interval-specific aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>xmin</code>: Left end of the interval sub-geometry (if <code>orientation = "horizontal"</code>).
+</p>
+</li>
+<li>
+<p><code>xmax</code>: Right end of the interval sub-geometry (if <code>orientation = "horizontal"</code>).
+</p>
+</li>
+<li>
+<p><code>ymin</code>: Lower end of the interval sub-geometry (if <code>orientation = "vertical"</code>).
+</p>
+</li>
+<li>
+<p><code>ymax</code>: Upper end of the interval sub-geometry (if <code>orientation = "vertical"</code>).
+</p>
+</li>
+</ul>
+<p><strong>Point-specific aesthetics</strong>
+</p>
+
+<ul><li>
+<p><code>shape</code>: Shape type used to draw the <strong>point</strong> sub-geometry.
+</p>
+</li></ul>
+<p><strong>Color aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>colour</code>: (or <code>color</code>) The color of the <strong>interval</strong> and <strong>point</strong> sub-geometries.
+Use the <code>slab_color</code>, <code>interval_color</code>, or <code>point_color</code> aesthetics (below) to
+set sub-geometry colors separately.
+</p>
+</li>
+<li>
+<p><code>fill</code>: The fill color of the <strong>slab</strong> and <strong>point</strong> sub-geometries. Use the <code>slab_fill</code>
+or <code>point_fill</code> aesthetics (below) to set sub-geometry colors separately.
+</p>
+</li>
+<li>
+<p><code>alpha</code>: The opacity of the <strong>slab</strong>, <strong>interval</strong>, and <strong>point</strong> sub-geometries. Use the <code>slab_alpha</code>,
+<code>interval_alpha</code>, or <code>point_alpha</code> aesthetics (below) to set sub-geometry colors separately.
+</p>
+</li>
+<li>
+<p><code>colour_ramp</code>: (or <code>color_ramp</code>) A secondary scale that modifies the <code>color</code>
+scale to "ramp" to another color. See <code>scale_colour_ramp()</code> for examples.
+</p>
+</li>
+<li>
+<p><code>fill_ramp</code>: A secondary scale that modifies the <code>fill</code>
+scale to "ramp" to another color. See <code>scale_fill_ramp()</code> for examples.
+</p>
+</li>
+</ul>
+<p><strong>Line aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>linewidth</code>: Width of the line used to draw the <strong>interval</strong> (except with <code>geom_slab()</code>: then
+it is the width of the <strong>slab</strong>). With composite geometries including an interval and slab,
+use <code>slab_linewidth</code> to set the line width of the <strong>slab</strong> (see below). For <strong>interval</strong>, raw
+<code>linewidth</code> values are transformed according to the <code>interval_size_domain</code> and <code>interval_size_range</code>
+parameters of the <code>geom</code> (see above).
+</p>
+</li>
+<li>
+<p><code>size</code>: Determines the size of the <strong>point</strong>. If <code>linewidth</code> is not provided, <code>size</code> will
+also determines the width of the line used to draw the <strong>interval</strong> (this allows line width and
+point size to be modified together by setting only <code>size</code> and not <code>linewidth</code>). Raw
+<code>size</code> values are transformed according to the <code>interval_size_domain</code>, <code>interval_size_range</code>,
+and <code>fatten_point</code> parameters of the <code>geom</code> (see above). Use the <code>point_size</code> aesthetic
+(below) to set sub-geometry size directly without applying the effects of
+<code>interval_size_domain</code>, <code>interval_size_range</code>, and <code>fatten_point</code>.
+</p>
+</li>
+<li>
+<p><code>stroke</code>: Width of the outline around the <strong>point</strong> sub-geometry.
+</p>
+</li>
+<li>
+<p><code>linetype</code>: Type of line (e.g., <code>"solid"</code>, <code>"dashed"</code>, etc) used to draw the <strong>interval</strong>
+and the outline of the <strong>slab</strong> (if it is visible). Use the <code>slab_linetype</code> or
+<code>interval_linetype</code> aesthetics (below) to set sub-geometry line types separately.
+</p>
+</li>
+</ul>
+<p><strong>Slab-specific color and line override aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>slab_fill</code>: Override for <code>fill</code>: the fill color of the slab.
+</p>
+</li>
+<li>
+<p><code>slab_colour</code>: (or <code>slab_color</code>) Override for <code>colour</code>/<code>color</code>: the outline color of the slab.
+</p>
+</li>
+<li>
+<p><code>slab_alpha</code>: Override for <code>alpha</code>: the opacity of the slab.
+</p>
+</li>
+<li>
+<p><code>slab_linewidth</code>: Override for <code>linwidth</code>: the width of the outline of the slab.
+</p>
+</li>
+<li>
+<p><code>slab_linetype</code>: Override for <code>linetype</code>: the line type of the outline of the slab.
+</p>
+</li>
+</ul>
+<p><strong>Interval-specific color and line override aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>interval_colour</code>: (or <code>interval_color</code>) Override for <code>colour</code>/<code>color</code>: the color of the interval.
+</p>
+</li>
+<li>
+<p><code>interval_alpha</code>: Override for <code>alpha</code>: the opacity of the interval.
+</p>
+</li>
+<li>
+<p><code>interval_linetype</code>: Override for <code>linetype</code>: the line type of the interval.
+</p>
+</li>
+</ul>
+<p><strong>Point-specific color and line override aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>point_fill</code>: Override for <code>fill</code>: the fill color of the point.
+</p>
+</li>
+<li>
+<p><code>point_colour</code>: (or <code>point_color</code>) Override for <code>colour</code>/<code>color</code>: the outline color of the point.
+</p>
+</li>
+<li>
+<p><code>point_alpha</code>: Override for <code>alpha</code>: the opacity of the point.
+</p>
+</li>
+<li>
+<p><code>point_size</code>: Override for <code>size</code>: the size of the point.
+</p>
+</li>
+</ul>
+<p><strong>Deprecated aesthetics</strong>
+</p>
+
+<ul>
+<li>
+<p><code>slab_size</code>: Use <code>slab_linewidth</code>.
+</p>
+</li>
+<li>
+<p><code>interval_size</code>: Use <code>interval_linewidth</code>.
+</p>
+</li>
+</ul>
+<p><strong>Other aesthetics</strong> (these work as in standard <code>geom</code>s)
+</p>
+
+<ul>
+<li>
+<p><code>width</code>
+</p>
+</li>
+<li>
+<p><code>height</code>
+</p>
+</li>
+<li>
+<p><code>group</code>
+</p>
+</li>
+</ul>
+<p>See examples of some of these aesthetics in action in <code>vignette("slabinterval")</code>.
+Learn more about the sub-geom override aesthetics (like <code>interval_color</code>) in the
+scales documentation. Learn more about basic ggplot aesthetics in
+<code>vignette("ggplot2-specs")</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Matthew Kay
+</p>
+
+
+<h3>See Also</h3>
+
+<p>See <code>geom_lineribbon()</code> for a combination geom designed for fit curves plus probability bands.
+See <code>geom_dotsinterval()</code> for a combination geom designed for plotting dotplots with intervals.
+See <code>stat_slabinterval()</code> for families of stats
+built on top of this geom for common use cases (like <code>stat_halfeye()</code>).
+See <code>vignette("slabinterval")</code> for a variety of examples of use.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# geom_slabinterval() is typically not that useful on its own.
+# See vignette("slabinterval") for a variety of examples of the use of its
+# shortcut geoms and stats, which are more useful than using
+# geom_slabinterval() directly.
+
+</code></pre>
+
+
+</div>

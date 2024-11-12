@@ -1,0 +1,174 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fclustering</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Functional clustering</h2>
+
+<h3>Description</h3>
+
+<p>Functional clustering based on a specified measure.
+The options of the measures can be found in <code>central_region</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fclustering(
+  curve_sets,
+  k,
+  type = c("area", "st", "erl", "cont"),
+  triangineq = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>curve_sets</code></td>
+<td>
+<p>A <code>curve_set</code> object or a list of <code>curve_set</code> objects to which
+the functional clustering is to be applied. If list of <code>curve_set</code> objects is provided,
+then the joined functional clustering is applied, which provides an equal weight combination
+of <code>curve_set</code> objects, if the <code>curve_set</code> objects contain the same numbers of elements
+(same lengths of vector <code class="reqn">r</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>The number of clusters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>The measure which is used to compute the dissimilarity matrix. The preferred options
+are <code>"area"</code> and <code>"st"</code>, but <code>"erl"</code> and <code>"cont"</code> can be also used with caution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>triangineq</code></td>
+<td>
+<p>Logical. Whether or not to compute the proportion of combinations
+of functions which satisfies the triangular inequality, see 'Value'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional parameters to be passed to <code>central_region</code>,
+which is responsible for calculating the central region (global envelope)
+on which the functional clustering is based.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Functional clustering joins the list of <code>curve_set</code> objects in one <code>curve_set</code> with long functions and
+applies on the differences of all functions the specified measure. This provides a dissimilarity matrix
+which is used in partitioning around medoids procedure. The resulting clusters can then be shown by plotting
+the function respectively for each <code>curve_set</code>. Thus for each <code>curve_set</code>, the panel with all the medoids
+is shown followed by all clusters represented by central region, medoid and all curves belonging to it, when
+the result object is plotted.
+</p>
+<p>If there are less than three curves in some of the groups, then the central region is not plotted.
+This leads to a warning message from ggplot2.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object having the class <code>fclust</code>, containing
+</p>
+
+<ul>
+<li>
+<p> curve_sets = The set(s) of functions determined for clustering
+</p>
+</li>
+<li>
+<p> k = Number of clusters
+</p>
+</li>
+<li>
+<p> type = Type of clustering method
+</p>
+</li>
+<li>
+<p> triangineq = The proportion of combinations of functions which satisfies the triangular inequality.
+The triangular inequality must hold to ensure the chosen measure forms a metric. In some weird cases
+it does not hold for ‘area’ measure, therefore this check is provided to ensure the data forms metric
+with the ‘area’ measure. The triangineq must be 1 to ensure the inequality holds for all functions.
+</p>
+</li>
+<li>
+<p> dis = The joined dissimilarity matrix
+</p>
+</li>
+<li>
+<p> pam = Results of the partitioning around medoids (pam) method applied on the joined functions
+with the dissimilarity matrix (dis). See <code>pam</code>.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Dai, W., Athanasiadis, S., Mrkvička, T. (2021) A new functional clustering method with combined dissimilarity sources and graphical interpretation. Intech open, London, UK. DOI: 10.5772/intechopen.100124
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>central_region</code>, <code>plot.fclust</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Read raw data from population growth rdata
+# with countries over million inhabitants
+data("popgrowthmillion")
+
+# Create centred data
+m &lt;- apply(popgrowthmillion, 2, mean) # Country-wise means
+cpopgrowthmillion &lt;- popgrowthmillion
+for(i in 1:dim(popgrowthmillion)[1]) {
+  cpopgrowthmillion[i,] &lt;- popgrowthmillion[i,] - m
+}
+
+# Create scaled data
+t2 &lt;- function(v) { sqrt(sum(v^2)) }
+s &lt;- apply(cpopgrowthmillion, 2, t2)
+spopgrowthmillion &lt;- popgrowthmillion
+for(i in 1:dim(popgrowthmillion)[1]) {
+  spopgrowthmillion[i,] &lt;- cpopgrowthmillion[i,]/s
+}
+
+# Create curve sets
+r &lt;- 1951:2015
+
+cset1 &lt;- curve_set(r = r, obs = popgrowthmillion)
+cset2 &lt;- curve_set(r = r, obs = spopgrowthmillion)
+csets &lt;- list(Raw = cset1, Shape = cset2)
+
+# Functional clustering with respect to joined "st" difference measure
+# and "joined" central regions of each group
+res &lt;- fclustering(csets, k=3, type="area")
+p &lt;- plot(res, plotstyle = "marginal", coverage = 0.5)
+p[[1]] # Central functions
+p[[2]] # Groups: central functions and regions
+# To collect the two figures into one use, e.g., patchwork:
+if(require("patchwork", quietly=TRUE)) {
+  p[[1]] + p[[2]] + plot_layout(widths = c(1, res$k))
+}
+# Silhouette plot of pam
+plot(res$pam)
+</code></pre>
+
+
+</div>

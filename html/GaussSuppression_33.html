@@ -1,0 +1,118 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>PrimaryFromRiskyDefault</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Additional primary cells based on risky primary cells</h2>
+
+<h3>Description</h3>
+
+<p>The algorithm uses parent-child relationships found from the model matrix (<code>x</code>)
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">PrimaryFromRiskyDefault(x, y, risky, candidates, allDims = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>The model matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A vector of numeric values with a length equal to <code>nrow(x)</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>risky</code></td>
+<td>
+<p>Indices to columns in <code>x</code> corresponding to primary cells classified
+as risky (interval limits not reached)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>candidates</code></td>
+<td>
+<p>Indices to columns in <code>x</code> that are candidates for becoming
+additional primary cells. Higher order cells must be included
+so that parent-child relationships are seen.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allDims</code></td>
+<td>
+<p>When TRUE, a primary cell is added for each dimension.
+can be specified as a vector of length  <code>length(risky)</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For a single <code>risky</code> cell,  the algorithm can be formulated as:
+</p>
+
+<ul>
+<li>
+<p> Consider this cell as a <code>child</code> and identify all <code>parents</code> that are present in <code>candidates</code>.
+</p>
+</li>
+<li>
+<p> Remove parents who are also parents of other parents (i.e., eliminate higher-level parents).
+</p>
+</li>
+<li>
+<p> Identify the children of these remaining parents that are included in <code>candidates</code>.
+</p>
+</li>
+<li>
+<p> Select the child that has the smallest value in the numeric variable (<code>y</code>).
+</p>
+</li>
+</ul>
+<p>For several <code>risky</code> cells, coordination takes place. See the comment below the examples.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Additional primary cells as indices to columns in <code>x</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Example inspired by suppression with maxN = 5
+d1 &lt;- SSBtoolsData("d1")
+mm &lt;- SSBtools::ModelMatrix(d1, dimVar = 1:2, crossTable = TRUE)
+x &lt;- mm$modelMatrix
+y &lt;- t(x) %*% d1$freq
+
+risky &lt;- c(13, 15, 40, 45)
+candidates &lt;- c(1:12, 14, 16, 17, 19, 21, 21, 24, 26:37, 39, 42, 44)
+
+info &lt;- rep("", length(y))
+info[risky ] &lt;- "risky"
+info[candidates] &lt;- "c"
+cbind(mm$crossTable, y=as.vector(y), info)
+
+PrimaryFromRiskyDefault(x = x, y = y, risky = risky, candidates = candidates)
+PrimaryFromRiskyDefault(x = x, y = y, risky = 40, candidates = candidates)
+
+# The last solution (39) is not included in the first (28, 35). 
+# This is because 39 is not needed when 35 is already included.
+
+</code></pre>
+
+
+</div>

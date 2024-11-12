@@ -1,0 +1,388 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>read.gnumeric.sheet</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Read data from a gnumeric (or MS Excel, Openoffice Calc, Xbase,
+Quatro Pro, Paradox, HTML, etc) spreadsheet or database file using
+ssconvert from the gnumeric distribution</h2>
+
+<h3>Description</h3>
+
+<p>Read data from a sheet of a gnumeric (or other common spreadsheet or
+database) file to a data.frame.
+</p>
+<p>Requires an external program, ‘<span class="samp">⁠ssconvert⁠</span>’ (normally installed
+with gnumeric) in ‘<span class="samp">⁠PATH⁠</span>’. See vignette ‘<span class="samp">⁠install-ssconvert.html⁠</span>’ for details.
+</p>
+<p>Calls ‘<span class="samp">⁠ssconvert⁠</span>’ to convert the input to CSV.
+‘<span class="samp">⁠ssconvert⁠</span>’ can read several file formats
+(see Details below).
+</p>
+<p>Note: During conversion to CSV ‘<span class="samp">⁠ssconvert⁠</span>’ also evaluates formulas
+(e.g. ‘<span class="samp">⁠=sum(A1:A3)⁠</span>’) in cells, and emits the result instead of
+the formula.
+</p>
+<p>‘<span class="samp">⁠read.gnumeric.range⁠</span>’ just calls ‘<span class="samp">⁠read.gnumeric.sheet⁠</span>’, but
+uses different default values for its arguments: by default drops no
+rows or columns and requires at least the bottom
+left corner of requested gnumeric cell range to be provided.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  read.gnumeric.sheet(file,
+                      head=FALSE,
+                      sheet.name='Sheet1',
+                      top.left='A1',
+                      bottom.right=NA,
+                      drop.empty.rows="bottom",
+                      drop.empty.columns="right",
+                      colnames.as.sheet=FALSE,
+                      rownames.as.sheet=colnames.as.sheet,
+                      quiet=TRUE,
+                      LANG='C',
+                      locale='C',
+                      import.encoding=NA,
+                      field.format='automatic',
+                      ...
+                     );
+
+  read.gnumeric.range(file,
+       head=FALSE,
+       sheet.name='Sheet1',
+       top.left='A1',
+       bottom.right,
+       drop.empty.rows="none",
+       drop.empty.columns="none",
+       colnames.as.sheet=FALSE,
+       rownames.as.sheet=colnames.as.sheet,
+       quiet=TRUE,
+       LANG='C',
+       locale='C',
+       import.encoding=NA,
+       field.format='automatic',
+       ...
+       );
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>Name of gnumeric file (or other file type readable by
+gnumeric) to read from.
+</p>
+<p>This may also be an URL, i.e. like<br><code>'http://example.com/path/file.gnumeric'</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>head</code></td>
+<td>
+<p>When TRUE, use first row of requested gnumeric sheet
+range as column names in the resulting <code>data.frame</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sheet.name</code></td>
+<td>
+<p>Name of sheet as appears in gnumeric.<br>
+Sheet names containing space or hyphen characters do not work
+(ssconvert reports 'Invalid range specified').
+</p>
+<p><code>sheet.name=NA</code> Omits sheet name from the ssconvert command line.<br>
+For gnumeric files this will read the sheet that was 'current' in
+gnumeric when the file was saved.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>top.left</code></td>
+<td>
+<p>Top left corner of requested gnumeric sheet
+range, e.g. <code>'A1'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bottom.right</code></td>
+<td>
+<p>Bottom right corner of requested gnumeric sheet
+range.<br></p>
+<p>The default for <code>read.gnumeric.sheet</code> is <code>NA</code>: with
+<code>top.left='A1'</code> or <code>top.left=NA</code> this means read full
+sheet.
+</p>
+<p>If <code>top.left</code> is not <code>'A1'</code> or <code>NA</code> (i.e. when
+reading partial sheet), then the interpretation of
+<code>bottom.right=NA</code> falls back to
+<code>'IV65536'</code>: this causes a lot of unused lines to be printed by
+‘<span class="samp">⁠ssconvert⁠</span>’ then parsed by <code>read.csv</code>, thus you might want
+to override it to speed up reading.
+</p>
+<p>Use <code>read.gnumeric.sheet.info</code> to read actual
+bottom.right cell name from a gnumeric file (but not other formats).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drop.empty.rows</code></td>
+<td>
+<p>One of
+<code>c('none','top','bottom','both','all')</code>.
+</p>
+<p><code>'all'</code>  drops all empty lines from the requested range, even
+those that are between two non-empty rows.
+<code>'both'</code> drops empty lines below the last non-empty row and
+above the first non-empty.
+<code>'top'</code>, <code>'bottom'</code> and <code>'none'</code> as you would expect.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drop.empty.columns</code></td>
+<td>
+<p> One of
+<code>c('none','left','right','both','all')</code><br>
+Similar to
+<code>drop.empty.rows</code>, but for columns.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colnames.as.sheet</code></td>
+<td>
+<p>Rename columns to <code>'A', 'B', 'C', ...</code> to
+have names corresponding to gnumeric column names.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rownames.as.sheet</code></td>
+<td>
+<p>Rename rows to <code>'1', '2', '3', ...</code> to have
+names corresponding to gnumeric row indices. Note: this means
+<code>df['1',]</code>, not <code>df[1,]</code> in the result (rownames are
+strings, not integers). Note: when deciding row names only
+<code>top.left</code> and <code>head</code> are accounted for, but not
+e.g. <code>skip</code> (which may be passed to <code>read.csv</code> via <code>...</code>).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>When TRUE, do not print command executed, and (on unix
+platforms) also redirect stderr of the external program
+‘<span class="samp">⁠ssconvert⁠</span>’ to /dev/null</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LANG</code></td>
+<td>
+<p> Under unix, passed to <code>ssconvert</code> in the environment
+variable 'LANG'. The default value (<code>'C'</code>) is intended to avoid
+using decimal comma in the emitted CSV file. It is probably always
+overridden by the <code>locale</code> argument.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>locale</code></td>
+<td>
+<p>Passed to <code>ssconvert -O "locale=C"</code><br>
+The default value (<code>'C'</code>) is intended to avoid
+using decimal comma in the emitted CSV file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>import.encoding</code></td>
+<td>
+<p>If not NA, passed to <code>ssconvert</code> as its
+<code> --import-encoding </code> parameter.
+
+
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>field.format</code></td>
+<td>
+<p> Passed to <code>ssconvert -O "format=value"</code>.
+Allowed values: "raw", "automatic", "preserve".
+</p>
+<p>"raw" emits date and datetime values as number of days since an
+(unspecified) epoch. <br>
+E.g.: <code>as.numeric(as.character(x))+as.Date('1899-12-30')</code> might work
+for date values and<br><code>as.POSIXct(as.numeric(as.character(x))*(60*60*24),</code><br><code>           origin="1899-12-29 23:59:59", tz='UTC')</code> might work for datetime
+values. See <code>help(as.Date)</code> for some comments on Excel epoch values.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Extra arguments, passed to <code>read.csv</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Data from the gnumeric file is dumped as .csv using the ‘<span class="samp">⁠ssconvert⁠</span>’
+program provided with gnumeric.
+</p>
+<p>‘<span class="samp">⁠ssconvert⁠</span>’ supports several input formats, thus the input file
+does not have to be a gnumeric file. The formats supported may be
+listed with
+</p>
+<pre>
+    ssconvert --list-importers
+  </pre>
+<p>from a shell prompt.
+</p>
+<p>For me this prints (with ssconvert version '1.8.4')
+</p>
+<pre>
+ID                           | Description
+Gnumeric_xbase:xbase         | Xbase (*.dbf) file format
+Gnumeric_Excel:excel         | MS Excel (tm) (*.xls)
+Gnumeric_Excel:xlsx          | MS Excel (tm) 2007
+Gnumeric_html:html           | HTML (*.html, *.htm)
+Gnumeric_oleo:oleo           | GNU Oleo (*.oleo)
+Gnumeric_applix:applix       | Applix (*.as)
+Gnumeric_QPro:qpro           | Quattro Pro (*.wb1, *.wb2, *.wb3)
+Gnumeric_paradox:paradox     | Paradox database or
+                             | primary index file
+Gnumeric_sc:sc               | SC/xspread
+Gnumeric_XmlIO:sax           | Gnumeric XML (*.gnumeric)
+Gnumeric_lotus:lotus         | Lotus 123 (*.wk1, *.wks, *.123)
+Gnumeric_XmlIO:dom           | Gnumeric XML (*.gnumeric) Old
+                             |   slow importer
+Gnumeric_dif:dif             | Data Interchange Format (*.dif)
+Gnumeric_Excel:excel_xml     | MS Excel (tm) 2003 SpreadsheetML
+Gnumeric_OpenCalc:openoffice | Open/Star Calc (*.sxc, *.ods)
+Gnumeric_plan_perfect:pln    | Plan Perfect Format (PLN) import
+Gnumeric_sylk:sylk           | MultiPlan (SYLK)
+Gnumeric_mps:mps             | Linear and integer program (*.mps)
+                             |   file format
+Gnumeric_stf:stf_csvtab      | Comma or tab separated
+                             |   values (CSV/TSV)
+Gnumeric_stf:stf_assistant   | Text import (configurable)
+  </pre>
+<p>But the actual list may depend on
+which import plugins are installed for gnumeric.
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    Format </td>
+<td style="text-align: left;"> Source </td>
+<td style="text-align: left;"> Status</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  .gnumeric  </td>
+<td style="text-align: left;"> gnumeric </td>
+<td style="text-align: left;"> works</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  .xls  </td>
+<td style="text-align: left;"> gnumeric </td>
+<td style="text-align: left;"> works</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  .html </td>
+<td style="text-align: left;"> gnumeric  ‘<span class="samp">⁠[Save as / HTML 4.0]⁠</span>’  </td>
+<td style="text-align: left;"> works</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  .html </td>
+<td style="text-align: left;"> Openoffice Calc ‘<span class="samp">⁠[Save as/HTML Document]⁠</span>’ </td>
+<td style="text-align: left;"> works</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  .ods </td>
+<td style="text-align: left;">  Openoffice Calc </td>
+<td style="text-align: left;"> works</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  Other formats </td>
+<td style="text-align: left;"> </td>
+<td style="text-align: left;"> not tested
+    </td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>read.gnumeric.range</code> for a variant with default
+arguments more suited for reading an exact cell range of a sheet.
+</p>
+<p><code>read.gnumeric.sheet.info</code> to read actual
+bottom.right cell name from a gnumeric file (but not other formats).
+</p>
+<p><code>read.gnumeric.sheets</code> to read all sheets
+from a gnumeric file (but not other formats).
+</p>
+<p><code>read.xlsx</code>, <code>read_xlsx</code> and
+<code>read_xls</code> for reading Microsoft Excel files
+</p>
+<p><code>read.DIF</code> for reading Data Interchange Format (DIF)
+files.
+</p>
+<p><code>read.dbf</code> for Xbase (.dbf) files.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Read all data from 'Sheet1'
+## Not run: 
+df &lt;- read.gnumeric.sheet( file="file.gnumeric" );
+
+df &lt;- read.gnumeric.sheet( file="file.gnumeric",
+                           sheet.name='Sheet1' );
+
+
+
+## Read from Excel sheet named 'Sheet3' the range C3:D50,
+## rename columns to 'C' and 'D', rows to '3' ... '50',
+## then drop all empty rows.
+##
+df&lt;-read.gnumeric.sheet( "file.xls",
+                          sheet.name='Sheet3',
+                          top.left='C3',
+                          bottom.right='D50',
+                          drop.empty.rows="all",
+                          drop.empty.columns="none",
+                          colnames.as.sheet=TRUE
+                         )
+
+
+## Read from "file.gnumeric", 'Sheet1' data in 'A1:E100',
+## Use first row (of selected range) as column names.
+## Drop empty rows and columns from bottom and right.
+df&lt;-read.gnumeric.sheet("file.gnumeric", head=TRUE,
+                         bottom.right='E100')
+
+
+## Why does it not work? Set quiet=FALSE to see
+## the command executed (and on unix, diagnostic
+## messages from ssconvert).
+df&lt;-read.gnumeric.sheet( "file.ods", quiet=FALSE )
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

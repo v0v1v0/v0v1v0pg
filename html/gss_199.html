@@ -1,0 +1,220 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sscopu</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimating Copula Density Using Smoothing Splines</h2>
+
+<h3>Description</h3>
+
+<p>Estimate copula densities using tensor-product cubic splines.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sscopu(x, symmetry=FALSE, alpha=1.4, order=NULL, exclude=NULL,
+       weights=NULL, id.basis=NULL, nbasis=NULL, seed=NULL,
+       qdsz.depth=NULL, prec=1e-7, maxiter=30, skip.iter=dim(x)[2]!=2)
+
+sscopu2(x, censoring=NULL, truncation=NULL, symmetry=FALSE, alpha=1.4,
+        weights=NULL, id.basis=NULL, nbasis=NULL, seed=NULL, prec=1e-7,
+        maxiter=30)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Matrix of observations on unit cubes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>symmetry</code></td>
+<td>
+<p>Flag indicating whether to enforce symmetry, or
+invariance under coordinate permutation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order</code></td>
+<td>
+<p>Highest order of interaction terms in log density.
+When <code>NULL</code>, it is set to <code>dim(x)[2]</code> internally.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exclude</code></td>
+<td>
+<p>Pair(s) of marginals whose interactions to be
+excluded in log density.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Parameter defining cross-validation score for smoothing
+parameter selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Optional vector of bin-counts for histogram data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id.basis</code></td>
+<td>
+<p>Index of observations to be used as "knots."</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbasis</code></td>
+<td>
+<p>Number of "knots" to be used.  Ignored when
+<code>id.basis</code> is specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Seed to be used for the random generation of "knots."
+Ignored when <code>id.basis</code> is specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>qdsz.depth</code></td>
+<td>
+<p>Depth to be used in <code>smolyak.quad</code> for
+the generation of quadrature.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prec</code></td>
+<td>
+<p>Precision requirement for internal iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiter</code></td>
+<td>
+<p>Maximum number of iterations allowed for
+internal iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>skip.iter</code></td>
+<td>
+<p>Flag indicating whether to use initial values of
+theta and skip theta iteration.  See <code>ssanova</code> for
+notes on skipping theta iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>censoring</code></td>
+<td>
+<p>Optional censoring indicator.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>truncation</code></td>
+<td>
+<p>Optional truncation points.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>sscopu</code> is essentially <code>ssden</code> applied to
+observations on unit cubes.  Instead of variables in data frames,
+the data are entered as a numerical matrix, and model complexity is
+globally controlled by the highest order of interactions allowed in    log density.
+</p>
+<p><code>sscopu2</code> further restricts the domain to the unit square, but
+allows for possible censoring and truncation.  With
+<code>censoring==0,1,2,3</code>, a data point <code class="reqn">(x1,x2)</code> represents
+exact observation, <code class="reqn">[0,x1]x{x2}</code>, <code class="reqn">{x1}x[0,x2]</code>, or
+<code class="reqn">[0,x1]x[0,x2]</code>.  With <code>truncation</code> point <code class="reqn">(t1,t2)</code>,
+the sample is taken from <code class="reqn">[0,t1]x[0,t2]</code> instead of the unit
+square.
+</p>
+<p>With <code>symmetriy=TRUE</code>, one may enforce the interchangeability
+of coordinates so that <code class="reqn">f(x1,x2)=f(x2,x1)</code>, say.
+</p>
+<p>When <code>(1,2)</code> is a row in <code>exclude</code>, interaction terms
+involving coordinates <code>1</code> and <code>2</code> are excluded.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>sscopu</code> and <code>sscopu2</code> return a list object of class
+<code>"sscopu"</code>.  <code>dsscopu</code> can be used to evaluate the
+estimated copula density.  A "copularization" process is applied to
+the estimated density by default so the resulting marginal densities
+are guaranteed to be uniform.
+</p>
+<p><code>cdsscopu</code>, <code>cpsscopu</code>, and
+<code>cqsscopu</code> can be used to evaluate 1-D conditional pdf,
+cdf, and quantiles.
+</p>
+
+
+<h3>Note</h3>
+
+<p>For reasonable execution time in higher dimensions, set
+<code>skip.iter=TRUE</code> in calls to <code>sscopu</code>.
+</p>
+<p>When <code>"Newton iteration diverges"</code> in <code>sscopu</code>, try to use
+a larger <code>qdsz.depth</code>; the default values for dimensions 2, 3,
+4, 5, 6+ are 24, 14, 12, 11, 10.  To be sure a larger
+<code>qdsz.depth</code> indeed makes difference, verify the cubature size
+using <code>smolyak.size</code>.
+</p>
+<p>The results may vary from run to run.  For consistency, specify
+<code>id.basis</code> or set <code>seed</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Chong Gu, <a href="mailto:chong@stat.purdue.edu">chong@stat.purdue.edu</a></p>
+
+
+<h3>References</h3>
+
+<p>Gu, C. (2013), <em>Smoothing Spline ANOVA Models (2nd Ed)</em>.  New
+York: Springer-Verlag.
+</p>
+<p>Gu, C. (2015), Hazard estimation with bivariate survival data and
+copula density estimation. <em>Journal of Computational and
+Graphical Statistics</em>, <b>24</b>, 1053-1073.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## simulate 2-D data
+x &lt;- matrix(runif(200),100,2)
+## fit copula density
+fit &lt;- sscopu(x)
+## "same fit"
+fit2 &lt;- sscopu2(x,id=fit$id)
+## symmetric fit
+fit.s &lt;- sscopu(x,sym=TRUE,id=fit$id)
+## Not run: 
+## Kendall's tau and Spearman's rho
+summary(fit); summary(fit2); summary(fit.s)
+## clean up
+rm(x,fit,fit2,fit.s)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

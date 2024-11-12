@@ -1,0 +1,133 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simGwexModel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>simGwexModel</h2>
+
+<h3>Description</h3>
+
+<p>Simulate from a GWex model
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">simGwexModel(
+  objGwexFit,
+  nb.rep = 10,
+  d.start = as.Date("01011900", "%d%m%Y"),
+  d.end = as.Date("31121999", "%d%m%Y"),
+  objGwexObs = NULL,
+  prob.class = c(0.5, 0.75, 0.9, 0.99),
+  objGwexSim = NULL,
+  nCluster = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>objGwexFit</code></td>
+<td>
+<p>an object of class <code>GwexFit</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nb.rep</code></td>
+<td>
+<p>number of repetitions of scenarios</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d.start</code></td>
+<td>
+<p>a starting date for the simulation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d.end</code></td>
+<td>
+<p>an ending date for the simulation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>objGwexObs</code></td>
+<td>
+<p>optional: an object of class <code>GwexObs</code> if we need the observations to simulate (disaggregation prec 3D -&gt; 1D)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob.class</code></td>
+<td>
+<p>vector of probabilities indicating class of "similar" mean intensities</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>objGwexSim</code></td>
+<td>
+<p>optional: an object of class <code>GwexSim</code> if we need simulations to simulate (temp conditional to prec)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nCluster</code></td>
+<td>
+<p>optional, number of clusters which can be used for the parallel computation</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>GwexSim</code></td>
+<td>
+<p>an object of class <code>GwexSim</code>. Contains sim (3D-array with the simulations) and a vector of dates</p>
+</td>
+</tr></table>
+<h3>Author(s)</h3>
+
+<p>Guillaume Evin
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># vector of dates
+vecDates = seq(from=as.Date("01/01/2005",format="%d/%m/%Y"),
+to=as.Date("31/12/2014",format="%d/%m/%Y"),by='day')
+
+###############################################################
+#               FIT AND SIMULATE FROM THE PRECIPITATION MODEL
+###############################################################
+# Format observations: create a G-Wex object
+myObsPrec = GwexObs(variable='Prec',date=vecDates,obs=dailyPrecipGWEX[,1,drop=FALSE])
+
+# Fit GWEX precipitation model, default options except for the threshold th
+myParPrec = fitGwexModel(myObsPrec,listOption=list(th=0.5)) # fit model
+
+# Generate 2 scenarios for one year, using the 'GwexFit' object
+mySimPrec = simGwexModel(objGwexFit=myParPrec, nb.rep=2, d.start=vecDates[1],
+d.end=vecDates[10])
+mySimPrec # print object
+
+###############################################################
+#     FIT AND SIMULATE FROM THE TEMPERATURE MODEL
+###############################################################
+# Format observations: create a G-Wex object
+myObsTemp = GwexObs(variable='Temp',date=vecDates,obs=dailyTemperGWEX)
+
+# Fit GWEX temperature model
+myParTemp = fitGwexModel(myObsTemp,listOption=list(hasTrend=TRUE,typeMargin='Gaussian',
+depStation='Gaussian'))
+
+# Generate 2 scenarios for one year, using an existing 'GwexFit' object
+mySimTemp = simGwexModel(objGwexFit=myParTemp, nb.rep=2, d.start=vecDates[1], 
+                          d.end=vecDates[365],objGwexObs=myObsPrec)
+mySimTemp # print object
+</code></pre>
+
+
+</div>

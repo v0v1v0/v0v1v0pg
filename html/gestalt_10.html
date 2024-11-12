@@ -1,0 +1,206 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>context</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Run an Action in an Ordered Context</h2>
+
+<h3>Description</h3>
+
+<p>Programming in R typically involves:
+</p>
+
+<ol>
+<li>
+<p> Making a context: assigning values to names.
+</p>
+</li>
+<li>
+<p> Performing an action: evaluating an expression relative to a context.
+</p>
+</li>
+</ol>
+<p><code>let()</code> and <code>run()</code> enable you to treat these procedures as reusable,
+<em>composable</em> components.
+</p>
+
+<ul>
+<li> <p><code>let()</code> makes a <strong>context</strong>: it <em>lazily</em> binds a sequence of ordered
+named expressions to a child of a given environment (by default, the
+current one).
+</p>
+<p>For instance, in an environment <code>env</code> where <code>z</code> is in scope,
+</p>
+<div class="sourceCode"><pre>  let(env, x = 1, y = x + 2, z = x * y * z)
+</pre></div>
+<p>is equivalent to calling
+</p>
+<div class="sourceCode"><pre>  local({
+    x &lt;- 1
+    y &lt;- x + 2
+    z &lt;- x * y * z
+    environment()
+  })
+</pre></div>
+<p>except <code>let()</code> binds the named expressions lazily (as
+promises) and comprehends tidyverse
+quasiquotation.
+</p>
+</li>
+<li> <p><code>run()</code> performs an <strong>action</strong>: it evaluates an expression relative to an
+environment (by default, the current one) and, optionally, a sequence of
+<em>lazily evaluated</em> ordered named expressions.
+</p>
+<p>For instance, in an environment <code>env</code> where <code>x</code> is in scope,
+</p>
+<div class="sourceCode"><pre>  run(env, x + y + z, y = x + 2, z = x * y * z)
+</pre></div>
+<p>is equivalent to calling
+</p>
+<div class="sourceCode"><pre>  local({
+    y &lt;- x + 2
+    z &lt;- x * y * z
+    x + y + z
+  })
+</pre></div>
+<p>except <code>run()</code>, like <code>let()</code>, binds <code>y</code> and <code>z</code> lazily and comprehends
+quasiquotation.
+</p>
+</li>
+</ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R">let(`_data` = parent.frame(), ...)
+
+run(`_data` = parent.frame(), `_expr`, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>_data</code></td>
+<td>
+<p>Context of named values, namely an environment, list or data
+frame; if a list or data frame, it is interpreted as an environment (like
+the <code>envir</code> argument of <code>eval()</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Named expressions. An expression looks up values to the left of
+it, and takes precedence over those in <code>`_data`</code>.
+Quasiquotation of names and expressions is
+supported (see ‘Examples’).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>'_expr'</code></td>
+<td>
+<p>Expression to evaluate (“run”). Quasiquotation is
+supported.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>run()</code> returns the evaluation of <code>`_expr`</code> in the combined
+environment of <code>`_data`</code> and <code>...</code>.
+</p>
+<p><code>let()</code> returns an environment where the bindings in <code>...</code> are in scope, as
+promises, as if they were assigned from left to right in
+a child of the environment defined by <code>`_data`</code>.
+</p>
+
+
+<h3>Composing Contexts</h3>
+
+<p><strong>Contexts</strong>, as made by <code>let()</code>, have an advantage over ordinary local
+assignments because contexts are both lazy and composable. Like
+assignments, the order of named expressions in a context is significant.
+</p>
+<p>For example, you can string together contexts to make larger ones:
+</p>
+<div class="sourceCode"><pre>  foo &lt;-
+    let(a = ., b = a + 2) %&gt;&gt;&gt;%
+    let(c = a + b) %&gt;&gt;&gt;%
+    run(a + b + c)
+
+  foo(1)
+  #&gt; [1] 8
+</pre></div>
+<p>Earlier bindings can be overriden by later ones:
+</p>
+<div class="sourceCode"><pre>  bar &lt;-
+    foo[1:2] %&gt;&gt;&gt;%        # Collect the contexts of 'foo()'
+    let(c = c - 1) %&gt;&gt;&gt;%  # Override 'c'
+    run(a + b + c)
+
+  bar(1)
+  #&gt; [1] 7
+</pre></div>
+<p>Bindings are promises; they are only evaluated on
+demand:
+</p>
+<div class="sourceCode"><pre>  run(let(x = a_big_expense(), y = "avoid a big expense"), y)
+  #&gt; [1] "avoid a big expense"
+</pre></div>
+
+
+<h3>Remark</h3>
+
+<p>“Contexts” as described here should not be confused with
+“contexts” in
+<a href="https://cran.r-project.org/doc/manuals/r-release/R-ints.html#Contexts">R's internal mechanism</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>with()</code> is like <code>run()</code>, but more limited because it doesn't
+support quasiquotation or provide a means to override local bindings.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Miles-per-gallon of big cars
+mtcars$mpg[mtcars$cyl == 8 &amp; mtcars$disp &gt; 350]
+run(mtcars, mpg[cyl == 8 &amp; disp &gt; 350])
+run(mtcars, mpg[big_cars], big_cars = cyl == 8 &amp; disp &gt; 350)
+
+# 'let()' makes a reusable local context for big cars
+cars &lt;- let(mtcars, big = cyl == 8 &amp; disp &gt; 350)
+
+eval(quote(mpg[big]), cars)  # Quoting restricts name lookup to 'cars'
+run(cars, mpg[big])          # The same, but shorter and more transparent
+
+run(cars, wt[big])
+mtcars$wt[mtcars$cyl == 8 &amp; mtcars$disp &gt; 350]
+
+# Precedence of names is from right to left ("bottom-up"):
+a &lt;- 1000
+run(`_expr` = a + b, a = 1, b = a + 2)    # 4: all references are local
+run(list(a = 1), a + b, b = a + 2)        # 4: 'b' references local 'a'
+run(let(a = 1, b = a + 2), a + b)         # 4: 'b' references local 'a'
+run(let(a = 1, b = a + 2), a + b, a = 0)  # 3: latter 'a' takes precedence
+run(list(a = 1, b = a + 2), a + b)        # 1003: 'b' references global 'a'
+
+# Bound expressions are lazily evaluated: no error unless 'x' is referenced
+run(`_expr` = "S'all good, man.", x = stop("!"))
+run(let(x = stop("!")), "S'all good, man.")
+let(x = stop("!"))    # Environment binding 'x'
+try(let(x = stop("!"))$x)  # Error: !
+
+# Quasiquotation is supported
+a &lt;- 1
+run(let(a = 2), a + !!a)               #&gt; [1] 3
+run(let(a = 1 + !!a, b = a), c(a, b))  #&gt; [1] 2 2
+
+</code></pre>
+
+
+</div>

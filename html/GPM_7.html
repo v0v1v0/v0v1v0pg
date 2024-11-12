@@ -1,0 +1,227 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Fit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>The Fitting Function of <code>GPM</code> Package</h2>
+
+<h3>Description</h3>
+
+<p>Fits a Gaussian process (GP) to a set of simulation data as described in <code>reference 1</code>. Both the inputs and outputs can be multi-dimensional. The outputs can be noisy in which case it is assumed that the noise is stationary (i.e., its variance is not a function of x).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">Fit(X, Y, CorrType = 'G', Eps = 10^(seq(-1, -12)), AnaGr = NULL, Nopt = 5,TraceIt = 0,
+MaxIter = 100, Seed = 1, LowerBound = NULL, UpperBound = NULL, 
+StopFlag = 1, Progress = 0, DoParallel = 0, Ncores = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Matrix containing the training (aka design or input) data points. The rows and columns of <code>X</code> denote individual observation settings and input dimension, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>Matrix containing the output (aka response) data points. The rows and columns of <code>Y</code> denote individual observation responses and output dimension, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CorrType</code></td>
+<td>
+<p>The type of the correlation function of the GP model. Choices include <code>'G'</code> (default), <code>'PE'</code>, <code>'LBG'</code>, and <code>'LB'</code>. See the <code>references</code> for the details. For smooth (or analytic) functions, choose either <code>'G'</code> or <code>'LBG'</code>. Fitting is faster if <code>'G'</code> is chosen.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Eps</code></td>
+<td>
+<p>A vector containing the smallest eigen value(s) that the correlation matrix is allowed to have. The elements of Eps must be in [0, 1] and sorted in a descending order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>AnaGr</code></td>
+<td>
+<p>Flag indicating whether the gradient of the log-likelihood should be taken analytically (<code>!= 0</code>) or numerically (<code>== 0</code>). For now, only available when <code>CorrType == 'G'</code> or <code>CorrType == 'PE'</code>. If <code>AnaGr != 0</code>, the fitted model will generally be more accurate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Nopt</code></td>
+<td>
+<p>The number of times the log-likelihood function is optimized when <code>Eps[1]</code> is used to constraint the smallest eigen value that the correlation matrix is allowed to have. Higher <code>Nopt</code> will increase fitting time as well as the chances of finding the global optimum. If <code>nrow(X)</code> is large (i.e., large training datasets), <code>Nopt</code> can be small.Analyzing the optimization results for <code>Eps[1]</code> and when <code>Progress != 0</code> will determine if <code>Nopt</code> has been large enough.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>TraceIt</code></td>
+<td>
+<p>Non-negative integer. If positive, tracing information on the progress of the optimization is <strong>printed</strong>. There are six levels of tracing (see <code>optim</code>) and higher values will produce more tracing information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MaxIter</code></td>
+<td>
+<p>Maximum number of iterations allowed for each optimization (see <code>optim</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Seed</code></td>
+<td>
+<p>An integer for the random number generator. Use this to make the results reproducible.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LowerBound, UpperBound</code></td>
+<td>
+<p>To estimate the scale (aka roughness) parameters of the correlation function, the feasible range should be defined. <code>LowerBound</code> and <code>UpperBound</code> are vectors determining, resepectively, the lower and upper bounds. Their length depends on the parametric form of the correlation function (see <code>reference 1</code> for the details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>StopFlag</code></td>
+<td>
+<p>Flag indicating whether the optimization must be stopped if the negative log-likelihood increases with decreasing <code>Eps[i]</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Progress</code></td>
+<td>
+<p>Flag indicating if the fitting process should be summarized. Set it to <code>!=0</code> to turn it on.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DoParallel</code></td>
+<td>
+<p>If <code>!= 0</code>, optimizations will be done in parallel.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ncores</code></td>
+<td>
+<p>Number of cores to use if <code>DoParallel != 0</code>. The default is the maximum number of physical cores.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Model A list containing the following components:
+</p>
+
+<ul>
+<li>
+<p><code>CovFunc</code> A list containing the type and estimated parameters of the correlation function.
+</p>
+</li>
+<li>
+<p><code>Data</code> A list storing the original (but scaled) data.
+</p>
+</li>
+<li>
+<p><code>Details</code> A list of some parameters (used in prediction) as well as some values reporting the total run-time (<code>cost</code>) and the added nugget (<code>Nug_opt</code>) for satisfying the constraint on the smallest eigen value of the correlation matrix.
+</p>
+</li>
+<li>
+<p><code>OptimHist</code> The optimization history.
+</p>
+</li>
+<li>
+<p><code>Setting</code> The default/provided settings for running the code.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+
+<ol>
+<li>
+<p> Bostanabad, R., Kearney, T., Tao, S., Apley, D. W. &amp; Chen, W. (2018) Leveraging the nugget parameter for efficient Gaussian process modeling. Int J Numer Meth Eng, 114, 501-516.
+</p>
+</li>
+<li>
+<p> Plumlee, M. &amp; Apley, D. W. (2017) Lifted Brownian kriging models. Technometrics, 59, 165-177.
+</p>
+</li>
+</ol>
+<h3>See Also</h3>
+
+<p><code>optim</code> for the details on <code>L-BFGS-B</code> algorithm used in optimization.<br><code>Predict</code> to use the fitted GP model for prediction.<br><code>Draw</code> to plot the response via the fitted model.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># 1D example: Fit a model (with default settings) and evaluate the performance
+# by computing the root mean squared error (RMSE) in prediction.
+library(lhs)
+X &lt;- 5*maximinLHS(15, 1)
+Y &lt;- 2*sin(2*X) + log(X+1)
+M &lt;- Fit(X, Y)
+XF &lt;- matrix(seq(0, 5, length.out = 100), 100, 1)
+YF &lt;- Predict(XF, M)
+RMSE &lt;- sqrt(mean((YF$YF - (2*sin(2*XF) + log(XF+1)))^2))
+
+## Not run: 
+# 1D example: Fit a model, evaluate the performance, and plot the response
+# along with 95% prediction interval
+X &lt;- 10*maximinLHS(10, 1) - 5
+Y &lt;- X*cos(X)
+M &lt;- Fit(X, Y)
+XF &lt;- matrix(seq(-5, 5, length.out = 500), 500, 1)
+YF &lt;- Predict(XF, M)
+RMSE &lt;- sqrt(mean((YF$YF - (XF*cos(XF)))^2))
+Draw(M, 1, res = 20)
+
+# 2D example: Fit a model, evaluate the performance, and plot the response
+# surface along with 95% prediction interval
+X &lt;- 2*maximinLHS(10, 2) - 1
+Y &lt;- X[, 1]^2 + X[, 2]^2
+M &lt;- Fit(X, Y, CorrType = "PE")
+XF &lt;- 2*maximinLHS(100, 2) - 1
+YF &lt;- Predict(XF, M)
+RMSE &lt;- sqrt(mean((YF$YF - (XF[, 1]^2 + XF[, 2]^2))^2))
+library(lattice)
+Draw(M, c(1, 1), res = 15, PI95=1)
+
+# 2D example: Plot the previous model wrt X1 in the [-2, 2]
+# interval with X2=1
+Draw(M, c(1, 0), LB = -2, UB = 2, res = 15, PI95=1)
+
+# 3D example: Compare the performance of Gaussian ("G") and lifted Browninan
+# with Gamma=1 ("LBG")
+X &lt;- 2*maximinLHS(50, 3) - 1
+Y &lt;- cos(X[, 1]^2) + 2*sin(X[, 2]^2) + X[, 3]^2
+M_G &lt;- Fit(X, Y)
+M_LBG &lt;- Fit(X, Y, CorrType = "LBG")
+XF &lt;- 2*maximinLHS(500, 3) - 1
+YF_G &lt;- Predict(XF, M_G)
+YF_LBG &lt;- Predict(XF, M_LBG)
+RMSE_G &lt;- sqrt(mean((YF_G$YF - (cos(XF[, 1]^2) + 2*sin(XF[, 2]^2) + XF[, 3]^2))^2))
+RMSE_LBG &lt;- sqrt(mean((YF_LBG$YF - (cos(XF[, 1]^2) + 2*sin(XF[, 2]^2) + XF[, 3]^2))^2))
+
+# 3D example: Draw the response in 2D using the M_G model when X3=0
+Draw(M_G, c(1, 1, 0), PI95 = 0, Values = 0, X1Label = 'Input 1', X2Label = 'Input 2')
+
+# 3D example: 2D response
+X &lt;- 2*maximinLHS(50, 3) - 1
+Y &lt;- cbind(cos(X[, 1]^2) + 2*sin(X[, 2]^2) + X[, 3]^2, rowSums(X))
+M &lt;- Fit(X, Y)
+Draw(M, c(0, 1, 1), Response_ID = 2, Values = 0.5)
+
+# 2D example with noise
+X &lt;- 2*maximinLHS(100, 2) - 1
+Y &lt;- X[, 1]^2 + X[, 2]^2 + matrix(rnorm(nrow(X), 0, .5), nrow(X), 1)
+M &lt;- Fit(X, Y)
+# Estimating the noise variance (should be close to 0.5^2)
+M$Details$Nug_opt*M$CovFunc$Parameters$Sigma2*M$Data$Yrange^2
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,141 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sfPoints</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Pointwise Spending Function</h2>
+
+<h3>Description</h3>
+
+<p>The function <code>sfPoints</code> implements a spending function with values
+specified for an arbitrary set of specified points. It is now recommended to
+use sfLinear rather than sfPoints. Normally <code>sfPoints</code> will be passed
+to <code>gsDesign</code> in the parameter <code>sfu</code> for the upper bound or
+<code>sfl</code> for the lower bound to specify a spending function family for a
+design. In this case, the user does not need to know the calling sequence,
+just the points they wish to specify. If using <code>sfPoints()</code> in a
+design, it is recommended to specify how to interpolate between the
+specified points (e.g,, linear interpolation); also consider fitting smooth
+spending functions; see <code>vignette("SpendingFunctionOverview")</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sfPoints(alpha, t, param)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Real value <code class="reqn">&gt; 0</code> and no more than 1. Normally,
+<code>alpha=0.025</code> for one-sided Type I error specification or
+<code>alpha=0.1</code> for Type II error specification. However, this could be set
+to 1 if for descriptive purposes you wish to see the proportion of spending
+as a function of the proportion of sample size/information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t</code></td>
+<td>
+<p>A vector of points with increasing values from &gt;0 and &lt;=1.  Values
+of the proportion of sample size/information for which the spending function
+will be computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>A vector of the same length as <code>t</code> specifying the
+cumulative proportion of spending to corresponding to each point in
+<code>t</code>; must be &gt;=0 and &lt;=1.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of type <code>spendfn</code>. See spending functions for further
+details.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The gsDesign technical manual is available at
+<a href="https://keaven.github.io/gsd-tech-manual/">https://keaven.github.io/gsd-tech-manual/</a>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Keaven Anderson <a href="mailto:keaven_anderson@merck.com">keaven_anderson@merck.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Jennison C and Turnbull BW (2000), <em>Group Sequential
+Methods with Applications to Clinical Trials</em>. Boca Raton: Chapman and Hall.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>vignette("SpendingFunctionOverview")</code>, <code>gsDesign</code>,
+<code>vignette("gsDesignPackageOverview")</code>, sfLogistic
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(ggplot2)
+# example to specify spending on a pointwise basis
+x &lt;- gsDesign(
+  k = 6, sfu = sfPoints, sfupar = c(.01, .05, .1, .25, .5, 1),
+  test.type = 2
+)
+x
+
+# get proportion of upper spending under null hypothesis
+# at each analysis
+y &lt;- x$upper$prob[, 1] / .025
+
+# change to cumulative proportion of spending
+for (i in 2:length(y))
+  y[i] &lt;- y[i - 1] + y[i]
+
+# this should correspond to input sfupar
+round(y, 6)
+
+# plot these cumulative spending points
+plot(1:6 / 6, y,
+  main = "Pointwise spending function example",
+  xlab = "Proportion of final sample size",
+  ylab = "Cumulative proportion of spending",
+  type = "p"
+)
+
+# approximate this with a t-distribution spending function
+# by fitting 3 points
+tx &lt;- 0:100 / 100
+lines(tx, sfTDist(1, tx, c(c(1, 3, 5) / 6, .01, .1, .5))$spend)
+text(x = .6, y = .9, labels = "Pointwise Spending Approximated by")
+text(x = .6, y = .83, "t-Distribution Spending with 3-point interpolation")
+
+# example without lower spending at initial interim or
+# upper spending at last interim
+x &lt;- gsDesign(
+  k = 3, sfu = sfPoints, sfupar = c(.25, .25),
+  sfl = sfPoints, sflpar = c(0, .25)
+)
+x
+
+</code></pre>
+
+
+</div>

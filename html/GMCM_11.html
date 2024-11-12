@@ -1,0 +1,146 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>EMAlgorithm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>EM algorithm for Gaussian mixture models</h2>
+
+<h3>Description</h3>
+
+<p>The regular expectation-maximization algorithm for general multivariate
+Gaussian mixture models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">EMAlgorithm(x, theta, m, eps = 1e-06, max.ite = 1e+05,
+  trace.theta = FALSE, verbose = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A <code>matrix</code> of observations where each row correspond to an
+observation and each columns to a feature/variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>A list of parameters of class <code>theta</code> as described in
+<code>rtheta</code>.
+Optional. If not provided <code>m</code> should be given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m</code></td>
+<td>
+<p><code>numeric</code>. The number of components if <code>theta</code> is not
+supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>The maximal required difference in successive likelihoods to
+establish convergence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.ite</code></td>
+<td>
+<p>The maximum number of iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace.theta</code></td>
+<td>
+<p>Logical. If <code>TRUE</code>, all estimates are stored and
+returned. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Set to <code>TRUE</code> for verbose output. Default is
+<code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Though not as versatile, the algorithm can be a faster alternative
+to <code>Mclust</code> in the <code>mclust</code>-package. If <code>theta</code> is not given,
+a k-means clustering is used to determine the initial <code>theta</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of length 3 with elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>theta </code></td>
+<td>
+<p>A list of the estimated parameters as described in
+<code>rtheta</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loglik.tr</code></td>
+<td>
+<p>A numeric vector of the log-likelihood trace.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kappa </code></td>
+<td>
+<p>A matrix where <code>kappa[i,j]</code> is the probability that
+<code>x[i, ]</code> is realized from the <code>j</code>'th component.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Anders Ellern Bilgrau &lt;anders.ellern.bilgrau@gmail.com&gt;
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>rtheta</code>, <code>PseudoEMAlgorithm</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(3)
+true.theta &lt;- rtheta(d = 2, m = 3, method = "old")
+true.theta$sigma &lt;- lapply(true.theta$sigma, cov2cor) # Scale
+## Not run: 
+plot(true.theta, nlevels = 20, add.ellipses = TRUE)
+
+## End(Not run)
+
+data &lt;- SimulateGMCMData(n = 1000, theta = true.theta)
+start.theta &lt;- rtheta(d = 2, m = 3)
+start.theta$mu &lt;- t(kmeans(data$z, 3)$centers) # More sensible location estimates
+start.theta &lt;- as.theta(start.theta) # Coerce the matrix to a list
+res &lt;- GMCM:::EMAlgorithm(data$z, theta = start.theta)
+
+par(mfrow = c(1,2))
+plot(data$z, cex = 0.5, pch = 16, main = "Simulated data",
+     col = rainbow(3)[data$K])
+plot(data$z, cex = 0.5, pch = 16, main = "GMM clustering",
+     col = rainbow(3)[apply(res$kappa,1,which.max)])
+</code></pre>
+
+
+</div>

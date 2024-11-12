@@ -1,0 +1,140 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemInputOutputTable_2_2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A General Equilibrium Model based on a 2×2 (Unbalanced) Input-Output Table</h2>
+
+<h3>Description</h3>
+
+<p>A general equilibrium model based on a 2×2 (unbalanced) input-output table (unit: yuan).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemInputOutputTable_2_2(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+names.commodity &lt;- c("prod", "lab")
+names.agent &lt;- c("firm", "laborer")
+
+IT &lt;- matrix(c(
+  40, 40,
+  40, 60
+), 2, 2, TRUE)
+
+OT &lt;- matrix(c(
+  100, 0,
+  0, 100
+), 2, 2, TRUE)
+
+dimnames(IT) &lt;- dimnames(OT) &lt;- list(names.commodity, names.agent)
+
+addmargins(IT)
+addmargins(OT)
+
+#### the model
+dst.firm &lt;- node_new(
+  "prod",
+  type = "SCES",
+  es = 1,
+  alpha = 1.25, # 100 / (40 + 40)
+  beta = prop.table(c(40, 40)),
+  "prod", "lab"
+)
+
+dst.consumer &lt;- node_new(
+  "util",
+  type = "SCES",
+  es = 1, alpha = 1,
+  beta = prop.table(c(40, 60)),
+  "prod", "lab"
+)
+
+dstl &lt;- list(dst.firm, dst.consumer)
+
+ge.benchmark &lt;- sdm2(
+  A = dstl,
+  B = matrix(c(
+    1, 0,
+    0, 0
+  ), 2, 2, TRUE),
+  S0Exg = matrix(c(
+    NA, NA,
+    NA, 100
+  ), 2, 2, TRUE),
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm", "consumer"),
+  numeraire = "lab"
+)
+
+ge.benchmark$p
+ge.benchmark$D
+ge.benchmark$S
+
+addmargins(ge.benchmark$DV)
+addmargins(ge.benchmark$SV)
+
+## the same as above
+ge &lt;- sdm2(
+  A = function(state) {
+    a.firm &lt;- SCES_A(es = 1, alpha = 1.25, Beta = prop.table(c(40, 40)), p = state$p)
+    a.consumer &lt;- SCES_A(es = 1, alpha = 1.25, Beta = prop.table(c(40, 60)), p = state$p)
+    cbind(a.firm, a.consumer)
+  },
+  B = matrix(c(
+    1, 0,
+    0, 0
+  ), 2, 2, TRUE),
+  S0Exg = matrix(c(
+    NA, NA,
+    NA, 100
+  ), 2, 2, TRUE),
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm", "consumer"),
+  numeraire = "lab"
+)
+
+## technology progress
+dstl[[1]]$alpha &lt;- 2.5
+
+ge.TP &lt;- sdm2(
+  A = dstl,
+  B = matrix(c(
+    1, 0,
+    0, 0
+  ), 2, 2, TRUE),
+  S0Exg = matrix(c(
+    NA, NA,
+    NA, 100
+  ), 2, 2, TRUE),
+  names.commodity = c("prod", "lab"),
+  names.agent = c("firm", "consumer"),
+  numeraire = "lab"
+)
+
+ge.TP$p
+ge.TP$D
+ge.TP$S
+
+addmargins(ge.TP$DV)
+addmargins(ge.TP$SV)
+
+</code></pre>
+
+
+</div>

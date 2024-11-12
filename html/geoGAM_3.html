@@ -1,0 +1,186 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bootstrap.geoGAM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bootstrapped predictive distribution
+</h2>
+
+<h3>Description</h3>
+
+<p>Method for class <code>geoGAM</code> to compute model based bootstrap for point predictions. Returns complete predictive distribution of which prediction intervals can be computed.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## Default S3 method:
+bootstrap(object, ...)
+
+## S3 method for class 'geoGAM'
+bootstrap(object, newdata, R = 100,
+          back.transform = c("none", "log", "sqrt"),
+          seed = NULL, cores = detectCores(), ...)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>geoGAM object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>data frame in which to look for covariates with which to predict.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>number of bootstrap replicates, single positive integer.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>back.transform</code></td>
+<td>
+<p>sould to <code>log</code> or <code>sqrt</code> transformed responses unbiased back transformation be applied? Default is <code>none</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>seed for simulation of new response. Set seed for reproducible results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>number of cores to be used for parallel computing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Soil properties are predicted for new locations <code class="reqn">\mathbf{s_{+}}</code> from the final <code>geoGAM</code> fit by <code class="reqn">\tilde{Y}(\mathbf{s_+})=\hat f(\mathbf{x}\mathbf{(s_+)})</code>, see function <code>predict.geoGAM</code>.
+
+
+To model the predictive distributions for continuous responses <code>bootstrap.geoGAM</code> uses a
+non-parametric, model-based bootstrapping approach (<cite>Davison and Hinkley 1997</cite>, pp. 262, 285) as follows:
+
+</p>
+
+<ol>
+<li>
+<p> New values of the response are simulated according to <code class="reqn">Y(\mathbf{s})^{*} = \hat f(\mathbf{x}(\mathbf{s}))+\mathbf{\epsilon}</code>, where <code class="reqn">\hat f(\mathbf{x}(\mathbf{s}))</code> are the fitted values of the final model
+and <code class="reqn">\epsilon</code> are errors randomly sampled with replacement from the centred, homoscedastic residuals of the final model <cite>Wood 2006</cite>, p. 129).
+</p>
+</li>
+<li> <p><code>geoGAM</code> is fitted to <code class="reqn">Y(\mathbf{s})^{*}</code>.
+</p>
+</li>
+<li>
+<p> Prediction errors are computed according to <code class="reqn">\delta_{+}^{*} =  \hat f(\mathbf{x}(\mathbf{s_{+}}))^{*} - (\, \hat f(\mathbf{x}(\mathbf{s_{+}})) + \mathbf{\epsilon} \,)</code>,
+where <code class="reqn">\hat f(\mathbf{x}(\mathbf{s_{+}}))^{*}</code> are predicted values at new locations <code class="reqn">\mathbf{s_{+}}</code> of the
+model built with the simulated response <code class="reqn">Y(\mathbf{s})^{*}</code> in step B above, and the errors <code class="reqn">\epsilon</code> are again randomly sampled from the centred, homoscedastic residuals of the final model (see step A).
+</p>
+</li>
+</ol>
+<p>Prediction intervals are computed according to
+
+</p>
+<p style="text-align: center;"><code class="reqn">
+	[\hat f(\mathbf{x}(\mathbf{s_{+})}) - \delta_{+\,(1-\alpha)}^{*}\,; \hat f(\mathbf{x}\mathbf{(s_{+}})) - \delta_{+\,(\alpha)}^{*}]</code>
+</p>
+
+
+<p>where <code class="reqn">\delta_{+\,(\alpha)}^{*}</code> and <code class="reqn">\delta_{+\,(1-\alpha)}^{*}</code> are the <code class="reqn">\alpha</code>- and <code class="reqn">(1-\alpha)</code>-quantiles of <code class="reqn">\delta_{+}^{*}</code>, pooled over all 1000 bootstrap repetitions.
+</p>
+<p>Predictive distributions for binary and ordinal responses are
+directly obtained from a final <code>geoGAM</code> fit by predicting probabilities
+of occurrence <code class="reqn">\mathrm{\widetilde{Prob}}(Y(\mathbf{s})=r\,|\,\mathbf{x}(\mathbf{s)})</code>
+(<cite>Davison and Hinkley 1997</cite>, p. 358).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Data frame of <code>nrows(newdata)</code> rows and <code>R + 2</code> columns with <code>x</code> and <code>y</code> indicating coordinates of the location and <code>P1</code> to <code>P...R</code> the prediction at this location from <code>1...R</code> replications.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>M. Nussbaum
+</p>
+
+
+<h3>References</h3>
+
+<p>Nussbaum, M., Walthert, L., Fraefel, M., Greiner, L., and Papritz, A.: Mapping of soil properties at high resolution in Switzerland using boosted geoadditive models, SOIL, 3, 191-210, doi:10.5194/soil-3-191-2017, 2017.
+</p>
+<p>Davison, A. C. and Hinkley, D. V., 2008. Bootstrap Methods and Their Applications. Cambridge University Press.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>To create geoGAM objects see <code>geoGAM</code> and to predict without simulation of the predictive distribution see <code>predict.geoGAM</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+data(quakes)
+
+# group stations to ensure min 20 observations per factor level
+# and reduce number of levels for speed
+quakes$stations &lt;- factor( cut( quakes$stations, breaks = c(0,15,19,23,30,39,132)) )
+
+# Artificially split data to create prediction data set
+set.seed(1)
+quakes.pred &lt;- quakes[ ss &lt;- sample(1:nrow(quakes), 500), ]
+quakes &lt;- quakes[ -ss, ]
+
+quakes.geogam &lt;- geoGAM(response = "mag",
+                        covariates = c("stations", "depth"),
+                        coords = c("lat", "long"),
+                        data = quakes,
+                        max.stop = 20,
+                        cores = 1)
+
+
+## compute model based bootstrap with 10 repetitions (use at least 100)
+quakes.boot &lt;- bootstrap(quakes.geogam,
+                         newdata = quakes.pred,
+                         R = 10, cores = 1)
+
+
+# plot predictive distribution for site in row 9
+hist( as.numeric( quakes.boot[ 9, -c(1:2)] ), col = "grey",
+      main = paste("Predictive distribution at", paste( quakes.boot[9, 1:2], collapse = "/" )),
+      xlab = "predicted magnitude")
+
+# compute 95 % prediction interval and add to plot
+quant95 &lt;- quantile( as.numeric( quakes.boot[ 9, -c(1:2)] ), probs = c(0.025, 0.975) )
+abline(v = quant95[1], lty = "dashed")
+abline(v = quant95[2], lty = "dashed")
+
+</code></pre>
+
+
+</div>

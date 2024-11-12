@@ -1,0 +1,677 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gsDesign</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Design Derivation</h2>
+
+<h3>Description</h3>
+
+<p><code>gsDesign()</code> is used to find boundaries and trial size required for a
+group sequential design.
+</p>
+<p>Many parameters normally take on default values and thus do not require
+explicit specification. One- and two-sided designs are supported. Two-sided
+designs may be symmetric or asymmetric. Wang-Tsiatis designs, including
+O'Brien-Fleming and Pocock designs can be generated. Designs with common
+spending functions as well as other built-in and user-specified functions
+for Type I error and futility are supported. Type I error computations for
+asymmetric designs may assume binding or non-binding lower bounds. The print
+function has been extended using <code>print.gsDesign()</code> to print
+<code>gsDesign</code> objects; see examples.
+</p>
+<p>The user may ignore the structure of the value returned by <code>gsDesign()</code>
+if the standard printing and plotting suffice; see examples.
+</p>
+<p><code>delta</code> and <code>n.fix</code> are used together to determine what sample
+size output options the user seeks. The default, <code>delta=0</code> and
+<code>n.fix=1</code>, results in a ‘generic’ design that may be used with
+any sampling situation. Sample size ratios are provided and the user
+multiplies these times the sample size for a fixed design to obtain the
+corresponding group sequential analysis times. If <code>delta&gt;0</code>,
+<code>n.fix</code> is ignored, and <code>delta</code> is taken as the standardized
+effect size - the signal to noise ratio for a single observation; for
+example, the mean divided by the standard deviation for a one-sample normal
+problem.  In this case, the sample size at each analysis is computed.  When
+<code>delta=0</code> and <code>n.fix&gt;1</code>, <code>n.fix</code> is assumed to be the sample
+size for a fixed design with no interim analyses. See examples below.
+</p>
+<p>Following are further comments on the input argument <code>test.type</code> which
+is used to control what type of error measurements are used in trial design.
+The manual may also be worth some review in order to see actual formulas for
+boundary crossing probabilities for the various options.  Options 3 and 5
+assume the trial stops if the lower bound is crossed for Type I and Type II
+error computation (binding lower bound).  For the purpose of computing Type
+I error, options 4 and 6 assume the trial continues if the lower bound is
+crossed (non-binding lower bound); that is a Type I error can be made by
+crossing an upper bound after crossing a previous lower bound.
+Beta-spending refers to error spending for the lower bound crossing
+probabilities under the alternative hypothesis (options 3 and 4). In this
+case, the final analysis lower and upper boundaries are assumed to be the
+same. The appropriate total beta spending (power) is determined by adjusting
+the maximum sample size through an iterative process for all options. Since
+options 3 and 4 must compute boundary crossing probabilities under both the
+null and alternative hypotheses, deriving these designs can take longer than
+other options. Options 5 and 6 compute lower bound spending under the null
+hypothesis.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gsDesign(
+  k = 3,
+  test.type = 4,
+  alpha = 0.025,
+  beta = 0.1,
+  astar = 0,
+  delta = 0,
+  n.fix = 1,
+  timing = 1,
+  sfu = sfHSD,
+  sfupar = -4,
+  sfl = sfHSD,
+  sflpar = -2,
+  tol = 1e-06,
+  r = 18,
+  n.I = 0,
+  maxn.IPlan = 0,
+  nFixSurv = 0,
+  endpoint = NULL,
+  delta1 = 1,
+  delta0 = 0,
+  overrun = 0,
+  usTime = NULL,
+  lsTime = NULL
+)
+
+## S3 method for class 'gsDesign'
+xtable(
+  x,
+  caption = NULL,
+  label = NULL,
+  align = NULL,
+  digits = NULL,
+  display = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>Number of analyses planned, including interim and final.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test.type</code></td>
+<td>
+<p><code>1=</code>one-sided <br><code>2=</code>two-sided symmetric <br><code>3=</code>two-sided, asymmetric, beta-spending with binding lower bound <br><code>4=</code>two-sided, asymmetric, beta-spending with non-binding lower bound
+<br><code>5=</code>two-sided, asymmetric, lower bound spending under the null
+hypothesis with binding lower bound <br><code>6=</code>two-sided, asymmetric,
+lower bound spending under the null hypothesis with non-binding lower bound.
+<br> See details, examples and manual.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Type I error, always one-sided. Default value is 0.025.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>Type II error, default value is 0.1 (90% power).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>astar</code></td>
+<td>
+<p>Normally not specified. If <code>test.type=5</code> or <code>6</code>,
+<code>astar</code> specifies the total probability of crossing a lower bound at
+all analyses combined.  This will be changed to <code class="reqn">1 - </code><code>alpha</code> when
+default value of 0 is used.  Since this is the expected usage, normally
+<code>astar</code> is not specified by the user.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>Effect size for theta under alternative hypothesis. This can be
+set to the standardized effect size to generate a sample size if
+<code>n.fix=NULL</code>. See details and examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.fix</code></td>
+<td>
+<p>Sample size for fixed design with no interim; used to find
+maximum group sequential sample size. For a time-to-event outcome, input
+number of events required for a fixed design rather than sample size and
+enter fixed design sample size (optional) in <code>nFixSurv</code>.  See details
+and examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timing</code></td>
+<td>
+<p>Sets relative timing of interim analyses. Default of 1
+produces equally spaced analyses.  Otherwise, this is a vector of length
+<code>k</code> or <code>k-1</code>.  The values should satisfy <code>0 &lt; timing[1] &lt;
+timing[2] &lt; ... &lt; timing[k-1] &lt; timing[k]=1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sfu</code></td>
+<td>
+<p>A spending function or a character string indicating a boundary
+type (that is, “WT” for Wang-Tsiatis bounds, “OF” for
+O'Brien-Fleming bounds and “Pocock” for Pocock bounds).  For
+one-sided and symmetric two-sided testing is used to completely specify
+spending (<code>test.type=1, 2</code>), <code>sfu</code>.  The default value is
+<code>sfHSD</code> which is a Hwang-Shih-DeCani spending function.  See details,
+<code>vignette("SpendingFunctionOverview")</code>, manual and examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sfupar</code></td>
+<td>
+<p>Real value, default is <code class="reqn">-4</code> which is an
+O'Brien-Fleming-like conservative bound when used with the default
+Hwang-Shih-DeCani spending function. This is a real-vector for many spending
+functions.  The parameter <code>sfupar</code> specifies any parameters needed for
+the spending function specified by <code>sfu</code>; this is not needed for
+spending functions (<code>sfLDOF</code>, <code>sfLDPocock</code>) or bound types
+(“OF”, “Pocock”) that do not require parameters.
+Note that <code>sfupar</code> can be specified as a positive scalar for
+<code>sfLDOF</code> for a generalized O'Brien-Fleming spending function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sfl</code></td>
+<td>
+<p>Specifies the spending function for lower boundary crossing
+probabilities when asymmetric, two-sided testing is performed
+(<code>test.type = 3</code>, <code>4</code>, <code>5</code>, or <code>6</code>).  Unlike the upper
+bound, only spending functions are used to specify the lower bound.  The
+default value is <code>sfHSD</code> which is a Hwang-Shih-DeCani spending
+function.  The parameter <code>sfl</code> is ignored for one-sided testing
+(<code>test.type=1</code>) or symmetric 2-sided testing (<code>test.type=2</code>).  See
+details, spending functions, manual and examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sflpar</code></td>
+<td>
+<p>Real value, default is <code class="reqn">-2</code>, which, with the default
+Hwang-Shih-DeCani spending function, specifies a less conservative spending
+rate than the default for the upper bound.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>Tolerance for error (default is 0.000001). Normally this will not
+be changed by the user.  This does not translate directly to number of
+digits of accuracy, so use extra decimal places.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>Integer value controlling grid for numerical integration as in
+Jennison and Turnbull (2000); default is 18, range is 1 to 80.  Larger
+values provide larger number of grid points and greater accuracy.  Normally
+<code>r</code> will not be changed by the user.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.I</code></td>
+<td>
+<p>Used for re-setting bounds when timing of analyses changes from
+initial design; see examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxn.IPlan</code></td>
+<td>
+<p>Used for re-setting bounds when timing of analyses changes
+from initial design; see examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nFixSurv</code></td>
+<td>
+<p>If a time-to-event variable is used, <code>nFixSurv</code>
+computed as the sample size from <code>nSurvival</code> may be entered to have
+<code>gsDesign</code> compute the total sample size required as well as the number
+of events at each analysis that will be returned in <code>n.fix</code>; this is
+rounded up to an even number.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>endpoint</code></td>
+<td>
+<p>An optional character string that should represent the type
+of endpoint used for the study. This may be used by output functions. Types
+most likely to be recognized initially are "TTE" for time-to-event outcomes
+with fixed design sample size generated by <code>nSurvival()</code> and "Binomial"
+for 2-sample binomial outcomes with fixed design sample size generated by
+<code>nBinomial()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta1</code></td>
+<td>
+<p><code>delta1</code> and <code>delta0</code> may be used to store
+information about the natural parameter scale compared to <code>delta</code> that
+is a standardized effect size. <code>delta1</code> is the alternative hypothesis
+parameter value on the natural parameter scale (e.g., the difference in two
+binomial rates).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta0</code></td>
+<td>
+<p><code>delta0</code> is the null hypothesis parameter value on the
+natural parameter scale.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>overrun</code></td>
+<td>
+<p>Scalar or vector of length <code>k-1</code> with patients enrolled
+that are not included in each interim analysis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>usTime</code></td>
+<td>
+<p>Default is NULL in which case upper bound spending time is 
+determined by <code>timing</code>. Otherwise, this should be a vector of length 
+<code>k</code> with the spending time at each analysis (see Details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lsTime</code></td>
+<td>
+<p>Default is NULL in which case lower bound spending time is 
+determined by <code>timing</code>. Otherwise, this should be a vector of length 
+<code>k</code> with the spending time at each analysis (see Details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> object of class found among <code>methods(xtable)</code>.  See
+below on how to write additional method functions for <code>xtable</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>caption</code></td>
+<td>
+<p>Character vector of length 1 or 2 containing the
+table's caption or title.  If length is 2, the second item is the
+"short caption" used when LaTeX generates a "List of Tables". Set to
+<code>NULL</code> to suppress the caption.  Default value is <code>NULL</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>label</code></td>
+<td>
+<p>Character vector of length 1 containing the LaTeX label
+or HTML anchor. Set to <code>NULL</code> to suppress the label.  Default
+value is <code>NULL</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>align</code></td>
+<td>
+<p>Character vector of length equal to the number of columns
+of the resulting table, indicating the alignment of the corresponding
+columns.  Also, <code>"|"</code> may be used to produce vertical lines
+between columns in LaTeX tables, but these are effectively ignored
+when considering the required length of the supplied vector.  If a
+character vector of length one is supplied, it is split as
+<code>strsplit(align, "")[[1]]</code> before processing. Since the row
+names are printed in the first column, the length of <code>align</code> is
+one greater than <code>ncol(x)</code> if <code>x</code> is a
+<code>data.frame</code>. Use <code>"l"</code>, <code>"r"</code>, and <code>"c"</code> to
+denote left, right, and center alignment, respectively.  Use
+<code>"p{3cm}"</code> etc. for a LaTeX column of the specified width. For
+HTML output the <code>"p"</code> alignment is interpreted as <code>"l"</code>,
+ignoring the width request. Default depends on the class of
+<code>x</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+
+<p>Numeric vector of length equal to one (in which case it will be
+replicated as necessary) or to the number of columns of the
+resulting table <b>or</b> matrix of the same size as the resulting
+table, indicating the number of digits to display in the
+corresponding columns. Since the row names are printed in the first
+column, the length of the vector <code>digits</code> or the number of
+columns of the matrix <code>digits</code> is one greater than
+<code>ncol(x)</code> if <code>x</code> is a <code>data.frame</code>. Default depends
+on the class of <code>x</code>. If values of <code>digits</code> are negative, the
+corresponding values of <code>x</code> are displayed in scientific format
+with <code>abs(digits)</code> digits.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>display</code></td>
+<td>
+
+<p>Character vector of length equal to the number of columns of the
+resulting table, indicating the format for the corresponding columns.
+Since the row names are printed in the first column, the length of
+<code>display</code> is one greater than <code>ncol(x)</code> if <code>x</code> is a
+<code>data.frame</code>.  These values are passed to the <code>formatC</code>
+function.  Use <code>"d"</code> (for integers), <code>"f"</code>, <code>"e"</code>,
+<code>"E"</code>, <code>"g"</code>, <code>"G"</code>, <code>"fg"</code> (for reals), or
+<code>"s"</code> (for strings).  <code>"f"</code> gives numbers in the usual
+<code>xxx.xxx</code> format; <code>"e"</code> and <code>"E"</code> give
+<code>n.ddde+nn</code> or <code>n.dddE+nn</code> (scientific format); <code>"g"</code>
+and <code>"G"</code> put <code>x[i]</code> into scientific format only if it
+saves space to do so.  <code>"fg"</code> uses fixed format as <code>"f"</code>,
+but <code>digits</code> as number of <em>significant</em> digits.  Note that
+this can lead to quite long result strings.  Default depends on the
+class of <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments.  (Currently ignored.)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of the class <code>gsDesign</code>. This class has the following
+elements and upon return from <code>gsDesign()</code> contains: </p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>As
+input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test.type</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>As
+input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>astar</code></td>
+<td>
+<p>As input, except when <code>test.type=5</code> or <code>6</code>
+and <code>astar</code> is input as 0; in this case <code>astar</code> is changed to
+<code>1-alpha</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>The standardized effect size for which the
+design is powered. Will be as input to <code>gsDesign()</code> unless it was input
+as 0; in that case, value will be computed to give desired power for fixed
+design with input sample size <code>n.fix</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.fix</code></td>
+<td>
+<p>Sample size
+required to obtain desired power when effect size is <code>delta</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timing</code></td>
+<td>
+<p>A vector of length <code>k</code> containing the portion of the
+total planned information or sample size at each analysis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>As
+input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.I</code></td>
+<td>
+<p>Vector of length <code>k</code>. If values
+are input, same values are output. Otherwise, <code>n.I</code> will contain the
+sample size required at each analysis to achieve desired <code>timing</code> and
+<code>beta</code> for the output value of <code>delta</code>.  If <code>delta=0</code> was
+input, then this is the sample size required for the specified group
+sequential design when a fixed design requires a sample size of
+<code>n.fix</code>. If <code>delta=0</code> and <code>n.fix=1</code> then this is the relative
+sample size compared to a fixed design; see details and examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxn.IPlan</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nFixSurv</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nSurv</code></td>
+<td>
+<p>Sample
+size for Lachin and Foulkes method when <code>nSurvival</code> is used for fixed
+design input. If <code>nSurvival</code> is used to compute <code>n.fix</code>, then
+<code>nFixSurv</code> is inflated by the same amount as <code>n.fix</code> and stored in
+<code>nSurv</code>. Note that if you use <code>gsSurv</code> for time-to-event sample
+size, this is not needed and a more complete output summary is given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>endpoint</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta1</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta0</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>overrun</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>usTime</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lsTime</code></td>
+<td>
+<p>As input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>Upper bound spending function,
+boundary and boundary crossing probabilities under the NULL and alternate
+hypotheses. See <code>vignette("SpendingFunctionOverview")</code> and manual for further
+details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>Lower bound spending function, boundary and boundary
+crossing probabilities at each analysis. Lower spending is under alternative
+hypothesis (beta spending) for <code>test.type=3</code> or <code>4</code>.  For
+<code>test.type=2</code>, <code>5</code> or <code>6</code>, lower spending is under the null
+hypothesis. For <code>test.type=1</code>, output value is <code>NULL</code>. See
+<code>vignette("SpendingFunctionOverview")</code> and manual.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>Standarized
+effect size under null (0) and alternate hypothesis. If <code>delta</code> is
+input, <code>theta[1]=delta</code>. If <code>n.fix</code> is input, <code>theta[1]</code> is
+computed using a standard sample size formula (pseudocode):
+<code>((Zalpha+Zbeta)/theta[1])^2=n.fix</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>falseprobnb</code></td>
+<td>
+<p>For
+<code>test.type=4</code> or <code>6</code>, this contains false positive probabilities
+under the null hypothesis assuming that crossing a futility bound does not
+stop the trial.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>en</code></td>
+<td>
+<p>Expected sample size accounting for early
+stopping. For time-to-event outcomes, this would be the expected number of
+events (although <code>gsSurv</code> will give expected sample size). For
+information-based-design, this would give the expected information when the
+trial stops. If <code>overrun</code> is specified, the expected sample size
+includes the overrun at each interim.</p>
+</td>
+</tr>
+</table>
+<p>An object of class "xtable" with attributes specifying formatting options for a table
+</p>
+
+
+<h3>Note</h3>
+
+<p>The gsDesign technical manual is available at
+<a href="https://keaven.github.io/gsd-tech-manual/">https://keaven.github.io/gsd-tech-manual/</a>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Keaven Anderson <a href="mailto:keaven_anderson@merck.com">keaven_anderson@merck.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Jennison C and Turnbull BW (2000), <em>Group Sequential
+Methods with Applications to Clinical Trials</em>. Boca Raton: Chapman and Hall.
+Lan KK, DeMets DL (1989). Group sequential procedures: calendar versus information 
+time. <em>Statistics in medicine</em> 8(10):1191-8.
+Liu, Q, Lim, P, Nuamah, I, and Li, Y (2012), On adaptive error spending approach for 
+group sequential trials with random information levels. <em>Journal of biopharmaceutical statistics</em>; 22(4), 687-699.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>vignette("gsDesignPackageOverview")</code>, gsBoundSummary,
+plot.gsDesign,
+<code>gsProbability</code>, <code>vignette("SpendingFunctionOverview")</code>,
+</p>
+<p><code>Normal</code>
+<code>xtable</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(ggplot2)
+#  symmetric, 2-sided design with O'Brien-Fleming-like boundaries
+#  lower bound is non-binding (ignored in Type I error computation)
+#  sample size is computed based on a fixed design requiring n=800
+x &lt;- gsDesign(k = 5, test.type = 2, n.fix = 800)
+
+# note that "x" below is equivalent to print(x) and print.gsDesign(x)
+x
+plot(x)
+plot(x, plottype = 2)
+
+# Assuming after trial was designed actual analyses occurred after
+# 300, 600, and 860 patients, reset bounds
+y &lt;- gsDesign(
+  k = 3, test.type = 2, n.fix = 800, n.I = c(300, 600, 860),
+  maxn.IPlan = x$n.I[x$k]
+)
+y
+
+#  asymmetric design with user-specified spending that is non-binding
+#  sample size is computed relative to a fixed design with n=1000
+sfup &lt;- c(.033333, .063367, .1)
+sflp &lt;- c(.25, .5, .75)
+timing &lt;- c(.1, .4, .7)
+x &lt;- gsDesign(
+  k = 4, timing = timing, sfu = sfPoints, sfupar = sfup, sfl = sfPoints,
+  sflpar = sflp, n.fix = 1000
+)
+x
+plot(x)
+plot(x, plottype = 2)
+
+# same design, but with relative sample sizes
+gsDesign(
+  k = 4, timing = timing, sfu = sfPoints, sfupar = sfup, sfl = sfPoints,
+  sflpar = sflp
+)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,418 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>stepGAIC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Choose a model by GAIC in a Stepwise Algorithm</h2>
+
+<h3>Description</h3>
+
+<p>The function <code>stepGAIC()</code> performs stepwise model selection using a Generalized Akaike Information Criterion (GAIC). It is based on the function <code>stepAIC()</code> given in the library MASS of Venables and Ripley (2002). The function has been changed recently to allow parallel computation.  The parallel computations are similar to the ones performed in the function <code>boot()</code> of the <span class="pkg">boot</span> package. Note that since version 4.3-5 of <span class="pkg">gamlss</span> the  <code>stepGAIC()</code> do not have the option of using the function <code>stepGAIC.CH</code> through the argument <code>additive</code>. 
+</p>
+<p>Note that <code>stepGAIC()</code>  is relying to the <code>dropterm()</code> and <code>addterm()</code> methods applied to gamlss objects.    <code>drop1()</code> and <code>add1()</code> are equivalent methods  to the  <code>dropterm()</code> and <code>addterm()</code> respectively but with different default arguments (see the examples). 
+</p>
+<p>The function <code>stepGAIC.VR()</code> is the old version  of <code>stepGAIC()</code> with no parallel computations.    
+</p>
+<p>The function  <code>stepGAIC.CH</code> is based on the S function <code>step.gam()</code> (see Chambers and Hastie (1991)) and it is more suited for model with smoothing additive terms when the degrees of freedom for smoothing are fixed in advance. This is something which rarely used these days, as most of the smoothing functions allow the calculations of the smoothing parameter,  see for example the additive function <code>pb()</code>).  
+</p>
+<p>The functions <code>stepGAIC.VR()</code> and <code>stepGAIC.CH()</code> have been adapted to work with  gamlss objects and  the main difference is the <code>scope</code> argument, see below. 
+</p>
+<p>While the functions <code>stepGAIC()</code> is used to build models for individual parameters of the distribution  of the response variable, the functions <code>stepGAICAll.A()</code> and <code>stepGAICAll.A()</code>  are building  models for all  the parameters.
+</p>
+<p>The functions  <code>stepGAICAll.A()</code> and <code>stepGAICAll.B()</code> are based on the <code>stepGAIC()</code> function but use  different  strategies for selecting a appropriate final model.    
+</p>
+<p><code>stepGAICAll.A()</code> has the following strategy: 
+</p>
+<p>Strategy A:
+</p>
+<p>i) build a model for <code>mu</code> using a forward approach. 
+</p>
+<p>ii) given the model for <code>mu</code> build a model for <code>sigma</code>  (forward)
+</p>
+<p>iii) given the models for  <code>mu</code> and <code>sigma</code> build a model for <code>nu</code> (forward) 
+</p>
+<p>iv)  given the models for  <code>mu</code>, <code>sigma</code> and <code>nu</code> build a model for <code>tau</code> (forward) 
+</p>
+<p>v) given the models for  <code>mu</code>, <code>sigma</code>,  <code>nu</code> and <code>tau</code> check whether the terms for <code>nu</code> 
+are needed using backward elimination. 
+</p>
+<p>vi) given the models for  <code>mu</code>, <code>sigma</code>,  <code>nu</code> and <code>tau</code> check whether the terms for <code>sigma</code> 
+are needed (backward).
+</p>
+<p>vii) given the models for  <code>mu</code>, <code>sigma</code>,  <code>nu</code> and <code>tau</code> check whether the terms for <code>mu</code> 
+are needed (backward).
+</p>
+<p>Note for this strategy to work the <code>scope</code> argument should be set appropriately. 
+</p>
+<p><code>stepGAICAll.B()</code> uses the same procedure as the function  <code>stepGAIC()</code> but each term in the scope is fitted  to all the parameters of the distribution, rather than the one specified  by the argument <code>what</code> of <code>stepGAIC()</code>. 
+The <code>stepGAICAll.B()</code> relies on the <code>add1All()</code> and <code>drop1All()</code> functions for the selection of variables.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">
+stepGAIC(object, scope, direction = c("both", "backward", "forward"), 
+          trace = TRUE, keep = NULL, steps = 1000, scale = 0, 
+          what = c("mu", "sigma", "nu", "tau"), parameter= NULL, k = 2, 
+          parallel = c("no", "multicore", "snow"), ncpus = 1L, cl = NULL, 
+          ...)
+
+stepGAIC.VR(object, scope, direction = c("both", "backward", "forward"), 
+         trace = TRUE, keep = NULL, steps = 1000, scale = 0, 
+         what = c("mu", "sigma", "nu", "tau"), parameter= NULL, k = 2, 
+         ...)
+
+stepGAIC.CH(object, scope = gamlss.scope(model.frame(object)), 
+            direction = c("both", "backward", "forward"), trace = TRUE, 
+            keep = NULL, steps = 1000, what = c("mu", "sigma", "nu", "tau"),
+            parameter= NULL, k = 2, ...)
+
+stepGAICAll.A(object, scope = NULL, sigma.scope = NULL, nu.scope = NULL, 
+              tau.scope = NULL, mu.try = TRUE, sigma.try = TRUE, 
+              nu.try = TRUE, tau.try = TRUE,  direction = NULL,  
+              parallel = c("no", "multicore", "snow"), ncpus = 1L, 
+              cl = NULL,  ...)
+
+stepGAICAll.B(object, scope, direction = c("both", "backward", "forward"), 
+              trace = T, keep = NULL, steps = 1000, scale = 0, k = 2, 
+              parallel = c("no", "multicore", "snow"), ncpus = 1L, 
+              cl = NULL, ...) 
+               
+drop1All(object, scope, test = c("Chisq", "none"), k = 2, sorted = FALSE, 
+              trace = FALSE, parallel = c("no", "multicore", "snow"), 
+              ncpus = 1L, cl = NULL, ...)
+              
+add1All(object, scope, test = c("Chisq", "none"), k = 2, sorted = FALSE, 
+              trace = FALSE, parallel = c("no", "multicore", "snow"), 
+              ncpus = 1L, cl = NULL, ...)              
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>an gamlss object. This
+is used as the initial model in the stepwise search. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scope</code></td>
+<td>
+<p>defines the range of models examined in the stepwise search.
+For the function   <code>stepAIC()</code> this should be either a single formula, 
+or a list containing  components <code>upper</code> and <code>lower</code>, both formulae.  
+See the details for how to specify the formulae and how they are
+used.
+For the function <code>stepGAIC</code> the scope defines the range of models examined in the step-wise search.
+It is a list of formulas, with each formula corresponding to a term in the model. 
+A 1 in the formula allows the additional option of leaving the term out of the model entirely. +          
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>direction</code></td>
+<td>
+<p>the mode of stepwise search, can be one of <code>both</code>,
+<code>backward</code>, or <code>forward</code>, with a default of <code>both</code>. If
+the <code>scope</code> argument is missing the default for <code>direction</code>
+is <code>backward</code></p>
+</td>
+</tr>
+</table>
+<p>.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>if positive, information is printed during the running of
+<code>stepAIC</code>. Larger values may give more information on the
+fitting process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep</code></td>
+<td>
+<p>a filter function whose input is a fitted model object and
+the associated 'AIC' statistic, and whose output is
+arbitrary. Typically 'keep' will select a subset of the
+components of the object and return them. The default is not
+to keep anything.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>steps</code></td>
+<td>
+<p> the maximum number of steps to be considered.  The default is
+1000 (essentially as many as required).  It is typically used
+to stop the process early. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>scale is nor used in gamlss</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>what</code></td>
+<td>
+<p>which distribution parameter is required, default <code>what="mu"</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameter</code></td>
+<td>
+<p>equivalent to <code>what</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p> the multiple of the number of degrees of freedom used for the
+penalty. Only 'k = 2' gives the genuine AIC: 'k = log(n)' is
+sometimes referred to as BIC or SBC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>The type of parallel operation to be used (if any). If missing, the default is "no".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncpus</code></td>
+<td>
+<p>integer: number of processes to be used in parallel operation: typically     one would chose this to the number of available CPUs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl</code></td>
+<td>
+<p>An optional parallel or snow cluster for use if <code>parallel = "snow"</code>. If not supplied, a cluster on the local machine is created for the duration of the call.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma.scope</code></td>
+<td>
+<p>scope for <code>sigma</code> if different to <code>scope</code> in <code>stepGAICAll.A()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu.scope</code></td>
+<td>
+<p>scope for <code>nu</code> if different to <code>scope</code> in <code>stepGAICAll.A()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau.scope</code></td>
+<td>
+<p>scope for <code>tau</code> if different to <code>scope</code> in <code>stepGAICAll.A()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu.try</code></td>
+<td>
+<p>The default value is is TRUE, set to FALSE if no model for <code>mu</code> is needed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma.try</code></td>
+<td>
+<p>The default value is TRUE, set to FALSE if no model for <code>sigma</code> is needed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu.try</code></td>
+<td>
+<p>The default value is TRUE, set to FALSE if no model for <code>nu</code> is needed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau.try</code></td>
+<td>
+<p>The default value is TRUE, set to FALSE if no model for <code>tau</code> is needed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test</code></td>
+<td>
+<p>whether to print the chi-square test or not</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sorted</code></td>
+<td>
+<p>whether to sort the results</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> any additional arguments to 'extractAIC'. (None are currently
+used.)  </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The set of models searched is determined by the <code>scope</code> argument.
+</p>
+<p>For the function <code>stepGAIC.VR()</code> the right-hand-side of its <code>lower</code> 
+component is always included in  the model, and right-hand-side of the model is included in the <code>upper</code> 
+component.  If <code>scope</code> is a single formula, it specifies  the <code>upper</code> component,
+and the <code>lower</code> model is empty.  If <code>scope</code> is missing, the initial model 
+is used as the <code>upper</code> model.
+</p>
+<p>Models specified by <code>scope</code> can be templates to update <code>object</code> as
+used by <code>update.formula</code>.
+</p>
+<p>For the function <code>stepGAIC.CH()</code> each of the formulas in scope specifies a 
+"regimen" of candidate forms in which the particular term may enter the model. 
+For example, a term formula might be 
+</p>
+<p>~ x1 + log(x1) + cs(x1, df=3)
+</p>
+<p>This means that x1 could either appear linearly, linearly in its logarithm, or as a smooth function estimated non-parametrically.
+Every term in the model is described by such a term formula, and the final model is built up by selecting a component from each formula. 
+</p>
+<p>The function <code>gamlss.scope</code> similar to the S <code>gam.scope()</code> in Chambers and Hastie (1991) can be used to create automatically
+term formulae from specified data or model frames.
+</p>
+<p>The supplied model object is used as the starting model, and hence there is the requirement 
+that one term from each of the term formulas of the parameters be present in the formula of the distribution parameter. 
+This also implies that any terms in formula of the distribution parameter not contained in any of the term formulas 
+will be forced to be present in every model considered.
+</p>
+<p>When the smoother used in <code>gamlss</code> modelling belongs to the new generation of smoothers allowing the determination of the  smoothing parameters
+automatically (i.e. <code>pb()</code>, <code>cy()</code>) then the function   <code>stepGAIC.VR()</code> can be used for model selection (see example below).
+</p>
+
+
+<h3>Value</h3>
+
+<p>the stepwise-selected model is returned, with up to two additional
+components.  There is an '"anova"' component corresponding to the
+steps taken in the search, as well as a '"keep"' component if the
+'keep=' argument was supplied in the call. The '"Resid. Dev"'
+column of the analysis of deviance table refers to a constant
+minus twice the maximized log likelihood
+</p>
+<p>The function <code>stepGAICAll.A()</code> returns with a component "anovaAll" containing all the different anova tables used in the process.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Mikis Stasinopoulos based on functions in MASS library and in Statistical Models in S</p>
+
+
+<h3>References</h3>
+
+<p>Chambers, J. M. and Hastie, T. J. (1991). <em>Statistical Models in S</em>, Chapman and Hall, London. 
+</p>
+<p>Rigby, R. A. and  Stasinopoulos D. M. (2005). Generalized additive models for location, scale and shape,(with discussion), 
+<em>Appl. Statist.</em>, <b>54</b>, part 3, pp 507-554.
+</p>
+<p>Rigby, R. A., Stasinopoulos, D. M.,  Heller, G. Z.,  and De Bastiani, F. (2019)
+<em>Distributions for modeling location, scale, and shape: Using GAMLSS in R</em>, Chapman and Hall/CRC. An older version can be found in <a href="https://www.gamlss.com/">https://www.gamlss.com/</a>.
+</p>
+<p>Stasinopoulos D. M. Rigby R.A. (2007) Generalized additive models for location scale and shape (GAMLSS) in R.
+<em>Journal of Statistical Software</em>, Vol. <b>23</b>, Issue 7, Dec 2007, <a href="https://www.jstatsoft.org/v23/i07/">https://www.jstatsoft.org/v23/i07/</a>.
+</p>
+<p>Stasinopoulos D. M., Rigby R.A., Heller G., Voudouris V., and De Bastiani F., (2017)
+<em>Flexible Regression and Smoothing: Using GAMLSS in R</em>,  Chapman and Hall/CRC.  
+</p>
+<p>(see also <a href="https://www.gamlss.com/">https://www.gamlss.com/</a>).
+</p>
+<p>Venables, W. N. and Ripley, B. D. (2002) <em>Modern Applied
+Statistics with S</em>. Fourth edition.  Springer.
+</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>gamlss.scope</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+data(usair)
+# -----------------------------------------------------------------------------
+#  null model 
+mod0&lt;-gamlss(y~1, data=usair, family=GA)
+#  all the explanatotory variables x1:x6 fitted linearly 
+mod1&lt;-gamlss(y~., data=usair, family=GA)
+#-------------------------------------------------------------------------------
+# droping terms 
+dropterm(mod1)
+# with chi-square information
+drop1(mod1)
+# for parallel computations use something like 
+nC &lt;- detectCores()
+drop1(mod1, parallel="snow",  ncpus=nC)
+drop1(mod1, parallel="multicore",  ncpus=nC)
+#------------------------------------------------------------------------------
+# adding terms
+addterm(mod0, scope=as.formula(paste("~", paste(names(usair[-1]),
+                  collapse="+"),sep="")))
+# with chi-square information
+add1(mod0, scope=as.formula(paste("~", paste(names(usair[-1]),
+                  collapse="+"),sep="")))
+# for parallel computations 
+nC &lt;- detectCores()
+add1(mod0, scope=as.formula(paste("~", paste(names(usair[-1]),
+                  collapse="+"),sep="")), parallel="snow",  ncpus=nC)
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# stepGAIC 
+# find the best subset for the mu
+mod2 &lt;- stepGAIC(mod1)
+mod2$anova
+#--------------------------------------------------------------
+# for parallel computations 
+mod21 &lt;- stepGAIC(mod1, , parallel="snow",  ncpus=nC)
+#--------------------------------------------------------------
+# find the best subset for sigma
+mod3&lt;-stepGAIC(mod2, what="sigma", scope=~x1+x2+x3+x4+x5+x6)
+mod3$anova
+#--------------------------------------------------------------
+# find the best model using pb() smoother 
+#only three variables are used here for simplicity
+mod20&lt;-stepGAIC(mod0, scope=list(lower=~1, upper=~pb(x1)+pb(x2)+pb(x5)))
+edf(mod20)
+# note that x1 and x2 enter linearly
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# the stepGAIC.CH function (no parallel here)
+# creating a scope from the usair model frame 
+gs&lt;-gamlss.scope(model.frame(y~x1+x2+x3+x4+x5+x6, data=usair))
+gs 
+mod5&lt;-stepGAIC.CH(mod0,gs)
+mod5$anova
+#-----------------------------------------------------------------------------=-
+#------------------------------------------------------------------------------
+# now stepGAICAll.A    
+mod7&lt;-stepGAICAll.A(mod0, scope=list(lower=~1,upper=~x1+x2+x3+x4+x5+x6)) 
+#-----------------------------------------------------------------------------=-
+#------------------------------------------------------------------------------
+# now  stepGAICAll.B
+drop1All(mod1, parallel="snow",  ncpus=nC)
+add1All(mod0, scope=as.formula(paste("~", paste(names(usair[-1]),
+                  collapse="+"))), parallel="snow",  ncpus=nC)
+mod8&lt;-stepGAICAll.B(mod0, scope=list(lower=~1,upper=~x1+x2+x3+x4+x5+x6))
+#-----------------------------------------------------------------------------=-
+#------------------------------------------------------------------------------
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,169 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GLSME.predict</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prediction for a new observation using parameters estimated by the <code>GLSME</code> function</h2>
+
+<h3>Description</h3>
+
+<p>The function takes parameters estimated by the <code>GLSME</code> function and predicts the response
+for a new observation of predictors. It also returns confidence intervals on the prediction.
+The function is still under development.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GLSME.predict(xo, glsme.estimate, vy, vx, alpha = 0.95)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>xo </code></td>
+<td>
+<p> The new observed predictors. In a intercept is in the model then a 1 has to be included for it.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>glsme.estimate </code></td>
+<td>
+<p> The output of the <code>GLSME</code> function. Has to have format <code>"long"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vy </code></td>
+<td>
+<p> Residual variance, both biological and measurement error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vx </code></td>
+<td>
+<p> Biological variance in predictor, NOT observation variance of predictor. If there is a predictor in the model then a 0 row and column have to included for it.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha </code></td>
+<td>
+<p> Level for confidence interval.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>BiasCorr </code></td>
+<td>
+<p> Prediction using the bias corrected estimate.
+</p>
+
+<ul>
+<li>
+<p>prediction  Predicted value
+</p>
+</li>
+<li>
+<p>MSE  Estimate of mean square error. They are calculated by the formula
+</p>
+<p style="text-align: center;"><code class="reqn">v_{y}+x_{o}^{T}(MSE[\beta | XO])x_{o}+ \beta'^{T} v_{x} \beta',</code>
+</p>
+
+<p>where <code class="reqn">\beta'</code> is the bias corrected estimate of <code class="reqn">\beta</code>.
+
+</p>
+</li>
+<li>
+<p>CI  <code class="reqn">1-\alpha</code> level confidence intervals. They are calculated by the formula
+</p>
+<p style="text-align: center;"><code class="reqn">\sqrt{1+1/n}*t_{\alpha}*(v_{y}+ \beta'^{T} v_{x} \beta'),</code>
+</p>
+
+<p>where <code class="reqn">t_{\alpha}</code> is the <code class="reqn">1-\alpha/2</code> level quantile of the t-distribution with n-k degrees of freedom,
+k is the number of regression parameters to estimate, 
+<code class="reqn">\beta'</code> is the bias corrected estimate of <code class="reqn">\beta</code> and n is the sample size used in 
+the estimation.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BiasUncorr </code></td>
+<td>
+<p> Prediction using the bias uncorrected estimate.
+</p>
+
+<ul>
+<li>
+<p>prediction  Predicted value
+</p>
+</li>
+<li>
+<p>MSE  Estimate of mean square error. They are calculated by the formula
+</p>
+<p style="text-align: center;"><code class="reqn">v_{y}+x_{o}^{T}(MSE[\beta | XO])x_{o}+ \beta'^{T} v_{x} \beta',</code>
+</p>
+
+<p>where <code class="reqn">\beta'</code> is the bias uncorrected estimate of <code class="reqn">\beta</code>.
+
+</p>
+</li>
+<li>
+<p>CI  <code class="reqn">1-\alpha</code> level confidence intervals. They are calculated by the formula
+</p>
+<p style="text-align: center;"><code class="reqn">\sqrt{1+1/n}*t_{\alpha}*(v_{y}+ \beta'^{T} v_{x} \beta'),</code>
+</p>
+
+<p>where <code class="reqn">t_{\alpha}</code> is the <code class="reqn">1-\alpha/2</code> level quantile of the t-distribution with n-k degrees of freedom,
+k is the number of regression parameters to estimate, <code class="reqn">\beta'</code> is the bias uncorrected estimate of <code class="reqn">\beta</code> 
+and n is the sample size used in the estimation.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Krzysztof Bartoszek</p>
+
+
+<h3>References</h3>
+
+<p>Hansen, T.F. and Bartoszek, K. (2012)
+Interpreting the evolutionary regression: the interplay between observational and biological errors in phylogenetic comparative studies.
+Systematic Biology 61(3):413-425.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(12345)
+n&lt;-3 ## number of species
+apetree&lt;-ape::rtree(n)
+### Define Brownian motion parameters to be able to simulate data under the Brownian motion model.
+BMparameters&lt;-list(vX0=matrix(0,nrow=2,ncol=1),Sxx=rbind(c(1,0),c(0.2,1)))
+### Now simulate the data and remove the values corresponding to the internal nodes.
+xydata&lt;-mvSLOUCH::simulBMProcPhylTree(apetree,X0=BMparameters$vX0,Sigma=BMparameters$Sxx)
+xydata&lt;-xydata[(nrow(xydata)-n+1):nrow(xydata),]
+
+x&lt;-xydata[,1]
+y&lt;-xydata[,2]
+
+yerror&lt;-diag((stats::rnorm(n,mean=0,sd=0.1))^2) #create error matrix
+y&lt;-mvtnorm::rmvnorm(1,mean=y,sigma=yerror)[1,]
+xerror&lt;-diag((stats::rnorm(n,mean=0,sd=0.1))^2) #create error matrix
+x&lt;-mvtnorm::rmvnorm(1,mean=x,sigma=xerror)[1,]
+glsme.res&lt;-GLSME(y=y, CenterPredictor=TRUE, D=cbind(rep(1, n), x), Vt=ape::vcv(apetree), 
+Ve=yerror, Vd=list("F",ape::vcv(apetree)), Vu=list("F", xerror),OutputType="long")
+GLSME.predict(c(1,1), glsme.res, vy=1, vx=rbind(c(0,0),c(0,1)))
+</code></pre>
+
+
+</div>

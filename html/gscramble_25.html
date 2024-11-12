@@ -1,0 +1,124 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plink_map2rec_rates</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Convert a PLINK map file to 'gscramble' RecRates bins in a tibble</h2>
+
+<h3>Description</h3>
+
+<p>This is a convenience function to convert PLINK map format to
+the format used in the 'gscramble' <code>RecRates</code> object.  By default,
+this function will use the positions of the markers and assume
+recombination rates of 1 cM per megabase.  If the marker positions
+are also available in Morgans in the PLINK map file, the these can be
+used by setting <code>use_morgans</code> to TRUE.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">plink_map2rec_rates(
+  map,
+  use_morgans = FALSE,
+  cM_per_Mb = 1,
+  chrom_lengths = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>map</code></td>
+<td>
+<p>path to the plink <code>.map</code> file holding information about
+the markers.  This file can be gzipped.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_morgans</code></td>
+<td>
+<p>logical. IF true, the third column in the PLINK map
+file (assumed to have the position of the markers in Morgans) will be used
+to calculate the <code>rec_probs</code> in the bins of the RecRates object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cM_per_Mb</code></td>
+<td>
+<p>numeric. If <code>use_morgans</code> is <code>FALSE</code>, physical positions
+will be converted to recombination fractions as <code>cM_per_Mb</code> centiMorgans
+per megabase.  Default is 1. This is also used to determine the recombination
+probability on the last segment of the chromosome (beyond the last marker)
+if <code>chrom_lengths</code> is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chrom_lengths</code></td>
+<td>
+<p>if you know the full length of each chromosome, you can
+add those in a tibble with columns <code>chrom</code> and <code>bp</code> where <code>chrom</code>
+<em>must be a character vector</em> (Don't leave them in as numerics) and <code>bp</code>
+must be a numeric vector of the number of base pairs of length of each
+chromosome.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For simplicity, this function will assume that the length of the chromosome
+is just one base pair beyond the last marker.  That is typically not correct
+but will have no effect, since there are no markers to be typed out beyond
+that point.  However, if you know the lengths of the chromosomes and want to
+add those in there, then pass them into the <code>chrom_lengths</code> option.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A tibble that provides the recombination rates for the segments of the genome.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">mapfile &lt;- system.file(
+    "extdata/example-plink-with-morgans.map.gz",
+    package = "gscramble"
+ )
+
+# get a rec-rates tibble from the positions of the markers,
+# assuming 1 cM per megabase.
+rec_rates_from_positions &lt;- plink_map2rec_rates(mapfile)
+
+# get a rec-rates tibble from the positions of the markers,
+# assuming 1.5 cM per megabase.
+rec_rates_from_positions_1.5 &lt;- plink_map2rec_rates(
+    mapfile,
+    cM_per_Mb = 1.5
+)
+
+# get a rec-rates tibble from the cumulative Morgans position
+# in the plink map file
+rec_rates_from_positions_Morg &lt;- plink_map2rec_rates(
+    mapfile,
+    use_morgans = TRUE
+)
+
+# get a rec-rates tibble from the cumulative Morgans position
+# in the plink map file, and extend it out to the full length
+# of the chromosome (assuming for that last part of the chromosome
+# a map of 1.2 cM per megabase.)
+rec_rates_from_positions_Morg_fl &lt;- plink_map2rec_rates(
+    mapfile,
+    use_morgans = TRUE,
+    cM_per_Mb = 1.2,
+    chrom_lengths = example_chrom_lengths
+)
+</code></pre>
+
+
+</div>

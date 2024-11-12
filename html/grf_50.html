@@ -1,0 +1,150 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.survival_forest</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict with a survival forest</h2>
+
+<h3>Description</h3>
+
+<p>Gets estimates of the conditional survival function S(t, x) = P[T &gt; t | X = x] using a trained survival forest.
+The curve can be estimated by Kaplan-Meier, or Nelson-Aalen.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'survival_forest'
+predict(
+  object,
+  newdata = NULL,
+  failure.times = NULL,
+  prediction.times = c("curve", "time"),
+  prediction.type = c("Kaplan-Meier", "Nelson-Aalen"),
+  num.threads = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>The trained forest.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>Points at which predictions should be made. If NULL, makes out-of-bag
+predictions on the training set instead (i.e., provides predictions at
+Xi using only trees that did not use the i-th training example). Note
+that this matrix should have the number of columns as the training
+matrix, and that the columns must appear in the same order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>failure.times</code></td>
+<td>
+<p>A vector of survival times to make predictions at. If NULL, then the
+failure times used for training the forest is used. If prediction.times = "curve" then the
+time points should be in increasing order. Default is NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prediction.times</code></td>
+<td>
+<p>"curve" predicts the survival curve S(t, x) on grid t = failure.times for each sample Xi.
+"time" predicts S(t, x) at an event time t = failure.times[i] for each sample Xi.
+Default is "curve".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prediction.type</code></td>
+<td>
+<p>The type of estimate of the survival function, choices are "Kaplan-Meier" or "Nelson-Aalen".
+The default is the prediction.type used to train the forest.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num.threads</code></td>
+<td>
+<p>Number of threads used in training. If set to NULL, the software
+automatically selects an appropriate amount.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments (currently ignored).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list with elements </p>
+
+<ul>
+<li>
+<p> predictions: a matrix of survival curves. If prediction.times = "curve" then each row
+is the survival curve for sample Xi: predictions[i, j] = S(failure.times[j], Xi).
+If prediction.times = "time" then each row is the survival curve at time point failure.times[i]
+for sample Xi: predictions[i, ] = S(failure.times[i], Xi).
+</p>
+</li>
+<li>
+<p> failure.times: a vector of event times t for the survival curve.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Train a standard survival forest.
+n &lt;- 2000
+p &lt;- 5
+X &lt;- matrix(rnorm(n * p), n, p)
+failure.time &lt;- exp(0.5 * X[, 1]) * rexp(n)
+censor.time &lt;- 2 * rexp(n)
+Y &lt;- pmin(failure.time, censor.time)
+D &lt;- as.integer(failure.time &lt;= censor.time)
+# Save computation time by constraining the event grid by discretizing (rounding) continuous events.
+s.forest &lt;- survival_forest(X, round(Y, 2), D)
+# Or do so more flexibly by defining your own time grid using the failure.times argument.
+# grid &lt;- seq(min(Y[D==1]), max(Y[D==1]), length.out = 150)
+# s.forest &lt;- survival_forest(X, Y, D, failure.times = grid)
+
+# Predict using the forest.
+X.test &lt;- matrix(0, 3, p)
+X.test[, 1] &lt;- seq(-2, 2, length.out = 3)
+s.pred &lt;- predict(s.forest, X.test)
+
+# Plot the survival curve.
+plot(NA, NA, xlab = "failure time", ylab = "survival function",
+     xlim = range(s.pred$failure.times),
+     ylim = c(0, 1))
+for(i in 1:3) {
+  lines(s.pred$failure.times, s.pred$predictions[i,], col = i)
+  s.true = exp(-s.pred$failure.times / exp(0.5 * X.test[i, 1]))
+  lines(s.pred$failure.times, s.true, col = i, lty = 2)
+}
+
+# Predict on out-of-bag training samples.
+s.pred &lt;- predict(s.forest)
+
+# Compute OOB concordance based on the mortality score in Ishwaran et al. (2008).
+s.pred.nelson.aalen &lt;- predict(s.forest, prediction.type = "Nelson-Aalen")
+chf.score &lt;- rowSums(-log(s.pred.nelson.aalen$predictions))
+if (require("survival", quietly = TRUE)) {
+ concordance(Surv(Y, D) ~ chf.score, reverse = TRUE)
+}
+
+
+</code></pre>
+
+
+</div>

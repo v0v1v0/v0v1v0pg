@@ -1,0 +1,95 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>translate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Convert raster data between different formats</h2>
+
+<h3>Description</h3>
+
+<p><code>translate()</code> is a wrapper of the <code>gdal_translate</code> command-line
+utility (see <a href="https://gdal.org/programs/gdal_translate.html">https://gdal.org/programs/gdal_translate.html</a>).
+The function can be used to convert raster data between different
+formats, potentially performing some operations like subsetting,
+resampling, and rescaling pixels in the process. Refer to the GDAL
+documentation at the URL above for a list of command-line arguments that
+can be passed in <code>cl_arg</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">translate(src_filename, dst_filename, cl_arg = NULL, quiet = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>src_filename</code></td>
+<td>
+<p>Character string. Filename of the source raster.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dst_filename</code></td>
+<td>
+<p>Character string. Filename of the output raster.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl_arg</code></td>
+<td>
+<p>Optional character vector of command-line arguments for
+<code>gdal_translate</code> (see URL above).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>Logical scalar. If <code>TRUE</code>, a progress bar will not be
+displayed. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Logical indicating success (invisible <code>TRUE</code>).
+An error is raised if the operation fails.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GDALRaster-class</code>, <code>rasterFromRaster()</code>, <code>warp()</code>
+</p>
+<p><code>ogr2ogr()</code> for vector data
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># convert the elevation raster to Erdas Imagine format and resample to 90m
+elev_file &lt;- system.file("extdata/storml_elev.tif", package="gdalraster")
+
+# command-line arguments for gdal_translate
+args &lt;- c("-tr", "90", "90", "-r", "average")
+args &lt;- c(args, "-of", "HFA", "-co", "COMPRESSED=YES")
+
+img_file &lt;- file.path(tempdir(), "storml_elev_90m.img")
+translate(elev_file, img_file, args)
+
+ds &lt;- new(GDALRaster, img_file)
+ds$getDriverLongName()
+ds$bbox()
+ds$res()
+ds$getStatistics(band=1, approx_ok=FALSE, force=TRUE)
+ds$close()
+
+deleteDataset(img_file)
+</code></pre>
+
+
+</div>

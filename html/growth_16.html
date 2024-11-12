@@ -1,0 +1,667 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>elliptic</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Nonlinear Multivariate Elliptically-contoured Repeated Measurements Models
+with AR(1) and Two Levels of Variance Components</h2>
+
+<h3>Description</h3>
+
+<p><code>elliptic</code> fits special cases of the multivariate
+elliptically-contoured distribution, the multivariate normal, Student t, and
+power exponential distributions. The latter includes the multivariate normal
+(power=1), a multivariate Laplace (power=0.5), and the multivariate uniform
+(power -&gt; infinity) distributions as special cases. As well, another form of
+multivariate skew Laplace distribution is also available.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">elliptic(response = NULL, model = "linear", distribution = "normal",
+  times = NULL, dose = NULL, ccov = NULL, tvcov = NULL,
+  nest = NULL, torder = 0, interaction = NULL,
+  transform = "identity", link = "identity",
+  autocorr = "exponential", pell = NULL, preg = NULL, covfn = NULL,
+  pvar = var(y), varfn = NULL, par = NULL, pre = NULL,
+  delta = NULL, shfn = FALSE, common = FALSE, twins = FALSE,
+  envir = parent.frame(), print.level = 0, ndigit = 10,
+  gradtol = 1e-05, steptol = 1e-05, iterlim = 100, fscale = 1,
+  stepmax = 10 * sqrt(theta %*% theta), typsize = abs(c(theta)))
+
+## S3 method for class 'elliptic'
+deviance(object, ...)
+
+## S3 method for class 'elliptic'
+fitted(object, recursive = FALSE, ...)
+
+## S3 method for class 'elliptic'
+residuals(object, recursive = FALSE, ...)
+
+## S3 method for class 'elliptic'
+print(x, digits = max(3, .Options$digits - 3),
+  correlation = TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>response</code></td>
+<td>
+<p>A list of two or three column matrices with response values,
+times, and possibly nesting categories, for each individual, one matrix or
+dataframe of response values, or an object of class, <code>response</code>
+(created by <code>restovec</code>) or <code>repeated</code> (created by
+<code>rmna</code> or <code>lvna</code>). If the
+<code>repeated</code> data object contains more than one response variable, give
+that object in <code>envir</code> and give the name of the response variable to be
+used here.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>The model to be fitted for the location. Builtin choices are
+(1) <code>linear</code> for linear models with time-varying covariate; if
+<code>torder &gt; 0</code>, a polynomial in time is automatically fitted; (2)
+<code>logistic</code> for a four-parameter logistic growth curve; (3) <code>pkpd</code>
+for a first-order one-compartment pharmacokinetic model. Otherwise, set this
+to a function of the parameters or a formula beginning with ~, specifying
+either a linear regression function for the location parameter in the
+Wilkinson and Rogers notation or a general function with named unknown
+parameters that describes the location, returning a vector the same length
+as the number of observations, in which case <code>ccov</code> and <code>tvcov</code>
+cannot be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distribution</code></td>
+<td>
+<p>Multivariate <code>normal</code>, <code>power exponential</code>,
+<code>Student t</code>, or skew <code>Laplace</code> distribution. The latter is not an
+elliptical distribution. Note that the latter has a different
+parametrization of the skew (family) parameter than the univariate skew
+Laplace distribution in <code>dskewlaplace</code>:
+<code class="reqn">skew=\frac{\sigma(1-\nu^2)}{\sqrt{2}\nu}</code>. Here, zero skew yields a symmetric distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>times</code></td>
+<td>
+<p>When <code>response</code> is a matrix, a vector of possibly
+unequally spaced times when they are the same for all individuals or a
+matrix of times. Not necessary if equally spaced. Ignored if response has
+class, <code>response</code> or <code>repeated</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dose</code></td>
+<td>
+<p>A vector of dose levels for the <code>pkpd model</code>, one per
+individual.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ccov</code></td>
+<td>
+<p>A vector or matrix containing time-constant baseline covariates
+with one line per individual, a model formula using vectors of the same
+size, or an object of class, <code>tccov</code> (created by
+<code>tcctomat</code>). If response has class, <code>repeated</code>,
+with a <code>linear</code>, <code>logistic</code>, or <code>pkpd</code> model, the covariates
+must be specified as a Wilkinson and Rogers formula unless none are to be
+used. For the <code>pkpd</code> and <code>logistic</code> models, all variables must be
+binary (or factor variables) as different values of all parameters are
+calculated for all combinations of these variables (except for the logistic
+model when a time-varying covariate is present). It cannot be used when
+model is a function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tvcov</code></td>
+<td>
+<p>A list of vectors or matrices with time-varying covariates for
+each individual (one column per variable), a matrix or dataframe of such
+covariate values (if only one covariate), or an object of class,
+<code>tvcov</code> (created by <code>tvctomat</code>). If times are not
+the same as for responses, the list can be created with
+<code>gettvc</code>. If response has class, <code>repeated</code>, with a
+<code>linear</code>, <code>logistic</code>, or <code>pkpd</code> model, the covariates must be
+specified as a Wilkinson and Rogers formula unless none are to be used. Only
+one time-varying covariate is allowed except for the <code>linear model</code>; if
+more are required, set <code>model</code> equal to the appropriate mean function.
+This argument cannot be used when model is a function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nest</code></td>
+<td>
+<p>When <code>response</code> is a matrix, a vector of length equal to
+the number of responses per individual indicating which responses belong to
+which nesting category. Categoriess must be consecutive increasing integers.
+This option should always be specified if nesting is present. Ignored if
+response has class, <code>repeated</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>torder</code></td>
+<td>
+<p>When the <code>linear model</code> is chosen, order of the
+polynomial in time to be fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interaction</code></td>
+<td>
+<p>Vector of length equal to the number of time-constant
+covariates, giving the levels of interactions between them and the
+polynomial in time in the <code>linear model</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transform</code></td>
+<td>
+<p>Transformation of the response variable: <code>identity</code>,
+<code>exp</code>, <code>square</code>, <code>sqrt</code>, or <code>log</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+<p>Link function for the location: <code>identity</code>, <code>exp</code>,
+<code>square</code>, <code>sqrt</code>, or <code>log</code>. For the <code>linear model</code>, if
+not the <code>identity</code>, initial estimates of the regression parameters must
+be supplied (intercept, polynomial in time, time-constant covariates,
+time-varying covariates, in that order).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>autocorr</code></td>
+<td>
+<p>The form of the autocorrelation function: <code>exponential</code>
+is the usual <code class="reqn">\rho^{|t_i-t_j|}</code>; <code>gaussian</code> is
+<code class="reqn">\rho^{(t_i-t_j)^2}</code>; <code>cauchy</code> is
+<code class="reqn">1/(1+\rho(t_i-t_j)^2)</code>; <code>spherical</code> is
+<code class="reqn">((|t_i-t_j|\rho)^3-3|t_i-t_j|\rho+2)/2</code>
+for <code class="reqn">|t_i-t_j|\leq1/\rho</code> and zero otherwise;
+<code>IOU</code> is the integrated Ornstein-Uhlenbeck process, <code class="reqn">(2\rho
+\min(t_i,t_j)+\exp(-\rho t_i) </code><code class="reqn">+\exp(-\rho t_j)-1
+-\exp(\rho|ti-t_j|))/2\rho^3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pell</code></td>
+<td>
+<p>Initial estimate of the power parameter of the multivariate
+power exponential distribution, of the degrees of freedom parameter of the
+multivariate Student t distribution, or of the asymmetry parameter of the
+multivariate Laplace distribution. If not supplied for the latter, asymmetry
+depends on the regression equation in <code>model</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>preg</code></td>
+<td>
+<p>Initial parameter estimates for the regression model. Only
+required for <code>linear model</code> if the <code>link</code> is not the
+<code>identity</code> or a variance (dispersion) function is fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covfn</code></td>
+<td>
+<p>Either a function or a formula beginning with ~, specifying how
+the covariance depends on covariates: either a linear regression function in
+the Wilkinson and Rogers notation or a general function with named unknown
+parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pvar</code></td>
+<td>
+<p>Initial parameter estimate for the variance or dispersion. If
+more than one value is provided, the log variance/dispersion depends on a
+polynomial in time. With the <code>pkpd model</code>, if four values are supplied,
+a nonlinear regression for the variance/dispersion is fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varfn</code></td>
+<td>
+<p>The builtin variance (dispersion) function has the
+variance/dispersion proportional to a function of the location: pvar*v(mu) =
+<code>identity</code> or <code>square</code>. If pvar contains two initial values, an
+additive constant is included: pvar(1)+pvar(2)*v(mu). Otherwise, either a
+function or a formula beginning with ~, specifying either a linear
+regression function in the Wilkinson and Rogers notation or a general
+function with named unknown parameters for the log variance can be supplied.
+If it contains unknown parameters, the keyword <code>mu</code> may be used to
+specify a function of the location parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par</code></td>
+<td>
+<p>If supplied, an initial estimate for the autocorrelation
+parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pre</code></td>
+<td>
+<p>Zero, one or two parameter estimates for the variance components,
+depending on the number of levels of nesting. If covfn is specified, this
+contains the initial estimates of the regression parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>Scalar or vector giving the unit of measurement for each
+response value, set to unity by default. For example, if a response is
+measured to two decimals, <code>delta=0.01</code>. Ignored if response has class,
+<code>response</code> or <code>repeated</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shfn</code></td>
+<td>
+<p>If TRUE, the supplied variance (dispersion) function depends on
+the mean function. The name of this mean function must be the last argument
+of the variance/dispersion function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>common</code></td>
+<td>
+<p>If TRUE, <code>mu</code> and <code>varfn</code> must both be either
+functions with, as argument, a vector of parameters having some or all
+elements in common between them so that indexing is in common between them
+or formulae with unknowns. All parameter estimates must be supplied in
+<code>preg</code>. If FALSE, parameters are distinct between the two functions and
+indexing starts at one in each function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>twins</code></td>
+<td>
+<p>Only possible when there are two observations per individual
+(e.g. twin data). If TRUE and <code>covfn</code> is supplied, allows the
+covariance to vary across pairs of twins with the diagonal "variance" of the
+covariance matrix remaining constant.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>envir</code></td>
+<td>
+<p>Environment in which model formulae are to be interpreted or a
+data object of class, <code>repeated</code>, <code>tccov</code>, or <code>tvcov</code>; the
+name of the response variable should be given in <code>response</code>. If
+<code>response</code> has class <code>repeated</code>, it is used as the environment.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print.level</code></td>
+<td>
+<p>Arguments for nlm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ndigit</code></td>
+<td>
+<p>Arguments for nlm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gradtol</code></td>
+<td>
+<p>Arguments for nlm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>steptol</code></td>
+<td>
+<p>Arguments for nlm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterlim</code></td>
+<td>
+<p>Arguments for nlm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fscale</code></td>
+<td>
+<p>Arguments for nlm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stepmax</code></td>
+<td>
+<p>Arguments for nlm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>typsize</code></td>
+<td>
+<p>Arguments for nlm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class, <code>elliptic</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recursive</code></td>
+<td>
+<p>If TRUE, recursive residuals or fitted values are given;
+otherwise, marginal ones. In all cases, raw residuals are returned, not
+standardized by the standard deviation (which may be changing with
+covariates or time).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of class, <code>elliptic</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>number of digits to print.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correlation</code></td>
+<td>
+<p>logical; print correlations.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>With two levels of nesting, the first is the individual and the second will
+consist of clusters within individuals.
+</p>
+<p>For clustered (non-longitudinal) data, where only random effects will be
+fitted, <code>times</code> are not necessary.
+</p>
+<p>This function is designed to fit linear and nonlinear models with
+time-varying covariates observed at arbitrary time points. A continuous-time
+AR(1) and zero, one, or two levels of nesting can be handled. Recall that
+zero correlation (all zeros off-diagonal in the covariance matrix) only
+implies independence for the multivariate normal distribution.
+</p>
+<p>Nonlinear regression models can be supplied as formulae where parameters are
+unknowns in which case factor variables cannot be used and parameters must
+be scalars. (See <code>finterp</code>.)
+</p>
+<p>Recursive fitted values and residuals are only available for the
+multivariate normal distribution with a linear model without a variance
+function and with either an AR(1) of <code>exponential</code> form and/or one
+level of random effect. In these cases, marginal and individual profiles can
+be plotted using <code>mprofile</code> and
+<code>iprofile</code> and residuals with
+<code>plot.residuals</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class <code>elliptic</code> is returned that contains all of the
+relevant information calculated, including error codes.
+</p>
+
+
+<h3>Methods (by generic)</h3>
+
+
+<ul>
+<li> <p><code>deviance</code>: Deviance method
+</p>
+</li>
+<li> <p><code>fitted</code>: Fitted method
+</p>
+</li>
+<li> <p><code>residuals</code>: Residuals method
+</p>
+</li>
+<li> <p><code>print</code>: Print method
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>J.K. Lindsey
+</p>
+
+
+<h3>References</h3>
+
+<p>Lindsey, J.K. (1999) Multivariate elliptically-contoured
+distributions for repeated measurements. Biometrics 55, 1277-1280.
+</p>
+<p>Kotz, S., Kozubowski, T.J., and Podgorski, K. (2001) The Laplace
+Distribution and Generalizations. A Revisit with Applications to
+Communications, Economics, Engineering, and Finance. Basel: Birkhauser, Ch.
+6.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>carma</code>, <code>dpowexp</code>,
+<code>dskewlaplace</code>, <code>finterp</code>,
+<code>gar</code>, <code>gettvc</code>,
+<code>gnlmix</code>, <code>glmm</code>,
+<code>gnlmm</code>, <code>gnlr</code>,
+<code>iprofile</code>, <code>kalseries</code>,
+<code>mprofile</code>, <code>potthoff</code>,
+<code>read.list</code>, <code>restovec</code>,
+<code>rmna</code>, <code>tcctomat</code>,
+<code>tvctomat</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# linear models
+y &lt;- matrix(rnorm(40),ncol=5)
+x1 &lt;- gl(2,4)
+x2 &lt;- gl(2,1,8)
+# independence with time trend
+elliptic(y, ccov=~x1, torder=2)
+# AR(1)
+elliptic(y, ccov=~x1, torder=2, par=0.1)
+elliptic(y, ccov=~x1, torder=3, interact=3, par=0.1)
+# random intercept
+elliptic(y, ccov=~x1+x2, interact=c(2,0), torder=3, pre=2)
+#
+# nonlinear models
+time &lt;- rep(1:20,2)
+dose &lt;- c(rep(2,20),rep(5,20))
+mu &lt;- function(p) exp(p[1]-p[3])*(dose/(exp(p[1])-exp(p[2]))*
+	(exp(-exp(p[2])*time)-exp(-exp(p[1])*time)))
+shape &lt;- function(p) exp(p[1]-p[2])*time*dose*exp(-exp(p[1])*time)
+conc &lt;- matrix(rnorm(40,mu(log(c(1,0.3,0.2))),sqrt(shape(log(c(0.1,0.4))))),
+	ncol=20,byrow=TRUE)
+conc[,2:20] &lt;- conc[,2:20]+0.5*(conc[,1:19]-matrix(mu(log(c(1,0.3,0.2))),
+	ncol=20,byrow=TRUE)[,1:19])
+conc &lt;- ifelse(conc&gt;0,conc,0.01)
+# with builtin function
+# independence
+elliptic(conc, model="pkpd", preg=log(c(0.5,0.4,0.1)), dose=c(2,5))
+# AR(1)
+elliptic(conc, model="pkpd", preg=log(c(0.5,0.4,0.1)), dose=c(2,5),
+	par=0.1)
+# add variance function
+elliptic(conc, model="pkpd", preg=log(c(0.5,0.4,0.1)), dose=c(2,5),
+	par=0.1, varfn=shape, pvar=log(c(0.5,0.2)))
+# multivariate power exponential distribution
+elliptic(conc, model="pkpd", preg=log(c(0.5,0.4,0.1)), dose=c(2,5),
+	par=0.1, varfn=shape, pvar=log(c(0.5,0.2)), pell=1,
+	distribution="power exponential")
+# multivariate Student t distribution
+elliptic(conc, model="pkpd", preg=log(c(0.5,0.4,0.1)), dose=c(2,5),
+	par=0.1, varfn=shape, pvar=log(c(0.5,0.2)), pell=5,
+	distribution="Student t")
+# multivariate Laplace distribution
+elliptic(conc, model="pkpd", preg=log(c(0.5,0.4,0.1)), dose=c(2,5),
+	par=0.1, varfn=shape, pvar=log(c(0.5,0.2)),
+	distribution="Laplace")
+# or equivalently with user-specified function
+# independence
+elliptic(conc, model=mu, preg=log(c(0.5,0.4,0.1)))
+# AR(1)
+elliptic(conc, model=mu, preg=log(c(0.5,0.4,0.1)), par=0.1)
+# add variance function
+elliptic(conc, model=mu, preg=log(c(0.5,0.4,0.1)), par=0.1,
+	varfn=shape, pvar=log(c(0.5,0.2)))
+# multivariate power exponential distribution
+elliptic(conc, model=mu, preg=log(c(0.5,0.4,0.1)), par=0.1,
+	varfn=shape, pvar=log(c(0.5,0.2)), pell=1,
+	distribution="power exponential")
+# multivariate Student t distribution
+elliptic(conc, model=mu, preg=log(c(0.5,0.4,0.1)), par=0.1,
+	varfn=shape, pvar=log(c(0.5,0.2)), pell=5,
+	distribution="Student t")
+# multivariate Laplace distribution
+elliptic(conc, model=mu, preg=log(c(0.5,0.4,0.1)), par=0.1,
+	varfn=shape, pvar=log(c(0.5,0.2)), pell=5,
+	distribution="Laplace")
+# or with user-specified formula
+# independence
+elliptic(conc, model=~exp(absorption-volume)*
+	dose/(exp(absorption)-exp(elimination))*
+	(exp(-exp(elimination)*time)-exp(-exp(absorption)*time)),
+	preg=list(absorption=log(0.5),elimination=log(0.4),
+	volume=log(0.1)))
+# AR(1)
+elliptic(conc, model=~exp(absorption-volume)*
+	dose/(exp(absorption)-exp(elimination))*
+	(exp(-exp(elimination)*time)-exp(-exp(absorption)*time)),
+	preg=list(absorption=log(0.5),elimination=log(0.4),volume=log(0.1)),
+	par=0.1)
+# add variance function
+elliptic(conc, model=~exp(absorption-volume)*
+	dose/(exp(absorption)-exp(elimination))*
+	(exp(-exp(elimination)*time)-exp(-exp(absorption)*time)),
+	preg=list(absorption=log(0.5),elimination=log(0.4),volume=log(0.1)),
+	varfn=~exp(b1-b2)*time*dose*exp(-exp(b1)*time),
+	par=0.1, pvar=list(b1=log(0.5),b2=log(0.2)))
+# variance as function of the mean
+elliptic(conc, model=~exp(absorption-volume)*
+	dose/(exp(absorption)-exp(elimination))*
+	(exp(-exp(elimination)*time)-exp(-exp(absorption)*time)),
+	preg=list(absorption=log(0.5),elimination=log(0.4),volume=log(0.1)),
+	varfn=~d*log(mu),shfn=TRUE,par=0.1, pvar=list(d=1))
+# multivariate power exponential distribution
+elliptic(conc, model=~exp(absorption-volume)*
+	dose/(exp(absorption)-exp(elimination))*
+	(exp(-exp(elimination)*time)-exp(-exp(absorption)*time)),
+	preg=list(absorption=log(0.5),elimination=log(0.4),volume=log(0.1)),
+	varfn=~exp(b1-b2)*time*dose*exp(-exp(b1)*time),
+	par=0.1, pvar=list(b1=log(0.5),b2=log(0.2)), pell=1,
+	distribution="power exponential")
+# multivariate Student t distribution
+elliptic(conc, model=~exp(absorption-volume)*
+	dose/(exp(absorption)-exp(elimination))*
+	(exp(-exp(elimination)*time)-exp(-exp(absorption)*time)),
+	preg=list(absorption=log(0.5),elimination=log(0.4),volume=log(0.1)),
+	varfn=~exp(b1-b2)*time*dose*exp(-exp(b1)*time),
+	par=0.1, pvar=list(b1=log(0.5),b2=log(0.2)), pell=5,
+	distribution="Student t")
+# multivariate Laplace distribution
+elliptic(conc, model=~exp(absorption-volume)*
+	dose/(exp(absorption)-exp(elimination))*
+	(exp(-exp(elimination)*time)-exp(-exp(absorption)*time)),
+	preg=list(absorption=log(0.5),elimination=log(0.4),volume=log(0.1)),
+	varfn=~exp(b1-b2)*time*dose*exp(-exp(b1)*time),
+	par=0.1, pvar=list(b1=log(0.5),b2=log(0.2)), pell=5,
+	distribution="Laplace")
+#
+# generalized logistic regression with square-root transformation
+# and square  link
+time &lt;- rep(seq(10,200,by=10),2)
+mu &lt;- function(p) {
+	yinf &lt;- exp(p[2])
+	yinf*(1+((yinf/exp(p[1]))^p[4]-1)*exp(-yinf^p[4]
+		*exp(p[3])*time))^(-1/p[4])}
+y &lt;- matrix(rnorm(40,sqrt(mu(c(2,1.5,0.05,-2))),0.05)^2,ncol=20,byrow=TRUE)
+y[,2:20] &lt;- y[,2:20]+0.5*(y[,1:19]-matrix(mu(c(2,1.5,0.05,-2)),
+	ncol=20,byrow=TRUE)[,1:19])
+y &lt;- ifelse(y&gt;0,y,0.01)
+# with builtin function
+# independence
+elliptic(y, model="logistic", preg=c(2,1,0.1,-1), trans="sqrt",
+	link="square")
+# the same model with AR(1)
+elliptic(y, model="logistic", preg=c(2,1,0.1,-1), trans="sqrt",
+	link="square", par=0.4)
+# the same model with AR(1) and one component of variance
+elliptic(y, model="logistic", preg=c(2,1,0.1,-1),
+	trans="sqrt", link="square", pre=1, par=0.4)
+# or equivalently with user-specified function
+# independence
+elliptic(y, model=mu, preg=c(2,1,0.1,-1), trans="sqrt",
+	link="square")
+# the same model with AR(1)
+elliptic(y, model=mu, preg=c(2,1,0.1,-1), trans="sqrt",
+	link="square", par=0.4)
+# the same model with AR(1) and one component of variance
+elliptic(y, model=mu, preg=c(2,1,0.1,-1),
+	trans="sqrt", link="square", pre=1, par=0.4)
+# or equivalently with user-specified formula
+# independence
+elliptic(y, model=~exp(yinf)*(1+((exp(yinf-y0))^b4-1)*
+	exp(-exp(yinf*b4+b3)*time))^(-1/b4),
+	preg=list(y0=2,yinf=1,b3=0.1,b4=-1), trans="sqrt", link="square")
+# the same model with AR(1)
+elliptic(y, model=~exp(yinf)*(1+((exp(yinf-y0))^b4-1)*
+	exp(-exp(yinf*b4+b3)*time))^(-1/b4),
+	preg=list(y0=2,yinf=1,b3=0.1,b4=-1), trans="sqrt",
+	link="square", par=0.1)
+# add one component of variance
+elliptic(y, model=~exp(yinf)*(1+((exp(yinf-y0))^b4-1)*
+	exp(-exp(yinf*b4+b3)*time))^(-1/b4),
+	preg=list(y0=2,yinf=1,b3=0.1,b4=-1),
+	trans="sqrt", link="square", pre=1, par=0.1)
+#
+# multivariate power exponential and Student t distributions for outliers
+y &lt;- matrix(rcauchy(40,mu(c(2,1.5,0.05,-2)),0.05),ncol=20,byrow=TRUE)
+y[,2:20] &lt;- y[,2:20]+0.5*(y[,1:19]-matrix(mu(c(2,1.5,0.05,-2)),
+	ncol=20,byrow=TRUE)[,1:19])
+y &lt;- ifelse(y&gt;0,y,0.01)
+# first with normal distribution
+elliptic(y, model="logistic", preg=c(1,1,0.1,-1))
+elliptic(y, model="logistic", preg=c(1,1,0.1,-1), par=0.5)
+# then power exponential
+elliptic(y, model="logistic", preg=c(1,1,0.1,-1), pell=1,
+	distribution="power exponential")
+elliptic(y, model="logistic", preg=c(1,1,0.1,-1), par=0.5, pell=1,
+	distribution="power exponential")
+# finally Student t
+elliptic(y, model="logistic", preg=c(1,1,0.1,-1), pell=1,
+	distribution="Student t")
+elliptic(y, model="logistic", preg=c(1,1,0.1,-1), par=0.5, pell=1,
+	distribution="Student t")
+
+</code></pre>
+
+
+</div>

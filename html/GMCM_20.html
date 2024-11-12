@@ -1,0 +1,191 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fit.meta.GMCM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate GMCM parameters of the special model</h2>
+
+<h3>Description</h3>
+
+<p>This function estimates the parameters of the special restricted Gaussian
+mixture copula model (GMCM) proposed by Li et. al. (2011).
+It is used to perform reproducibility (or meta) analysis using GMCMs.
+It features various optimization routines to identify the maximum likelihood
+estimate of the special GMCMs.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fit.meta.GMCM(u, init.par, method = c("NM", "SANN", "L-BFGS", "L-BFGS-B",
+  "PEM"), max.ite = 1000, verbose = TRUE, positive.rho = TRUE,
+  trace.theta = FALSE, ...)
+
+fit.special.GMCM(u, init.par, method = c("NM", "SANN", "L-BFGS",
+  "L-BFGS-B", "PEM"), max.ite = 1000, verbose = TRUE,
+  positive.rho = TRUE, trace.theta = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>u</code></td>
+<td>
+<p>An <code>n</code> by <code>d</code> matrix of test statistics. Rows correspond
+to features and columns to experiments. Larger values are assumed to be
+indicative of stronger evidence and reproducibility.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init.par</code></td>
+<td>
+<p>A 4-dimensional vector of the initial parameters where,
+<code>init.par[1]</code> is the mixture proportion of spurious signals,
+<code>init.par[2]</code> is the mean, <code>init.par[3]</code> is the standard
+deviation, <code>init.par[4]</code> is the correlation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>A character vector of length <code class="reqn">1</code>. The optimization
+method used. Should be either <code>"NM"</code>, <code>"SANN"</code>, <code>"L-BFGS"</code>,
+<code>"L-BFGS-B"</code>, or <code>"PEM"</code> which are abbreviations of Nelder-Mead,
+Simulated Annealing, limited-memory quasi-Newton method, limited-memory
+quasi-Newton method with box constraints, and the pseudo EM algorithm,
+respectively. Default is <code>"NM"</code>. See <code>optim</code> for further
+details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.ite</code></td>
+<td>
+<p>The maximum number of iterations.  If the <code>method</code> is
+<code>"SANN"</code> this is the number of iterations as there is no other
+stopping criterion. (See <code>optim</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical. If <code>TRUE</code>, the log-likelihood values are
+printed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>positive.rho</code></td>
+<td>
+<p><code>logical</code>. If <code>TRUE</code>, the correlation parameter
+is restricted to be positive.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace.theta</code></td>
+<td>
+<p><code>logical</code>. Extra convergence information is appended
+as a list to the output returned if <code>TRUE</code>. The exact behavior is
+dependent on the value of <code>method</code>. If <code>method</code> equals
+<code>"PEM"</code>, the argument is passed to <code>trace.theta</code> in
+<code>PseudoEMAlgorithm</code>. Otherwise it is passed to the control
+argument <code>trace</code> in <code>optim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to the <code>control</code>-list in
+<code>optim</code> or <code>PseudoEMAlgorithm</code> if <code>method</code> is
+<code>"PEM"</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>"L-BFGS-B"</code> method does not perform a transformation of
+the parameters.
+</p>
+<p><code>fit.special.GMCM</code> is simply an alias of <code>fit.meta.gmcm</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A vector <code>par</code> of length 4 of the fitted parameters where
+<code>par[1]</code> is the probability of being from the first (or null)
+component, <code>par[2]</code> is the mean, <code>par[3]</code> is the standard
+deviation, and <code>par[4]</code> is the correlation.
+</p>
+<p>If <code>trace.theta</code> is <code>TRUE</code>, then a <code>list</code> is returned where
+the first entry is as described above and the second entry is the trace
+information (dependent of <code>method</code>.).
+</p>
+
+
+<h3>Note</h3>
+
+<p>Simulated annealing is strongly dependent on the initial values and
+the cooling scheme.
+</p>
+<p>See <code>optim</code> for further details.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Anders Ellern Bilgrau &lt;anders.ellern.bilgrau@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Li, Q., Brown, J. B. J. B., Huang, H., &amp; Bickel, P. J. (2011).
+Measuring reproducibility of high-throughput experiments. The Annals of
+Applied Statistics, 5(3), 1752-1779. doi:10.1214/11-AOAS466
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>optim</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1)
+
+# True parameters
+true.par &lt;- c(0.9, 2, 0.7, 0.6)
+# Simulation of data from the GMCM model
+data &lt;- SimulateGMCMData(n = 1000, par = true.par)
+uhat &lt;- Uhat(data$u) # Ranked observed data
+
+init.par &lt;- c(0.5, 1, 0.5, 0.9)  # Initial parameters
+
+# Optimization with Nelder-Mead
+nm.par   &lt;- fit.meta.GMCM(uhat, init.par = init.par, method = "NM")
+
+## Not run: 
+# Comparison with other optimization methods
+# Optimization with simulated annealing
+sann.par &lt;- fit.meta.GMCM(uhat, init.par = init.par, method = "SANN",
+                          max.ite = 3000, temp = 1)
+# Optimization with the Pseudo EM algorithm
+pem.par  &lt;- fit.meta.GMCM(uhat, init.par = init.par, method = "PEM")
+
+# The estimates agree nicely
+rbind("True" = true.par, "Start" = init.par,
+      "NM" = nm.par, "SANN" = sann.par, "PEM" = pem.par)
+
+## End(Not run)
+
+# Get estimated cluster
+Khat &lt;- get.IDR(x = uhat, par = nm.par)$Khat
+plot(uhat, col = Khat, main = "Clustering\nIDR &lt; 0.05")
+</code></pre>
+
+
+</div>

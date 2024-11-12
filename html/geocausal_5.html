@@ -1,0 +1,192 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get_cate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generate a Hajek estimator for heterogeneity analysis</h2>
+
+<h3>Description</h3>
+
+<p>A function that returns a Hajek estimator of CATE for a spatial or spatio-temporal effect modifier
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get_cate(
+  obs,
+  cf1,
+  cf2,
+  treat,
+  pixel_count_out,
+  lag,
+  trunc_level = 0.95,
+  time_after = TRUE,
+  entire_window = NULL,
+  em = NULL,
+  E_mat = NULL,
+  nbase = 6,
+  spline_type = "ns",
+  intercept = TRUE,
+  eval_values = NULL,
+  eval_mat = NULL,
+  test_beta = NULL,
+  bound = 1,
+  save_weights = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>obs</code></td>
+<td>
+<p>observed density</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cf1</code></td>
+<td>
+<p>counterfactual density 1</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cf2</code></td>
+<td>
+<p>counterfactual density 2</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>treat</code></td>
+<td>
+<p>column of a hyperframe that summarizes treatment data. In the form of 'hyperframe$column'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pixel_count_out</code></td>
+<td>
+<p>column of a hyperframe that summarizes the number of outcome events in each pixel</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lag</code></td>
+<td>
+<p>integer that specifies lags to calculate causal estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trunc_level</code></td>
+<td>
+<p>the level of truncation for the weights (0-1).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_after</code></td>
+<td>
+<p>whether to include one unit time difference between treatment and outcome. By default = TRUE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>entire_window</code></td>
+<td>
+<p>owin object (the entire region of interest)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>em</code></td>
+<td>
+<p>treat column of a hyperframe that summarizes the effect modifier data. In the form of 'hyperframe$column'. It can be NULL if E_mat is provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>E_mat</code></td>
+<td>
+<p>optional covariance matrix (excluding the intercept) for the effect modifier. If provided, then the regression model will be based on this matrix. If 'intercept = TRUE', then a column of 1 will be add to 'E_mat'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbase</code></td>
+<td>
+<p>number of bases for splines</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spline_type</code></td>
+<td>
+<p>type of splines. Either '"ns"' or '"bs"'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>whether to include intercept in the regression model. Default is TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eval_values</code></td>
+<td>
+<p>a vector of values of the effect modifier for which CATE will be evaluated. Default is a 'seq(a,b,length.out=20)' where 'a' and 'b' are minimum and maximum values of the effect modifier.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eval_mat</code></td>
+<td>
+<p>evaluated spline basis (excluding the intercept) matrix at 'eval_values'.  If 'intercept = TRUE', then a column of 1 will be add to 'eval_mat'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test_beta</code></td>
+<td>
+<p>a vector of integers contain the indices of the coefficients that are included in the hypothesis test. By default, the null hypothesis is that all coefficient  (except the intercept is 0). See details below</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bound</code></td>
+<td>
+<p>either '1' or '2' specifying which bound estimator will be used. Default is '1'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_weights</code></td>
+<td>
+<p>whether to save weights. Default is 'TRUE'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments passed onto the function</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>'E_mat' should be a matrix or array of dimensions <code class="reqn">n</code> by <code class="reqn">m</code> where <code class="reqn">n</code> is the product of image dimensions and number of time period,
+and <code class="reqn">m</code> is 'nbase'-'intercept'. If you want to construct your own covariate matrix 'E_mat', you should use 'get_em_vec()' to convert
+the effect modifer(usually a column of a hyperframe) to a vector, and then construct the splines basis based on the vector. The covariate matrix'E_mat' should not 
+the column for intercept. The function 'get_cate()' will conduct a hypothesis testing on whether all the selected coefficients are 0. 'test_beta' is a vector of positive integers specifying the indices
+of the chosen beta. The coefficients (except the intercept) are indexed by '1,2,...,nbase-intercept'. By default, it test whether all the coefficients(except the intercept) are 0, and this is testing the
+the heterogeneity effect of the effect modifier.
+</p>
+
+
+<h3>Value</h3>
+
+<p>list of the following:
+'est_beta': estimated regression coefficient
+'V_beta': estimated asymptotic covariance matrix of regression coefficient (normalized by total time periods)   
+'chisq_stat': observed chi-square statistics for the hypothesis test
+'p.value': observed chi-square statistics for the hypothesis test
+'specification': information about the specification of the spline basis and the values on which the CATE is estimated
+'est_eval': estimated CATE evaluted at chosen values
+'V_eval': estimated asymptotic covariance matrix of the estimated CATE values (normalized by total time periods)
+'mean_effect': Mean of the pseudo pixel effect
+'total_effect': Mean of the pseudo effect for the window 'entire_window'. It is equal to mean effect times the total number of pixels inside the chosen window
+</p>
+
+
+</div>

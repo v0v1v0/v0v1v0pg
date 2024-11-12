@@ -1,0 +1,186 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GNARXfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting function for GNARX models</h2>
+
+<h3>Description</h3>
+
+<p>Fits the GNARX model to the given inputs using <code>GNARdesignX</code> and <code>lm</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GNARXfit(vts=GNAR::fiveVTS, net=GNAR::fiveNet, alphaOrder=2, betaOrder=c(1,1),
+ fact.var=NULL, globalalpha=TRUE, tvnets=NULL, netsstart=NULL, ErrorIfNoNei=TRUE, 
+ xvts=NULL, lambdaOrder=NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>vts</code></td>
+<td>
+<p>a matrix containing the multivariate time series to be modelled. The <code>i,j</code> entry of this matrix should be for time <code>i</code> and vertex/node <code>j</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>net</code></td>
+<td>
+<p>the (first) network associated with the time series, containing a list with entries <code>$edges</code> and <code>$dist</code>. This network should have the same number of nodes as the number of columns of the <code>vts</code> matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alphaOrder</code></td>
+<td>
+<p>a non-negative integer specifying the maximum time-lag to model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>betaOrder</code></td>
+<td>
+<p>a vector of length <code>alphaOrder</code> specifying the maximum neighbour set to model at each of the time-lags.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fact.var</code></td>
+<td>
+<p>a vector of factors indicating which nodes belong to different sets with different parameters to be fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>globalalpha</code></td>
+<td>
+<p>a TRUE/FALSE value indivating whether to use global alpha parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tvnets</code></td>
+<td>
+<p>a list of additional networks. Currently only NULL (the static network case) is supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>netsstart</code></td>
+<td>
+<p>a vector of times corresponding to the first time points for each network of <code>tvnets</code>. Currently only NULL (the static network case) is supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ErrorIfNoNei</code></td>
+<td>
+<p>a TRUE/FALSE value indicating whether to stop the function call with an error if betaOrder specifies more neighbour sets than exist in the network. If FALSE the function will continue and some parameters will be NA.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xvts</code></td>
+<td>
+<p>a list of matrices containing values of the exogenous regressors for each vertex/node. The <code>i,j</code> entry of the <code>h</code>th element of the list refers to the value of the <code>h</code>th exogenous regressor for time <code>i</code> and vertex/node <code>j</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambdaOrder</code></td>
+<td>
+<p>a vector of the same length as <code>xvts</code> containing non-negative integers specifying the maximum time-lag of exogenous regressors to model. The <code>h</code>th element of the vector refers to the maximum lag of the <code>h</code>th exogenous regressor.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The GNAR model of order <code class="reqn">(p,S)</code> is defined as
+</p>
+<p style="text-align: center;"><code class="reqn">X_{i,t} = \sum_{j=1}^p \left( \alpha_{i,j} X_{i,t-j} +\sum_{c=1}^C \sum_{r=1}^{S_j} \beta_{j,r, c}\sum_{q \in {N}^{(r)}_t(i)} \omega_{i,q,c}^{(t)} X_{q,t-j} \right) + u_{i,t}</code>
+</p>
+
+<p>where <code class="reqn">p</code> is the maximum time lag, <code class="reqn">S=(S_1,...,S_p)</code> and <code class="reqn">S_j </code> is the maximum stage of neighbour dependence for time lag <code class="reqn">j</code>, <code class="reqn">{N}^{(r)}_t(i)</code> is the <code class="reqn">r</code>th stage neighbour set of node <code class="reqn">i</code> at time <code class="reqn">t</code>, <code class="reqn">\omega_{i,q,c}^{(t)}</code> is the connection weight between node <code class="reqn">i</code> and node <code class="reqn">q</code> at time <code class="reqn">t</code> if the path corresponds
+to covariate <code class="reqn">c</code>. Here, we consider a sum from one to zero to be zero and <code class="reqn">\{u_{i,t}\}</code>, are assumed to be independent and identically distributed at each node <code class="reqn">i</code>, with mean zero and variance <code class="reqn">\sigma_i^2</code>.
+Currently, only a single network GNAR model can be fitted.
+The connection weight, <code class="reqn">\omega_{i,q,c}^{(t)}</code>, is the inverse of the distance between nodes <code>i</code> and <code>q</code>, normalised so that they sum to 1 for each <code>i,t</code>.
+See is.GNARnet for <code>GNARnet</code> object information and example construction.
+</p>
+<p>A GNARX process of order <code class="reqn">p</code>, neighbourhood order vector <code class="reqn">s</code> of length <code class="reqn">p</code> and <code class="reqn">H</code> node-specific time series exogenous variables with order vector <code class="reqn">p'</code>, denoted 
+GNARX <code class="reqn">(p, s, p')</code>, is given by
+</p>
+<p style="text-align: center;"><code class="reqn">
+    Y_{i,t}=\sum_{j=1}^{p}\left(\alpha_{i,j}Y_{i,t-j} + \sum_{r=1}^{s_j}  \beta_{j,r} \sum_{q\in\mathcal{N}^{(r)}(i)}\omega_{i,q}Y_{q,t-j}\right)+ {\color{blue} \sum_{h=1}^H
+    \sum_{j'=0}^{p'_h}
+    \lambda_{h,j'} X_{h,i,t-j'}+u_{i,t}},
+</code>
+</p>
+
+<p>where <code class="reqn"> u_{i, t}</code> are assumed to be set of mutually uncorrelated random variables with
+mean zero and variance of <code class="reqn">\sigma^2</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mod</code></td>
+<td>
+<p>the <code>lm</code> output from fitting the GNAR model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>the original response values, with NAs left in.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dd</code></td>
+<td>
+<p>the output of <code>GNARdesign</code> containing the design matrix, with NAs left in.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>frbic</code></td>
+<td>
+<p>inputs to other <code>GNAR</code> functions.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Knight, M.I., Nunes, M.A. and Nason, G.P. Modelling, detrending and decorrelation of network time series.
+<a href="https://arxiv.org/abs/1603.03221">arXiv preprint</a>.<br><br>
+Knight, M.I., Leeming, K., Nason, G.P. and Nunes, M. A. (2020) Generalised Network Autoregressive Processes and the GNAR package. <em>Journal of Statistical Software</em>, <b>96</b> (5), 1–36.<br><br>
+Nason G.P. and Wei J. (2022) Quantifying the economic response to COVID-19 mitigations and death rates via forecasting Purchasing Managers’ Indices using Generalised Network Autoregressive models with 
+exogenous variables. <em>Journal of the Royal Statistical Society Series A</em>, <b>185</b>, 1778–1792.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+set.seed(1)
+n = 1000
+xvts=list()
+xvts[[1]] = matrix(rnorm(5*n, mean=0, sd=2), nrow=n, ncol=5)
+xvts[[2]] = matrix(rnorm(5*n, mean=0, sd=2), nrow=n, ncol=5)
+lambdaParams=list()
+lambdaParams[[1]] = c(0.5, -0.5)
+lambdaParams[[2]] = c(0.3, 0.1)
+
+# Simulate the GNARX using the exogenous variables xvts with associated parameters lambdaParams
+
+Y_data &lt;- GNARXsim(n=n, net=GNAR::fiveNet, alphaParams=list(c(rep(0.2,5))), betaParams=list(c(0.5)),
+                      sigma=1, xvts=xvts, lambdaParams=lambdaParams)
+
+# fit a GNARX to the model
+
+model &lt;- GNARXfit(vts = Y_data, net = GNAR::fiveNet,globalalpha = TRUE, alphaOrder = 1,
+                betaOrder = 1, xvts = xvts, lambdaOrder = c(1,1))
+
+# look at the residuals
+residToMat(model)$resid
+</code></pre>
+
+
+</div>

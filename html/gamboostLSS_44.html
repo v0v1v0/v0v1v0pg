@@ -1,0 +1,336 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mboostLSS</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fitting GAMLSS by Boosting
+</h2>
+
+<h3>Description</h3>
+
+<p>Functions for fitting GAMLSS (generalized additive models for
+location, scale and shape) using boosting techniques. 
+Two algorithms are implemented: (a) The cyclic algorithm
+iteratively rotates between the distribution parameters, updating one while using
+the current fits of the others as offsets (for details see Mayr et
+al., 2012). 
+(b) The noncyclic algorithm selects in each step the update of a base-learner 
+for the distribution parameter that best fits the negative gradient 
+(algorithm with inner loss of Thomas et al., 2018). 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mboostLSS(formula, data = list(), families = GaussianLSS(),
+          control = boost_control(), weights = NULL, 
+          method = c("cyclic", "noncyclic"), ...)
+glmboostLSS(formula, data = list(), families = GaussianLSS(),
+            control = boost_control(), weights = NULL, 
+            method = c("cyclic", "noncyclic"), ...)
+gamboostLSS(formula, data = list(), families = GaussianLSS(),
+            control = boost_control(), weights = NULL, 
+            method = c("cyclic", "noncyclic"), ...)
+blackboostLSS(formula, data = list(), families = GaussianLSS(),
+              control = boost_control(), weights = NULL,
+              method = c("cyclic", "noncyclic"), ...)
+
+## fit function:
+mboostLSS_fit(formula, data = list(), families = GaussianLSS(),
+              control = boost_control(), weights = NULL,
+              fun = mboost, funchar = "mboost", call = NULL, method, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p> a symbolic description of the model to be fit. See
+<code>mboost</code> for details. If <code>formula</code> is a single formula,
+the same formula is used for all distribution parameters. <code>formula</code>
+can also be a (named) list, where each list element corresponds
+to one distribution parameter of the GAMLSS distribution. The names must be
+the same as in the family (see example for details). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p> a data frame containing the variables in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>families</code></td>
+<td>
+<p> an object of class <code>families</code>. It can be either one of
+the pre-defined distributions that come along with the package or a new distribution
+specified by the user (see <code>Families</code> for details). Per
+default, we use the two-parametric <code>GaussianLSS</code> family.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p> a list of parameters controlling the algorithm. For
+more details see <code>boost_control</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p> a numeric vector of weights (optional). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p> fitting method, currently two methods are supported:
+<code>"cyclic"</code> (see Mayr et al., 2012) and <code>"noncyclic"</code> 
+(algorithm with inner loss of Thomas et al., 2018). 
+The latter requires a one dimensional <code>mstop</code> value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fun</code></td>
+<td>
+<p> fit function. Either <code>mboost</code>,
+<code>glmboost</code>, <code>gamboost</code> or
+<code>blackboost</code>. Specified directly via the corresponding LSS
+function. E.g. <code>gamboostLSS()</code> calls
+<code>mboostLSS_fit(..., fun = gamboost)</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>funchar</code></td>
+<td>
+<p> character representation of fit function. Either <code>"mboost"</code>,
+<code>"glmboost"</code>, <code>"gamboost"</code> or <code>"blackboost"</code>.
+Specified directly via the corresponding LSS function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p> used to forward the call from <code>mboostLSS</code>,
+<code>glmboostLSS</code>, <code>gamboostLSS</code> and <code>blackboostLSS</code>.
+This argument should not be directly specified by users!</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments to be passed to <code>mboostLSS_fit</code>.
+In  <code>mboostLSS_fit</code>, <code>...</code> represent further arguments to be
+passed to <code>mboost</code> and <code>mboost_fit</code>. So
+<code>...</code> can be all arguments of <code>mboostLSS_fit</code> and
+<code>mboost_fit</code>. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For information on GAMLSS theory see Rigby and Stasinopoulos (2005) or
+the information provided at <a href="https://www.gamlss.com/">https://www.gamlss.com/</a>. For a tutorial on
+<code>gamboostLSS</code> see Hofner et al. (2016). Thomas et al. (2018) 
+developed a novel non-cyclic approach to fit gamboostLSS models. This approach
+is suitable for the combination with <code>stabsel</code> and speeds up
+model tuning via <code>cvrisk</code> (see also below).
+</p>
+<p><code>glmboostLSS</code> uses <code>glmboost</code> to fit the
+distribution parameters of a GAMLSS – a linear boosting model is
+fitted for each parameter.
+</p>
+<p><code>gamboostLSS</code> uses <code>gamboost</code> to fit the
+distribution parameters of a GAMLSS – an additive boosting model (by
+default with smooth effects) is fitted for each parameter. With the
+<code>formula</code> argument, a wide range of different base-learners can
+be specified (see <code>baselearners</code>). The
+base-learners imply the type of effect each covariate has on the
+corresponding distribution parameter.
+</p>
+<p><code>mboostLSS</code> uses <code>mboost</code> to fit the
+distribution parameters of a GAMLSS. The type of model (linear,
+tree-based or smooth) is specified by <code>fun</code>.
+</p>
+<p><code>blackboostLSS</code> uses <code>blackboost</code> to fit the
+distribution parameters of a GAMLSS – a tree-based boosting model is
+fitted for each parameter.
+</p>
+<p><code>mboostLSS</code>, <code>glmboostLSS</code>, <code>gamboostLSS</code> and
+<code>blackboostLSS</code> all call <code>mboostLSS_fit</code> while <code>fun</code> is
+the corresponding <code>mboost</code> function, i.e., the same
+function without <code>LSS</code>. For further possible arguments see
+these functions as well as <code>mboost_fit</code>. 
+Note that <code>mboostLSS_fit</code> is usually not called directly by the user. 
+</p>
+<p>For <code>method = "cyclic"</code> it is possible to specify one or
+multiple <code>mstop</code> and <code>nu</code> values via
+<code>boost_control</code>. In the case of one single value, this
+value is used for all distribution parameters of the GAMLSS model.
+Alternatively, a (named) vector or a (named) list with separate values
+for each component can be used to specify a separate value for each
+parameter of the GAMLSS model. The names of the list must correspond
+to the names of the distribution parameters of the GAMLSS family. If
+no names are given, the order of the <code>mstop</code> or <code>nu</code> values
+is assumed to be the same as the order of the components in the
+<code>families</code>. For one-dimensional stopping, the user therefore can
+specify, e.g., <code>mstop = 100</code> via <code>boost_control</code>. For
+more-dimensional stopping, one can specify, e.g., <code>mstop =
+  list(mu = 100, sigma = 200)</code> (see examples).
+</p>
+<p>If <code>method</code> is set to <code>"noncyclic"</code>, <code>mstop</code> has
+to be a one dimensional integer. Instead of cycling through all distribution 
+parameters, in each iteration only the best base-learner is used. One base-learner of every 
+parameter is selected via RSS, the distribution parameter is then chosen via the loss 
+(in Thomas et. al., 2018, called inner loss). 
+For details on the noncyclic fitting method see Thomas et. al. (2018). 
+</p>
+<p>To (potentially) stabilize the model estimation by standardizing the
+negative gradients one can use the argument <code>stabilization</code> of
+the families. See <code>Families</code> for details.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>mboostLSS</code> or <code>nc_mboostLSS</code> (inheriting from 
+class <code>mboostLSS</code>) for models fitted with <code>method = "cyclic"</code>
+and <code>method = "non-cyclic"</code>, respectively, with corresponding methods to
+extract information. A <code>mboostLSS</code> model object is a named list 
+with one list entry for each modelled distribution parameter. 
+Special "subclasses" inheriting from <code>mboostLSS</code> exist for each of the 
+model-types (with the same name as the function, e.g., <code>gamboostLSS</code>).
+</p>
+
+
+<h3>References</h3>
+
+<p>B. Hofner, A. Mayr, M. Schmid (2016). gamboostLSS: An R Package for
+Model Building and Variable Selection in the GAMLSS Framework.
+Journal of Statistical Software, 74(1), 1-31.
+</p>
+<p>Available as <code>vignette("gamboostLSS_Tutorial")</code>.
+</p>
+<p>Mayr, A., Fenske, N., Hofner, B., Kneib, T. and Schmid, M. (2012):
+Generalized additive models for location, scale and shape for
+high-dimensional data - a flexible approach based on boosting. Journal
+of the Royal Statistical Society, Series C (Applied Statistics) 61(3):
+403-427.
+</p>
+<p>M. Schmid, S. Potapov, A. Pfahlberg, and T. Hothorn. Estimation and
+regularization techniques for regression models with multidimensional
+prediction functions. Statistics and Computing, 20(2):139-150, 2010.
+</p>
+<p>Rigby, R. A. and D. M. Stasinopoulos (2005). Generalized additive models
+for location, scale and shape (with discussion). Journal of the Royal
+Statistical Society, Series C (Applied Statistics), 54, 507-554.
+</p>
+<p>Buehlmann, P. and Hothorn, T. (2007), Boosting algorithms: Regularization,
+prediction and model fitting. Statistical Science, 22(4), 477–505.
+</p>
+<p>Thomas, J., Mayr, A., Bischl, B., Schmid, M., Smith, A., and Hofner, B. (2018), 
+Gradient boosting for distributional regression - faster tuning and improved 
+variable selection via noncyclical updates. 
+<em>Statistics and Computing</em>. 28: 673-687. 
+<a href="https://doi.org/10.1007/s11222-017-9754-6">doi:10.1007/s11222-017-9754-6</a><br>
+(Preliminary version: <a href="https://arxiv.org/abs/1611.10171">https://arxiv.org/abs/1611.10171</a>).
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>Families</code> for a documentation of available GAMLSS distributions.
+</p>
+<p>The underlying boosting functions <code>mboost</code>, <code>gamboost</code>, <code>glmboost</code>,
+<code>blackboost</code> are contained in the <code>mboost</code> package.
+</p>
+<p>See for example <code>risk</code> or <code>coef</code> for methods
+that can be used to extract information from <code>mboostLSS</code> objects.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+### Data generating process:
+set.seed(1907)
+x1 &lt;- rnorm(1000)
+x2 &lt;- rnorm(1000)
+x3 &lt;- rnorm(1000)
+x4 &lt;- rnorm(1000)
+x5 &lt;- rnorm(1000)
+x6 &lt;- rnorm(1000)
+mu    &lt;- exp(1.5 +1 * x1 +0.5 * x2 -0.5 * x3 -1 * x4)
+sigma &lt;- exp(-0.4 * x3 -0.2 * x4 +0.2 * x5 +0.4 * x6)
+y &lt;- numeric(1000)
+for( i in 1:1000)
+    y[i] &lt;- rnbinom(1, size = sigma[i], mu = mu[i])
+dat &lt;- data.frame(x1, x2, x3, x4, x5, x6, y)
+
+### linear model with y ~ . for both components: 400 boosting iterations
+model &lt;- glmboostLSS(y ~ ., families = NBinomialLSS(), data = dat,
+                     control = boost_control(mstop = 400),
+                     center = TRUE)
+coef(model, off2int = TRUE)
+
+
+### estimate model with different formulas for mu and sigma:
+names(NBinomialLSS())      # names of the family
+
+### Do not test the following code per default on CRAN as it takes some time to run:
+# Note: Multiple formulas must be specified via a _named list_
+#       where the names correspond to the names of the distribution parameters
+#       in the family (see above)
+model2 &lt;- glmboostLSS(formula = list(mu = y ~ x1 + x2 + x3 + x4,
+                                    sigma = y ~ x3 + x4 + x5 + x6),
+                     families = NBinomialLSS(), data = dat,
+                     control = boost_control(mstop = 400, trace = TRUE),
+                     center = TRUE)
+coef(model2, off2int = TRUE)
+### END (don't test automatically)
+
+
+
+### Offset needs to be specified via the arguments of families object:
+model &lt;- glmboostLSS(y ~ ., data = dat,
+                     families = NBinomialLSS(mu = mean(mu),
+                                             sigma = mean(sigma)),
+                     control = boost_control(mstop = 10),
+                     center = TRUE)
+# Note: mu-offset = log(mean(mu)) and sigma-offset = log(mean(sigma))
+#       as we use a log-link in both families
+coef(model)
+log(mean(mu))
+log(mean(sigma))
+
+### Do not test the following code per default on CRAN as it takes some time to run:
+### use different mstop values for the two distribution parameters
+### (two-dimensional early stopping)
+### the number of iterations is passed to boost_control via a named list
+model3 &lt;- glmboostLSS(formula = list(mu = y ~ x1 + x2 + x3 + x4,
+                                    sigma = y ~ x3 + x4 + x5 + x6),
+                     families = NBinomialLSS(), data = dat,
+                     control = boost_control(mstop = list(mu = 400,
+                                                          sigma = 300),
+                                             trace  = TRUE),
+                     center = TRUE)
+coef(model3, off2int = TRUE)
+
+### Alternatively we can change mstop of model2:
+# here it is assumed that the first element in the vector corresponds to
+# the first distribution parameter of model2 etc.
+mstop(model2) &lt;- c(400, 300)
+par(mfrow = c(1,2))
+plot(model2, xlim = c(0, max(mstop(model2))))
+## all.equal(coef(model2), coef(model3)) # same!
+### END (don't test automatically)
+
+</code></pre>
+
+
+</div>

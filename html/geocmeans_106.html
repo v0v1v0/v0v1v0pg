@@ -1,0 +1,119 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>spatialDiag</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Spatial diagnostic</h2>
+
+<h3>Description</h3>
+
+<p>Utility function to facilitate the spatial diagnostic of a classification
+</p>
+<p>Calculate the following indicators: Moran I index (spdep::moranI) for each
+column of the membership matrix, Join count test (spdep::joincount.multi) for
+the most likely groups of each datapoint, Spatial consistency index (see
+function spConsistency) and the Elsa statistic (see function calcElsa). Note
+that if the FCMres object given was constructed with rasters, the joincount
+statistic is not calculated and no p-values are provided for the Moran I
+indices.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">spatialDiag(
+  object,
+  nblistw = NULL,
+  window = NULL,
+  undecided = NULL,
+  matdist = NULL,
+  nrep = 50
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A FCMres object, typically obtained from functions CMeans,
+GCMeans, SFCMeans, SGFCMeans. Can also be a simple membership matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nblistw</code></td>
+<td>
+<p>A list.w object describing the neighbours typically produced
+by the spdep package. Required if data is a dataframe, see the parameter window
+if you use a list of rasters as input. Can also be NULL if object is a FCMres object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>window</code></td>
+<td>
+<p>If rasters were used for the classification, the window must be
+specified instead of a list.w object. Can also be NULL if object is a FCMres object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>undecided</code></td>
+<td>
+<p>A float giving the threslhod to detect undecided observations. An
+observation is undecided if its maximum membership value is bellow this float. If
+null, no observations are undecided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>matdist</code></td>
+<td>
+<p>A matrix representing the dissimilarity between the clusters. The matrix must
+be squared and the diagonal must be filled with zeros.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nrep</code></td>
+<td>
+<p>An integer indicating the number of permutation to do to simulate
+the random distribution of the spatial inconsistency</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A named list with :
+</p>
+
+<ul>
+<li>
+<p> MoranValues : the moran I values for each column of the membership
+matrix (spdep::MoranI)
+</p>
+</li>
+<li>
+<p> JoinCounts : the result of the join count test calculated with
+the most likely group for each datapoint (spdep::joincount.multi)
+</p>
+</li>
+<li>
+<p> SpConsist : the mean value of the spatial consistency index
+(the lower, the better, see ?spConsistency for details)
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(LyonIris)
+AnalysisFields &lt;-c("Lden","NO2","PM25","VegHautPrt","Pct0_14","Pct_65","Pct_Img",
+"TxChom1564","Pct_brevet","NivVieMed")
+dataset &lt;- sf::st_drop_geometry(LyonIris[AnalysisFields])
+queen &lt;- spdep::poly2nb(LyonIris,queen=TRUE)
+Wqueen &lt;- spdep::nb2listw(queen,style="W")
+result &lt;- SFCMeans(dataset, Wqueen,k = 5, m = 1.5, alpha = 1.5, standardize = TRUE)
+spatialDiag(result, undecided=0.45, nrep=30)
+</code></pre>
+
+
+</div>

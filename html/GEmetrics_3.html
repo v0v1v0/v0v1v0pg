@@ -1,0 +1,90 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GEmetrics_blup</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Best linear unbiased prediction of genotype-by-environment (GE) metrics</h2>
+
+<h3>Description</h3>
+
+<p>This function calculates the best linear unbiased prediction of
+the following GE metrics: ecovalence, environmental variance, Finlay and
+Wilkinson regression and Lin and Binns superiority measure.
+Ignoring the P matrix resumes to ignoring the condition
+variance term in the calculation
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GEmetrics_blup(G_hat, metric, P = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>G_hat</code></td>
+<td>
+<p>a matrix of best linear unbiased prediction of environment-specific
+breeding values for N genotypes (as rows) in J environments (as columns)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metric</code></td>
+<td>
+<p>a character string indicating what GE metric to consider:
+"Ecovalence", "EnvironmentalVar", "FinlayWilkRegression", "LinBinns"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>P</code></td>
+<td>
+<p>(optional) a square conditional variance matrix of environment-specific
+breeding values of dimension NJxNJ, where each row block of size N correspond
+to an environment and the rows of each block correspond to genotypes</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a vector of size N with best linear unbiased prediction of
+the GE metric
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Set seed for reproductibility
+set.seed(123)
+
+## Load "wheat" dataset from BGLR
+data("wheat",package = "BGLR")
+
+## Generate a design data frame for all genotypes in 5 environments
+Design &lt;- expand.grid(Genotype=rownames(wheat.A),Environment=paste0("Env",1:5))
+
+## Set sparseness by discarding 80% of the combinations
+Design &lt;- Design[-sample(nrow(Design),round(nrow(Design)*4/5)),]
+
+## Simulate phenotypic data with default parameter values
+DataSim &lt;- Simulate_MET_data(Design=Design,K=wheat.A)
+
+
+## Calculate the blup and the conditional variance matrix using simulated variance components
+## this step can take several seconds
+## note that variance can also be estimated (e.g. using BGLR)
+BlupEnvBV &lt;- EnvBV_blup(Pheno=DataSim$Pheno,K=wheat.A,Omega_G=DataSim$Omega_G,
+                        Omega_E=DataSim$Omega_E)
+
+
+## Compute GE metric estimates
+GEmetrics_hat &lt;- GEmetrics_blup(G_hat=BlupEnvBV$G_hat,metric="Ecovalence",P=BlupEnvBV$P)
+head(GEmetrics_hat)
+
+</code></pre>
+
+
+</div>

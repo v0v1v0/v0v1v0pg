@@ -1,0 +1,91 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>score_geneset_directionality</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute a score between -1 and 1 representing the proportion of up- or down-regulated genes for each geneset, weighted by gene effectsizes</h2>
+
+<h3>Description</h3>
+
+<p>Importantly, the scope/utility of this score is limited to help users post-hoc filter for genesets that contain mostly up/down-regulated genes.
+However, this might not coincide with the geneset pvalues / significance. For example,
+genesets may exclusively contain genes with a positive effectsize but at the same time these can all be minor effects/values and thus the geneset
+is not significant or less significant than other genesets with the exact same "directionality score".
+For example, genesets may contain both up- and down-regulated genes but still be significant when testing with GOAT and using <code>score_type='effectsize'</code>
+</p>
+<p>The scores computed with this function can help in post-hoc interpretation of GOAT results to further narrow down all significant genesets to a
+subset with strong directionality. For example, after <code>test_genesets()</code> we can filter the results for
+A) significant genesets and B) that contain at most N genes and C) that are near-exclusively up/down-regulated.
+Bringing this all together (also useful for other types of geneset testing, like ORA, score_type="pvalue", etc);
+<code>result = test_genesets(genesets_filtered, genelist, method = "goat", score_type = "effectsize", padj_method = "bonferroni", padj_cutoff = 0.05)</code>
+<code>result = score_geneset_directionality(result, genelist)</code>
+<code>result |&gt; filter(signif &amp; ngenes &lt;= 100 &amp; abs(score_directionality_rank) &gt;= 0.95)</code>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">score_geneset_directionality(genesets, genelist)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>genesets</code></td>
+<td>
+<p>tibble with genesets, must contain columns 'source', 'id', 'genes'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>genelist</code></td>
+<td>
+<p>tibble with genes, must contain columns 'gene', 'effectsize'</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>input <code>genesets</code> with results in 3 columns;
+<code>score_directionality_rank</code> is the weighted gene score where gene values are the sign of their effectsize and weights are linearly proportional to their inverse ranks in the input genelist.
+<code>score_directionality_rank2</code> is similar, but now using rank^2 gene weights to boost the influence of most-important genes in the input genelist.
+<code>score_directionality_value</code> uses the absolute gene effectsizes as gene weights
+Note that the latter is least robust as it depends on the scaling of input data!
+</p>
+
+
+<h3>score definitions;</h3>
+
+<p>geneset directionality score = weighted mean of respective genes,
+where gene weights are 1 minus their relative rank in up/down-regulation (depending on negative/positive effectsize)
+and the value for each gene is -1 or 1 depending on up/down-regulation (sign of effectsize).
+</p>
+
+
+<h3>pseudocode;</h3>
+
+
+<ol><li>
+<p> gene values and weights
+A) gene weight between 0 and 1 for the subset of upregulated genes / positive effectsizes;
+</p>
+</li></ol>
+<ul>
+<li>
+<p> r = for the subset of genes with effectsize &gt; 0, compute gene rank (1 = highest effectsize, N = smallest effectsize that is greater than zero)
+</p>
+</li>
+<li>
+<p> weight = 1 - r/max(r)
+B) analogous to (A) for the subset of genes with negative effectsize
+C) result per gene: value = sign of its effectsize, weight = 0 if effectsize 0, otherwise respective weights from (A) or (B)
+</p>
+</li>
+</ul>
+<ol><li>
+<p> geneset score_directionality = weighted mean over values/weights of respective genes
+</p>
+</li></ol>
+</div>

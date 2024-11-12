@@ -1,0 +1,133 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>desparsify</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>De-Sparsified Graphical Lasso Estimator</h2>
+
+<h3>Description</h3>
+
+<script id="MathJax-script" async src="../../mathjaxr/doc/mathjax/es5/tex-chtml-full.js"></script><p>Compute the de-sparsified (sometimes called "de-biased") glasso estimator with
+the approach described in Equation 7 of Jankova and Van De Geer (2015).
+The basic idea is to <em>undo</em> \(L_1\)-regularization, in order
+to compute <em>p</em>-values and confidence intervals
+(i.e., to make statistical inference).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">desparsify(object, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class <code>ggmncv</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Currently ignored.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>According to Jankova and Van De Geer (2015), the de-sparisifed estimator,
+\(\hat{\mathrm{\bf T}}\), is defined as
+</p>
+\(\hat{\mathrm{\bf T}} = 2\hat{\boldsymbol{\Theta}} - \hat{\boldsymbol{\Theta}}\hat{\mathrm{\bf R}}\hat{\boldsymbol{\Theta}},\)
+<p>where \(\hat{\boldsymbol{\Theta}}\) denotes the graphical lasso estimator of the precision matrix
+and \(\hat{\mathrm{\bf R}}\) is the sample correlation matrix. Further details can be
+found in Section 2 ("Main Results") of Jankova and Van De Geer (2015).
+</p>
+<p>This approach is built upon earlier work on the de-sparsified lasso estimator
+(Javanmard and Montanari 2014; Van de Geer et al. 2014; Zhang and Zhang 2014)
+</p>
+
+
+<h3>Value</h3>
+
+<p>The de-sparsified estimates, including
+</p>
+
+<ul>
+<li> <p><code>Theta</code>:  De-sparsified precision matrix
+</p>
+</li>
+<li> <p><code>P</code>:  De-sparsified partial correlation matrix
+</p>
+</li>
+</ul>
+<h3>Note</h3>
+
+<p>This assumes (reasonably) Gaussian data, and should not to be expected
+to work for, say, polychoric correlations. Further, all work to date
+has only looked at the graphical lasso estimator, and not de-sparsifying
+nonconvex regularization. Accordingly, it is probably best to set
+<code>penalty = "lasso"</code> in <code>ggmncv</code>.
+</p>
+<p>This function only provides the de-sparsified estimator and
+not <em>p</em>-values or confidence intervals (see <code>inference</code>).
+</p>
+
+
+<h3>References</h3>
+
+<p>Jankova J, Van De Geer S (2015).
+“Confidence intervals for high-dimensional inverse covariance estimation.”
+<em>Electronic Journal of Statistics</em>, <b>9</b>(1), 1205–1229.<br><br> Javanmard A, Montanari A (2014).
+“Confidence intervals and hypothesis testing for high-dimensional regression.”
+<em>The Journal of Machine Learning Research</em>, <b>15</b>(1), 2869–2909.<br><br> Van de Geer S, BÃ¼hlmann P, Ritov Y, Dezeure R (2014).
+“On asymptotically optimal confidence regions and tests for high-dimensional models.”
+<em>The Annals of Statistics</em>, <b>42</b>(3), 1166–1202.<br><br> Zhang C, Zhang SS (2014).
+“Confidence intervals for low dimensional parameters in high dimensional linear models.”
+<em>Journal of the Royal Statistical Society: Series B (Statistical Methodology)</em>, <b>76</b>(1), 217–242.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># data
+Y &lt;- GGMncv::Sachs[,1:5]
+
+n &lt;- nrow(Y)
+p &lt;- ncol(Y)
+
+# fit model
+# note: fix lambda, as in the reference
+fit &lt;- ggmncv(cor(Y), n = nrow(Y),
+              progress = FALSE,
+              penalty = "lasso",
+              lambda = sqrt(log(p)/n))
+
+# fit model
+# note: no regularization
+fit_non_reg &lt;- ggmncv(cor(Y), n = nrow(Y),
+                      progress = FALSE,
+                      penalty = "lasso",
+                      lambda = 0)
+
+
+# remove (some) bias and sparsity
+That &lt;- desparsify(fit)
+
+# graphical lasso estimator
+fit$P
+
+# de-sparsified estimator
+That$P
+
+# mle
+fit_non_reg$P
+</code></pre>
+
+
+</div>

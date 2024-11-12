@@ -1,0 +1,264 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>genodds</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generalized Odds Ratios</h2>
+
+<h3>Description</h3>
+
+<p>Performs Agresti's Generalized Odds Ratios (GenOR) for two-group ordinal data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">genodds(response, group, strata=NULL,
+        alpha=0.05,ties="split",
+        nnt=FALSE,verbose=FALSE,upper=TRUE, suppress_interpretation=FALSE,
+        assume_no_effect=FALSE,
+        permutation_test=FALSE, nPermutations=5000)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>response</code></td>
+<td>
+<p>A (non-empty) vector. Gives the outcome measure.
+If a factor, level order is used to determine ranking of outcomes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>A factor vector of equal length to <code>response</code>.
+Gives the groups for the test. Must take on exactly 2 values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strata</code></td>
+<td>
+<p>An optional factor vector of equal length to <code>response</code>.
+Gives treatment blocks to separate comparisons.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>The acceptable type 1 error used in the test.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ties</code></td>
+<td>
+<p>A string specifying how ties should be treated.
+Should be equal to "split" 0.5 for WMW Odds,
+or "drop" for Agresti's GenOR.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nnt</code></td>
+<td>
+<p>A boolean.
+If <code>TRUE</code>, then print number needed to treat in addition to generalised odds ratios.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>A boolean.
+If <code>TRUE</code>, then print both pooled odds and relative risk ratio matrices
+regardless of result of statistical test.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>A boolean specifying if the upper triangle
+of relative risk ratios should be printed.
+If <code>FALSE</code>, lower triangle is used instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>suppress_interpretation</code></td>
+<td>
+<p>A boolean specifying if the interpretable summary statements of results should be suppressed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>assume_no_effect</code></td>
+<td>
+<p>A boolean indicating if p-values and confidence intervals should be calculated
+using pooled_SElnnull (if TRUE) or pooled_SElnodds (if FALSE).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>permutation_test</code></td>
+<td>
+<p>A boolean specifying if a permutation test should be performed on the data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nPermutations</code></td>
+<td>
+<p>The number of permutations to use in the permutation test</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Agresti's generalized odds ratios (GenOR) calculates the odds that,
+if a pair of observations are randomly selected from
+two groups, the outcome in one group is higher than the other.
+This implementation determines the direction of this comparison
+using factor levels. Odds are given with reference to
+observations corresponding to the higher <code>group</code> level
+resulting in a higher value in <code>response</code>.
+The opposite direction can be calculated by either calculating 1/genodds,
+or by specifying <code>response=1-response</code> in function input.
+</p>
+<p>If <code>nnt=TRUE</code>, the Number Needed to Treat (NNT) is printed.
+NNT is a health economics measure and is related to generalised
+odds ratios through the formula NNT=1+2/(GenOR-1).
+It measures the expected number of patients required for a
+treatment to have impacted a patient's outcome.
+In this implementation, a positive NNT occurs when GenOR&gt;1
+and corresponds to the number needed to treat in the higher
+<code>group</code> level to observe a higher <code>response</code> value,
+while a negative NNT occurs when GenOR&lt;1 and corresponds
+to the number needed to treat in the higher <code>group</code>
+level to observe a lower <code>response</code> value.
+If the confidence interval for GenOR straddles 1,
+the confidence interval for NNT is given as the union of disjoint
+intervals.
+</p>
+<p><code>ties</code> changes how ties are treated. If <code>"split"</code> is provided,
+then ties are equally split between favouring both groups
+(following the approach set out by O'Brien et. al. (2006)).
+If <code>"drop"</code> is provided, then ties are ignored
+(following the approach set out by Agresti (1980)).
+By default, <code>"split"</code> is used.
+</p>
+<p>If <code>assume_no_effect==TRUE</code>, use O'Brien's method for calculating standard
+error under null for the purposes of calculating p-values and confidence intervals.
+If <code>assume_no_effect==FALSE</code> (the default option), then p-values and confidence intervals
+will be calculated using standard error instead.
+</p>
+<p>If <code>strata</code> is specified, generalized odds ratios are calculated
+separately for each individual strata. If in-stratum odds ratios are not
+significantly different from each other (with significance level <code>alpha</code>),
+these odds are pooled to obtain a global odds ratio which is adjusted
+for strata. If in-stratum odds ratios are significantly different, a matrix containing
+the relative risk ratios between stratum is printed, along with Z-scores
+corresponding to the significance of these differences.
+If <code>verbose=TRUE</code> is supplied, both pooled odds and relative risk ratios
+are printed regardless of if the between-stratum odds ratios are
+significantly different.
+</p>
+<p>Permutation testing is performed following the approach suggested by Howard et al. (2012),
+where the probability of a random observation from one group achieving a higher score
+than a patient in another group is calculated (given there is a difference between the scores),
+and then the <code>group</code> labels are randomly shuffled to guarantee the null hypothesis
+of no difference between groups is true. The permutation test p-value is the proportion of such
+permutations which result in a test statistic more extreme than what was observed on the original
+data, forming a two-tail test. This procedure is equivalent to that provided by Agresti's generalised
+odds ratio, and is implemented here for both methods of handling <code>ties</code>.
+</p>
+<p>By default, <code>print.genodds()</code> will report an interpretable summary of the test statistic
+following a loosely modified form of the statements suggested by Howard et al. (2012).
+This may be suppressed by specifying <code>suppress_interpretation=TRUE</code>.
+</p>
+<p>Options <code>verbose</code>, <code>nnt</code>, <code>upper</code>, and <code>suppress_interpretation</code>
+may be re-specified when using print method.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with class "<code>Genodds</code>" containing the following:
+</p>
+
+<dl>
+<dt>pooled_lnodds</dt>
+<dd>
+<p>The pooled log(odds).</p>
+</dd>
+<dt>pooled_lnconf.int</dt>
+<dd>
+<p>(1-<code>alpha</code>)% Confidence intervals for pooled log(odds).</p>
+</dd>
+<dt>pooled_SElnodds</dt>
+<dd>
+<p>Standard error of pooled log(odds).</p>
+</dd>
+<dt>pooled_SElnnull</dt>
+<dd>
+<p>Standard error of pooled log(odds) under the null hypothesis.</p>
+</dd>
+<dt>pooled_p</dt>
+<dd>
+<p>The p-value of the test of pooled log(odds) = 1.</p>
+</dd>
+<dt>pooled_rel_statistic</dt>
+<dd>
+<p>Statistic of test that strata odds are equal.</p>
+</dd>
+<dt>pooled_rel_p</dt>
+<dd>
+<p>p-value for test that strata odds are equal.</p>
+</dd>
+<dt>relative_lnodds</dt>
+<dd>
+<p>A matrix giving the log of the ratio of odds between strata (generalised relative risk ratio).</p>
+</dd>
+<dt>relative_selnodds</dt>
+<dd>
+<p>A matrix containing the standard error of the log(relative risk ratio).</p>
+</dd>
+<dt>results</dt>
+<dd>
+<p>A list containing a summary of each strata measure.</p>
+</dd>
+<dt>param.record</dt>
+<dd>
+<p>A list containing parameters used in the test.</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>Agresti, A. (1980). Generalized odds ratios for ordinal data.
+<em>Biometrics</em>, 59-67.
+</p>
+<p>O'Brien, R. G., &amp; Castelloe, J. (2006, March).
+Exploiting the link between the Wilcoxon-Mann-Whitney test and a simple odds statistic.
+In <em>Thirty-first Annual SAS Users Group International Conference</em>.
+</p>
+<p>Churilov, L., Arnup, S., Johns, H., Leung, T., Roberts,
+S., Campbell, B. C., Davis, S. M. &amp; Donnan, G. A. (2014).
+An improved method for simple, assumption-free ordinal analysis of the
+modified Rankin Scale using generalized odds ratios.
+<em>International Journal of Stroke</em>, 9(8), 999-1005.
+</p>
+<p>Howard, G., Waller, J. L., Voeks, J. H., Howard, V. J., Jauch, E. C.,
+Lees, K. R., ... &amp; Hess, D. C. (2012). A simple, assumption-free,
+and clinically interpretable approach for analysis of modified Rankin
+outcomes. <em>Stroke</em>, 43(3), 664-669.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Use the alteplase dataset provided by package and calculate genodds
+df &lt;- alteplase
+x &lt;- genodds(df$mRS,df$treat,df$time)
+x
+print(x,nnt=TRUE)
+
+</code></pre>
+
+
+</div>

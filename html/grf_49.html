@@ -1,0 +1,134 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.regression_forest</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict with a regression forest</h2>
+
+<h3>Description</h3>
+
+<p>Gets estimates of E[Y|X=x] using a trained regression forest.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'regression_forest'
+predict(
+  object,
+  newdata = NULL,
+  linear.correction.variables = NULL,
+  ll.lambda = NULL,
+  ll.weight.penalty = FALSE,
+  num.threads = NULL,
+  estimate.variance = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>The trained forest.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>Points at which predictions should be made. If NULL, makes out-of-bag
+predictions on the training set instead (i.e., provides predictions at
+Xi using only trees that did not use the i-th training example). Note
+that this matrix should have the number of columns as the training
+matrix, and that the columns must appear in the same order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linear.correction.variables</code></td>
+<td>
+<p>Optional subset of indexes for variables to be used in local
+linear prediction. If NULL, standard GRF prediction is used. Otherwise,
+we run a locally weighted linear regression on the included variables.
+Please note that this is a beta feature still in development, and may slow down
+prediction considerably. Defaults to NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ll.lambda</code></td>
+<td>
+<p>Ridge penalty for local linear predictions. Defaults to NULL and will be cross-validated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ll.weight.penalty</code></td>
+<td>
+<p>Option to standardize ridge penalty by covariance (TRUE),
+or penalize all covariates equally (FALSE). Defaults to FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num.threads</code></td>
+<td>
+<p>Number of threads used in training. If set to NULL, the software
+automatically selects an appropriate amount.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimate.variance</code></td>
+<td>
+<p>Whether variance estimates for <code class="reqn">\hat\tau(x)</code> are desired
+(for confidence intervals).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments (currently ignored).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Vector of predictions, along with estimates of the error and
+(optionally) its variance estimates. Column 'predictions' contains
+estimates of E[Y|X=x]. The square-root of column 'variance.estimates' is the standard error
+the test mean-squared error. Column 'excess.error' contains
+jackknife estimates of the Monte-carlo error. The sum of 'debiased.error'
+and 'excess.error' is the raw error attained by the current forest, and
+'debiased.error' alone is an estimate of the error attained by a forest with
+an infinite number of trees. We recommend that users grow
+enough forests to make the 'excess.error' negligible.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Train a standard regression forest.
+n &lt;- 50
+p &lt;- 10
+X &lt;- matrix(rnorm(n * p), n, p)
+Y &lt;- X[, 1] * rnorm(n)
+r.forest &lt;- regression_forest(X, Y)
+
+# Predict using the forest.
+X.test &lt;- matrix(0, 101, p)
+X.test[, 1] &lt;- seq(-2, 2, length.out = 101)
+r.pred &lt;- predict(r.forest, X.test)
+
+# Predict on out-of-bag training samples.
+r.pred &lt;- predict(r.forest)
+
+# Predict with confidence intervals; growing more trees is now recommended.
+r.forest &lt;- regression_forest(X, Y, num.trees = 100)
+r.pred &lt;- predict(r.forest, X.test, estimate.variance = TRUE)
+
+
+</code></pre>
+
+
+</div>

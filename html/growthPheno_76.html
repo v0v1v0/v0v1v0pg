@@ -1,0 +1,544 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>traitExtractFeatures</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Extract features, that are single-valued for each individual, from traits observed over time.</h2>
+
+<h3>Description</h3>
+
+<p>Extract one or more sets of features from traits observed over time, the result being 
+traits that have a single value for each individual. The sets of features are:
+</p>
+
+<ol>
+<li> <p><b>single times</b> – the value for each individual for a single time. 
+(uses <code>getTimesSubset</code>)
+</p>
+</li>
+<li> <p><b>growth rates for a time interval</b> – the average growth rate (AGR 
+and/or RGR) over a time interval for each individual. 
+(uses <code>byIndv4Intvl_GRsDiff</code> or <code>byIndv4Intvl_GRsAvg</code>)
+</p>
+</li>
+<li> <p><b>water use traits for a time interval</b> – the total water use (WU), 
+the water use rate (WUR) and the water use index (WUI) over a time 
+interval for each individual. (uses <code>byIndv4Intvl_WaterUse</code>)
+</p>
+</li>
+<li> <p><b>growth rates for the imaging period overall</b> – the average growth rate (AGR 
+and/or RGR) over the whole imaging period for each individual. 
+(uses <code>byIndv4Intvl_GRsDiff</code> or <code>byIndv4Intvl_GRsAvg</code>)
+</p>
+</li>
+<li> <p><b>water use traits for the imaging period overall</b> – the total water use (WU), 
+the water use rate (WUR) and the water use index (WUI) for the whole imaging 
+period for each individual. (uses <code>byIndv4Intvl_WaterUse</code>)
+</p>
+</li>
+<li> <p><b>totals for the imaging period overall</b> – the total over the whole imaging 
+period of a trait for each individual. (uses <code>byIndv4Intvl_ValueCalc</code>)
+</p>
+</li>
+<li> <p><b>maximum for the imaging period overall</b> – the maximum value over the whole 
+imaging period, and the time at which it occurred, for each individual. 
+(uses <code>byIndv4Intvl_ValueCalc</code>)
+</p>
+</li>
+</ol>
+<p>The <code>Tomato</code> vignette illustrates the use of <code>traitSmooth</code> and 
+<code>traitExtractFeatures</code> to carry out the SET procedure for the example 
+presented in Brien et al. (2020). 
+Use <code>vignette("Tomato", package = "growthPheno")</code> to access it.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">traitExtractFeatures(data, individuals = "Snapshot.ID.Tag", times = "DAP", 
+                     starts.intvl = NULL, stops.intvl = NULL, 
+                     suffices.intvl = NULL, 
+                     responses4intvl.rates = NULL, 
+                     growth.rates = NULL, 
+                     growth.rates.method = "differences", 
+                     suffices.growth.rates = NULL, 
+                     water.use4intvl.traits = NULL, 
+                     responses4water = NULL, 
+                     water.trait.types = c("WU", "WUR", "WUI"), 
+                     suffix.water.rate = "R", suffix.water.index = "I", 
+                     responses4singletimes = NULL, times.single = NULL, 
+                     responses4overall.rates = NULL, 
+                     water.use4overall.water = NULL, 
+                     responses4overall.water = NULL, 
+                     responses4overall.totals = NULL, 
+                     responses4overall.max = NULL, 
+                     intvl.overall = NULL, suffix.overall = NULL, 
+                     sep.times.intvl = "to", sep.suffix.times = ".", 
+                     sep.growth.rates = ".", sep.water.traits = "", 
+                     mergedata = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A <code>data.frame</code> containing the columns specified by 
+<code>individuals</code>, <code>times</code>, the various <code>responses</code> 
+arguments and the <code>water.use argument</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>individuals</code></td>
+<td>
+<p>A <code>character</code> giving the name of the 
+<code>factor</code> that defines the subsets of the <code>data</code> 
+for which each subset corresponds to the <code>response</code> values for 
+an individual (e.g. plant, pot, cart, plot or unit).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>times</code></td>
+<td>
+<p>A <code>character</code> giving the name of the column in 
+<code>data</code> containing the times at which the data was 
+collected, either as a <code>numeric</code>, <code>factor</code>, or 
+<code>character</code>. It will be used identifying the intervals and,  
+if a <code>factor</code> or <code>character</code>, the values should 
+be numerics stored as characters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>starts.intvl</code></td>
+<td>
+<p>A <code>numeric</code> giving the times, in terms of values in 
+<code>times</code>, that are the initial times for a set of intervals for which 
+<code>growth.rates</code> and <code>water.use</code> traits are to be obtained. 
+These times may also be used to obtain values for single-time traits 
+(see <code>responses4singletimes</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stops.intvl</code></td>
+<td>
+<p>A <code>numeric</code> giving the times, in terms of values in 
+<code>times</code>, that are the end times for a set of intervals for which 
+<code>growth.rates</code> and <code>water.use</code> traits are to be obtained. 
+These times may also be used to obtain values for single-time traits 
+(see <code>responses4singletimes</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>suffices.intvl</code></td>
+<td>
+<p>A <code>character</code> giving the suffices for intervals 
+specified using <code>starts.intvl</code> and <code>stops.intvl</code>. If <code>NULL</code>, 
+the suffices are automatically generated using <code>starts.intvl</code>, 
+<code>stops.intvl</code> and <code>sep.times.intvl</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>responses4intvl.rates</code></td>
+<td>
+<p>A <code>character</code> specifying the names of the columns 
+containing responses for which growth rates are to be obtained for 
+the intervals specified by <code>starts.intvl</code> and <code>stops.intvl</code>. 
+For <code>growth.rates.method</code> set to <code>differences</code>, the growth rates will 
+be computed from the column of the <code>response</code> values whose name is 
+listed in <code>responses4intvl.rates</code>.  For <code>growth.rates.method</code> set to 
+<code>derivatives</code>, the growth rates will be computed from a column with 
+the growth rates computed for each time. The name of the column should be 
+a <code>response</code> listed in <code>responses4intvl.rates</code> to which is appended an 
+element of <code>suffices.growth.rates</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>growth.rates.method</code></td>
+<td>
+<p>A <code>character</code> specifying the method to use  
+in calculating the growth rates over an interval for the responses 
+specified by <code>responses4intvl.rates</code>. 
+The two possibilities are <code>"differences"</code> and <code>"ratesaverages"</code>. 
+For <code>differences</code>, the growth rate for an interval is computed 
+by taking differences between the values of a response for pairs 
+of <code>times</code>. For <code>ratesaverage</code>, the growth rate for an interval 
+is computed by  taking weighted averages of growth rates for times within 
+the interval. That is, <code>differences</code> operates on the  response and 
+<code>ratesaverage</code> operates on the growth rates previously calculated 
+from the response, so that the appropriate one of these must be in 
+<code>data</code>. The <code>ratesaverage</code> option is most appropriate when the 
+growth rates are calculated using the derivatives of a fitted curve. 
+Note that, for responses for which the AGR has been calculated using 
+differences, both methods will give the same result, but the 
+<code>differences</code> option will  be more efficient than <code>ratesaverages</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>growth.rates</code></td>
+<td>
+<p>A <code>character</code> specifying which growth rates are 
+to be obtained for the intervals specified by <code>starts.intvl</code> and 
+<code>stops.intvl</code>. It should contain one of both of <code>"AGR"</code> and 
+<code>"RGR"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>suffices.growth.rates</code></td>
+<td>
+<p>A <code>character</code> giving the suffices appended to  
+<code>responses4intvl.rates</code> in constructung the column names for the 
+storing the growth rates specified by <code>growth.rates</code>. If 
+<code>suffices.growth.rates</code> is <code>NULL</code>, then <code>"AGR"</code> and 
+<code>"RGR"</code> will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>water.use4intvl.traits</code></td>
+<td>
+<p>A <code>character</code> giving the names of the columns in 
+<code>data</code> that contain the water use values that are to be used 
+in computing the water use traits (WU, WUR, WUI) for the intervals 
+specified by <code>starts.intvl</code> and <code>stops.intvl</code>. If there is 
+only one column name, then the <code>WUI</code> will be calculated using 
+this name for all column names in <code>responses4water</code>. If there 
+are several  column names in <code>water.use4intvl.traits</code>, then there must be 
+either one or the same number of names in <code>responses4water</code>. 
+If both have same number of names, then the two lists of column names 
+will be processed in parallel, so that a single <code>WUI</code> will be 
+produced for each pair of <code>responses4water</code> and <code>water.use4intvl.traits</code> 
+values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>responses4water</code></td>
+<td>
+<p>A <code>character</code> giving the names of the columns  
+in <code>data</code> that are to provide the numerator in calculating a 
+<code>WUI</code> for the intervals specified using <code>starts.intvl</code> and 
+<code>stops.intvl</code>. The denominator will be the values in the columns 
+in <code>data</code> whose names are those given by <code>water.use4intvl.traits</code>. 
+If there is only one column name in <code>responses4water</code>, then the 
+<code>WUI</code> will be calculated using this name for all column names in 
+<code>responses4water</code>. If there are several column names in 
+<code>responses4water</code>, then there must be either one or the same 
+number of names in <code>water.use4intvl.traits</code>. If both have same number of 
+names, then the two lists of column names will be 
+processed in parallel, so that a single <code>WUI</code> will be produced 
+for each pair of <code>responses4water</code> and <code>water.use4intvl.traits</code> values. 
+</p>
+<p>See the <code>Value</code> section for a description of how 
+<code>responses4water</code> is incorporated into the names constructed for 
+the water use traits.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>water.trait.types</code></td>
+<td>
+<p>A <code>character</code> listing the trait types to compute
+and return. It should be some combination of <code>WU</code>, <code>WUR</code> 
+and <code>WUI</code>. See Details in <code>byIndv4Intvl_WaterUse</code> for 
+how each is calculated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>suffix.water.rate</code></td>
+<td>
+<p>A <code>character</code> giving the label to be appended 
+to the value of <code>water.use4intvl.traits</code> to form the name of the WUR.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>suffix.water.index</code></td>
+<td>
+<p>A <code>character</code> giving the label to be appended 
+to the value of <code>water.use4intvl.traits</code> to form the name of the WUI.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>responses4singletimes</code></td>
+<td>
+<p>A <code>character</code> specifying the names of the 
+columns containing <code>responses</code> for which a column of the values is 
+to be formed for each response for each of the times values specified in 
+<code>times.single</code>. If  <code>times.single</code> is <code>NULL</code>, then the  
+unique values in the combined <code>starts.intvl</code> and <code>stops.intvl</code> 
+will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>times.single</code></td>
+<td>
+<p>A <code>numeric</code> giving the times of imaging, for each of 
+which, the values of each <code>responses4singletimes</code> will be stored in 
+a column of the resulting <code>data.frame</code>. If <code>NULL</code>, then 
+the  unique values in the combined <code>starts.intvl</code> and <code>stops.intvl</code> 
+will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>responses4overall.rates</code></td>
+<td>
+<p>A <code>character</code> specifying the names of the  
+columns containing responses for which growth rates are to be obtained 
+for the whole imaging period i.e. the interval specified by 
+<code>intvl.overall</code>. The settings of <code>growth.rates.method</code>, 
+<code>growth.rates</code>, <code>suffices.growth.rates</code>, 
+<code>sep.growth.rates</code>, <code>suffix.overall</code> and <code>intvl.overall</code> 
+will be used in producing the growth rates. See <code>responses4intvl.rates</code> 
+for more information about how these arguments are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>water.use4overall.water</code></td>
+<td>
+<p>A <code>logical</code> indicating whether the overall 
+water.traits are to be obtained. The settings of <code>water.trait.types</code>, 
+<code>suffix.water.rate</code>, <code>suffix.water.index</code>, <code>sep.water.traits</code>, 
+<code>suffix.overall</code> and <code>intvl.overall</code> will be used in producing the 
+overall water traits. See <code>water.use4intvl.traits</code> for more information about 
+how these arguments are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>responses4overall.water</code></td>
+<td>
+<p>A <code>character</code> giving the names of the columns  
+in <code>data</code> that are to provide the numerator in calculating a 
+<code>WUI</code> for the interval corresponding to the whole imaging period. 
+See <code>response.water</code> for further details. See <code>responses4water</code> 
+for more information about how this argument is processed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>responses4overall.totals</code></td>
+<td>
+<p>A <code>character</code> specifying the names of the 
+columns containing responses for which a column of the values is 
+to be formed by summing the response for each individual over the 
+whole of the imaging period.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>responses4overall.max</code></td>
+<td>
+<p>A <code>character</code> specifying the names of the 
+columns containing responses for which columns of the values are 
+to be formed for the maximum of the response for each 
+individual over the whole of the imaging period and the <code>times</code> value 
+at which the maximum occurred.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intvl.overall</code></td>
+<td>
+<p>A <code>numeric</code> giving the starts and stop times of imaging. 
+If <code>NULL</code>, the start time will be the minimum of <code>starts.intvl</code> 
+and the stop time will be the maximum of <code>stops.intvl</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>suffix.overall</code></td>
+<td>
+<p>A <code>character</code> giving the suffix to be appended to  
+the names of traits that apply to the whole imagng period. It applies to 
+<code>overall.growth.rates</code>, <code>water.use4overall.water</code>, 
+<code>responses4overall.water</code> and <code>responses4overall.totals</code>. 
+If <code>NULL</code>, then nothing will be added.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sep.times.intvl</code></td>
+<td>
+<p>A <code>character</code> giving the separator to use in 
+combining a <code>starts.intvl</code> with a <code>stops.intvl</code> in constructing 
+the suffix to be appended to an interval trait. If set to <code>NULL</code> and 
+there is only one value for each of <code>starts.intvl</code> and 
+<code>stops.intvl</code>, then no suffix will be added; otherwise 
+<code>sep.times.intvl</code> set to <code>NULL</code> will result in an error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sep.suffix.times</code></td>
+<td>
+<p>A <code>character</code> giving the separator to use in 
+appending a suffix for times to a trait. For no separator, set to 
+<code>""</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sep.growth.rates</code></td>
+<td>
+<p>A <code>character</code> giving the character(s) to be 
+used to separate the <code>suffices.growth.rates</code> value from the 
+<code>responses4intvl.rates</code> values in constructing the name for a 
+new rate. It is also used for separating <code>responses4water</code> 
+values from the <code>suffix.water.index</code>. For no separator, set to 
+<code>""</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sep.water.traits</code></td>
+<td>
+<p>A <code>character</code> giving the character(s) to be 
+used to separate the <code>suffix.rate</code> and <code>suffix.index</code> values 
+from the <code>response</code> value in constructing the name for a new 
+rate/index. The default of <code>""</code> results in no separator.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mergedata</code></td>
+<td>
+<p>A <code>data.frame</code> containing a column with the name given 
+in <code>individuals</code> and for which there is only one row for each value 
+given in this column. In general, it will be that the number of rows in 
+<code>mergedata</code>  is equal to the number of unique values in the column in 
+<code>data</code> labelled by the value of <code>individuals</code>, but this is not 
+mandatory. If <code>mergedata</code> is not <code>NULL</code>, the values extracted by 
+<code>traitExtractFeatures</code> will be <code>merge</code>d with it.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>allows passing of arguments to other functions; not used at present.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>data.frame</code> that contains an <code>individuals</code> column and a 
+column for each extracted trait, in addition to any columns in <code>mergedata</code>. 
+The number of rows in the <code>data.frame</code> will equal the number of 
+unique element of the  <code>individuals</code> column in <code>data</code>, except when 
+there are extra values in the <code>individuals</code> column in <code>data</code>. If the 
+latter applies, then the number of rows will equal the number of unique 
+values in the combined <code>individuals</code> columns from <code>mergedata</code> and 
+<code>data</code>. 
+</p>
+<p>The names of the columns produced by the function are constructed as follows: 
+</p>
+
+<ol>
+<li> <p><b>single times</b> – A name for a single-time trait is formed by appending 
+a full stop to an element of <code>responses4singletimes</code>, followed by the value of 
+<code>times</code> at which the values were observed.
+</p>
+</li>
+<li> <p><b>growth rates for a time interval</b> –  The name for an interval growth 
+rate is constructed by concatenating the relevant element of <code>responses4intvl.rates</code>, 
+<code>growth.rates</code> and a suffix for the time interval, each separated by a full 
+stop. The interval suffix is formed by joining its <code>starts.intvl</code> and 
+<code>stops.intvl</code> values, separating them by the value of <code>sep.times.intvl</code>.
+</p>
+</li>
+<li> <p><b>growth rates for the whole imaging period</b> –  The name for an interval growth 
+rate is constructed by concatenating the relevant element of <code>responses4intvl.rates</code>, 
+<code>growth.rates</code> and <code>suffix.overall</code>, each separated by a full 
+stop.
+</p>
+</li>
+<li> <p><b>water use traits for a time interval</b> – Construction of the names for 
+the three water traits begins with the value of <code>water.use4intvl.traits</code>. The rate (WUR) 
+has either <code>R</code> or the value of <code>suffix.water.rate</code> added to the value of 
+<code>water.use4intvl.traits</code>. Similarly the index (WUI) has either <code>I</code> or the value of 
+<code>suffix.water.index</code> added to it. The WUI also has the element of 
+<code>responses4water</code> used in calculating the WUI prefixed to its name. 
+All three water use traits have a suffix for the interval appended to their names. 
+This suffix is contructed by joining its <code>starts.intvl</code> and <code>stops.intvl</code>, 
+separated by the value of <code>sep.times.intvl</code>.
+</p>
+</li>
+<li> <p><b>water use traits for the whole imaging period</b> – Construction of the names for 
+the three water traits begins with the value of <code>water.use4intvl.traits</code>. The rate (WUR) 
+has either <code>R</code> or the value of <code>suffix.water.rate</code> added to the value of 
+<code>water.use4intvl.traits</code>. Similarly the index (WUI) has either <code>I</code> or the value of 
+<code>suffix.water.index</code> added to it. The WUI also has the element of 
+<code>responses4water</code> used in calculating the WUI prefixed to its name. 
+All three water use traits have <code>suffix.overall</code> appended to their names.
+</p>
+</li>
+<li> <p><b>the total for the whole of imaging period</b> – The name for whole-of-imaging 
+total is formed by combining an element of<code>responses4overall.totals</code>  with <code>suffix.overall</code>, 
+separating them by a full stop.
+</p>
+</li>
+<li> <p><b>maximum for the whole of imaging period</b> – The name of the column with the 
+maximum values will be the result of concatenating the <code>responses4overall.max</code>, <code>"max"</code> 
+and <code>suffix.overall</code>, each separated by a full stop. The name of the column with 
+the value of <code>times</code> at which the maximum occurred will be the result of 
+concatenating the <code>responses4overall.max</code>, <code>"max"</code> and the value of <code>times</code>,  
+each separated by a full stop.
+</p>
+</li>
+</ol>
+<p>The <code>data.frame</code> is returned invisibly.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Chris Brien</p>
+
+
+<h3>References</h3>
+
+<p>Brien, C., Jewell, N., Garnett, T., Watts-Williams, S. J., &amp; Berger, B. (2020). Smoothing and extraction of traits in the growth analysis of noninvasive phenotypic data. <em>Plant Methods</em>, <b>16</b>, 36. <a href="https://doi.org/10.1186/s13007-020-00577-6">doi:10.1186/s13007-020-00577-6</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>getTimesSubset</code>, <code>byIndv4Intvl_GRsAvg</code>, 
+<code>byIndv4Intvl_GRsDiff</code>, <code>byIndv4Intvl_WaterUse</code>, <br><code>byIndv_ValueCalc</code>.</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> #Load dat
+ data(tomato.dat)
+
+ #Define DAP constants 
+ DAP.endpts   &lt;- c(18,22,27,33,39,43,51)
+ nDAP.endpts &lt;- length(DAP.endpts)
+ DAP.starts &lt;- DAP.endpts[-nDAP.endpts]
+ DAP.stops   &lt;- DAP.endpts[-1]
+ DAP.segs &lt;- list(c(DAP.endpts[1]-1, 39), 
+                   c(40, DAP.endpts[nDAP.endpts]))
+ #Add PSA rates and smooth PSA, also producing sPSA rates
+ tom.dat &lt;- byIndv4Times_SplinesGRs(data = tomato.dat, 
+                                    response = "PSA", response.smoothed = "sPSA", 
+                                    times = "DAP", rates.method = "differences", 
+                                    smoothing.method = "log", 
+                                    spline.type = "PS", lambda = 1, 
+                                    smoothing.segments = DAP.segs)
+  
+ #Smooth WU
+ tom.dat &lt;- byIndv4Times_SplinesGRs(data = tom.dat, 
+                                    response = "WU", response.smoothed = "sWU",
+                                    rates.method = "none", 
+                                    times = "DAP", 
+                                    smoothing.method = "direct", 
+                                    spline.type = "PS", lambda = 10^(-0.5), 
+                                    smoothing.segments = DAP.segs)
+ 
+ #Extract single-valued traits for each individual
+ indv.cols &lt;- c("Snapshot.ID.Tag", "Lane", "Position", "Block", "Cart", "AMF", "Zn")
+ indv.dat &lt;- subset(tom.dat, subset = DAP == DAP.endpts[1], 
+                    select = indv.cols)
+ indv.dat &lt;- traitExtractFeatures(data = tom.dat, 
+                                  starts.intvl = DAP.starts, stops.intvl = DAP.stops, 
+                                  responses4singletimes = "sPSA", 
+                                  responses4intvl.rates = "sPSA", 
+                                  growth.rates = c("AGR", "RGR"), 
+                                  water.use4intvl.traits = "sWU", 
+                                  responses4water = "sPSA", 
+                                  responses4overall.totals = "sWU",
+                                  responses4overall.max = "sPSA.AGR",
+                                  mergedata = indv.dat)
+</code></pre>
+
+
+</div>

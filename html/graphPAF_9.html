@@ -1,0 +1,141 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>impact_fraction</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>General calculations of impact fractions</h2>
+
+<h3>Description</h3>
+
+<p>General calculations of impact fractions
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">impact_fraction(
+  model,
+  data,
+  new_data,
+  calculation_method = "B",
+  prev = NULL,
+  ci = FALSE,
+  boot_rep = 50,
+  t_vector = NULL,
+  ci_level = 0.95,
+  ci_type = c("norm"),
+  weight_vec = NULL,
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>Either a clogit, glm or coxph fitted model object.  Non-linear effects should be specified via ns(x, df=y), where ns is the natural spline function from the splines library.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A dataframe containing variables used for fitting the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>new_data</code></td>
+<td>
+<p>A dataframe (of the same variables and size as data) representing an alternative distribution of risk factors</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>calculation_method</code></td>
+<td>
+<p>A character either 'B' (Bruzzi) or 'D' (Direct method).  For case control data, the method described in Bruzzi 1985 is recommended.  Bruzzi's method estimates PAF from relative risks and prevalence of exposure to the risk factor.  The Direct method estimates PAF by summing estimated probabilities of disease in the absence of exposure on the individual level</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prev</code></td>
+<td>
+<p>estimated prevalence of disease.  This only needs to be specified if the data source is from a case control study, and the direct method is used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci</code></td>
+<td>
+<p>Logical. If TRUE, a bootstrap confidence interval is computed along with point estimate (default FALSE)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boot_rep</code></td>
+<td>
+<p>Integer.  Number of bootstrap replications (Only necessary to specify if ci=TRUE)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t_vector</code></td>
+<td>
+<p>Numeric.  A vector of times at which to calculate PAF (only specified if model is coxph)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci_level</code></td>
+<td>
+<p>Numeric.  Default 0.95. A number between 0 and 1 specifying the confidence level</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci_type</code></td>
+<td>
+<p>Character.  Default norm.  A vector specifying the types of confidence interval desired.  "norm", "basic", "perc" and "bca" are the available methods</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight_vec</code></td>
+<td>
+<p>An optional vector of inverse sampling weights for survey data (note that variance will not be calculated correctly if sampling isn't independent).  Note that this vector will be ignored if prev is specified, and the weights will be calibrated so that the weighted sample prevalence of disease equals prev.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>A logical indicator for whether extended output is produced when ci=TRUE, default TRUE</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A numeric estimated impact fraction if ci=FALSE, or for survival data a vector of estimated impact corresponding to event times in the data.  If ci=TRUE, estimated impact fractions and other information are bundled into an object of class IF_summary.
+</p>
+
+
+<h3>References</h3>
+
+<p>Bruzzi, P., Green, S.B., Byar, D.P., Brinton, L.A. and Schairer, C., 1985. Estimating the population attributable risk for multiple risk factors using case-control data. American journal of epidemiology, 122(5), pp.904-914
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(splines)
+library(survival)
+new_data &lt;- stroke_reduced
+N &lt;- nrow(new_data)
+inactive_patients &lt;- (1:N)[stroke_reduced$exercise==1]
+N_inactive &lt;- sum(stroke_reduced$exercise)
+newly_active_patients &lt;- inactive_patients[sample(1:N_inactive,0.2*N_inactive)]
+new_data$exercise[newly_active_patients] &lt;- 0
+model_exercise &lt;- clogit(formula = case ~ age + education +exercise +
+ns(diet, df = 3) + smoking + alcohol + stress + ns(lipids,df = 3) +
+ns(waist_hip_ratio, df = 3) + high_blood_pressure +strata(strata),
+data=stroke_reduced)
+impact_fraction(model=model_exercise,stroke_reduced,new_data,
+calculation_method = "B")
+</code></pre>
+
+
+</div>

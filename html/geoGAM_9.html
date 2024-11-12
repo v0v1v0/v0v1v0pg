@@ -1,0 +1,228 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.geoGAM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Prediction from fitted geoGAM model
+</h2>
+
+<h3>Description</h3>
+
+<p>Takes a fitted <code>geoGAM</code> object and produces point predictions for a new set of covariate values. If no new data is provided fitted values are returned. Centering and scaling is applied with the same parameters as for the calibration <code>data</code> set given to <code>geoGAM</code>. Factor levels are aggregated according to the final model fit.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'geoGAM'
+predict(object, newdata,
+        type = c("response", "link", "probs", "class"),
+        back.transform = c("none", "log", "sqrt"),
+        threshold = 0.5, se.fit = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>an object of class <code>geoGAM</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>An optional data frame in which to look for variables with which to predict. If omitted, the fitted values are used. If newdata is provided then it should contain all the variables needed for prediction: a warning is generated if not. Factors aggregated by the function <code>geoGAM</code> will be aggregated in the same way for prediction within this function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Type of prediction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>back.transform</code></td>
+<td>
+<p>Should to <code>log</code> or <code>sqrt</code> transformed responses unbiased back transformation be applied? Default is <code>none</code>. Ignored for categorical responses.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threshold</code></td>
+<td>
+<p> Ignored for <code>type = c("response", "link", "probs")</code> and for <code>type = "class"</code> for responses with more than two levels.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.fit</code></td>
+<td>
+<p>logical. Default is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments to <code>predict()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Returns point predictions for new locations <code class="reqn">s</code> from linear and smooth trends <code class="reqn">\hat f(\mathbf{x},s)</code> estimated
+by penalized least squares geoGAM by calling the function <code>predict.gam</code>.
+</p>
+<p><strong>Back transformation of log and sqrt</strong>
+</p>
+<p>For lognormal responses (<code>back.transform = 'log'</code>) in full analogy to lognormal kriging (<cite>Cressie-2006</cite>, Eq. 20) the predictions are backtransformed by
+
+</p>
+<p style="text-align: center;"><code class="reqn">
+	\mathrm{E}[ Y(\mathbf{s})\,|\,\mathbf{x}] = \exp\left(~ \hat
+	f(\mathbf{x}(\mathbf{s})) + \frac{1}{2} \hat \sigma^2 -
+	\frac{1}{2} \mbox{Var}[ \hat
+	f(\mathbf{x}(\mathbf{s}) ] \right)
+	</code>
+</p>
+
+
+<p>with <code class="reqn">\hat f(\mathbf{x}(\mathbf{s}))</code> being the prediction of the log-transformed response,
+<code class="reqn">\hat \sigma^2</code> the estimated residual variance of the final <code>geoGAM</code> fit (see <code>predict.gam</code> with <code>se.fit=TRUE</code>) and
+<code class="reqn">\mbox{Var}[ \hat f(\mathbf{x}(\mathbf{s}) ) ]</code> the variance of <code class="reqn">\hat f(\mathbf{x}(\mathbf{s}))</code> as provided again by the final <code>geoGAM</code>.
+</p>
+<p>For responses with square root transformation (<code>back.transform = 'sqrt'</code>) unbiased backtransform is computed by (<cite>Nussbaum et al. 2017b</cite>)
+
+</p>
+<p style="text-align: center;"><code class="reqn">
+\tilde{Y}(s) = \hat{f}(\mathbf{x}(\mathbf{s}))^2 + \hat{\sigma}^2 - Var[ \hat{f}(\mathbf{x}(\mathbf{s}))]
+</code>
+</p>
+
+
+<p>with <code class="reqn">\hat{f}(\mathbf{x}(\mathbf{s}))^2</code> being the prediction of the sqrt-transformed response, <code class="reqn">\hat{\sigma}^2</code> the estimated residual variance of the fitted model and <code class="reqn">Var[ \hat{f}(\mathbf{x}(\mathbf{s}))]</code> the variance of <code class="reqn">\hat{f}(\mathbf{x}(\mathbf{s}))</code> as provided again by <code>geoGAM</code>.
+</p>
+<p><strong>Discretization of probability predictions</strong>
+</p>
+<p>For binary and ordered responses predictions yield
+predicted occurrence probabilities <code class="reqn">\tilde
+	P(Y(\mathbf{s})=\mathbf{r}|\mathbf{x},s)</code> for response classes <code class="reqn">\mathbf{r}</code>.
+</p>
+<p>To obtain binary class predictions a <code>threshold</code> can be given. A threshold of 0.5 (default) maximizes percentage correct of predicted classes. For binary responses of rare events this threshold may not be optimal. Maximizing on e.g. Gilbert Skill Score (GSS, Wilks, 2011, chap. 8) on cross-validation predictions of the final geoGAM might be a better strategy. GSS is excluding the correct predictions of the more abundant class 	and is preferably used in case of unequal distribution of binary responses
+(direct implementation of such a cross validation procedure planed.)
+</p>
+<p>For ordered responses <code>predict</code> with <code>type = 'class'</code> selects the class to which the median of the
+probability distribution over the ordered categories is assigned (<cite>Tutz 2012, p. 475</cite>).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Vector of point predictions for the sites in <code>newdata</code> is returned, with unbiased back transformation applied according to option <code>back.transform</code>.
+</p>
+<p>If <code>se.fit = TRUE</code> then a 2 item list is returned with items <code>fit</code> and <code>se.fit</code> containing predictions and associated standard error estimates as computed by <code>predict.gam</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>M. Nussbaum
+</p>
+
+
+<h3>References</h3>
+
+<p>Cressie, N. A. C., 1993. Statistics for Spatial Data, John Wiley and Sons.
+</p>
+<p>Nussbaum, M., Walthert, L., Fraefel, M., Greiner, L., and Papritz, A.: Mapping of soil properties at high resolution in Switzerland using boosted geoadditive models, SOIL, 3, 191-210, doi:10.5194/soil-3-191-2017, 2017.
+</p>
+<p>Nussbaum, M., Spiess, K., Baltensweiler, A., Grob, U., Keller, A., Greiner, L., Schaepman, M. E., and Papritz, A.: Evaluation of digital soil mapping approaches with large sets of environmental covariates, SOIL, 4, 1-22, doi:10.5194/soil-4-1-2018, 2018.
+</p>
+<p>Tutz, G., 2012. Regression for Categorical Data, Cambridge University Press.
+</p>
+<p>Wilks, D. S., 2011. Statistical Methods in the Atmospheric Sciences, Academic Press.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>geoGAM</code>, <code>gam</code>, <code>predict.gam</code>, <code>summary.geoGAM</code>, <code>plot.geoGAM</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(quakes)
+set.seed(2)
+
+quakes &lt;- quakes[ ss &lt;- sample(1:nrow(quakes), 50), ]
+
+# Artificially split data to create prediction data set
+quakes.pred &lt;- quakes[ -ss, ]
+
+quakes.geogam &lt;- geoGAM(response = "mag",
+                        covariates = c("depth", "stations"),
+                        data = quakes,
+                        max.stop = 5,
+                        cores = 1)
+
+predicted &lt;- predict(quakes.geogam, newdata = quakes.pred, type = "response" )
+
+
+
+
+
+## Use soil data set of soil mapping study area near Berne
+
+data(berne)
+data(berne.grid)
+
+# Split data sets and
+# remove rows with missing values in response and covariates
+
+d.cal &lt;- berne[ berne$dataset == "calibration" &amp; complete.cases(berne), ]
+
+### Model selection for numeric response
+ph10.geogam &lt;- geoGAM(response = "ph.0.10",
+                      covariates = names(d.cal)[14:ncol(d.cal)],
+                      coords = c("x", "y"),
+                      data = d.cal,
+                      seed = 1,
+                      cores = 1)
+
+# Create GRID output with predictions
+sp.grid &lt;- berne.grid[, c("x", "y")]
+
+sp.grid$pred.ph.0.10 &lt;- predict(ph10.geogam, newdata = berne.grid)
+
+if(requireNamespace("raster")){
+
+  require("sp")
+
+  # transform to sp object
+  coordinates(sp.grid) &lt;- ~ x + y
+
+  # assign Swiss CH1903 / LV03 projection
+  proj4string(sp.grid) &lt;- CRS("EPSG:21781")
+
+  # transform to grid
+  gridded(sp.grid) &lt;- TRUE
+
+  plot(sp.grid)
+
+  # optionally save result to GeoTiff
+  # writeRaster(raster(sp.grid, layer = "pred.ph.0.10"),
+  #             filename= "raspH10.tif", datatype = "FLT4S", format ="GTiff")
+
+}
+
+
+
+
+</code></pre>
+
+
+</div>

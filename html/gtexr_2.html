@@ -1,0 +1,169 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>calculate_expression_quantitative_trait_loci</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate Expression Quantitative Trait Loci</h2>
+
+<h3>Description</h3>
+
+<p>Calculate your own eQTLs
+</p>
+
+<ul>
+<li>
+<p> This service calculates the gene-variant association for any given pair of gene and variant, which may or may not be significant.
+</p>
+</li>
+<li>
+<p> This requires as input a GENCODE ID, GTEx variant ID, and tissue site detail ID.
+</p>
+</li>
+</ul>
+<p>By default, the calculation is based on the latest GTEx release.
+</p>
+<p><a href="https://gtexportal.org/api/v2/redoc#tag/Dynamic-Association-Endpoints/operation/calculate_expression_quantitative_trait_loci_api_v2_association_dyneqtl_get">GTEx Portal API documentation</a>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">calculate_expression_quantitative_trait_loci(
+  tissueSiteDetailId,
+  gencodeId,
+  variantId,
+  datasetId = "gtex_v8"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>tissueSiteDetailId</code></td>
+<td>
+<p>String. The ID of the tissue of interest. Can be a
+GTEx specific ID (e.g. "Whole_Blood"; use <code>get_tissue_site_detail()</code>
+to see valid values) or an Ontology ID.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gencodeId</code></td>
+<td>
+<p>String. A Versioned GENCODE ID of a gene, e.g.
+"ENSG00000065613.9".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variantId</code></td>
+<td>
+<p>String. A gtex variant ID.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>datasetId</code></td>
+<td>
+<p>String. Unique identifier of a dataset. Usually includes a
+data source and data release. Options: "gtex_v8", "gtex_snrnaseq_pilot".</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Notes on output:
+</p>
+
+<ul>
+<li>
+<p> Beta and standard error are recorded in columns <code>nes</code> and <code>error</code> respectively (see <a href="https://gtexportal.org/home/faq#nes_beta">GTEx FAQs</a>)
+</p>
+</li>
+<li> <p><code>variantId</code> contains (in order) chromosome, position, reference allele, alternative allele and human genome build separated by underscores. The reference and alternative alleles for "chr1_13550_G_A_b38" for example are "G" and "A" respectively.
+</p>
+</li>
+<li>
+<p> See examples for how to calculate minor and alternative allele frequencies.
+</p>
+</li>
+</ul>
+<p>Notes on input:
+</p>
+
+<ul><li>
+<p> Argument <code>variantId</code> also accepts RSIDs.
+</p>
+</li></ul>
+<h3>Value</h3>
+
+<p>A tibble.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other Dynamic Association Endpoints: 
+<code>calculate_ieqtls()</code>,
+<code>calculate_isqtls()</code>,
+<code>calculate_splicing_quantitative_trait_loci()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# perform request - returns a tibble with a single row
+calculate_expression_quantitative_trait_loci(tissueSiteDetailId = "Whole_Blood",
+                                             gencodeId = "ENSG00000203782.5",
+                                             variantId = "rs79641866")
+
+# unnest list columns with tidyr::unnest()
+calculate_expression_quantitative_trait_loci(tissueSiteDetailId = "Whole_Blood",
+                                             gencodeId = "ENSG00000203782.5",
+                                             variantId = "rs79641866") |&gt;
+  tidyr::unnest(c("data", "genotypes"))
+
+# to calculate minor and alternative allele frequencies
+calculate_expression_quantitative_trait_loci(
+  tissueSiteDetailId = "Liver",
+  gencodeId = "ENSG00000237973.1",
+  variantId = "rs12119111"
+) |&gt;
+ dplyr::bind_rows(.id = "rsid") |&gt;
+
+ tidyr::separate(
+   col = "variantId",
+   into = c(
+     "chromosome",
+     "position",
+     "reference_allele",
+     "alternative_allele",
+     "genome_build"
+   ),
+   sep = "_"
+ ) |&gt;
+
+ # ...then ascertain alternative_allele frequency
+ dplyr::mutate(
+   alt_allele_count = (2 * homoAltCount) + hetCount,
+   total_allele_count = 2 * (homoAltCount + hetCount +  homoRefCount),
+   alternative_allele_frequency = alt_allele_count / total_allele_count
+ ) |&gt;
+
+ dplyr::select(
+   rsid,
+   beta = nes,
+   se = error,
+   pValue,
+   minor_allele_frequency = maf,
+   alternative_allele_frequency,
+   chromosome:genome_build,
+   tissueSiteDetailId
+ )
+
+## End(Not run)
+</code></pre>
+
+
+</div>

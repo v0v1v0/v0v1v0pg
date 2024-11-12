@@ -1,0 +1,159 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemTwoCountry_RealExchangeRateIndex_7_4</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculating Real Exchange Rate Index</h2>
+
+<h3>Description</h3>
+
+<p>Some examples of calculating the real exchange rate index in a two-country economy.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemTwoCountry_RealExchangeRateIndex_7_4(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>A real exchange rate index.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><cite>gemTwoCountry_Bond_7_4</cite>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# es.DFProd is the substitution elasticity between domestic and foreign products.
+makeDstl &lt;- function(es.DFProd = 0.5,
+                     alpha.firm.CHN = 1,
+                     beta.household.CHN = c(0.75, 0.25),
+                     outbound.investment.rate = 0.25) {
+  es.CL &lt;- 0.8 # substitution elasticity between capital and labor
+
+  dst.firm.CHN &lt;- node_new("output",
+    type = "SCES", alpha = alpha.firm.CHN, beta = c(0.75, 0.25), es = es.CL,
+    "lab.CHN", "cap.CHN"
+  )
+
+  dst.household.CHN &lt;- node_new("util",
+    type = "FIN", rate = c(1, outbound.investment.rate),
+    "cc1", "bond.ROW"
+  ) # 0.1 is the amount of foreign investment corresponding to
+  # each unit of cc1 (i.e. composite commodity 1).
+
+  node_set(dst.household.CHN, "cc1",
+    type = "SCES", alpha = 1, beta = beta.household.CHN, es = es.DFProd,
+    "prod.CHN", "prod.ROW"
+  )
+
+  node_plot(dst.household.CHN)
+
+  dst.firm.ROW &lt;- node_new("output",
+    type = "SCES", alpha = 1, beta = c(0.5, 0.5), es = es.CL,
+    "lab.ROW", "cap.ROW"
+  )
+
+  dst.household.ROW &lt;- node_new("util",
+    type = "SCES", alpha = 1, beta = c(0.05, 0.95), es = es.DFProd,
+    "prod.CHN", "prod.ROW"
+  )
+
+  list(dst.firm.CHN, dst.household.CHN, dst.firm.ROW, dst.household.ROW)
+}
+
+dstl &lt;- makeDstl()
+
+SExg &lt;- {
+  tmp &lt;- matrix(NA, 7, 4, TRUE)
+  tmp[2, 2] &lt;- 30 # the supply of lab.CHN
+  tmp[3, 2] &lt;- 10 # the supply of cap.CHN
+  tmp[5, 4] &lt;- 156 # the supply of lab.ROW
+  tmp[6, 4] &lt;- 156 # the supply of cap.ROW
+  tmp[7, 4] &lt;- 8 # the supply of bond.ROW
+  tmp
+}
+
+f &lt;- function(A = dstl,
+              S0Exg = SExg) {
+  sdm2(
+    A = A,
+    names.commodity = c(
+      "prod.CHN", "lab.CHN", "cap.CHN",
+      "prod.ROW", "lab.ROW", "cap.ROW", "bond.ROW"
+    ),
+    names.agent = c(
+      "firm.CHN", "household.CHN",
+      "firm.ROW", "household.ROW"
+    ),
+    B = {
+      tmp &lt;- matrix(0, 7, 4, TRUE)
+      tmp[1, 1] &lt;- tmp[4, 3] &lt;- 1
+      tmp
+    },
+    S0Exg = S0Exg,
+    numeraire = "lab.CHN"
+  )
+}
+
+ge.benchmark &lt;- f()
+
+## real exchange rate index
+reri &lt;- function(ge.new, ge.benchmark) {
+  weight.CHN &lt;- rowSums(ge.benchmark$SV)[c("prod.CHN", "lab.CHN", "cap.CHN")]
+  weight.ROW &lt;- rowSums(ge.benchmark$SV)[c("prod.ROW", "lab.ROW", "cap.ROW")]
+
+  weighted.mean(ge.new$p[c("prod.ROW", "lab.ROW", "cap.ROW")], weight.ROW) /
+    weighted.mean(ge.new$p[c("prod.CHN", "lab.CHN", "cap.CHN")], weight.CHN)
+}
+
+
+## technology progress in CHN
+reri(f(A = makeDstl(es.DFProd = 5, alpha.firm.CHN = 2)), ge.benchmark)
+reri(f(A = makeDstl(es.DFProd = 0.5, alpha.firm.CHN = 2)), ge.benchmark)
+
+## labor supply change in CHN
+SExg.LSC &lt;- SExg
+SExg.LSC[2, 2] &lt;- SExg.LSC[2, 2] * 2
+
+reri(f(A = makeDstl(es.DFProd = 5), S0Exg = SExg.LSC), ge.benchmark)
+
+reri(f(S0Exg = SExg.LSC), ge.benchmark)
+
+## capital accumulation in CHN
+SExg.CA &lt;- SExg
+SExg.CA[3, 2] &lt;- SExg.CA[3, 2] * 3
+
+reri(f(A = makeDstl(es.DFProd = 5), S0Exg = SExg.CA), ge.benchmark)
+
+reri(f(S0Exg = SExg.CA), ge.benchmark)
+
+## preference change in China
+reri(f(A = makeDstl(es.DFProd = 5, beta.household.CHN = c(0.5, 0.5))), ge.benchmark)
+reri(f(A = makeDstl(beta.household.CHN = c(0.5, 0.5))), ge.benchmark)
+
+## outbound-investment-rate change in China
+reri(f(A = makeDstl(es.DFProd = 5, outbound.investment.rate = 0.1)), ge.benchmark)
+reri(f(A = makeDstl(outbound.investment.rate = 0.1)), ge.benchmark)
+
+</code></pre>
+
+
+</div>

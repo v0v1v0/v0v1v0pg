@@ -1,0 +1,129 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GET.variogram</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Variogram and residual variogram with global envelopes</h2>
+
+<h3>Description</h3>
+
+<p>The function accompanies the function <code>variogram</code> with global envelopes
+that are based on permutations of the variable(s) or residuals for which the variogram is calculated.
+Therefore, one can inspect the hypothesis of "no spatial autocorrelation" of the variable or the residuals
+of the fitted model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GET.variogram(
+  object,
+  nsim = 999,
+  data = NULL,
+  ...,
+  GET.args = NULL,
+  savefuns = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class <code>gstat</code> or a <code>variogram.formula</code>.
+In the first case, direct (residual) variograms are calculated for the variable
+defined in object. Only one variable allowed.
+In the second case, a formula defining the response vector and (possible) regressors,
+in case of absence of regressors, use e.g. z~1. See <code>variogram</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>The number of permutations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data frame where the names in formula are to be found. If NULL,
+the data are assumed to be found in the <code>object</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional parameters to be passed to <code>variogram</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GET.args</code></td>
+<td>
+<p>A named list of additional arguments to be passed to <code>global_envelope_test</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>savefuns</code></td>
+<td>
+<p>Logical. If TRUE, then the functions from permutations are saved to the attribute
+simfuns.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(require("sp", quietly=TRUE) &amp; require("gstat", quietly=TRUE)) {
+  # Examples from gstat complemented with global envelopes
+  #-------------------------------------------------------
+  data("meuse")
+  coordinates(meuse) &lt;- ~x+y
+  # topsoil zinc concentration, mg kg-1 soil ("ppm")
+  bubble(meuse, "zinc",
+         col=c("#00ff0088", "#00ff0088"), main="zinc concentrations (ppm)")
+  # Variogram can be calculated as follows by the function variogram of the gstat package.
+  # The function variogram takes a formula as its first argument:
+  # log(zinc)~1 means that we assume a constant trend for the variable log(zinc).
+  lzn.vgm &lt;- variogram(object=log(zinc)~1, data=meuse)
+  plot(lzn.vgm)
+  # Variogram with global envelopes is as easy:
+  lzn.vgm.GET &lt;- GET.variogram(object=log(zinc)~1, data=meuse)
+  
+  plot(lzn.vgm.GET)
+
+  # Instead of the constant mean, denoted by ~1, a mean function can
+  # be specified, e.g. using ~sqrt(dist) as a predictor variable:
+  lznr.vgm &lt;- variogram(log(zinc)~sqrt(dist), meuse)
+  # In this case, the variogram of residuals with respect
+  # to a fitted mean function are shown.
+  plot(lznr.vgm)
+  # The variogram with global envelopes (obtained by permuting the residuals):
+  lznr.vgm.GET &lt;- GET.variogram(object=log(zinc)~sqrt(dist), data=meuse)
+  
+  plot(lznr.vgm.GET)
+
+  # Directional variograms
+  lzn.dir &lt;- variogram(object=log(zinc)~1, data=meuse, alpha=c(0, 45, 90, 135))
+  plot(lzn.dir)
+  # with global envelopes
+  lzn.dir.GET &lt;- GET.variogram(object=log(zinc)~1, data=meuse, alpha=c(0, 45, 90, 135))
+  
+  plot(lzn.dir.GET)
+
+  # Use instead gstat objects
+  g &lt;- gstat(id="ln.zinc", formula=log(zinc)~1, data=meuse)
+  # or: g &lt;- gstat(id="ln.zinc", formula=log(zinc)~sqrt(dist), data=meuse)
+  # The variogram
+  plot(variogram(g))
+  # The variogram with global envelopes:
+  g.GET &lt;- GET.variogram(object=g)
+  
+  plot(g.GET)
+}
+</code></pre>
+
+
+</div>

@@ -1,0 +1,186 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>annotation</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Annotation class and class functions
+</h2>
+
+<h3>Description</h3>
+
+<p>An annotation describes a DNA segment. It has labels attached to
+positions. Each label can be attached to a single position or to a
+range. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">annotation(x1, x2 = NA, text, rot = 0, col = "black")
+as.annotation(df, x2 = NA, rot = 0, col = "black")
+is.annotation(annotation)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x1</code></td>
+<td>
+
+<p>Numeric. A vector giving the first or only position of the
+label. Mandatory. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x2</code></td>
+<td>
+
+<p>Numeric. A vector of the same length as <code>x1</code>. If a row (or the
+whole column is  <code>NA</code>, then the annotation(s) will be attached
+to <code>x0</code>. Else, the annotation will be attached to the range
+between both positions. <code>NA</code> by default.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>text</code></td>
+<td>
+
+<p>Character of the same length as <code>x0</code>. Gives the text of the
+labels. Mandatory.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rot</code></td>
+<td>
+
+<p>Numeric of the same length as <code>x0</code>. Gives the rotation, in
+degrees, of the labels. 0 by default.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col</code></td>
+<td>
+
+<p>Vector of the same length as <code>x0</code>. The color of the
+labels. <code>black</code> by default.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+
+<p>A data frame to convert to an annotation object. Should have at
+least columns <code>x1</code> and <code>text</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>annotation</code></td>
+<td>
+
+<p>An object to test.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>An <code>annotation</code> object is a data frame with columns <code>x0</code>,
+<code>x1</code>, <code>text</code>, <code>col</code> and <code>rot</code>. They give,
+respectively, the first (or only) position, eventually the second
+position, the text, the color and the rotation of the annotation. When
+plotted with <code>plot_gene_map</code>, it will add an annotation row on
+top of the first <code>dna_seg</code>. Labels for which only one position is
+given will be centered on that position. Labels for which two
+positions are given are linked by an horizontal square bracket and the
+label is plotted in the middle of the positions.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>annotation</code> and  <code>as.annotation</code> return an annotation object.
+<code>is.annotation</code> returns a logical.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Lionel Guy
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plot_gene_map</code>, <code>middle</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## loading data
+data(three_genes)
+
+## Calculating middle positions
+mid_pos &lt;- middle(dna_segs[[1]])
+
+# Create first annotation
+annot1 &lt;- annotation(x1=mid_pos, text=dna_segs[[1]]$name)
+plot_gene_map(dna_segs=dna_segs, comparisons=comparisons, annotations=annot1)
+
+## Exploring options
+annot2 &lt;- annotation(x1=c(mid_pos[1], dna_segs[[1]]$end[2]),
+                     x2=c(NA, dna_segs[[1]]$end[3]),
+                     text=c(dna_segs[[1]]$name[1], "region1"),
+                     rot=c(30, 0), col=c("grey", "black"))
+plot_gene_map(dna_segs=dna_segs, comparisons=comparisons,
+              annotations=annot2, annotation_height=1.3)
+
+## Annotations on all the segments
+annots &lt;- lapply(dna_segs, function(x){
+  mid &lt;- middle(x)
+  annot &lt;- annotation(x1=mid, text=x$name, rot=30)
+})
+plot_gene_map(dna_segs=dna_segs, comparisons=comparisons,
+              annotations=annots, annotation_height=1.8, annotation_cex=1)
+
+##
+## Using a bigger dataset from a 4-genome comparison
+##
+data(barto)
+## Adding a tree
+tree &lt;- newick2phylog("(BB:2.5,(BG:1.8,(BH:1,BQ:0.8):1.9):3);")
+## Showing several subsegments
+xlims2 &lt;- list(c(1445000, 1415000, 1380000, 1412000),
+               c(  10000,   45000,   50000,   83000, 90000, 120000),
+               c(  15000,   36000,   90000,  120000, 74000,  98000),
+               c(   5000,    82000))
+## Adding annotations for all genomes, allow segments to be placed out
+## of the longest segment
+annots &lt;- lapply(barto$dna_segs, function(x){
+  mid &lt;- middle(x)
+  annot &lt;- annotation(x1=mid, text=x$name, rot=30)
+  # removing gene names starting with "B" and keeping 1 in 4
+  idx &lt;- grep("^[^B]", annot$text, perl=TRUE)
+  annot[idx[idx %% 4 == 0],] 
+})
+plot_gene_map(barto$dna_segs, barto$comparisons, tree=tree,
+              annotations=annots,
+              xlims=xlims2,
+              limit_to_longest_dna_seg=FALSE,
+              dna_seg_scale=TRUE)
+
+
+</code></pre>
+
+
+</div>

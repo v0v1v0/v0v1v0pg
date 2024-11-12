@@ -1,0 +1,127 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gnfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Goodness of Fit Test for Continuous Distribution Functions</h2>
+
+<h3>Description</h3>
+
+<p>Computes the test statistic and p-value of the Cramer-von Mises and Anderson-Darling test for some continuous distribution functions proposed by Chen and Balakrishnan (1995). In addition to our classic distribution functions here, we calculate the Goodness of Fit (GoF) test to dataset which follows the extreme value distribution function, without remembering the formula of distribution/density functions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gnfit(dat, dist, df = NULL, pr = NULL, threshold = NULL)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dat</code></td>
+<td>
+<p>A numeric vector of data values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist</code></td>
+<td>
+<p>A named distribution function in R, such as "norm", "t", "laplace", "logis", "gev", "gum", "gpd".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>Degrees of freedom (&gt; 2) for Student-t's distribution. This value is set to NULL by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pr</code></td>
+<td>
+<p>An object returned by maximum likelihood estimation of <a href="https://CRAN.R-project.org/package=ismev">gev.fit</a>, <a href="https://CRAN.R-project.org/package=ismev">gum.fit</a> or <a href="https://CRAN.R-project.org/package=ismev">gpd.fit</a>. It is also numeric vector giving the maximum likelihood estimation for the nonstationary model with location, scale and shape parameters for "gev" (generalized extreme value distribution), location and scale parameters in gumbel distribution or scale and shape parameters in case of "gpd" (generalized pareto distribution), resp.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threshold</code></td>
+<td>
+<p>The threshold is a single number. It is allocated by "gpd" with shape and scale parameters.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>To test <code class="reqn">H_0: X_1,\ldots, X_n</code> is a random sample from a continuous distribution with cumulative distribution function <code class="reqn">F(x;\theta)</code>, where the form of <code class="reqn">F</code> is known but <code class="reqn">\theta</code> is unknown. We first esitmate <code class="reqn">\theta</code> by <code class="reqn">\theta^*</code> (for eg. maximum likelihood estimation method). Next, we compute <code class="reqn">v_i=F(x_i,\theta^*)</code>, where the <code class="reqn">x_i</code>'s are in ascending order.
+</p>
+<p>The Cramer-von Mises test statistic is
+</p>
+<p style="text-align: center;"><code class="reqn">W^2=\sum_{i=1}^{n}(u_i-\frac{(2i-1)}{2n})^2+\frac{1}{12n},</code>
+</p>
+
+<p>and
+</p>
+<p style="text-align: center;"><code class="reqn">A^2=-n-\frac{1}{n}\sum_{i=1}^{n}((2i-1)\log(u_i)+(2n+1-2i)\log(1-u_i));</code>
+</p>
+
+<p>where, <code class="reqn">u_i=\Phi((y_i-\bar{y}_i)/s_y)</code>, <code class="reqn">y_i=\Phi^{-1}(v_i)</code>, and <code class="reqn">\Phi</code> is the standard normal CDF and <code class="reqn">\Phi^{-1}</code> its inverse.
+</p>
+<p>Modify <code class="reqn">W^2</code> and <code class="reqn">A^2</code> into </p>
+<p style="text-align: center;"><code class="reqn">W^*=W^2(1+0.5/n),</code>
+</p>
+<p> and  </p>
+<p style="text-align: center;"><code class="reqn">A^*=A^2(1+0.75/n+2.25/n^2).</code>
+</p>
+
+<p>The p-value is computed from the modified statistic <code class="reqn">W^*</code> and <code class="reqn">A^*</code> according to Table 4.9 in Stephens (1986).</p>
+
+
+<h3>Value</h3>
+
+<p>The output is an object of the class "htest" for the Cramer-von Mises and Anderson-Darling statistics corresponding to p-values.</p>
+
+
+<h3>References</h3>
+
+<p>Stephens (1986, ISBN:0824774876)
+</p>
+<p>Chen and Balakrishnan (1995) &lt;http://asq.org/qic/display-item/index.html?item=11407&gt;
+</p>
+<p>Marsaglia (2004) &lt;doi:10.18637/jss.v009.i02&gt;
+</p>
+
+
+<h3>See Also</h3>
+
+<p>The package of <a href="https://CRAN.R-project.org/package=normtest">nortest</a> for performing the Anderson-Darling test for normality. <a href="https://CRAN.R-project.org/package=ADGofTest">ADGofTest</a> implementation of the Anderson-Darling goodness of fit test based on  Marsaglia's (2004).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(rmutil)
+r &lt;- rlaplace(1000, m = 1, s = 2)
+gnfit(r, "laplace")
+
+library(ismev)
+pr &lt;- c(-0.5, 1, 0.2)
+r &lt;- gevq(pr, runif(1000, 0, 1))
+model &lt;- gev.fit(r)$mle
+gnfit(r, "gev", pr = model)
+
+library(ismev)
+r &lt;- gum.q(runif(1000, 0, 1), -0.5, 1)
+n &lt;- length(r)
+time &lt;- matrix(1:n, ncol=1)
+model &lt;- gum.fit(r, ydat=time, mul=1)$mle
+mle&lt;-dim(2)
+mle[1] &lt;- model[1] + model[2] * (n+1)
+mle[2] &lt;- model[3]
+gnfit(r, "gum", pr = mle)
+
+
+</code></pre>
+
+
+</div>

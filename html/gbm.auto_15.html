@@ -1,0 +1,510 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gbm.mapsf</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Maps of predicted abundance from Boosted Regression Tree modelling</h2>
+
+<h3>Description</h3>
+
+<p>Generates maps from the outputs of gbm.step then Gbm.predict.grids, handled automatically within
+gbm.auto but can be run alone, and generates representativeness surfaces from the output of
+gbm.rsb.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gbm.mapsf(
+  predabund = NULL,
+  predabundlon = 2,
+  predabundlat = 1,
+  predabundpreds = 3,
+  myLocation = NULL,
+  trim = TRUE,
+  trimfivepct = FALSE,
+  scale100 = FALSE,
+  gmapsAPI = NULL,
+  mapsource = "google",
+  googlemap = TRUE,
+  maptype = "satellite",
+  darkenproportion = 0,
+  mapzoom = NULL,
+  shape = NULL,
+  expandfactor = 0,
+  colourscale = "viridis",
+  colorscale = NULL,
+  heatcolours = c("white", "yellow", "orange", "red", "brown4"),
+  colournumber = 8,
+  colourscalelimits = NULL,
+  colourscalebreaks = NULL,
+  colourscalelabels = NULL,
+  colourscaleexpand = NULL,
+  studyspecies = "MySpecies",
+  plottitle = paste0("Predicted abundance of ", studyspecies),
+  plotsubtitle = "CPUE",
+  legendtitle = "CPUE",
+  plotcaption = paste0("gbm.auto::gbm.mapsf, ", lubridate::today()),
+  axisxlabel = "Longitude",
+  axisylabel = "Latitude",
+  legendposition = c(0.05, 0.15),
+  fontsize = 12,
+  fontfamily = "Times New Roman",
+  filesavename = paste0(lubridate::today(), "_", studyspecies, "_", legendtitle, ".png"),
+  savedir = tempdir(),
+  receiverlats = NULL,
+  receiverlons = NULL,
+  receivernames = NULL,
+  receiverrange = NULL,
+  recpointscol = "black",
+  recpointsfill = "white",
+  recpointsalpha = 0.5,
+  recpointssize = 1,
+  recpointsshape = 21,
+  recbufcol = "grey75",
+  recbuffill = "grey",
+  recbufalpha = 0.5,
+  reclabcol = "black",
+  reclabfill = NA,
+  reclabnudgex = 0,
+  reclabnudgey = -200,
+  reclabpad = 0,
+  reclabrad = 0.15,
+  reclabbord = 0
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>predabund</code></td>
+<td>
+<p>Predicted abundance data frame produced by gbm.auto (Abundance_Preds_only.csv),
+with Latitude, Longitude, and Predicted Abundance columns. Default NULL. You need to read the csv
+in R if not already present as an object in the environment.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predabundlon</code></td>
+<td>
+<p>Longitude column number. Default 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predabundlat</code></td>
+<td>
+<p>Latitude column number. Default 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predabundpreds</code></td>
+<td>
+<p>Predicted abundance column number, default 3.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>myLocation</code></td>
+<td>
+<p>Location for extents, format c(xmin, ymin, xmax, ymax). Default NULL, extents
+autocreated from data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trim</code></td>
+<td>
+<p>Remove NA &amp; &lt;=0 values and crop to remaining date extents? Default TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trimfivepct</code></td>
+<td>
+<p>Replace anything &lt; 5% of the max value (i.e. &lt; 95% UD contour in home range
+analysis) with NA since it won't be drawn (for movegroup dBBMMs). Default FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale100</code></td>
+<td>
+<p>Scale Predicted Abundance to 100? Default FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gmapsAPI</code></td>
+<td>
+<p>Enter your Google maps API here, quoted character string. Default NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mapsource</code></td>
+<td>
+<p>Source for ggmap::get_map; uses Stamen as fallback if no Google Maps API present
+. Options: "google", "stamen", "gbm.basemap". Default "google". Using "gbm.basemap" requires one
+to have run that functiuon already, and enter its location using the shape paramater below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>googlemap</code></td>
+<td>
+<p>If pulling basemap from Google maps, this sets expansion factors since Google
+Maps tiling zoom setup doesn't align to myLocation extents. Default TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maptype</code></td>
+<td>
+<p>Type of map for ggmap::get_map param maptype. Options: Google mapsource: "terrain",
+"terrain-background", "satellite", "roadmap", "hybrid". Stamen mapsource: "terrain",
+"terrain-background", "terrain-labels", "terrain-lines", "watercolor", "toner", "toner-2010",
+"toner-2011", "toner-background", "toner-hybrid", "toner-labels", "toner-lines", "toner-lite".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>darkenproportion</code></td>
+<td>
+<p>Amount to darken the google/stamen basemap, 0-1. Default 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mapzoom</code></td>
+<td>
+<p>Highest number = zoomed in. Google: 3 (continent) - 21 (building). stamen: 0-18.
+Default 9.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shape</code></td>
+<td>
+<p>If mapsource is "gbm.basemap", enter the full path to gbm.basemaps downloaded map,
+typically Crop_Map.shp, including the .shp. Default NULL. Can also name an existing object in the
+environment, read in with sf::st_read.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expandfactor</code></td>
+<td>
+<p>Extents expansion factor for basemap. default 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colourscale</code></td>
+<td>
+<p>Scale fill colour scheme to use, default "viridis", other option is
+"gradient".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colorscale</code></td>
+<td>
+<p>Scale fill colour scheme to use, default NULL, populating this will overwrite
+colourscale.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>heatcolours</code></td>
+<td>
+<p>Vector of colours if gradient selected for colourscale, defaults to heatmap
+theme.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colournumber</code></td>
+<td>
+<p>Number of colours to spread heatcolours over, if gradient selected for
+colourscale. Default 8.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colourscalelimits</code></td>
+<td>
+<p>Colour scale limits, default NULL, vector of 2, e.g. c(0, 0).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colourscalebreaks</code></td>
+<td>
+<p>Colour scale breaks, default NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colourscalelabels</code></td>
+<td>
+<p>Colour scale labels, default NULL, must match number of breaks.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colourscaleexpand</code></td>
+<td>
+<p>Colour scale expand, default NULL, vector of 2, e.g. c(0, 0).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>studyspecies</code></td>
+<td>
+<p>Name of your study species, appears in plot title and savename. Default
+"MySpecies".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plottitle</code></td>
+<td>
+<p>Title of the resultant plot, default paste0("Predicted abundance of ",
+studyspecies).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plotsubtitle</code></td>
+<td>
+<p>Plot subtitle, default ""CPUE". Can add the n of your individuals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>legendtitle</code></td>
+<td>
+<p>Legend title, default "CPUE".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plotcaption</code></td>
+<td>
+<p>Plot caption, default "gbm.auto::gbm.mapsf" + today's date.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>axisxlabel</code></td>
+<td>
+<p>Default "Longitude".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>axisylabel</code></td>
+<td>
+<p>Default "Latitude".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>legendposition</code></td>
+<td>
+<p>Vector of 2, format c(1,2), Proportional distance of (middle?) of legend
+box from L to R, percent distance from Bottom to Top. Values 0 to 1. Default c(0.05, 0.15).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fontsize</code></td>
+<td>
+<p>Font size, default 12.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fontfamily</code></td>
+<td>
+<p>= Font family, default "Times New Roman".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filesavename</code></td>
+<td>
+<p>File savename, default today's date + studyspecies + legendtitle.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>savedir</code></td>
+<td>
+<p>Save outputs to a temporary directory (default) else change to current directory
+e.g. "/home/me/folder". Do not use getwd() here. No terminal slash. E.g.
+paste0(movegroupsavedir, "Plot/") .</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>receiverlats</code></td>
+<td>
+<p>Vector of latitudes for receivers to be plotted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>receiverlons</code></td>
+<td>
+<p>Vector of longitudes for receivers to be plotted. Same length as receiverlats.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>receivernames</code></td>
+<td>
+<p>Vector of names for receivers to be plotted. Same length as receiverlats.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>receiverrange</code></td>
+<td>
+<p>Single (will be recycled), or vector (same length as receiverlats) of
+detection ranges in metres for receivers to be plotted. If you have a max and a (e.g.) 90 percent
+detection range, probably use max.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recpointscol</code></td>
+<td>
+<p>Colour of receiver centrepoint outlines. Default "black".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recpointsfill</code></td>
+<td>
+<p>Colour of receiver centrepoint fills. Default "white".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recpointsalpha</code></td>
+<td>
+<p>Alpha value of receiver centrepoint fills, 0 (invisible) to 1 (fully
+visible). Default 0.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recpointssize</code></td>
+<td>
+<p>Size of receiver points. Default 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recpointsshape</code></td>
+<td>
+<p>Shape of receiver points, default 21, circle with outline and fill.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recbufcol</code></td>
+<td>
+<p>Colour of the receiver buffer circle outlines. Default "grey75"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recbuffill</code></td>
+<td>
+<p>Colour of the receiver buffer circle fills. Default "grey".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recbufalpha</code></td>
+<td>
+<p>Alpha value of receiver buffer fills, 0 (invisible) to 1 (fully visible).
+Default 0.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reclabcol</code></td>
+<td>
+<p>Receiver label text colour. Default "black".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reclabfill</code></td>
+<td>
+<p>Receiver label fill colour, NA for no fill. Default NA.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reclabnudgex</code></td>
+<td>
+<p>Receiver label offset nudge in X dimension. Default 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reclabnudgey</code></td>
+<td>
+<p>Receiver label offset nudge in Y dimension. Default -200.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reclabpad</code></td>
+<td>
+<p>Receiver label padding in lines. Default 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reclabrad</code></td>
+<td>
+<p>Receiver label radius in lines. Default 0.15.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reclabbord</code></td>
+<td>
+<p>Receiver label border in mm. Default 0.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Error in seq.default(xlim[1], xlim[2], by = byx):wrong sign in 'by' argument
+Check that your lat &amp; long columns are the right way around. Ensure grids (predabund) data are
+gridded, i.e. they are in a regular pattern of same/similar lines of lat/lon, even if they're
+missing sections.
+</p>
+<p>Suggested parameter values:
+z = rsbdf[,"Unrepresentativeness"]
+</p>
+<p>mapmain = "Unrepresentativeness: "
+</p>
+<p>legendtitle = "UnRep 0-1"
+</p>
+
+
+<h4>How to get Google map basemaps</h4>
+
+<p>(from https://www.youtube.com/watch?v=O5cUoVpVUjU):
+</p>
+
+<ol>
+<li>
+<p> Sign up with dev console: a. You must enter credit card details, but won’t be charged if your
+daily API requests stay under the limit. b. Follow the link:
+https://console.cloud.google.com/projectselector2/apis/dashboard?supportedpurview=project c.
+Sign up for Google cloud account (it may auto populate your current gmail), click agree and
+continue. d. Click the navigation email in the top left corner and click on Billing. e. Create a
+billing account – they will NOT auto charge after trial ends. f. Enter information, click on
+'start my free trial'. They may offer a free credit for trying out their service. More pricing
+details: https://mapsplatform.google.com/pricing/ . g. Click “Select a Project” then
+“New project” in the top right corner. h. Enter Project Name, leave Location as is, click
+“Create”. i. You should now see your project name at the top, where the drop-down menu is.
+</p>
+</li>
+<li>
+<p> Enable Maps and Places API: a. Click 'Library' on the left. b. In the search field type “Maps”
+. c. Scroll down, click “Maps Java Script API”. d. Click Enable. e. Click 'Library' again, search
+“Places”, click on “Places API”. f. Click Enable.
+</p>
+</li>
+<li>
+<p> Create Credentials for API  Key: a. Return to 'APIs &amp; Services' page. b. Click on Credentials.
+c. At the top click 'Create Credentials &gt; API Key'. d. API key should pop up with option to copy
+it. e. You can restrict the key if you want by following steps 4 &amp; 5 here:
+https://www.youtube.com/watch?v=O5cUoVpVUjU&amp;t=232s
+</p>
+</li>
+</ol>
+<h3>Value</h3>
+
+<p>Species abundance maps using data provided by gbm.auto, and
+Representativeness Surface Builder maps using data provided by gbm.rsb, to be
+run in a png/par/gbm.map/dev.off sequence.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Simon Dedman, <a href="mailto:simondedman@gmail.com">simondedman@gmail.com</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Not run
+
+</code></pre>
+
+
+</div>

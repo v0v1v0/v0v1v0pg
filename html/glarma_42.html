@@ -1,0 +1,208 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>RobberyConvict</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Court Convictions for Armed Robbery in New South Wales
+</h2>
+
+<h3>Description</h3>
+
+<p>Monthly counts of charges laid and convictions made in Local Courts
+and Higher Court in armed robbery in New South Wales from 1995–2007.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">data(RobberyConvict)</code></pre>
+
+
+<h3>Format</h3>
+
+<p>A data frame containing the following columns:
+</p>
+
+<table>
+<tr>
+<td style="text-align: right;">
+
+  [, 1]</td>
+<td style="text-align: left;"> Date </td>
+<td style="text-align: left;"> Date in month/year format.</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+  [, 2]</td>
+<td style="text-align: left;"> Incpt </td>
+<td style="text-align: left;"> A vector of ones, providing the intercept in the
+  model.</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+  [, 3]</td>
+<td style="text-align: left;"> Trend </td>
+<td style="text-align: left;"> Scaled time trend.</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+  [, 4]</td>
+<td style="text-align: left;"> Step.2001 </td>
+<td style="text-align: left;"> Unit step change from 2001 onwards.</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+  [, 5]</td>
+<td style="text-align: left;"> Trend.2001 </td>
+<td style="text-align: left;"> Change in trend term from 2001 onwards.</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+  [, 6]</td>
+<td style="text-align: left;"> HC.N </td>
+<td style="text-align: left;"> Monthly number of cases for robbery (Higher
+  Court).</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+  [, 7]</td>
+<td style="text-align: left;"> HC.Y </td>
+<td style="text-align: left;"> Monthly number of convictions for robbery
+  (Higher court).</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+  [, 8]</td>
+<td style="text-align: left;"> HC.P </td>
+<td style="text-align: left;"> Proportion of convictions to charges for robbery
+  (Higher court).</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+  [, 9]</td>
+<td style="text-align: left;"> LC.N </td>
+<td style="text-align: left;"> Monthly number of cases for robbery (Lower
+  court).</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+  [, 10]</td>
+<td style="text-align: left;"> LC.Y </td>
+<td style="text-align: left;"> Monthly number of convictions for robbery
+  (Lower court).</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+  [, 11]</td>
+<td style="text-align: left;"> LC.P </td>
+<td style="text-align: left;"> Proportion of convictions to charges for
+  robbery (Lower court).</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+ </td>
+</tr>
+</table>
+<h3>Source</h3>
+
+<p>Dunsmuir, William TM, Tran, Cuong, and Weatherburn, Don (2008)
+<em>Assessing the Impact of Mandatory DNA Testing of Prison Inmates
+in NSW on Clearance, Charge and Conviction Rates for Selected Crime
+Categories.</em>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">### Example with Robbery Convictions
+data(RobberyConvict)
+datalen &lt;- dim(RobberyConvict)[1]
+monthmat &lt;- matrix(0, nrow = datalen, ncol = 12)
+dimnames(monthmat) &lt;- list(NULL, c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                                   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+months &lt;- unique(months(strptime(RobberyConvict$Date, format = "%m/%d/%Y"),
+                        abbreviate=TRUE))
+
+
+for (j in 1:12) {
+  monthmat[months(strptime(RobberyConvict$Date,  "%m/%d/%Y"),
+                  abbreviate = TRUE) == months[j], j] &lt;-1
+}
+
+RobberyConvict &lt;- cbind(rep(1, datalen), RobberyConvict, monthmat)
+rm(monthmat)
+
+## LOWER COURT ROBBERY
+y1 &lt;- RobberyConvict$LC.Y
+n1 &lt;- RobberyConvict$LC.N
+
+Y &lt;- cbind(y1, n1-y1)
+
+glm.LCRobbery &lt;- glm(Y ~ Step.2001 +
+                        I(Feb + Mar + Apr + May + Jun + Jul) +
+                        I(Aug + Sep + Oct + Nov + Dec),
+                     data = RobberyConvict, family = binomial(link = logit),
+                     na.action = na.omit, x = TRUE)
+
+summary(glm.LCRobbery, corr = FALSE)
+
+X &lt;- glm.LCRobbery$x
+
+
+## Newton Raphson
+glarmamod &lt;- glarma(Y, X, phiLags = c(1), type = "Bin", method = "NR",
+                    residuals = "Pearson", maxit = 100, grad = 1e-6)
+glarmamod
+summary(glarmamod)
+
+## LRT, Wald tests.
+likTests(glarmamod)
+
+## Residuals and Fit Plots
+plot.glarma(glarmamod)
+
+
+## HIGHER COURT ROBBERY
+y1 &lt;- RobberyConvict$HC.Y
+n1 &lt;- RobberyConvict$HC.N
+
+Y &lt;- cbind(y1, n1-y1)
+
+glm.HCRobbery &lt;- glm(Y ~ Trend + Trend.2001 +
+                       I(Feb + Mar + Apr + May + Jun) + Dec,
+                     data = RobberyConvict, family = binomial(link = logit),
+                     na.action = na.omit, x = TRUE)
+
+summary(glm.HCRobbery,corr = FALSE)
+
+X &lt;- glm.HCRobbery$x
+
+
+## Newton Raphson
+glarmamod &lt;- glarma(Y, X, phiLags = c(1, 2, 3), type = "Bin", method = "NR",
+                    residuals = "Pearson", maxit = 100, grad = 1e-6)
+glarmamod
+summary(glarmamod)
+
+
+## LRT, Wald tests.
+likTests(glarmamod)
+
+## Residuals and Fit Plots
+plot.glarma(glarmamod)
+</code></pre>
+
+
+</div>

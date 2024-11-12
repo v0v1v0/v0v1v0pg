@@ -1,0 +1,334 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>nph_traj</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate analytic time-to-event trial properties under non-proportional hazards and complex assumptions</h2>
+
+<h3>Description</h3>
+
+<p>This function calculates the expected parameters/outputs/properties for a two-arm Time-To-Event trial under complex assumptions.
+It is designed to work with non-proportional hazards and ought to be able to accommodate any distributional assumptions for
+events, censoring and recruitment, so long as they are correctly detailed in Curve or RCurve objects.<br>
+The function performs power calculations and hence can be used for sample size planning. By creating trajectories of properties
+over time, the function also assists with identifying the optimum assessment time.<br>
+The function uses numerical integration across event, censoring and recruitment functions to estimate observed and expected event numbers.
+From these, it estimates an expected HR, with the same interpretation as that found using Cox regression, using the Pike method.
+The estimated event numbers and HR can be used to calculate power by one of several methods, including the Schoenfeld and Frontier methods.
+A separate, direct, power calculation can also be performed using the log-rank test formula and its Z-distribution.<br>
+To assist sample size finding, the function will also optionally estimate the required sample size to reach a given power
+keeping all variables other than recruitment.<br>
+Expected RMST and landmark analysis properties may also be calculated. This also uses numerical integration techniques.
+Power is also then estimated for such analyses.<br></p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">nph_traj(
+  active_ecurve,
+  control_ecurve,
+  active_dcurve = Blank(),
+  control_dcurve = Blank(),
+  rcurve,
+  max_assessment = 100,
+  landmark = NULL,
+  RMST = NULL,
+  HRbound = 1,
+  alpha1 = 0.025,
+  required_power = NULL,
+  detailed_output = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>active_ecurve</code></td>
+<td>
+<p>Event distribution for the active arm, specified as a Curve object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control_ecurve</code></td>
+<td>
+<p>Event distribution for the control arm, specified as a Curve object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>active_dcurve</code></td>
+<td>
+<p>Dropout/censoring distribution for the active arm, specified as a Curve object. By default, a Blank() object, i.e. no dropout.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control_dcurve</code></td>
+<td>
+<p>Dropout/censoring distribution for the control arm, specified as a Curve object. By default, a Blank() object, i.e. no dropout.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rcurve</code></td>
+<td>
+<p>Recruitment distribution, specified as an RCurve object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_assessment</code></td>
+<td>
+<p>Maximum assessment time to calculate properties up to</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>landmark</code></td>
+<td>
+<p>(Optional) Time in months of landmark analysis, if required. Otherwise NULL (Not calculated; default).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RMST</code></td>
+<td>
+<p>(Optional) Restriction time for RMST analysis in months, if required. Otherwise NULL (Not calculated; default).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>HRbound</code></td>
+<td>
+<p>(Optional) Specify HR value to test landmark significance against. Default is 1 (superiority testing). Values above 1 would be non-inferiority.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha1</code></td>
+<td>
+<p>One-sided alpha required, as a decimal. 0.025 by default. Requires 0 &lt; alpha1 &lt;= 0.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>required_power</code></td>
+<td>
+<p>(Optional) Power required for estimated sample sizes. Otherwise NULL (not calculated; default).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>detailed_output</code></td>
+<td>
+<p>Boolean to require a more detailed output table, including Peto LogHR, expectations of various quantities and alternative power calculations. Default = FALSE (detailed outputs omitted).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a table with one row per assessment time. Table contains both all input parameters as well as the following expected quantities:
+</p>
+
+<ul>
+<li>
+<p>"Time" Time at which the assessment is made
+</p>
+</li>
+<li>
+<p>"Patients" Number of patients expected to be recruited to date
+</p>
+</li>
+<li>
+<p>"Events_Active" Expected number of observed events in active arm
+</p>
+</li>
+<li>
+<p>"Events_Control" Expected number of observed events in control arm
+</p>
+</li>
+<li>
+<p>"Events_Total" Expected number of events across both arms
+</p>
+</li>
+<li>
+<p>"HR" Expected Hazard Ratio (using the Pike method)
+</p>
+</li>
+<li>
+<p>"LogHR" Log of the expected Hazard Ratio
+</p>
+</li>
+<li>
+<p>"LogHR_SE" SE of the log of the expected Hazard Ratio
+</p>
+</li>
+<li>
+<p>"Schoenfeld_Power" Estimated power based on Schoenfeld formula
+</p>
+</li>
+<li>
+<p>"Frontier_Power" Estimated power based on Frontier method, using estimated event ratio at 0.5 power
+</p>
+</li>
+</ul>
+<p>In addition, if the detailed_output argument is set to TRUE, the following additional columns are provided:
+</p>
+
+<ul>
+<li>
+<p>"E_Events_Active" Expected number of expected events in active arm
+</p>
+</li>
+<li>
+<p>"E_Events_Control" Expected number of expected events in control arm
+</p>
+</li>
+<li>
+<p>"HR_CI_Upper" Estimated Upper Bound of the CI for the Hazard Ratio
+</p>
+</li>
+<li>
+<p>"HR_CI_Lower" Estimated Lower Bound of the CI for the Hazard Ratio
+</p>
+</li>
+<li>
+<p>"Peto_LogHR" Expected Log Hazard Ratio using the Peto method
+</p>
+</li>
+<li>
+<p>"Expected_Z" Estimated Z-score based on expected quantities for O, E and V, and log-rank test formula
+</p>
+</li>
+<li>
+<p>"Expected_P" Estimated p-value based on estimated Z-score
+</p>
+</li>
+<li>
+<p>"Log_Rank_Stat" Expected log-rank statistic
+</p>
+</li>
+<li>
+<p>"Variance" Expected variance of LR-statistic by integration of V_function
+</p>
+</li>
+<li>
+<p>"V_Pike_Peto" Expected variance based upon Pike and Peto approximations
+</p>
+</li>
+<li>
+<p>"Event_Ratio" Expected ratio of events between arms; active divided by control
+</p>
+</li>
+<li>
+<p>"Event_Prop_Power" Estimated power based on event proportion method, using event ratio rather than randomisation ratio
+</p>
+</li>
+<li>
+<p>"Z_Power" Estimated power based on expected value of Z
+</p>
+</li>
+</ul>
+<p>If RMST calculations are requested, the following columns are included:
+</p>
+
+<ul>
+<li>
+<p>"RMST_Restrict" Specified RMST restriction time
+</p>
+</li>
+<li>
+<p>"RMST_Active" Expected RMST for active arm
+</p>
+</li>
+<li>
+<p>"RMST_Control" Expected RMST for control arm
+</p>
+</li>
+<li>
+<p>"RMST_Delta" Absolute difference in expected RMSTs between arms (active minus control)
+</p>
+</li>
+<li>
+<p>"RMST_SE" Estimated SE of the RMST delta
+</p>
+</li>
+<li>
+<p>"RMST_Z" Estimated RMST Z score
+</p>
+</li>
+<li>
+<p>"RMST_Failure" Estimated probability of RMST difference being uncomputable for the specified restriction time
+</p>
+</li>
+<li>
+<p>"RMST_Power" Estimated RMST Power
+</p>
+</li>
+</ul>
+<p>If landmark calculations are requested, the following columns are included:
+</p>
+
+<ul>
+<li>
+<p>"LM_Time" Time of landmark analysis
+</p>
+</li>
+<li>
+<p>"LM_Active" Expected Kaplan Meier estimate of active arm at landmark time 
+</p>
+</li>
+<li>
+<p>"LM_Control" Expected Kaplan Meier estimate of control arm at landmark time 
+</p>
+</li>
+<li>
+<p>"LM_Delta" Expected absolute difference in Kaplan Meiers estimates at landmark time (active-control) 
+</p>
+</li>
+<li>
+<p>"LM_A_SE" Estimated Greenwood SE for active arm at landmark time 
+</p>
+</li>
+<li>
+<p>"LM_C_SE" Estimated Greenwood SE for control arm at landmark time 
+</p>
+</li>
+<li>
+<p>"LM_D_SE" Estimated Greenwood SE for delta at landmark time 
+</p>
+</li>
+<li>
+<p>"LM_Z" Estimated landmark analysis Z-score based on Greenwood SE 
+</p>
+</li>
+<li>
+<p>"LM_Power" Estimated landmark analysis power based on Greenwood SE 
+</p>
+</li>
+</ul>
+<p>If a required power is requested, the following column is included:
+</p>
+
+<ul><li>
+<p>"Estimated_SS" Estimated sample size required, keeping constant all parameters other than rate of recruitment and total sample size
+</p>
+</li></ul>
+<h3>Author(s)</h3>
+
+<p>James Bell
+</p>
+
+
+<h3>References</h3>
+
+<p>Bell J, Accurate Sample Size Calculations in Trials with Non-Proportional Hazards, 2018, presentation at PSI Conference.
+<a href="https://www.psiweb.org/docs/default-source/default-document-library/james-bell-slides.pdf?sfvrsn=3324dedb_0">https://www.psiweb.org/docs/default-source/default-document-library/james-bell-slides.pdf?sfvrsn=3324dedb_0</a>
+Bell J, Power Calculations for Time-to-Event Trials Using Predicted Event Proportions, 2019, unpublished.
+Ruehl J, Sample Size Calculation in Time-To-Event Trials with Non-Proportional Hazards Using GESTATE, 2018, BSc thesis at University of Ulm.
+Pike MC, Contribution to discussion in Asymptotically efficient rank invariant test procedures by Peto R and Peto J,
+Journal of the Royal Statistical Society Series A, 135(2), 201-203.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">nph_traj(max_assessment=100,rcurve=LinearR(12,100,100),control_ecurve=Weibull(100,1),
+active_ecurve=Weibull(250,0.8))
+</code></pre>
+
+
+</div>

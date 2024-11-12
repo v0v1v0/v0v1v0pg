@@ -1,0 +1,278 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>graph.flm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Graphical functional GLM</h2>
+
+<h3>Description</h3>
+
+<p>Non-parametric graphical tests of significance in functional general linear model (GLM)
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">graph.flm(
+  nsim,
+  formula.full,
+  formula.reduced,
+  curve_sets,
+  factors = NULL,
+  contrasts = FALSE,
+  lm.args = NULL,
+  GET.args = NULL,
+  mc.cores = 1L,
+  mc.args = NULL,
+  cl = NULL,
+  savefuns = FALSE,
+  fast = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>The number of random permutations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula.full</code></td>
+<td>
+<p>The formula specifying the general linear model,
+see <code>formula</code> in <code>lm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula.reduced</code></td>
+<td>
+<p>The formula of the reduced model with nuisance factors only. This model
+should be nested within the full model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>curve_sets</code></td>
+<td>
+<p>A named list of sets of curves giving the dependent variable (Y), and
+possibly additionally factors whose values vary across the argument values of the functions.
+The dimensions of the elements should match with each other.
+Note that factors that are fixed across the functions can be given in the argument <code>factors</code>.
+Also <code>fdata</code> objects allowed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>factors</code></td>
+<td>
+<p>A data frame of factors. An alternative way to specify factors when they
+are constant for all argument values of the functions. The number of rows of the data frame should be equal
+to the number of curves. Each column should specify the values of a factor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>Logical or NULL. FALSE, TRUE and NULL specify the three test functions
+as described in description part of this help file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lm.args</code></td>
+<td>
+<p>A named list of additional arguments to be passed to <code>lm</code>. See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GET.args</code></td>
+<td>
+<p>A named list of additional arguments to be passed to <code>global_envelope_test</code>,
+e.g. <code>typeone</code> specifies the type of multiple testing control, FWER or FDR.
+See <code>global_envelope_test</code> for the defaults and available options.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.cores</code></td>
+<td>
+<p>The number of cores to use, i.e. at most how many child processes will be run simultaneously.
+Must be at least one, and parallelization requires at least two cores. On a Windows computer mc.cores must be 1
+(no parallelization). For details, see <code>mclapply</code>, for which the argument is passed.
+Parallelization can be used in generating simulations and in calculating the second stage tests.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.args</code></td>
+<td>
+<p>A named list of additional arguments to be passed to <code>mclapply</code>.
+Only relevant if <code>mc.cores</code> is more than 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl</code></td>
+<td>
+<p>Allows parallelization through the use of <code>parLapply</code> (works also
+in Windows), see the argument <code>cl</code> there, and examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>savefuns</code></td>
+<td>
+<p>Logical. If TRUE, then the functions from permutations are saved to the attribute
+simfuns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fast</code></td>
+<td>
+<p>Logical. See details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function <code>graph.flm</code> performs the graphical functional GLM of Mrkvička et al. (2021),
+described also in Section 3.6 of Myllymäki and Mrkvička (2020) (type <code>vignette("GET")</code> in R).
+This is a nonparametric graphical test of significance of a covariate in functional GLM.
+The test is able to find not only if the factor of interest is significant, but also which
+functional domain is responsible for the potential rejection.
+In the case of functional multi-way main effect ANOVA or functional main effect ANCOVA models,
+the test is able to find which groups differ (and where they differ).
+In the case of functional factorial ANOVA or functional factorial ANCOVA models,
+the test is able to find which combination of levels (which interactions) differ (and where they differ).
+The described tests are global envelope tests applied in the context of GLMs.
+The Freedman-Lane algorithm (Freedman and Lane, 1983) is applied to permute the functions
+(to obtain the simulations under the null hypothesis of "no effects");
+consequently, the test approximately achieves the desired significance level.
+</p>
+<p>The specification of the full and reduced formulas is important. The reduced model should be
+nested within the full model. The full model should include in addition to the reduced
+model the interesting factors whose effects are under investigation.
+The implementation to find the coefficients of the interesting factors is based on
+<code>dummy.coef</code> and the restrictions there apply.
+</p>
+<p>The regression coefficients serve as test functions in the graphical functional GLM.
+For a continuous interesting factor, the test function is its regression coefficient across the
+functional domain. For a discrete factor, there are three possibilities that are controlled by
+the arguments <code>contrasts</code>. If <code>contrasts = FALSE</code>, then the test statistic is
+the function/long vector where the coefficients related to all levels of the factor are joined
+together. If <code>contrasts = TRUE</code>, then the differences between the same coefficients are
+considered instead. Given the coefficients in a specific order that is obtained through the use
+of <code>lm</code> and <code>dummy.coef</code>, the differences are taken for couples i and j
+where i &lt; j and reducing j from i (e.g. for three groups 1,2,3, the constrasts are 1-2, 1-3, 2-3).
+If <code>contrasts = NULL</code> the coefficients given by <code>lm</code> are used directly.
+</p>
+<p>There are different versions of the implementation depending on the application.
+Given that the argument <code>fast</code> is TRUE, then
+</p>
+
+<ul>
+<li>
+<p> If all the covariates are continuous or <code>contrasts = NULL</code> and <code>lm.args = NULL</code>
+the regression coefficients are computed using the normal equation approach instead of using <code>lm</code>.
+</p>
+</li>
+<li>
+<p> Otherwise, if all the covariates are constant across the functions, i.e. they can be provided in the
+argument <code>factors</code>, then a linear model is fitted separately by least-squares estimation to
+the data at each argument value of the functions fitting a multiple linear model by <code>lm</code>.
+The possible extra arguments passed in <code>lm.args</code> to <code>lm</code> must be of the form that
+<code>lm</code> accepts for fitting a multiple linear model. In the basic case, no extra arguments are
+needed.
+</p>
+</li>
+<li>
+<p> Otherwise, if some of the covariates vary across the space and there are user specified extra arguments given in
+<code>lm.args</code>, then the implementation fits a linear model at each argument value of the functions using
+<code>lm</code>, which can be rather slow. The arguments <code>lm.args</code> are passed to <code>lm</code>
+for fitting each linear model.
+</p>
+</li>
+</ul>
+<p>By setting <code>fast = FALSE</code>, it is possible to use the slow version (third option)
+for any case. Usually this is not desired.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>global_envelope</code> or <code>combined_global_envelope</code> object,
+which can be printed and plotted directly.
+</p>
+
+
+<h3>References</h3>
+
+<p>Mrkvička, T., Roskovec, T. and Rost, M. (2021) A nonparametric graphical tests of significance in functional GLM. Methodology and Computing in Applied Probability 23, 593-612. doi: 10.1007/s11009-019-09756-y
+</p>
+<p>Myllymäki, M and Mrkvička, T. (2020). GET: Global envelopes in R. arXiv:1911.06583 [stat.ME]. https://doi.org/10.48550/arXiv.1911.06583
+</p>
+<p>Freedman, D., &amp; Lane, D. (1983) A nonstochastic interpretation of reported significance levels. Journal of Business &amp; Economic Statistics, 1(4), 292-298. doi:10.2307/1391660
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data("rimov")
+res &lt;- graph.flm(nsim=19, # Increase the number of simulations for serious analysis!
+  formula.full = Y~Year,
+  formula.reduced = Y~1,
+  curve_sets = list(Y=rimov), factors = data.frame(Year = 1979:2014))
+plot(res)
+
+# Test if there is a change in the slope in 1994,
+# i.e. the full model is T = a + b*year + c*year:Interv,
+# where Interv is a dummy variable indicating the pre-intervention
+# period (coded 0) or the post-intervention period (coded 1)
+Year &lt;- 1979:2014
+res &lt;- graph.flm(nsim = 19, # Increase the number of simulations for serious analysis!
+  formula.full = Y ~ Year + Year:Interv,
+  formula.reduced = Y ~ Year,
+  curve_sets = list(Y=rimov),
+  factors = data.frame(Year = Year,
+                       Interv = factor(c(rep(0,times=1994-1979+1), rep(1,times=2014-1994)),
+                                      levels=0:1)),
+  contrasts = NULL)
+plot(res)
+
+# An example of testing the joint effect of a discrete and a continuous variable
+nsim &lt;- 999
+
+data("GDPtax")
+factors.df &lt;- data.frame(Group = GDPtax$Group, Tax = GDPtax$Profittax)
+res.tax_within_group &lt;- graph.flm(nsim = nsim,
+  formula.full = Y~Group+Tax+Group:Tax,
+  formula.reduced = Y~Group+Tax,
+  curve_sets = list(Y=GDPtax$GDP),
+  factors = factors.df)
+plot(res.tax_within_group)
+
+# Image data examples
+
+data("abide_9002_23")
+iset &lt;- abide_9002_23$curve_set
+
+
+# Testing the discrete factor 'group' with contrasts
+# (Use contrasts = FALSE for 'means'; and for continuous factors)
+res &lt;- graph.flm(nsim = 19, # Increase nsim for serious analysis!
+  formula.full = Y ~ Group + Sex + Age,
+  formula.reduced = Y ~ Sex + Age,
+  curve_sets = list(Y = iset),
+  factors = abide_9002_23[['factors']],
+  contrasts = TRUE,
+  GET.args = list(type = "area"))
+plot(res)
+
+# Examples of modifying 2d plots
+plot(res, sign.col="white") + ggplot2::scale_fill_viridis_c(option="magma")
+plot(res, sign.col="white") + ggplot2::scale_fill_viridis_c(option="magma") +
+  ggplot2::scale_radius(range = 2*c(1, 6))
+plot(res, what=c("obs", "lo", "hi", "lo.sign", "hi.sign"))
+plot(res, what=c("obs", "lo", "hi", "lo.sign", "hi.sign"), sign.type="col")
+</code></pre>
+
+
+</div>

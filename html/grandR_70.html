@@ -1,0 +1,163 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>FitKineticsGeneLogSpaceLinear</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a kinetic model using a linear model.</h2>
+
+<h3>Description</h3>
+
+<p>Fit the standard mass action kinetics model of gene expression using a linear model after log-transforming the observed values
+(i.e. assuming gaussian homoscedastic errors of the logarithmized values) for the given gene.
+The fit takes only old RNA into account and requires proper normalization, but can be performed without assuming steady state for the degradation rate.
+The parameters are fit per Condition.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">FitKineticsGeneLogSpaceLinear(
+  data,
+  gene,
+  slot = DefaultSlot(data),
+  time = Design$dur.4sU,
+  CI.size = 0.95
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A grandR object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gene</code></td>
+<td>
+<p>The gene for which to fit the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>slot</code></td>
+<td>
+<p>The data slot to take expression values from</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>The column in the column annotation table representing the labeling duration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CI.size</code></td>
+<td>
+<p>A number between 0 and 1 representing the size of the confidence interval</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The start of labeling for all samples should be the same experimental time point. The fit gets more precise with multiple samples from multiple
+labeling durations. Also a sample without 4sU (representing time 0) is useful.
+</p>
+<p>The standard mass action kinetics model of gene expression arises from the following differential equation:
+</p>
+<p style="text-align: center;"><code class="reqn">df/dt = s - d  f(t)</code>
+</p>
+
+<p>This model assumes constant synthesis and degradation rates (but not necessarily that the system is in steady state at time 0).
+From the solution of this differential equation, it is straight forward to derive the expected abundance of old and new RNA at time t
+for given parameters s (synthesis rate), d (degradation rate) and f0=f(0) (the abundance at time 0). These equations are implemented in
+<code>f.old.equi</code> (old RNA assuming steady state gene expression, i.e. f0=s/d),
+<code>f.old.nonequi</code> (old RNA without assuming steady state gene expression) and
+<code>f.new</code> (new RNA; whether or not it is steady state does not matter).
+</p>
+<p>This function primarily finds d such that the squared error between the observed values of old and new RNA and their corresponding functions
+is minimized in log space. For that to work, data has to be properly normalized, but this is independent on any steady state assumptions. The synthesis
+rate is computed (under the assumption of steady state) as <code class="reqn">s=f0 \cdot d</code>
+</p>
+
+
+<h3>Value</h3>
+
+<p>A named list containing the model fit:
+</p>
+
+<ul>
+<li>
+<p>data: a data frame containing the observed value used for fitting
+</p>
+</li>
+<li>
+<p>Synthesis: the synthesis rate (in U/h, where U is the unit of the slot)
+</p>
+</li>
+<li>
+<p>Degradation: the degradation rate (in 1/h)
+</p>
+</li>
+<li>
+<p>Half-life: the RNA half-life (in h, always equal to log(2)/degradation-rate
+</p>
+</li>
+<li>
+<p>conf.lower: a vector containing the lower confidence bounds for Synthesis, Degradation and Half-life
+</p>
+</li>
+<li>
+<p>conf.upper: a vector containing the lower confidence bounds for Synthesis, Degradation and Half-life
+</p>
+</li>
+<li>
+<p>f0: The abundance at time 0 (in U)
+</p>
+</li>
+<li>
+<p>logLik: the log likelihood of the model
+</p>
+</li>
+<li>
+<p>rmse: the total root mean square error
+</p>
+</li>
+<li>
+<p>adj.r.squared: adjusted R^2 of the linear model fit
+</p>
+</li>
+<li>
+<p>total: the total sum of all new and old RNA values used for fitting
+</p>
+</li>
+<li>
+<p>type: always "lm"
+</p>
+</li>
+</ul>
+<p>If <code>Condition(data)</code> is not NULL, the return value is a named list (named according to the levels of <code>Condition(data)</code>), each
+element containing such a structure.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>FitKinetics, FitKineticsGeneLeastSquares, FitKineticsGeneNtr
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">sars &lt;- ReadGRAND(system.file("extdata", "sars.tsv.gz", package = "grandR"),
+                  design=c("Condition",Design$dur.4sU,Design$Replicate))
+sars &lt;- Normalize(sars)
+FitKineticsGeneLogSpaceLinear(sars,"SRSF6")   # fit per condition
+
+</code></pre>
+
+
+</div>

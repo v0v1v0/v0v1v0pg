@@ -1,0 +1,284 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>varDT</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Variance approximation with Deville-Tillé (2005) formula</h2>
+
+<h3>Description</h3>
+
+<p><code>varDT</code> estimates the variance of the estimator of a total
+in the case of a balanced sampling design with equal or unequal probabilities 
+using Deville-Tillé (2005) formula. Without balancing variables, it falls back 
+to Deville's (1993) classical approximation. Without balancing variables and 
+with equal probabilities, it falls back to the classical Horvitz-Thompson 
+variance estimator for the total in the case of simple random sampling. 
+Stratification is natively supported.
+</p>
+<p><code>var_srs</code> is a convenience wrapper for the (stratified) simple random
+sampling case.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">varDT(
+  y = NULL,
+  pik,
+  x = NULL,
+  strata = NULL,
+  w = NULL,
+  precalc = NULL,
+  id = NULL
+)
+
+var_srs(y, pik, strata = NULL, w = NULL, precalc = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A (sparse) numerical matrix of the variable(s) whose variance of their total
+is to be estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pik</code></td>
+<td>
+<p>A numerical vector of first-order inclusion probabilities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An optional (sparse) numerical matrix of balancing variable(s).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strata</code></td>
+<td>
+<p>An optional categorical vector (factor or character) when
+variance estimation is to be conducted within strata.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>An optional numerical vector of row weights (see Details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>precalc</code></td>
+<td>
+<p>A list of pre-calculated results (see Details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>A vector of identifiers of the units used in the calculation.
+Useful when <code>precalc = TRUE</code> in order to assess whether the ordering of the
+<code>y</code> data matrix matches the one used at the pre-calculation step.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>varDT</code> aims at being the workhorse of most variance estimation conducted
+with the <code>gustave</code> package. It may be used to estimate the variance
+of the estimator of a total in the case of (stratified) simple random sampling, 
+(stratified) unequal probability sampling and (stratified) balanced sampling. 
+The native integration of stratification based on Matrix::TsparseMatrix allows 
+for significant performance gains compared to higher level vectorizations
+(<code>*apply</code> especially).
+</p>
+<p>Several time-consuming operations (e.g. collinearity-check, matrix
+inversion) can be pre-calculated in order to speed up the estimation at
+execution time. This is determined by the value of the parameters <code>y</code>
+and <code>precalc</code>: </p>
+ <ul>
+<li>
+<p> if <code>y</code> not <code>NULL</code> and
+<code>precalc</code> <code>NULL</code> : on-the-fly calculation (no pre-calculation). 
+</p>
+</li>
+<li>
+<p> if <code>y</code> <code>NULL</code> and <code>precalc</code> <code>NULL</code> :
+pre-calculation whose results are stored in a list of pre-calculated data. 
+</p>
+</li>
+<li>
+<p> if <code>y</code> not <code>NULL</code> and <code>precalc</code> not <code>NULL</code> :
+calculation using the list of pre-calculated data. </p>
+</li>
+</ul>
+<p><code>w</code> is a row weight used at the final summation step. It is useful
+when <code>varDT</code> or <code>var_srs</code> are used on the second stage of a 
+two-stage sampling design applying the Rao (1975) formula.
+</p>
+
+
+<h3>Value</h3>
+
+ <ul>
+<li>
+<p> if <code>y</code> is not <code>NULL</code> (calculation step) : 
+the estimated variances as a numerical vector of size the number of 
+columns of y. </p>
+</li>
+<li>
+<p> if <code>y</code> is <code>NULL</code> (pre-calculation step) : a list 
+containing pre-calculated data.</p>
+</li>
+</ul>
+<h3>Difference with <code>varest</code> from package <code>sampling</code>
+</h3>
+
+<p><code>varDT</code> differs from <code>sampling::varest</code> in several ways: 
+</p>
+ <ul>
+<li>
+<p> The formula implemented in <code>varDT</code> is more general and
+encompasses balanced sampling. </p>
+</li>
+<li>
+<p> Even in its reduced
+form (without balancing variables), the formula implemented in <code>varDT</code>
+slightly differs from the one implemented in <code>sampling::varest</code>.
+Caron (1998, pp. 178-179) compares the two estimators
+(<code>sampling::varest</code> implements V_2, <code>varDT</code> implements V_1). 
+</p>
+</li>
+<li> <p><code>varDT</code> introduces several optimizations: </p>
+ <ul>
+<li>
+<p>matrixwise operations allow to estimate variance on several interest
+variables at once </p>
+</li>
+<li>
+<p> Matrix::TsparseMatrix capability and the native
+integration of stratification yield significant performance gains. </p>
+</li>
+<li>
+<p>the ability to pre-calculate some time-consuming operations speeds up the
+estimation at execution time. </p>
+</li>
+</ul>
+</li>
+<li> <p><code>varDT</code> does not natively
+implements the calibration estimator (i.e. the sampling variance estimator
+that takes into account the effect of calibration). In the context of the
+<code>gustave</code> package, <code>res_cal</code> should be called before 
+<code>varDT</code> in order to achieve the same result.</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Martin Chevalier
+</p>
+
+
+<h3>References</h3>
+
+<p>Caron N. (1998), "Le logiciel Poulpe : aspects méthodologiques", <em>Actes 
+des Journées de méthodologie statistique</em> <a href="http://jms-insee.fr/jms1998s03_1/">http://jms-insee.fr/jms1998s03_1/</a>
+Deville, J.-C. (1993), <em>Estimation de la variance pour les enquêtes en
+deux phases</em>, Manuscript, INSEE, Paris.
+</p>
+<p>Deville, J.-C., Tillé, Y. (2005), "Variance approximation under balanced
+sampling", <em>Journal of Statistical Planning and Inference</em>, 128, issue
+2 569-591
+</p>
+<p>Rao, J.N.K (1975), "Unbiased variance estimation for multistage designs",
+<em>Sankhya</em>, C n°37
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>res_cal</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(sampling)
+set.seed(1)
+
+# Simple random sampling case
+N &lt;- 1000
+n &lt;- 100
+y &lt;- rnorm(N)[as.logical(srswor(n, N))]
+pik &lt;- rep(n/N, n)
+varDT(y, pik)
+sampling::varest(y, pik = pik)
+N^2 * (1 - n/N) * var(y) / n
+
+# Unequal probability sampling case
+N &lt;- 1000
+n &lt;- 100
+pik &lt;- runif(N)
+s &lt;- as.logical(UPsystematic(pik))
+y &lt;- rnorm(N)[s]
+pik &lt;- pik[s]
+varDT(y, pik)
+varest(y, pik = pik)
+# The small difference is expected (see Details).
+
+# Balanced sampling case
+N &lt;- 1000
+n &lt;- 100
+pik &lt;- runif(N)
+x &lt;- matrix(rnorm(N*3), ncol = 3)
+s &lt;- as.logical(samplecube(x, pik))
+y &lt;- rnorm(N)[s]
+pik &lt;- pik[s]
+x &lt;- x[s, ]
+varDT(y, pik, x)
+
+# Balanced sampling case (variable of interest
+# among the balancing variables)
+N &lt;- 1000
+n &lt;- 100
+pik &lt;- runif(N)
+y &lt;- rnorm(N)
+x &lt;- cbind(matrix(rnorm(N*3), ncol = 3), y)
+s &lt;- as.logical(samplecube(x, pik))
+y &lt;- y[s]
+pik &lt;- pik[s]
+x &lt;- x[s, ]
+varDT(y, pik, x)
+# As expected, the total of the variable of interest is perfectly estimated.
+
+# strata argument
+n &lt;- 100
+H &lt;- 2
+pik &lt;- runif(n)
+y &lt;- rnorm(n)
+strata &lt;- letters[sample.int(H, n, replace = TRUE)]
+all.equal(
+ varDT(y, pik, strata = strata),
+ varDT(y[strata == "a"], pik[strata == "a"]) + varDT(y[strata == "b"], pik[strata == "b"])
+)
+
+# precalc argument
+n &lt;- 1000
+H &lt;- 50
+pik &lt;- runif(n)
+y &lt;- rnorm(n)
+strata &lt;- sample.int(H, n, replace = TRUE)
+precalc &lt;- varDT(y = NULL, pik, strata = strata)
+identical(
+ varDT(y, precalc = precalc),
+ varDT(y, pik, strata = strata)
+)
+
+</code></pre>
+
+
+</div>

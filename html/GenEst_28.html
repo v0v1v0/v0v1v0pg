@@ -1,0 +1,179 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>calcSplits</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate the number of fatalities by up to two splitting covariates</h2>
+
+<h3>Description</h3>
+
+<p>Total mortality can be split into sub-categories, according to
+various splitting covariates such as species, visibility class, season, 
+site, unit, etc. Given the carcass search data, estimated mortalities, 
+and splitting covariates, <code>calcSplits()</code> gives the "splits" or 
+summaries the estimated mortalities by levels of the splitting 
+covariates. For example, user may specify <code>"season"</code> and 
+<code>"species"</code> as splitting variables to see estimated mortalities by
+season and species. Input would be arrays of estimated mortalities and
+arrival intervals when <code>ncarc</code> carcass have been discovered and 
+uncertainty in mortality estimates is captured via simulation with 
+<code>nsim</code> simulation draws.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">calcSplits(
+  M,
+  split_CO = NULL,
+  data_CO = NULL,
+  split_SS = NULL,
+  data_SS = NULL,
+  split_time = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p><code>estM</code> object, containing numeric array (ncarc x nsim)
+of estimated mortalities and other pieces</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>split_CO</code></td>
+<td>
+<p>Character vector of names of splitting covariates to be
+found in the <code>data_CO</code> data frame. No more than two <code>split_CO</code> 
+variables are allowed. Use <code>split_CO = NULL</code> if no CO splits are 
+desired.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data_CO</code></td>
+<td>
+<p>data frame that summarizes the carcass search data and must
+include columns specified by the <code>split_CO</code> arg. Each row includes
+search and discovery parameters associated with a single observed 
+carcass. Columns include carcass ID, carcass discovery date, unit, and 
+any number of covariates. <code>data_CO</code> is required if and only if 
+<code>split_CO</code> is non-NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>split_SS</code></td>
+<td>
+<p>Character string giving the name of a splitting covariate 
+in the <code>data_SS</code> list, with <code>data_SS[[split_SS]]</code> describing
+characteristics of the search intervals (e.g., "season"). Note that
+<code>length(data_SS[[split_SS]]</code> must equal 
+<code>length(data_SS$days) - 1</code> because no inference is made about
+carcass arrivals prior to time t = 0, and the "interval" prior to t = 0 
+is not taken as a "search interval." If no <code>split_SS</code> split is 
+desired, use <code>split_SS = NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data_SS</code></td>
+<td>
+<p>Search schedule data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>split_time</code></td>
+<td>
+<p>Numeric vector that defines time intervals for splits.
+Times must be numeric, strictly increasing, and span the monitoring period
+[0, <code>max(data_SS$days)</code>]. If no <code>split_time</code> is desired, use
+<code>split_time = NULL</code>. If <code>split_time</code> is NULL and <code>split_SS</code>
+is not NULL, <code>data_SS</code> is required.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed down</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Arrival intervals (<code>Aj</code>) are given as integers, j, that
+indicate which search interval the given carcass (indexed by row) arrived
+in the given simulation draw (indexed by column). Arrival interval indices
+(j) are relative to indexed carcasses' search schedules.
+</p>
+<p>No more than two splitting variables (<code>split_CO</code>, <code>split_SS</code>, 
+and <code>split_time</code>) in total may be used. <code>split_CO</code> variables
+describe qualitative characteristics of the observed carcasses or where
+they were found. Some examples include searcher (DHD, JPS, MMH), carcass
+size (S, M, L), species, age (fresh/dry or immature/mature), unit,
+visibility class (easy, moderate, difficult), etc.
+</p>
+<p><code>split_SS</code> variables describe characteristics of the search intervals,
+such as season (spring, summer, fall, winter) or treatment
+(pre- or post-minimization). Each search interval is assigned a level of 
+the <code>split_SS</code> variable. For example, for a search schedule with
+5 searches (including a search at t = 0), and the <code>split_SS</code> 
+variable would have values for each of the 4 search intervals. The
+levels of the <code>split_SS</code> must be in contiguous blocks. For example,
+<code>season = c("S", "S", "F", "F")</code> would be acceptable, but
+<code>season = c("S", "F", "S", "F")</code> would not be.
+</p>
+<p><code>split_time</code> variables are numeric vectors that split the monitoring
+period into distinct time intervals. For example,
+<code>split_time = c(0, 30, 60, 90, 120)</code> would split the 120 monitoring
+period into 30-day intervals, and <code>calcSplits()</code> would return 
+mortality estimates for each of the intervals.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>splitFull</code> is returned. If one splitting
+covariate is given, then the output will be an array of estimated
+mortality in each level of the splitting covariate, with one row for each
+covariate level and one column for each simulation draw. If two splitting
+covariates are given, output will be a list of arrays. Each array gives
+the estimated mortalities for one level of the second splitting covariate
+and all levels of the first splitting covariate.
+</p>
+<p>Objects of class <code>splitFull</code> have attributes <code>vars</code> (which gives
+the name of the splitting covariate(s)) and <code>type</code> (which specifies
+whether the covariate(s) are of type <code>split_CO</code>, <code>split_SS</code>, or
+<code>split_time</code>). A summary of a resulting <code>splitFull</code> object
+is returned from the S3 function <code>summary(splits, CL = 0.90, ...)</code>,
+which gives the mean and a 5-number summary for each level of each
+covariate. The 5-number summary includes the alpha/2, 0.25, 0.5, 0.75,
+and 1 - alpha/2 quantiles, where alpha = 1 - CL. A graph summarizing the
+results can be drawn using <code>plot(splits, CL, ...)</code>, which gives
+a graphical representation of the <code>summary</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> 
+  model_SE &lt;- pkm(p ~ 1, k ~ 1, data = wind_RPbat$SE)
+  model_CP &lt;- cpm(l ~ 1, s ~ 1, data = wind_RPbat$CP, dist = "weibull",
+    left = "LastPresent", right = "FirstAbsent")
+  Mhat &lt;- estM(nsim = 1000, data_CO = wind_RPbat$CO, 
+    data_SS = wind_RPbat$SS, data_DWP = wind_RPbat$DWP, 
+    model_SE = model_SE, model_CP = model_CP,
+    unitCol = "Turbine", COdate = "DateFound")
+
+  M_spp &lt;- calcSplits(M = Mhat, split_CO = "Species",
+    data_CO = wind_RPbat$CO)
+  summary(M_spp)
+  plot(M_spp)
+ 
+</code></pre>
+
+
+</div>

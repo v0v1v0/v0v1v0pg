@@ -1,0 +1,149 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fit_KM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit Weibull, Log-Normal or Exponential survival curves to Kaplan Meier estimates</h2>
+
+<h3>Description</h3>
+
+<p>This is a function to fit Weibull and log-normal curves to Survival data in life-table form using non-linear regression.<br>
+By default it fits both, then picks the best fit based on the lowest (un)weighted residual sum of squares.<br>
+Alternatively, just one shape may be fitted, by changing the 'type' argument to either "Weibull" or "Lognormal".
+Weighted or unweighted fitting are possible. In general, weighted fitting using the number at risk as the weights seems to work best.<br>
+This function is primarily used by event_prediction function, but also useful for general KM curve fitting.<br>
+One useful aspect of this is for fitting the 'inverse KM', where drop-outs are events, while events and 'time-outs' are censored.
+This allows for finding a suitable parameterisation for the censoring curve.<br>
+Primary advantage over likelihood-based methods is ability to use aggregated, rather than patient-level data.
+Primary disadvantage is that the covariance matrix is unusable due to strong correlation between the input data points going into the regression.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fit_KM(
+  KMcurve,
+  Survival = "Survival",
+  Time = "Time",
+  type = c("automatic", "Weibull", "Lognormal", "Exponential"),
+  weighting = TRUE,
+  Weights = "Weights",
+  Weight_power = 1,
+  startbeta = 1,
+  startsigma = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>KMcurve</code></td>
+<td>
+<p>The dataframe object containing the survival data in lifetable form</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Survival</code></td>
+<td>
+<p>The column name for the survival function (i.e. the probabilities). Default is "Survival"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Time</code></td>
+<td>
+<p>The column name for the times. Default is "Time"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Type of event curve to fit.Default is "Automatic", fitting both Weibull and Log-normal curves.
+Alternatively accepts "Weibull", "Lognormal" or "Exponential" to force the type.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weighting</code></td>
+<td>
+<p>Boolean for whether to use weighting. Default=TRUE as it greatly improves curve fitting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Weights</code></td>
+<td>
+<p>Name of Weights column. Default="Weights". Optional if weighting=FALSE. Recommended to use number at risk or remaining.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Weight_power</code></td>
+<td>
+<p>Power to raise the weights to. Useful in large trials to give added weight to later points where numbers may still be high. Default=1 (Use weights as specified)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startbeta</code></td>
+<td>
+<p>Starting value for the Weibull beta (shape) parameter to be used in the non-linear regression. Default=1 (exponential).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startsigma</code></td>
+<td>
+<p>Starting value for the Lognormal sigma (sd) parameter to be used in the non-linear regression. Default=1.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a 3-item list providing information needed to define a Curve object:
+</p>
+
+<ul>
+<li>
+<p>"Item 1"The type of Curve object fitted.
+</p>
+</li>
+<li>
+<p>"Item 2"A list of fitted parameters for the curve type.
+</p>
+</li>
+<li>
+<p>"Item 3"A placeholder vector of NAs where the covariance-matrix parameters should be.
+</p>
+</li>
+<li>
+<p>"Item 4"A data frame containing the goodness of fit metrics for each curve type.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>James Bell
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">recruit &lt;- PieceR(matrix(c(rep(1,12),10,15,25,30,45,60,55,50,65,60,55,30),ncol=2),1)
+example_data_short &lt;- simulate_trials(active_ecurve=Weibull(50,0.8),
+control_ecurve=Weibull(50,0.8), rcurve=recruit,assess=10,iterations=1,seed=12345,
+detailed_output=TRUE)
+
+library(survival)
+
+temp1  &lt;- summary(survfit(Surv(example_data_short[,"Time"],1-example_data_short[,"Censored"])~ 1,
+error="greenwood"))
+out1 &lt;- cbind(temp1$time,temp1$n.risk,temp1$surv,temp1$std.err)
+out1 &lt;- rbind(c(0,out1[1,2],1,0),out1)
+colnames(out1) &lt;- c("Time","NAR","Survival","Std.Err")
+x1 &lt;- ceiling(max(out1[,"Time"]))
+example_lifetable &lt;- out1[findInterval(0:x1,out1[,"Time"]),]
+example_lifetable[,"Time"] &lt;- 0:x1
+
+fit_KM(KMcurve=example_lifetable,Survival="Survival",Time="Time",Weights="NAR",type="automatic")
+</code></pre>
+
+
+</div>

@@ -1,0 +1,510 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gwqs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting Weighted Quantile Sum regression models</h2>
+
+<h3>Description</h3>
+
+<p>Fits Weighted Quantile Sum (WQS) regression  (Carrico et al. (2014) <a href="https://doi.org/10.1007/s13253-014-0180-3">doi:10.1007/s13253-014-0180-3</a>),
+a random subset implementation of WQS (Curtin et al. (2019) <a href="https://doi.org/10.1080/03610918.2019.1577971">doi:10.1080/03610918.2019.1577971</a>),
+a repeated holdout validation WQS (Tanner et al. (2019) <a href="https://doi.org/10.1016/j.mex.2019.11.008">doi:10.1016/j.mex.2019.11.008</a>) and a WQS with
+2 indices (Renzetti et al. (2023) <a href="https://doi.org/10.3389/fpubh.2023.1289579">doi:10.3389/fpubh.2023.1289579</a>) for continuous, binomial,
+multinomial, Poisson, quasi-Poisson and negative binomial outcomes.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gwqs(formula, data, na.action, weights, mix_name, stratified, rh = 1, b = 100,
+             b1_pos = TRUE, bint_cont_pos = NULL, bint_cat_pos = NULL, b_constr = FALSE,
+             zero_infl = FALSE, q = 4, validation = 0.6, validation_rows = NULL,
+             family = gaussian, signal = c("t2", "t3", "one", "abst", "expt"),
+             rs = FALSE, n_vars = NULL,
+             zilink = c("logit", "probit", "cloglog", "cauchit", "log"), seed = NULL,
+             wp = NULL, wn = NULL, plan_strategy = "sequential", lambda = 0,
+             optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
+             control = list(trace = FALSE, maxit = 2000, reltol = 1e-9),
+             b1_constr = NULL, ...)
+
+gwqs_multinom(formula, data, na.action, weights, mix_name, stratified, rh = 1, b = 100,
+                      b1_pos = c(TRUE, TRUE), b_constr = FALSE, q = 4,
+                      validation = 0.6, validation_rows = NULL,
+                      signal = c("t2", "t3", "one", "abst", "expt"),
+                      rs = FALSE, n_vars = NULL,
+                      zilink = c("logit", "probit", "cloglog", "cauchit", "log"),
+                      seed = NULL, wp = NULL, wn = NULL, plan_strategy = "sequential",
+                      lambda = 0, optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
+                      control = list(trace = FALSE, maxit = 2000, reltol = 1e-9),
+                      b1_constr = NULL, ...)
+
+gwqsrh(formula, data, na.action, weights, mix_name, stratified, rh = 1, b = 100,
+               b1_pos = TRUE, bint_cont_pos = NULL, bint_cat_pos = NULL, b_constr = FALSE,
+               zero_infl = FALSE, q = 4, validation = 0.6, validation_rows = NULL,
+               family = gaussian, signal = c("t2", "t3", "one", "abst", "expt"),
+               rs = FALSE, n_vars = NULL,
+               zilink = c("logit", "probit", "cloglog", "cauchit", "log"), seed = NULL,
+               wp = NULL, wn = NULL, plan_strategy = "sequential", lambda = 0,
+               optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
+               control = list(trace = FALSE, maxit = 2000, reltol = 1e-9), ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>An object of class <code>formula</code> specifying the relationship to be tested. The <code>wqs</code>
+term must be included in <code>formula</code>, e.g. <code>y ~ wqs + ...</code>. To test for an interaction term with
+a continuous variable <code>a</code> or for a quadratic term we can specify the <code>formula</code> as below:
+<code>y ~ wqs*a + ...</code> and <code>y ~ wqs + I(wqs^2) + ...</code>, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The <code>data.frame</code> containing the variables to be included in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p><code>model.frame</code>. <code>na.omit</code> is the default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>An optional term containing the name of the variable in the dataset representing the weights
+to be used in the fitting process. Should be <code>NULL</code> or the variable name.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mix_name</code></td>
+<td>
+<p>A character vector listing the variables contributing to a mixture effect.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stratified</code></td>
+<td>
+<p>The character name of the variable for which you want to stratify for.
+It has to be a <code>factor</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rh</code></td>
+<td>
+<p>Number of repeated holdout validations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b</code></td>
+<td>
+<p>Number of bootstrap samples used in parameter estimation. No bootstrap will be performed if b = 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b1_pos</code></td>
+<td>
+<p>A logical value that determines whether weights are derived from models where the beta
+values were positive (<code>TRUE</code>) or negative (<code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bint_cont_pos</code></td>
+<td>
+<p>A logical value that determines whether weights are derived from models where the
+beta parameter of the interaction term between the WQS index and a continuous variable were
+positive (<code>TRUE</code>) or negative (<code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bint_cat_pos</code></td>
+<td>
+<p>A logical value or a vector of logical values that determines whether weights are
+derived from models where the slopes of the WQS index for each level (other than the reference one)
+of the interacting categorical variable were positive (<code>TRUE</code>) or negative (<code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_constr</code></td>
+<td>
+<p>A logial value that determines whether to apply positive (if <code>b1_pos = TRUE</code>) or
+negative (if <code>b1_pos = FALSE</code>) constraints in the optimization function for the weight estimation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zero_infl</code></td>
+<td>
+<p>A logical value (<code>TRUE</code> or <code>FALSE</code>) that allows to fit a zero inflated
+model in case <code>family = "poisson"</code> or <code>family = "negbin"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q</code></td>
+<td>
+<p>An <code>integer</code> to specify how mixture variables will be ranked, e.g. in quartiles
+(<code>q = 4</code>), deciles (<code>q = 10</code>), or percentiles (<code>q = 100</code>). If <code>q = NULL</code> then
+the values of the mixture variables are taken (these must be standardized).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>validation</code></td>
+<td>
+<p>Percentage of the dataset to be used to validate the model. If
+<code>validation = 0</code> then the test dataset is used as validation dataset too.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>validation_rows</code></td>
+<td>
+<p>A list of a single (if rh=1) or multiple vectors containing the rows to be
+considered in the validation step. When "validation_rows=NULL" (default) the function randomly choose
+the observations to be considered in the validation step.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A character value that allows to decide for the glm: <code>gaussian</code> for linear regression,
+<code>binomial</code> for logistic regression, <code>poisson</code> for Poisson regression,
+<code>quasipoisson</code> for quasi-Poisson regression, <code>"negbin"</code> for negative binomial regression.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>signal</code></td>
+<td>
+<p>Character identifying the signal function to be used when the average weights
+are estimated. It can take values from <code>"one"</code> to apply the identity, <code>"abst"</code> to apply
+the absolute value of the t-statistic, <code>"t2"</code> to apply the squared value of the t-statistic,
+<code>"expt"</code> to apply the exponential of the t-statistic as signal function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rs</code></td>
+<td>
+<p>A logic value. If <code>rs = FALSE</code> then the bootstrap implementation of WQS is performed.
+If <code>rs = TRUE</code> then the random subset implementation of WQS is applied (see the "Details" and the
+vignette for further information).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_vars</code></td>
+<td>
+<p>The number of mixture components to be included at each random subset step.
+If <code>rs = TRUE</code> and <code>n_vars = NULL</code> then the square root of the number of elements
+in the mixture is taken.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zilink</code></td>
+<td>
+<p>Character specification of link function in the binary zero-inflation model
+(you can choose among <code>"logit", "probit", "cloglog", "cauchit", "log"</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>An <code>integer</code> value to fix the seed, if it is equal to <code>NULL</code> no seed is chosen.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wp, wn</code></td>
+<td>
+<p>An optional set of starting weights for the positive (<code>wp</code>) and negative (<code>wn</code>) directions
+to be passed to the optimization function. The default is <code>wp = NULL, wn = NULL</code> to let the <code>gwqs</code> function
+set the starting values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plan_strategy</code></td>
+<td>
+<p>A character value that allows to choose the evaluation strategies for the
+<code>plan</code> function. You can choose among "sequential", "transparent", "multisession", "multicore",
+"multiprocess", "cluster" and "remote" (see <code>plan</code> help page for more details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>The value of the penalization term used to shrink towards 0 the weights that are not
+truly associated with the outcome (see the "Details" and the vignette for further information).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optim.method</code></td>
+<td>
+<p>A character identifying the method to be used by the <code>optim</code> function
+(you can choose among <code>"BFGS", "Nelder-Mead", "CG", "SANN"</code>, <code>"BFGS"</code> is the default).
+See <code>optim</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>The control list of optimization parameters. See <code>optim</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b1_constr</code></td>
+<td>
+<p>The argument is deprecated, use 'b_constr' instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to be passed to the function</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>gWQS</code> uses the <code>glm</code> function in the <b>stats</b> package to fit the linear, logistic,
+the Poisson and the quasi-Poisson regression, while the <code>glm.nb</code> function from the <b>MASS</b>
+package is used to fit the negative binomial regression respectively. The <code>nlm</code> function from
+the <b>stats</b> package was used to optimize the log-likelihood of the multinomial regression.<br></p>
+<p>The <code>optim</code> optimization function is used to estimate the weights at each
+bootstrap step.<br></p>
+<p>The <code>seed</code> argument specifies a fixed seed through the <code>set.seed</code> function.<br></p>
+<p>The <code>rs</code> term allows to choose the type of methodology between the bootstrap implementation
+(WQSBS) or the random subset implementation (WQSRS) of the WQS. The first method performs <code>b</code>
+bootstrapped samples to estimate the weights while the second creates <code>b</code> randomly-selected
+subset of the total predictor set. For further details please see the vignette
+("How to use gWQS package") and the references below.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>gwqs</code> return the results of the WQS regression as well as many other objects and datasets.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>The object that summarizes the output of the WQS model, reflecting a
+linear, logistic, multinomial, Poisson, quasi-Poisson or negative binomial regression
+depending on how the <code>family</code> parameter was specified.
+The summary function can be used to call and print fit data (not for multinomial regression).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>final_weights</code></td>
+<td>
+<p><code>data.frame</code> containing the final weights associated to each chemical.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conv</code></td>
+<td>
+<p>Indicates whether the solver has converged (0) or not (1 or 2).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bres</code></td>
+<td>
+<p>Matrix of estimated weights, mixture effect parameter estimates and the associated
+standard errors, statistics and p-values estimated for each bootstrap iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wqs</code></td>
+<td>
+<p>Vector containing the wqs index for each subject.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pwqs</code></td>
+<td>
+<p>Vector containing the positive wqs index for each subject.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nwqs</code></td>
+<td>
+<p>Vector containing the negative wqs index for each subject.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>qi</code></td>
+<td>
+<p>List of the cutoffs used to divide in quantiles the variables in the mixture</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bindex</code></td>
+<td>
+<p>List of vectors containing the <code>rownames</code> of the subjects included in each
+bootstrap dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y_wqs_df</code></td>
+<td>
+<p><code>data.frame</code> containing the dependent variable values adjusted for the
+residuals of a fitted model adjusted for covariates (original values when <code>family = binomial</code>
+or <code>"multinomial"</code>) and the wqs index estimated values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>The family specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The matched call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>The formula supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mix_name</code></td>
+<td>
+<p>The vector of variable names used to identify the elements in the mixture.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q</code></td>
+<td>
+<p>The method used to rank varibales included in the mixture.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_levels</code></td>
+<td>
+<p>The number of levels of the of the dependent variable when a multinomial regression is ran.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zero_infl</code></td>
+<td>
+<p>If a zero inflated model was ran (<code>TRUE</code>) or not (<code>FALE</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zilink</code></td>
+<td>
+<p>The chosen link function when a zero inflated model was ran.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dwqs</code></td>
+<td>
+<p>A logical value whether two indices were included (<code>TRUE</code>) in the model or not (<code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>levelnames</code></td>
+<td>
+<p>The name of each level when a multinomial regression is ran.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The data used in the WQS analysis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>objfn_values</code></td>
+<td>
+<p>The vector of the b values of the objective function corresponding to the optima values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optim_messages</code></td>
+<td>
+<p>The vector of character strings giving any additional information returned by the
+optimizer, or NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gwqslist</code></td>
+<td>
+<p>List of the output from the <code>rh</code> WQS models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coefmat</code></td>
+<td>
+<p>Matrix containing the parameter estimates from each repeated holdout WQS model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wmat</code></td>
+<td>
+<p>Matrix containing the weight estimates from each repeated holdout WQS model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rh</code></td>
+<td>
+<p>The number of repeated holdout performed.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Stefano Renzetti, Paul Curtin, Allan C Just, Ghalib Bello, Chris Gennings
+</p>
+
+
+<h3>References</h3>
+
+<p>Carrico C, Gennings C, Wheeler D, Factor-Litvak P. Characterization of a weighted quantile sum
+regression for highly correlated data in a risk analysis setting. J Biol Agricul Environ Stat.
+2014:1-21. ISSN: 1085-7117. <a href="https://doi.org/10.1007/s13253-014-0180-3">doi:10.1007/s13253-014-0180-3</a>.<br></p>
+<p>Curtin P, Kellogg J, Cech N, Gennings C (2021). A random subset implementation of weighted quantile
+sum (WQSRS) regression for analysis of high-dimensional mixtures, Communications in Statistics -
+Simulation and Computation, 50:4, 1119-1134. <a href="https://doi.org/10.1080/03610918.2019.1577971">doi:10.1080/03610918.2019.1577971</a>.<br></p>
+<p>Tanner EM, Bornehag CG, Gennings C. Repeated holdout validation for weighted quantile sum regression.
+MethodsX. 2019 Nov 22;6:2855-2860. <a href="https://doi.org/10.1016/j.mex.2019.11.008">doi:10.1016/j.mex.2019.11.008</a>. PMID: 31871919; PMCID: PMC6911906.<br></p>
+<p>Renzetti S, Gennings C and Calza S (2023) A weighted quantile sum regression with penalized weights
+and two indices. Front Public Health 11:1151821. <a href="https://doi.org/10.3389/fpubh.2023.1151821">doi:10.3389/fpubh.2023.1151821</a>.<br></p>
+
+
+<h3>See Also</h3>
+
+<p>glm, glm.nb, multinom, zeroinfl.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># we save the names of the mixture variables in the variable "toxic_chems"
+toxic_chems = names(wqs_data)[1:34]
+
+# To run a linear model and save the results in the variable "results". This linear model
+# (family = gaussian) will rank/standardize variables in quartiles (q = 4), perform a
+# 40/60 split of the data for training/validation (validation = 0.6), and estimate weights
+# over 2 bootstrap samples (b = 2; in practical applications at least 100 bootstraps
+# should be used). Weights will be derived from mixture effect parameters that are positive
+# (b1_pos = TRUE). A unique seed was specified (seed = 2016) so this model will be
+# reproducible, and plots describing the variable weights and linear relationship will be
+# generated as output (plots = TRUE). In the end tables describing the weights values and
+# the model parameters with the respectively statistics are generated in the plots window
+# (tables = TRUE):
+results = gwqs(yLBX ~ wqs, mix_name = toxic_chems, data = wqs_data, q = 4, validation = 0.6,
+               b = 2, b1_pos = TRUE, b_constr = FALSE, family = gaussian, seed = 2016)
+
+# to test the significance of the covariates
+summary(results)
+
+</code></pre>
+
+
+</div>

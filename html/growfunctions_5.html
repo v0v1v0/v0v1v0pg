@@ -1,0 +1,268 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gen_informative_sample</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generate a finite population and take an informative single or two-stage sample.</h2>
+
+<h3>Description</h3>
+
+<p>Used to compare performance of sample design-weighted and unweighted estimation procedures.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gen_informative_sample(
+  clustering = TRUE,
+  two_stage = FALSE,
+  theta = c(0.2, 0.7, 1),
+  M = 3,
+  theta_star = matrix(c(0.3, 0.3, 0.3, 0.31, 0.72, 2.04, 0.58, 0.83, 1), 3, 3, byrow =
+    TRUE),
+  gp_type = "rq",
+  N = 10000,
+  T = 15,
+  L = 10,
+  R = 8,
+  I = 4,
+  n = 750,
+  noise_to_signal = 0.05,
+  incl_gradient = "medium"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>clustering</code></td>
+<td>
+<p>Boolean input on whether want population generated from clusters of covariance 
+parameters.  Defaults to <code>clustering = FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>two_stage</code></td>
+<td>
+<p>Boolean input on whether want two stage sampling, with first stage defining set
+of <code>L</code> blocks, where membership in blocks determined by quantiles of observation unit
+variance functions.  (They are structured like strata, though they are sub-sampled).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>A numeric vector of global covariance parameters in the case of <code>clustering = FALSE</code>.
+The length, <code>P</code>, of <code>theta</code> must be consistent with the selected <code>gp_type</code>.  
+Defaults to <code>theta = c(0.30.7,1.0)</code> in the case of <code>clustering = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>Scalar input denoting number of clusters to employ if <code>clustering = TRUE</code>. Defaults to
+<code>M = 3</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta_star</code></td>
+<td>
+<p>An <em>P x M</em> matrix of cluster location values associated with the choice of 
+<code>M</code> and the selected <code>gp_type</code>. Defaults to 
+<code>matrix(c(0.3,0.3,0.3,0.31,0.72,2.04,0.58,0.83,1.00),3,3,byrow=TRUE))</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gp_type</code></td>
+<td>
+<p>Input of choice for covariance matrix formulation to be used to generate the functions
+for the <code>N</code> population units.  Choices are <code>c("se","rq")</code>, where <code>"se"</code> denotes
+the squared exponential covariance function and <code>"rq"</code> denotes the rational quadratic.
+Defaults to <code>gp_type = "se"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>A scalar input denoting the number of population units (or establishments).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>T</code></td>
+<td>
+<p>A scalar input denoting the number of time points in each of <code>N</code>, <em>T x 1</em> functions
+that contribute to the <em>N x T</em> population data matrix, <code>y</code>.  Defaults to <code>T = 15</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+<p>A scalar input that denotes the number of blocks in which to assign the population
+units to be sub-sampled in the first stage of sampling.  
+Defaults to <code>L = 10</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>A scalar input that denotes the number of blocks to sample from <code>L  = 10</code> with
+probability proportional to the average variance of member functions in each block.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>I</code></td>
+<td>
+<p>A scalar input denoting the number of strata to form within each block.  Population units
+are divided into equally-sized strata based on variance quantiles. Defaults to <code>I  = 4</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Sample size to be generated.  Both an informative sample under either single
+(<code>two_stage = FALSE</code>) or 2-stage (<code>two_stage = TRUE</code>) sample is taken, along with
+a non-informative, <em>iid</em> sample of the same size (<code>n</code>) from the finite population
+(generated with (<code>clustering = TRUE</code>) or without clustering). Defaults to <code>n = 770</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>noise_to_signal</code></td>
+<td>
+<p>A numeric input in the interval, <code>(0,1)</code>, denoting the ratio of noise
+variance to the average variance of the generated functions, <code>bb_i</code>.  Defaults to 
+<code>noise_to_signal = 0.05</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>incl_gradient</code></td>
+<td>
+<p>A character input on whether stratum probabilities from lowest-to-highest
+is to <code>"high"</code>, in which case they are proportional to the exponential of the
+cluster number.  If set to <code>"medium"</code> , the inclusion probabilities are proportional
+to the square of the cluster number.  Note that population units are assigned to each
+stratum proportional to a progressively increasing quantile variance.  The 
+<code>incl_gradient</code> setting is used for both <code>two_stage = TRUE</code>, in which
+case it is applied to strata within block, as well as <code>two_stage = FALSE</code>,
+in which case a simple stratified random sample is conducted.  Defaults to 
+<code>incl_gradient = "medium"</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list object named <code>dat_sim</code> containing objects related to the generated sample
+finite population, the informative sample and the non-informative, <em>iid</em>, sample. 
+Some important objects, include:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>H</code></td>
+<td>
+<p>A vector of length <code>N</code>, the population size, with cluster assignments
+for each establishment (unit) in <code>1,..M</code> clusters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>map.tot</code></td>
+<td>
+<p>A <code>data.frame</code> object including unit label identifiers
+(under <code>establishment</code>),
+the cluster assignment (if <code>clustering = TRUE</code>), 
+the block (if<code>two_stage = TRUE</code>) and stratum assignments 
+and the sample inclusion probabilities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>map.obs</code></td>
+<td>
+<p>A <code>data.frame</code> object configured the same as <code>map.tot</code>, only
+confined to those establishments/units selected into the <em>informative</em>
+sample of size <code>n</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>map.iid</code></td>
+<td>
+<p>A <code>data.frame</code> object configured the same as <code>map.tot</code>, only
+confined to those establishments/units selected into the <em>non-informative</em>,
+iid sample of size <code>n</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>(y,bb)</code></td>
+<td>
+<p><em>N x T</em> <code>matrix</code> objects containing data responses and de-noised '
+functions, respectively, for each of the <code>N</code> population units. The order
+of the <code>N</code> units is consistent with <code>map</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>(y_obs,bb_obs)</code></td>
+<td>
+<p><em>N x T</em> <code>matrix</code> objects containing observed responses and de-noised '
+functions, respectively, for each of the <code>n</code> units sampled under an
+informative sampling design. The order of the <code>n</code> units is consistent
+with <code>map_obs</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>(y_iid,bb_iid)</code></td>
+<td>
+<p><em>N x T</em> <code>matrix</code> objects containing observed responses and de-noised '
+functions, respectively, for each of the <code>n</code> units sampled under a
+non-informative / iid sampling design. The order of the <code>n</code> units is consistent
+with <code>map_iid</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Terrance Savitsky <a href="mailto:tds151@gmail.com">tds151@gmail.com</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gpdpgrow</code>, <code>gmrfdpgrow</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+library(growfunctions)
+## use gen_informative_sample() to generate an 
+## N X T population drawn from a dependent GP
+## By default, 3 clusters are used to generate 
+## the population.
+## A single stage stratified random sample of size n 
+## is drawn from the population using I = 4 strata. 
+## The resulting sample is informative in that the 
+## distribution for this sample is
+## different from the population from which 
+## it was drawn because the strata inclusion
+## probabilities are proportional to a feature 
+## of the response, y (in the case, the variance.
+## The stratified random sample over-samples 
+## large variance strata).
+## (The user may also select a 2-stage 
+## sample with the first stage
+## sampling "blocks" of the population and 
+## the second stage sampling strata within blocks). 
+dat_sim        &lt;- gen_informative_sample(N = 10000, 
+                                n = 500, T = 10,
+                                noise_to_signal = 0.1)
+
+## extract n x T observed sample under informative
+## stratified sampling design.
+y_obs                       &lt;- dat_sim$y_obs
+T                           &lt;- ncol(y_obs)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

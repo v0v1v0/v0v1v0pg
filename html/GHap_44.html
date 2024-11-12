@@ -1,0 +1,407 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ghap.varblup</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Convert BLUP of individuals into BLUP of variants
+</h2>
+
+<h3>Description</h3>
+
+<p>Given genomic estimated breeding values (GEBVs), compute Best Linear Unbiased Predictor (BLUP) solutions for variant effects.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ghap.varblup(object, gebv, covmat, type = 1,
+             only.active.variants = TRUE,
+             weights = NULL, tol = 1e-12,
+             vcp = NULL, errormat = NULL, 
+             errorname = "", nlambda = 1000,
+             ncores = 1, verbose = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+
+<p>A valid GHap object (phase, haplo or plink).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gebv</code></td>
+<td>
+
+<p>A named vector of genomic estimated breeding values.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covmat</code></td>
+<td>
+
+<p>An additive genomic relationship matrix, such as obtained with type=1 or type=2 in the <code>ghap.kinship</code> function. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+
+<p>A numeric value indicating the type of relationship matrix (see details in the <code>ghap.kinship</code> function).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>only.active.variants</code></td>
+<td>
+
+<p>A logical value specifying whether only active variants should be included in the calculations (default = TRUE).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+
+<p>A numeric vector providing variant-specific weights.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+
+<p>A numeric value specifying the scalar to add to the diagonal of the relationship matrix it is not inversible (default = 1e-10).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcp</code></td>
+<td>
+
+<p>A numeric value for the variance in GEBVs.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>errormat</code></td>
+<td>
+
+<p>A square error matrix for GEBVs. This matrix can be obtained with argument extras = "LHSi" in the <code>ghap.lmm</code> function. If provided, calculation of standard errors and test statistics for the variants is activated.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>errorname</code></td>
+<td>
+
+<p>The name used for the random effect representing GEBVs in the <code>ghap.lmm</code> function. If the error matrix was imported from somewhere else, this argument can be ignored provided that the names in the error matrix match the ones in the relationship matrix.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nlambda</code></td>
+<td>
+
+<p>A numeric value for the number of variants to be used in the estimation of the inflation factor (default = 1000).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+
+<p>A numeric value specifying the number of cores to be used in parallel computations (default = 1).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>A logical value specifying whether log messages should be printed (default = TRUE).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function uses the equation:
+</p>
+<p style="text-align: center;"><code class="reqn">\mathbf{\hat{a}} = q\mathbf{DM}^T\mathbf{K}^{-1}\mathbf{\hat{u}}</code>
+</p>
+
+<p>where <code class="reqn">\mathbf{M}</code> is the <em>n</em> x <em>m</em> matrix of genotypes, where <em>n</em> is the number of individuals and <em>m</em> is the number of variants (i.e, markers or HapAlleles), <code class="reqn">\mathbf{D} = diag(d_i)</code> with <code class="reqn">d_i</code> being the weight of variant <em>i</em> (default <code class="reqn">d_i = 1</code>), <code class="reqn">q</code> is the inverse weighted sum of variances in the columns of <code class="reqn">\mathbf{M}</code>, <code class="reqn">\mathbf{K}</code> is the additive genomic relationship matrix and <code class="reqn">\hat{u}</code> is the vector of GEBVs.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function returns a data frame with results from the genome-wide conversion of BLUP of individuals into BLUP of variants. If a GHap.haplo object is used, the first columns of the data frame will be:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>CHR</code></td>
+<td>
+
+<p>Chromosome name.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BLOCK</code></td>
+<td>
+
+<p>Block alias.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BP1</code></td>
+<td>
+
+<p>Block start position.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BP2</code></td>
+<td>
+
+<p>Block end position.
+</p>
+</td>
+</tr>
+</table>
+<p>For GHap.phase and GHap.plink objects, the first columns will be:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>CHR</code></td>
+<td>
+
+<p>Chromosome name.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MARKER</code></td>
+<td>
+
+<p>Block start position.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BP</code></td>
+<td>
+
+<p>Block end position.
+</p>
+</td>
+</tr>
+</table>
+<p>The remaining columns of the data frame will be equal for any class of GHap objects:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>ALLELE</code></td>
+<td>
+
+<p>Identity of the counted (A1 or haplotype) allele.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FREQ</code></td>
+<td>
+
+<p>Frequency of the allele.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SCORE</code></td>
+<td>
+
+<p>Estimated BLUP of the allele.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>VAR</code></td>
+<td>
+
+<p>Variance in allele-specific breeding values.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pVAR</code></td>
+<td>
+
+<p>Proportion of variance explained by the allele.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CENTER</code></td>
+<td>
+
+<p>Average genotype (meaningful only for predictions with <code>ghap.profile</code>).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SCALE</code></td>
+<td>
+
+<p>A constant set to 1 (meaningful only for predictions with <code>ghap.profile</code>).
+</p>
+</td>
+</tr>
+</table>
+<p>If an error matrix for GEBVs is provided through the 'errormat' argument, the following additional columns are included in the data frame:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>SE</code></td>
+<td>
+
+<p>Standard error for the BLUP of the allele.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CHISQ.EXP</code></td>
+<td>
+
+<p>Expected values for the test statistics.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CHISQ.OBS</code></td>
+<td>
+
+<p>Observed value for the test statistics.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CHISQ.GC</code></td>
+<td>
+
+<p>Test statistics scaled by the inflation factor (Genomic Control). Inflation is computed through regression of observed quantiles onto expected quantiles. In order to avoid overestimation by variants rejecting the null hypothesis, a random sample of variants (with size controled via the nlambda argument) is taken within three standard deviations from the mean of the distribution of test statistics.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LOGP</code></td>
+<td>
+
+<p>log10(1/P) or -log10(P) for the BLUP of the allele.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LOGP.GC</code></td>
+<td>
+
+<p>log10(1/P) or -log10(P) for the BLUP of the allele (scaled by the inflation factor).
+</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Yuri Tani Utsunomiya &lt;ytutsunomiya@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>I. Stranden and D.J. Garrick. Technical note: derivation of equivalent computing algorithms for genomic predictions and reliabilities of animal merit. J Dairy Sci. 2009. 92:2971-2975.
+</p>
+<p>J.L.G. Duarte et al. Rapid screening for phenotype-genotype associations by linear transformations of genomic evaluations. BMC Bioinformatics. 2014, 15:246.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# #### DO NOT RUN IF NOT NECESSARY ###
+# 
+# # Copy plink data in the current working directory
+# exfiles &lt;- ghap.makefile(dataset = "example",
+#                          format = "plink",
+#                          verbose = TRUE)
+# file.copy(from = exfiles, to = "./")
+# 
+# # Copy metadata in the current working directory
+# exfiles &lt;- ghap.makefile(dataset = "example",
+#                          format = "meta",
+#                          verbose = TRUE)
+# file.copy(from = exfiles, to = "./")
+# 
+# # Load plink data
+# plink &lt;- ghap.loadplink("example")
+# 
+# # Load phenotype and pedigree data
+# df &lt;- read.table(file = "example.phenotypes", header=T)
+# 
+# ### RUN ###
+# 
+# # Subset individuals from the pure1 population
+# pure1 &lt;- plink$id[which(plink$pop == "Pure1")]
+# plink &lt;- ghap.subset(object = plink, ids = pure1, variants = plink$marker)
+# 
+# # Subset markers with MAF &gt; 0.05
+# freq &lt;- ghap.freq(plink)
+# mkr &lt;- names(freq)[which(freq &gt; 0.05)]
+# plink &lt;- ghap.subset(object = plink, ids = pure1, variants = mkr)
+# 
+# # Compute genomic relationship matrix
+# # Induce sparsity to help with matrix inversion
+# K &lt;- ghap.kinship(plink, sparsity = 0.01)
+# 
+# # Fit mixed model
+# df$rep &lt;- df$id
+# model &lt;- ghap.lmm(formula = pheno ~ 1 + (1|id) + (1|rep),
+#                   data = df,
+#                   covmat = list(id = K, rep = NULL),
+#                   extras = "LHSi")
+# refblup &lt;- model$random$id$Estimate
+# names(refblup) &lt;- rownames(model$random$id)
+# 
+# # Convert blup of individuals into blup of variants
+# mkrblup &lt;- ghap.varblup(object = plink, gebv = refblup,
+#                         covmat = K, vcp = model$vcp$Estimate[1],
+#                         errormat = model$extras$LHSi, errorname = "id")
+# 
+# # Build GEBVs from variant effects and compare predictions
+# gebv &lt;- ghap.profile(object = plink, score = mkrblup)
+# plot(gebv$SCORE, refblup); abline(0,1)
+# 
+# # Compare variant solutions with regular GWAS
+# gwas &lt;- ghap.assoc(object = plink,
+#                    formula = pheno ~ 1 + (1|id) + (1|rep),
+#                    data = df,
+#                    covmat = list(id = K, rep = NULL))
+# ghap.manhattan(data = gwas, chr = "CHR", bp = "BP", y = "LOGP")
+# ghap.manhattan(data = mkrblup, chr = "CHR", bp = "BP", y = "LOGP")
+# plot(mkrblup$LOGP, gwas$LOGP); abline(0,1)
+
+</code></pre>
+
+
+</div>

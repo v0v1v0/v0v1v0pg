@@ -1,0 +1,80 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GHS_est</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>GHS MCMC sampler using data-augmented block (column-wise) Gibbs sampler</h2>
+
+<h3>Description</h3>
+
+<p><code>GHS_est</code> returns a tuple whose first element is a p by p by nmc matrices of saved posterior samples of precision matrix, second element is the p*(p-1)/2 by nmc vector of saved samples of the local tuning parameter and the third element is the 1 by nmc vector of saved samples of the global tuning parameter
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GHS_est(S, n, burnin, nmc)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>S</code></td>
+<td>
+<p>sample covariance matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>sample size</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>number of MCMC burnins</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmc</code></td>
+<td>
+<p>number of saved samples</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># This function generates positive definite matrices for testing purposes 
+# with specificied eigenvalues
+Posdef &lt;- function (n,ev)
+{
+  Z &lt;- matrix(ncol=n, rnorm(n^2))
+  decomp &lt;- qr(Z)
+  Q &lt;- qr.Q(decomp)
+  R &lt;- qr.R(decomp)
+  d &lt;- diag(R)
+  ph &lt;- d / abs(d)
+  O &lt;- Q %*% diag(ph)
+  Z &lt;- t(O) %*% diag(ev) %*% O
+  return(Z)
+}
+eig1 &lt;- rep(1,2)
+eig2 &lt;- rep(0.75,3)
+#eig3 &lt;- rep(0.25,3)
+eig_val &lt;- c(eig1,eig2)
+z &lt;- Posdef(5,eig_val)
+Mu &lt;- rep(0,5)
+Sigma &lt;- solve(z)
+Y &lt;- mvrnorm(n=5,mu=Mu,Sigma=Sigma)
+S &lt;- t(Y)%*%Y
+out &lt;- GHS_est(S,50,100,5000)
+est_matrix &lt;- apply(out[[1]],c(1,2),mean)
+image(est_matrix)
+</code></pre>
+
+
+</div>

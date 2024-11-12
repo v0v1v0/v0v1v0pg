@@ -1,0 +1,65 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>AUC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculates the AUC of an ROC curve.</h2>
+
+<h3>Description</h3>
+
+<p>Calculates the area under an ROC curve (AUC).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">AUC(tpfp)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>tpfp</code></td>
+<td>
+<p>A matrix with two columns, the true positive and the false positive rates.</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>A number between 0 and 1, the area under the curve (AUC).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">n &lt;- 40
+p &lt;- 50
+mu &lt;- rep(0, p)
+tol &lt;- 1e-8
+K &lt;- cov_cons(mode="sub", p=p, seed=1, spars=0.2, eig=0.1, subgraphs=10)
+true_edges &lt;- which(abs(K) &gt; tol &amp; diag(p) == 0)
+dm &lt;- 1 + (1-1/(1+4*exp(1)*max(6*log(p)/n, sqrt(6*log(p)/n))))
+set.seed(1)
+domain &lt;- make_domain("R+", p=p)
+x &lt;- tmvtnorm::rtmvnorm(n, mean = mu, sigma = solve(K),
+       lower = rep(0, p), upper = rep(Inf, p), algorithm = "gibbs",
+       burn.in.samples = 100, thinning = 10)
+est &lt;- estimate(x, setting="gaussian", elts=NULL, domain=domain, centered=TRUE,
+         symmetric="symmetric", lambda_length=100, mode="min_pow",
+         param1=1, param2=3, diagonal_multiplier=dm)
+# Apply tp_fp to each estimated edges set for each lambda
+TP_FP &lt;- t(sapply(est$edgess, function(edges){tp_fp(edges, true_edges, p)}))
+old.par &lt;- par(mfrow=c(1,1), mar=c(5,5,5,5))
+auc &lt;- AUC(TP_FP)
+plot(c(), c(),  ylim=c(0,1), xlim=c(0,1), cex.lab=1,
+  main=paste("ROC curve, AUC",round(auc,4)), xlab="False Positives",
+  ylab="True Positives")
+points(TP_FP[,2], TP_FP[,1], type="l")
+points(c(0,1), c(0,1), type = "l", lty = 2)
+par(old.par)
+</code></pre>
+
+
+</div>

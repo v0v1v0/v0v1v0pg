@@ -1,0 +1,160 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>outliers</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Outlier detection for price relatives</h2>
+
+<h3>Description</h3>
+
+<p>Standard cutoff-based methods for detecting outliers with price relatives.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">quartile_method(x, cu = 2.5, cl = cu, a = 0, type = 7)
+
+resistant_fences(x, cu = 2.5, cl = cu, a = 0, type = 7)
+
+robust_z(x, cu = 2.5, cl = cu)
+
+fixed_cutoff(x, cu = 2.5, cl = 1/cu)
+
+tukey_algorithm(x, cu = 2.5, cl = cu, type = 7)
+
+hb_transform(x)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A strictly positive numeric vector of price relatives. These can be
+made with, e.g., <code>back_period()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cu, cl</code></td>
+<td>
+<p>A numeric vector, or something that can be coerced into one,
+giving the upper and lower cutoffs for each element of <code>x</code>. Recycled to the
+same length as <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+<p>A numeric vector, or something that can be coerced into one,
+between 0 and 1 giving the scale factor for the median to establish the
+minimum dispersion between quartiles for each element of <code>x</code>. The default
+does not set a minimum dispersion. Recycled to the same length as <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>See <code>quantile()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Each of these functions constructs an interval of the form <code class="reqn">[b_l(x) -
+c_l \times l(x), b_u(x) + c_u \times u(x)]</code> and assigns a value in <code>x</code> as <code>TRUE</code> if that value does not
+belong to the interval, <code>FALSE</code> otherwise. The methods differ in how
+they construct the values <code class="reqn">b_l(x)</code>, <code class="reqn">b_u(x)</code>,
+<code class="reqn">l(x)</code>, and <code class="reqn">u(x)</code>. Any missing values in <code>x</code> are ignored when
+calculating the cutoffs, but will return <code>NA</code>.
+</p>
+<p>The fixed cutoff method is the simplest, and just uses the interval
+<code class="reqn">[c_l, c_u]</code>.
+</p>
+<p>The quartile method and Tukey algorithm are described in paragraphs 5.113 to
+5.135 of the CPI manual (2020), as well as by Rais (2008) and Hutton (2008).
+The resistant fences method is an alternative to the quartile method, and is
+described by Rais (2008) and Hutton (2008). Quantile-based methods often
+identify price relatives as outliers because the distribution is
+concentrated around 1; setting <code>a &gt; 0</code> puts a floor on the minimum
+dispersion between quantiles as a fraction of the median. See the references
+for more details.
+</p>
+<p>The robust Z-score is the usual method to identify relatives in the
+(asymmetric) tails of the distribution, simply replacing the mean with the
+median, and the standard deviation with the median absolute deviation.
+</p>
+<p>These methods often assume that price relatives are symmetrically
+distributed (if not Gaussian). As the distribution of price relatives often
+has a long right tail, the natural logarithm can be used to transform price
+relative before identifying outliers (sometimes under the assumption that
+price relatives are distributed log-normal). The Hidiroglou-Berthelot
+transformation is another approach, described in the CPI manual (par.
+5.124). (Sometimes the transformed price relatives are multiplied by
+<code class="reqn">\max(p_1, p_0)^u</code>, for some
+<code class="reqn">0 \le u \le 1</code>, so that products with a larger price
+get flagged as outliers (par. 5.128).)
+</p>
+
+
+<h3>Value</h3>
+
+<p>A logical vector, the same length as <code>x</code>, that is <code>TRUE</code> if the
+corresponding element of <code>x</code> is identified as an outlier,
+<code>FALSE</code> otherwise.
+</p>
+
+
+<h3>References</h3>
+
+<p>Hutton, H. (2008). Dynamic outlier detection in price index surveys.
+<em>Proceedings of the Survey Methods Section: Statistical Society of Canada Annual Meeting</em>.
+</p>
+<p>IMF, ILO, Eurostat, UNECE, OECD, and World Bank. (2020).
+<em>Consumer Price Index Manual: Concepts and Methods</em>.
+International Monetary Fund.
+</p>
+<p>Rais, S. (2008). Outlier detection for the Consumer Price Index.
+<em>Proceedings of the Survey Methods Section: Statistical Society of Canada Annual Meeting</em>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>grouped()</code> to make each of these functions operate on grouped data.
+</p>
+<p><code>back_period()</code>/<code>base_period()</code> for a simple utility function to turn prices
+in a table into price relatives.
+</p>
+<p>The <code>HBmethod()</code> function in the <span class="pkg">univOutl</span> package for the
+Hidiroglou-Berthelot method for identifying outliers.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1234)
+
+x &lt;- rlnorm(10)
+
+fixed_cutoff(x)
+robust_z(x)
+quartile_method(x)
+resistant_fences(x) # always identifies fewer outliers than above
+tukey_algorithm(x)
+
+log(x)
+hb_transform(x)
+
+# Works the same for grouped data
+
+f &lt;- c("a", "b", "a", "a", "b", "b", "b", "a", "a", "b")
+grouped(quartile_method)(x, group = f)
+
+</code></pre>
+
+
+</div>

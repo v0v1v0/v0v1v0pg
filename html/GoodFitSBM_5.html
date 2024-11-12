@@ -1,0 +1,108 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>graphchi_BetaSBM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Computation of the chi-square test statistic for goodness-of-fit, under beta-SBM</h2>
+
+<h3>Description</h3>
+
+<p><code>graphchi_BetaSBM</code> obtains the value of the chi-square test statistic required for the goodness-of-fit of a beta-SBM (Karwa et al. (2023))
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">graphchi_BetaSBM(G, C, p_mle)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+<p>an igraph object which is an undirected graph with no self loop</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>C</code></td>
+<td>
+<p>a positive integer vector of size n for block assignments of each node; from 1 to K (no of blocks)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_mle</code></td>
+<td>
+<p>a matrix with the MLE estimates of the edge probabilities</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A numeric value
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>teststat_val</code></td>
+<td>
+<p>The value of the chi-square test statistic</p>
+</td>
+</tr></table>
+<h3>See Also</h3>
+
+<p><code>goftest_BetaSBM()</code> performs the goodness-of-fit test for the beta-SBM, where the values of the chi-square test statistics are required
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">RNGkind(sample.kind = "Rounding")
+set.seed(1729)
+
+# We model a network with 3 even classes
+n1 = 2
+n2 = 2
+n3 = 2
+
+# Generating block assignments for each of the nodes
+n = n1 + n2 + n3
+class = rep(c(1, 2, 3), c(n1, n2, n3))
+
+# Generating the adjacency matrix of the network
+# Generate the matrix of connection probabilities
+cmat = matrix(
+  c(
+    0.80, 0.5, 0.5,
+    0.5, 0.80, 0.5,
+    0.5, 0.5, 0.80
+  ),
+  ncol = 3,
+  byrow = TRUE
+)
+pmat = cmat / n
+
+# Creating the n x n adjacency matrix
+adj &lt;- matrix(0, n, n)
+for (i in 2:n) {
+  for (j in 1:(i - 1)) {
+    p = pmat[class[i], class[j]] # We find the probability of connection with the weights
+    adj[i, j] = rbinom(1, 1, p) # We include the edge with probability p
+  }
+}
+
+adjsymm = adj + t(adj)
+
+# graph from the adjacency matrix
+G = igraph::graph_from_adjacency_matrix(adjsymm, mode = "undirected", weighted = NULL)
+
+# mle of the edge probabilities
+p.hat = get_mle_BetaSBM (G, class)
+
+# chi-square test statistic values
+graphchi_BetaSBM(G, class, p.hat)
+</code></pre>
+
+
+</div>

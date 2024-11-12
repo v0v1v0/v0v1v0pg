@@ -1,0 +1,465 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ps</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>P-Splines Fits in a GAMLSS Formula</h2>
+
+<h3>Description</h3>
+
+<p>There are several function which use P-spline methodology:
+</p>
+<p>a) <code>pb()</code>, the current version of P-splines which uses SVD in the fitting and therefore is the most reliable 
+</p>
+<p>b) <code>pbo()</code> and <code>pbp()</code>, older versions of P-splines. The first  uses a simple matrix algebra in the fits. The second is the last version of <code>pb()</code> with SVD  but uses different method  for prediction.
+</p>
+<p>c) <code>pbc()</code> the new version of cycle P-splines (using SVD)
+</p>
+<p>d) <code>cy()</code> the older version of cycle P-splines.
+</p>
+<p>e) <code>pbm()</code> for fitting monotonic  P-splines (using SVD)
+</p>
+<p>f) <code>pbz()</code> for fitting  P-splines which allow the fitted curve to shrink to zero degrees of freedom 
+</p>
+<p>g) <code>ps()</code> the original P-splines with no facility of estimating the smoothing parameters and 
+</p>
+<p>j) <code>pvc()</code> penalised varying coefficient models.
+</p>
+<p>k) <code>pvp()</code> older version of pb() where the prediction was different (it is here in case someone would like to compare the results).
+</p>
+<p>Theoretical explanation of the above P-splines can be found in Eilers <em>et al.</em> (2016)
+</p>
+<p>The functions take a vector and return it with several attributes. The vector is used in the construction of the design matrix X used in the fitting. The functions do not do the  smoothing, but assign the attributes to the vector to aid gamlss in the smoothing. The functions doing the smoothing are   <code>gamlss.pb()</code>, <code>gamlss.pbo()</code>, <code>gamlss.pbc()</code>  <code>gamlss.cy()</code>  <code>gamlss.pvc()</code>,  <code>gamlss.pbm()</code>, <code>gamlss.pbz</code> and <code>gamlss.ps()</code> which are used in the backfitting  function <code>additive.fit</code>.
+</p>
+<p>The function <code>pb()</code> is more efficient and faster than the original penalised smoothing function <code>ps()</code>. After December 2014 the  <code>pb()</code> has changed radically to improved performance. The older version of the <code>pb()</code> function is called now <code>pbo()</code>. 
+<code>pb()</code> allows the estimation of the smoothing parameters using different local (performance iterations) methods. The method are "ML", "ML-1", "EM", "GAIC" and "GCV". 
+</p>
+<p>The function <code>pbm()</code> fits monotonic smooth functions, that is functions which increase or decrease monotonically depending on the value of the argument <code>mono</code> which takes the values <code>"up"</code> or <code>"down"</code>.
+</p>
+<p>The function <code>pbz()</code> is similar to <code>pb()</code> with the extra property that when lambda becomes very large the resulting smooth function  goes to a constant rather than to a linear function. This is very useful for model selection. The function is based on Maria Durban idea of using a double penalty, one of order 2 and one of order 1. The second penalty only applies if the effective df are close to 2 (that is if a linear is already selected). 
+</p>
+<p>The function <code>pbc()</code> fits a cycle penalised beta regression spline such as  the last fitted value of the smoother is equal to the first fitted value. <code>cy()</code> is the older version.
+</p>
+<p>The function <code>pvc()</code> fits  varying coefficient models see Hastie and Tibshirani(1993) and it is more general and flexible than the old <code>vc()</code> function which was based on cubic splines.
+</p>
+<p>The function <code>getZmatrix()</code> creates a (random effect) design matrix <code>Z</code> which can be  used to fit a P-splines smoother using the <code>re())</code> function. (The <code>re()</code>  is an interface with the random effect function <code>lme</code> of the package <span class="pkg">nlme</span>. 
+</p>
+<p>The function <code>.hat.WX()</code> is for internal use only.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pb(x, df = NULL, lambda = NULL, max.df=NULL, 
+    control = pb.control(...), ...)
+pbo(x, df = NULL, lambda = NULL, control = pbo.control(...), ...)
+pbp(x, df = NULL, lambda = NULL, control = pbp.control(...), ...)
+pbo.control(inter = 20, degree = 3, order = 2, start = 10, quantiles = FALSE, 
+               method = c("ML", "GAIC", "GCV", "EM", "ML-1"), k = 2, ...)
+pb.control(inter = 20, degree = 3, order = 2, start = 10, quantiles = FALSE, 
+          method = c("ML", "GAIC", "GCV"), k = 2, ...)
+pbp.control(inter = 20, degree = 3, order = 2, start = 10, quantiles = FALSE, 
+          method = c("ML", "GAIC", "GCV"), k = 2, ...)
+pbc(x,  df = NULL, lambda = NULL, max.df=NULL, 
+    control = pbc.control(...), ...)
+pbc.control(inter = 20, degree = 3, order = 2, start = 10, 
+          method = c("ML", "GAIC", "GCV"), k = 2, sin = TRUE, ...)
+cy(x, df = NULL, lambda = NULL, control = cy.control(...), ...)
+cy.control(inter = 20, degree = 3, order = 2, start = 10, 
+          method = c("ML", "GAIC", "GCV", "EM", "ML-1"), k = 2, ts=FALSE, ...)
+pvc(x, df = NULL, lambda = NULL, by = NULL, control = pvc.control(...), ...)          
+pvc.control(inter = 20, degree = 3, order = 2, start = 10, quantiles = FALSE, 
+             method = c("ML", "GAIC", "GCV"), k = 2, ...) 
+pbm(x, df = NULL, lambda = NULL, mono=c("up", "down"), 
+            control = pbm.control(...), ...)
+pbm.control(inter = 20, degree = 3, order = 2, start = 10, quantiles = FALSE, 
+            method=c("ML","GAIC", "GCV"), k=2, kappa = 1e10, ...)
+pbz(x, df = NULL, lambda = NULL, control = pbz.control(...), ...)
+pbz.control(inter = 20, degree = 3, order = 2, start = c(1e-04, 1e-04), 
+     quantiles = FALSE, method = c("ML", "GAIC", "GCV"), k = 2, lim = 3, ...)
+
+ps(x, df = 3, lambda = NULL, ps.intervals = 20, degree = 3, order = 3)
+
+getZmatrix(x, xmin = NULL, xmax = NULL, inter = 20, degree = 3, order = 2)
+
+.hat.WX(w, x)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>the univariate predictor</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>the desired equivalent number of degrees of freedom (trace of the smoother matrix minus two for the constant and linear fit)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>the smoothing parameter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.df</code></td>
+<td>
+<p>the limit of how large the effective degrees of freedom should be allowed to be</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>setting the control parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by</code></td>
+<td>
+<p>a factor, for fitting different smoothing curves to each level of the factor or a continuous explanatory variable in which case  
+the coefficients of the <code>by</code> variable change smoothly according to <code>x</code> i.e. beta(x)*z where z is the <code>by</code> variable. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>for extra arguments</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inter</code></td>
+<td>
+<p>the no of break points (knots) in the x-axis</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>degree</code></td>
+<td>
+<p>the degree of the piecewise polynomial</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order</code></td>
+<td>
+<p>the required difference in the vector of coefficients</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>the lambda starting value if the local methods are used, see below</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quantiles</code></td>
+<td>
+<p>if TRUE the quantile values of x are use to determine the knots</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ts</code></td>
+<td>
+<p>if TRUE assumes that it is a seasonal factor</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>The method used in the (local) performance iterations. Available methods are "ML", "ML-1", "EM", "GAIC" and "GCV"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>the penalty used in "GAIC" and "GCV"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mono</code></td>
+<td>
+<p>for monotonic P-splines whether going "up"  or "down"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kappa</code></td>
+<td>
+<p>the smoothing hyper-parameter for the monotonic part of smoothing</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ps.intervals</code></td>
+<td>
+<p>the no of break points in the x-axis</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xmin</code></td>
+<td>
+<p>minimum value for creating the B-spline</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xmax</code></td>
+<td>
+<p>maximum value for creating the B-spline</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sin</code></td>
+<td>
+<p>whether to use the sin penalty or not</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lim</code></td>
+<td>
+<p>at which level the second penalty of order 1 should start</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>iterative weights only for function <code>.hat.WX</code> </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>ps()</code> function is based on Brian Marx function which can be found in his website.
+The <code>pb()</code>, <code>cy()</code>, <code>pvc()</code> and  <code>pbm()</code> functions are based on Paul Eilers's original R functions. 
+Note that  <code>ps()</code> and  <code>pb()</code> functions behave differently at their default values if df and lambda are not specified.
+<code>ps(x)</code> by default  uses 3 extra degrees of freedom for smoothing <code>x</code>.
+<code>pb(x)</code> by default  estimates lambda (and therefore the degrees of freedom) automatically using a "local" method.
+The local (or performance iterations) methods available are: 
+(i) local Maximum Likelihood, "ML", 
+(ii) local Generalized Akaike information criterion, "GAIC",
+(iii) local Generalized Cross validation "GCV" 
+(iv) local EM-algorithm, "EM" (which is very slow) and 
+(v) a modified version of the ML, "ML-1" which produce identical results with "EM" but faster.
+</p>
+<p>The  function <code>pb()</code> fits a P-spline smoother.
+</p>
+<p>The  function <code>pbm()</code> fits a monotonic (going up or down) P-spline smoother.
+</p>
+<p>The  function <code>pbc()</code> fits a P-spline smoother where the beginning and end are the same.  
+</p>
+<p>The <code>pvc()</code> fits a varying coefficient model.  
+</p>
+<p>Note that the local (or performance iterations) methods can occasionally  make the convergence of gamlss less stable compared to models where the degrees of freedom are fixed.           
+</p>
+
+
+<h3>Value</h3>
+
+<p>the vector x is returned, endowed with a number of attributes. The vector itself is used in the construction of the model matrix, 
+while the attributes are needed for the backfitting algorithms <code>additive.fit()</code>.  
+</p>
+
+
+<h3>Warning</h3>
+
+<p>There are occasions where the automatic local methods do not work. One accusation which came to our attention is  when 
+the range of the response variable values is very large. Scaling the response variable will solve the problem.</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Mikis Stasinopoulos, Bob Rigby and Paul Eilers</p>
+
+
+<h3>References</h3>
+
+<p>Eilers, P. H. C. and Marx, B. D. (1996). Flexible smoothing with
+B-splines and penalties (with comments and rejoinder). <em>Statist. Sci</em>,
+<b>11</b>, 89-121.
+</p>
+<p>Eilers, Paul HC, Marx, Brian D and Durban, Maria, (2016) Twenty years of P-splines. <em>SORT-Statistics and Operations Research Transactions</em>, <b>39</b>, 149–186.
+</p>
+<p>Hastie, T. J. and Tibshirani, R. J. (1993), Varying coefficient models (with discussion),J. R. Statist. Soc. B., <b>55</b>,
+757-796.
+</p>
+<p>Rigby, R. A. and  Stasinopoulos D. M. (2005). Generalized additive models for location, scale and shape,(with discussion), 
+<em>Appl. Statist.</em>, <b>54</b>, part 3, pp 507-554.
+</p>
+<p>Rigby, R. A., Stasinopoulos, D. M.,  Heller, G. Z.,  and De Bastiani, F. (2019)
+<em>Distributions for modeling location, scale, and shape: Using GAMLSS in R</em>, Chapman and Hall/CRC. An older version can be found in <a href="https://www.gamlss.com/">https://www.gamlss.com/</a>.
+</p>
+<p>Stasinopoulos D. M. Rigby R.A. (2007) Generalized additive models for location scale and shape (GAMLSS) in R.
+<em>Journal of Statistical Software</em>, Vol. <b>23</b>, Issue 7, Dec 2007, <a href="https://www.jstatsoft.org/v23/i07/">https://www.jstatsoft.org/v23/i07/</a>.
+</p>
+<p>Stasinopoulos D. M., Rigby R.A., Heller G., Voudouris V., and De Bastiani F., (2017)
+<em>Flexible Regression and Smoothing: Using GAMLSS in R</em>,  Chapman and Hall/CRC.  
+</p>
+<p>(see also <a href="https://www.gamlss.com/">https://www.gamlss.com/</a>).
+</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>gamlss</code>, <code>gamlss.ps</code>, <code>cs</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#==============================
+# pb() and ps() functions
+data(aids)
+# fitting a smoothing cubic spline with 7 degrees of freedom
+# plus the a quarterly  effect  
+aids1&lt;-gamlss(y~ps(x,df=7)+qrt,data=aids,family=PO) # fix df's 
+aids2&lt;-gamlss(y~pb(x,df=7)+qrt,data=aids,family=PO) # fix df's
+aids3&lt;-gamlss(y~pb(x)+qrt,data=aids,family=PO) # estimate lambda
+with(aids, plot(x,y))
+with(aids, lines(x,fitted(aids1),col="red"))
+with(aids, lines(x,fitted(aids2),col="green"))
+with(aids, lines(x,fitted(aids1),col="yellow"))
+rm(aids1, aids2, aids3)
+#=============================
+## Not run: 
+# pbc()
+# simulate data
+set.seed(555)
+x = seq(0, 1, length = 100)
+y = sign(cos(1 * x * 2 * pi + pi / 4)) + rnorm(length(x)) * 0.2
+plot(y~x)
+m1&lt;-gamlss(y~pbc(x)) 
+lines(fitted(m1)~x)
+rm(y,x,m1)
+#=============================
+# the pvc() function
+# function to generate data
+genData &lt;- function(n=200)
+ {
+f1 &lt;- function(x)-60+15*x-0.10*x^2
+f2 &lt;- function(x)-120+10*x+0.08*x^2
+set.seed(1441)
+x1 &lt;- runif(n/2, min=0, max=55)
+x2 &lt;- runif(n/2, min=0, max=55)
+y1 &lt;- f1(x1)+rNO(n=n/2,mu=0,sigma=20)
+y2 &lt;- f2(x2)+rNO(n=n/2,mu=0,sigma=30)
+ y &lt;- c(y1,y2)
+ x &lt;- c(x1,x2)
+ f &lt;- gl(2,n/2)
+da&lt;-data.frame(y,x,f)
+da
+}
+da&lt;-genData(500)
+plot(y~x, data=da, pch=21,bg=c("gray","yellow3")[unclass(f)])
+# fitting models
+# smoothing x
+m1 &lt;- gamlss(y~pb(x), data=da)
+# parallel smoothing lines
+m2 &lt;- gamlss(y~pb(x)+f, data=da)
+# linear interaction
+m3 &lt;- gamlss(y~pb(x)+f*x, data=da)
+# varying coefficient model
+m4 &lt;- gamlss(y~pvc(x, by=f), data=da)
+GAIC(m1,m2,m3,m4)
+# plotting the fit
+lines(fitted(m4)[da$f==1][order(da$x[da$f==1])]~da$x[da$f==1]
+         [order(da$x[da$f==1])], col="blue", lwd=2)
+lines(fitted(m4)[da$f==2][order(da$x[da$f==2])]~da$x[da$f==2]
+         [order(da$x[da$f==2])], col="red", lwd=2)
+rm(da,m1,m2,m3,m4)
+#=================================
+# the rent data
+# first with a factor
+data(rent)
+plot(R~Fl, data=rent, pch=21,bg=c("gray","blue")[unclass(rent$B)])
+r1 &lt;- gamlss(R~pb(Fl), data=rent)
+# identical to model
+r11 &lt;- gamlss(R~pvc(Fl), data=rent)
+# now with the factor
+r2 &lt;- gamlss(R~pvc(Fl, by=B), data=rent)
+lines(fitted(r2)[rent$B==1][order(rent$Fl[rent$B==1])]~rent$Fl[rent$B==1]
+                [order(rent$Fl[rent$B==1])], col="blue", lwd=2)
+lines(fitted(r2)[rent$B==0][order(rent$Fl[rent$B==0])]~rent$Fl[rent$B==0]
+                [order(rent$Fl[rent$B==0])], col="red", lwd=2)
+# probably not very sensible model
+rm(r1,r11,r2)
+#-----------
+# now with a continuous variable
+# additive model
+ h1 &lt;-gamlss(R~pb(Fl)+pb(A), data=rent)
+# varying-coefficient model
+ h2 &lt;-gamlss(R~pb(Fl)+pb(A)+pvc(A,by=Fl), data=rent)
+AIC(h1,h2)
+rm(h1,h2)
+#-----------
+# monotone function
+set.seed(1334)
+x = seq(0, 1, length = 100)
+p = 0.4
+y = sin(2 * pi * p * x) + rnorm(100) * 0.1
+plot(y~x)
+m1 &lt;- gamlss(y~pbm(x))
+points(fitted(m1)~x, col="red")
+yy &lt;- -y
+plot(yy~x)
+m2 &lt;- gamlss(yy~pbm(x, mono="down"))
+points(fitted(m2)~x, col="red")
+#==========================================
+# the pbz() function
+# creating uncorrelated data
+set.seed(123)
+y&lt;-rNO(100)
+x&lt;-1:100
+plot(y~x)
+#----------------------
+# ML estimation
+m1&lt;-gamlss(y~pbz(x))
+m2 &lt;-gamlss(y~pb(x))
+AIC(m1,m2)
+op &lt;- par( mfrow=c(1,2))
+term.plot(m1, partial=T)
+term.plot(m2, partial=T)
+par(op)
+# GAIC estimation
+m11&lt;-gamlss(y~pbz(x, method="GAIC", k=2))
+m21 &lt;-gamlss(y~pb(x, method="GAIC", k=2))
+AIC(m11,m21)
+op &lt;- par( mfrow=c(1,2))
+term.plot(m11, partial=T)
+term.plot(m21, partial=T)
+par(op)
+# GCV estimation
+m12&lt;-gamlss(y~pbz(x, method="GCV"))
+m22 &lt;-gamlss(y~pb(x, method="GCV"))
+AIC(m12,m22)
+op &lt;- par( mfrow=c(1,2))
+term.plot(m12, partial=T)
+term.plot(m22, partial=T)
+par(op)
+# fixing df is more trycky since df are the extra df 
+m13&lt;-gamlss(y~pbz(x, df=0))
+m23 &lt;-gamlss(y~pb(x, df=0))
+AIC(m13,m23)
+# here the second penalty is not take effect therefore identical results 
+m14&lt;-gamlss(y~pbz(x, df=1))
+m24 &lt;-gamlss(y~pb(x, df=1))
+AIC(m14,m24)
+# fixing lambda
+m15&lt;-gamlss(y~pbz(x, lambda=1000))
+m25 &lt;-gamlss(y~pb(x, lambda=1000))
+AIC(m15,m25)
+#--------------------------------------------------
+# prediction 
+m1&lt;-gamlss(y~pbz(x), data=data.frame(y,x))
+m2 &lt;-gamlss(y~pb(x), data=data.frame(y,x))
+AIC(m1,m2)
+predict(m1, newdata=data.frame(x=c(80, 90, 100, 110)))
+predict(m2, newdata=data.frame(x=c(80, 90, 100, 110)))
+#---------------------------------------------------
+
+## End(Not run)
+</code></pre>
+
+
+</div>

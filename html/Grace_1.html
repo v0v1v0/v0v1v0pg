@@ -1,0 +1,173 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>grace</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+
+Graph-Constrained Estimation
+</h2>
+
+<h3>Description</h3>
+
+
+<p>Calculate coefficient estimates of Grace based on methods described in Li and Li (2008).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  grace(Y, X, L, lambda.L, lambda.1=0, lambda.2=0, normalize.L=FALSE, K=10, verbose=FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+
+<p>outcome vector.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>matrix of predictors.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+
+<p>penalty weight matrix L.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.L</code></td>
+<td>
+
+<p>tuning parameter value for the penalty induced by the L matrix (see details). If a sequence of lambda.L values is supplied, K-fold cross-validation is performed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.1</code></td>
+<td>
+
+<p>tuning parameter value for the lasso penalty (see details). If a sequence of lambda.1 values is supplied, K-fold cross-validation is performed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.2</code></td>
+<td>
+
+<p>tuning parameter value for the ridge penalty (see details). If a sequence of lambda.2 values is supplied, K-fold cross-validation is performed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normalize.L</code></td>
+<td>
+
+<p>whether the penalty weight matrix L should be normalized.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+
+<p>number of folds in cross-validation.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>whether computation progress should be printed.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The Grace estimator is defined as
+</p>
+<p style="text-align: center;"><code class="reqn">(\hat\alpha, \hat\beta) = \arg\min_{\alpha, \beta}{\|Y-\alpha 1 -X\beta\|_2^2+lambda.L(\beta^T L\beta)+lambda.1\|\beta\|_1+lambda.2\|\beta\|_2^2}</code>
+</p>
+
+<p>In the formulation, L is the penalty weight matrix. Tuning parameters lambda.L, lambda.1 and lambda.2 may be chosen by cross-validation. In practice, X and Y are standardized and centered, respectively, before estimating <code class="reqn">\hat\beta</code>. The resulting estimate is then rescaled back into the original scale. Note that the intercept <code class="reqn">\hat\alpha</code> is not penalized.
+</p>
+<p>The Grace estimator could be considered as a generalized elastic net estimator (Zou and Hastie, 2005). It penalizes the regression coefficient towards the space spanned by eigenvectors of L with the smallest eigenvalues. Therefore, if L is informative in the sense that <code class="reqn">L\beta</code> is small, then the Grace estimator could be less biased than the elastic net.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An R ‘list’ with elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>fitted intercept.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>fitted regression coefficients.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Sen Zhao
+</p>
+
+
+<h3>References</h3>
+
+<p>Zou, H., and Hastie, T. (2005). Regularization and variable selection via the elastic net. Journal of the Royal Statistical Society: Series B, 67, 301-320.
+</p>
+<p>Li, C., and Li, H. (2008). Network-constrained regularization and variable selection for analysis of genomic data. Bioinformatics, 24, 1175-1182.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(120)
+n &lt;- 100
+p &lt;- 200
+
+L &lt;- matrix(0, nrow = p, ncol = p)
+for(i in 1:10){
+	L[((i - 1) * p / 10 + 1), ((i - 1) * p / 10 + 1):(i * (p / 10))] &lt;- -1
+}
+diag(L) &lt;- 0
+ind &lt;- lower.tri(L, diag = FALSE)
+L[ind] &lt;- t(L)[ind]
+diag(L) &lt;- -rowSums(L)
+
+beta &lt;- c(rep(1, 10), rep(0, p - 10))
+
+Sigma &lt;- solve(L + 0.1 * diag(p))
+sigma.error &lt;- sqrt(t(beta) %*% Sigma %*% beta) / 2
+
+X &lt;- mvrnorm(n, mu = rep(0, p), Sigma = Sigma)
+Y &lt;- c(X %*% beta + rnorm(n, sd = sigma.error))
+
+grace(Y, X, L, lambda.L = c(0.08, 0.12), lambda.2 = c(0.08, 0.12))
+</code></pre>
+
+
+</div>

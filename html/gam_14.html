@@ -1,0 +1,210 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gam.lo</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Specify a loess fit in a GAM formula</h2>
+
+<h3>Description</h3>
+
+<p>A symbolic wrapper to indicate a smooth term in a formala argument to gam
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gam.lo(
+  x,
+  y,
+  w = rep(1, length(y)),
+  span = 0.5,
+  degree = 1,
+  ncols = p,
+  xeval = x
+)
+
+lo(..., span = 0.5, degree = 1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>for <code>gam.lo</code>, the appropriate basis of polynomials generated
+from the arguments to <code>lo</code>. These are also the variables that receive
+linear coefficients in the GAM fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>a response variable passed to <code>gam.lo</code> during backfitting</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>weights</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>span</code></td>
+<td>
+<p>the number of observations in a neighborhood. This is the
+smoothing parameter for a <code>loess</code> fit. If specified, the full argument
+name <code>span</code> must be written.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>degree</code></td>
+<td>
+<p>the degree of local polynomial to be fit; currently restricted
+to be <code>1</code> or <code>2</code>. If specified, the full argument name
+<code>degree</code> must be written.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncols</code></td>
+<td>
+<p>for <code>gam.lo</code> the number of columns in <code>x</code> used as the
+smoothing inputs to local regression. For example, if <code>degree=2</code>, then
+<code>x</code> has two columns defining a degree-2 polynomial basis. Both are
+needed for the parameteric part of the fit, but <code>ncol=1</code> telling the
+local regression routine that the first column is the actually smoothing
+variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xeval</code></td>
+<td>
+<p>If this argument is present, then <code>gam.lo</code> produces a
+prediction at <code>xeval</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>the unspecified <code>...{}</code> can be a comma-separated list of
+numeric vectors, numeric matrix, or expressions that evaluate to either of
+these. If it is a list of vectors, they must all have the same length.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A smoother in gam separates out the parametric part of the fit from the
+non-parametric part. For local regression, the parametric part of the fit is
+specified by the particular polynomial being fit locally. The workhorse
+function <code>gam.lo</code> fits the local polynomial, then strips off this
+parametric part. All the parametric pieces from all the terms in the
+additive model are fit simultaneously in one operation for each loop of the
+backfitting algorithm.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>lo</code> returns a numeric matrix.  The simplest case is when there
+is a single argument to <code>lo</code> and <code>degree=1</code>; a one-column matrix
+is returned, consisting of a normalized version of the vector.  If
+<code>degree=2</code> in this case, a two-column matrix is returned, consisting of
+a degree-2 polynomial basis.  Similarly, if there are two arguments, or the
+single argument is a two-column matrix, either a two-column matrix is
+returned if <code>degree=1</code>, or a five-column matrix consisting of powers
+and products up to degree <code>2</code>.  Any dimensional argument is allowed,
+but typically one or two vectors are used in practice.
+</p>
+<p>The matrix is endowed with a number of attributes; the matrix itself is used
+in the construction of the model matrix, while the attributes are needed for
+the backfitting algorithms <code>general.wam</code> (weighted additive model) or
+<code>lo.wam</code> (currently not implemented). Local-linear curve or surface
+fits reproduce linear responses, while local-quadratic fits reproduce
+quadratic curves or surfaces. These parts of the <code>loess</code> fit are
+computed exactly together with the other parametric linear parts
+</p>
+<p>When two or more smoothing variables are given, the user should make sure
+they are in a commensurable scale; <code>lo()</code> does no normalization. This
+can make a difference, since <code>lo()</code> uses a spherical (isotropic)
+neighborhood when establishing the nearest neighbors.
+</p>
+<p>Note that <code>lo</code> itself does no smoothing; it simply sets things up for
+<code>gam</code>; <code>gam.lo</code> does the actual smoothing. of the model.
+</p>
+<p>One important attribute is named <code>call</code>. For example, <code>lo(x)</code> has
+a call component <code>gam.lo(data[["lo(x)"]], z, w, span = 0.5, degree = 1,
+ncols = 1)</code>. This is an expression that gets evaluated repeatedly in
+<code>general.wam</code> (the backfitting algorithm).
+</p>
+<p><code>gam.lo</code> returns an object with components </p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p>The
+residuals from the smooth fit. Note that the smoother removes the parametric
+part of the fit (using a linear fit with the columns in <code>x</code>), so these
+residual represent the nonlinear part of the fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nl.df</code></td>
+<td>
+<p>the
+nonlinear degrees of freedom</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var</code></td>
+<td>
+<p>the pointwise variance for the
+nonlinear fit</p>
+</td>
+</tr>
+</table>
+<p>When <code>gam.lo</code> is evaluated with an <code>xeval</code> argument, it returns a
+matrix of predictions.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Written by Trevor Hastie, following closely the design in the
+"Generalized Additive Models" chapter (Hastie, 1992) in Chambers and Hastie
+(1992).
+</p>
+
+
+<h3>References</h3>
+
+<p>Hastie, T. J. (1992) <em>Generalized additive models.</em> Chapter
+7 of <em>Statistical Models in S</em> eds J. M. Chambers and T. J. Hastie,
+Wadsworth &amp; Brooks/Cole.
+</p>
+<p>Hastie, T. and Tibshirani, R. (1990) <em>Generalized Additive Models.</em>
+London: Chapman and Hall.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>s</code>, <code>bs</code>, <code>ns</code>,
+<code>poly</code>, <code>loess</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+y ~ Age + lo(Start)
+     # fit Start using a loess smooth with a (default) span of 0.5.
+y ~ lo(Age) + lo(Start, Number) 
+y ~ lo(Age, span=0.3) # the argument name span cannot be abbreviated.
+
+</code></pre>
+
+
+</div>

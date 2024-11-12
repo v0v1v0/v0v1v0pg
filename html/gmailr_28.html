@@ -1,0 +1,283 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gm_auth</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Authorize gmailr</h2>
+
+<h3>Description</h3>
+
+<p>Authorize gmailr to view and manage your Gmail projects. This function is a
+wrapper around <code>gargle::token_fetch()</code>.
+</p>
+<p>By default, you are directed to a web browser, asked to sign in to your
+Google account, and to grant gmailr permission to operate on your
+behalf with Google Gmail. By default, with your permission, these user
+credentials are cached in a folder below your home directory, from where
+they can be automatically refreshed, as necessary. Storage at the user
+level means the same token can be used across multiple projects and
+tokens are less likely to be synced to the cloud by accident.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gm_auth(
+  email = gm_default_email(),
+  path = NULL,
+  subject = NULL,
+  scopes = "full",
+  cache = gargle::gargle_oauth_cache(),
+  use_oob = gargle::gargle_oob_default(),
+  token = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>email</code></td>
+<td>
+<p>Optional. If specified, <code>email</code> can take several different
+forms:
+</p>
+
+<ul>
+<li> <p><code>"jane@gmail.com"</code>, i.e. an actual email address. This allows the user to
+target a specific Google identity. If specified, this is used for token
+lookup, i.e. to determine if a suitable token is already available in the
+cache. If no such token is found, <code>email</code> is used to pre-select the targeted
+Google identity in the OAuth chooser. (Note, however, that the email
+associated with a token when it's cached is always determined from the token
+itself, never from this argument).
+</p>
+</li>
+<li> <p><code>"*@example.com"</code>, i.e. a domain-only glob pattern. This can be helpful if
+you need code that "just works" for both <code>alice@example.com</code> and
+<code>bob@example.com</code>.
+</p>
+</li>
+<li> <p><code>TRUE</code> means that you are approving email auto-discovery. If exactly one
+matching token is found in the cache, it will be used.
+</p>
+</li>
+<li> <p><code>FALSE</code> or <code>NA</code> mean that you want to ignore the token cache and force a
+new OAuth dance in the browser.
+</p>
+</li>
+</ul>
+<p>Defaults to the option named <code>"gargle_oauth_email"</code>, retrieved by
+<code>gargle_oauth_email()</code> (unless a wrapper package implements different
+default behavior).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>path</code></td>
+<td>
+<p>JSON identifying the service account, in one of the forms
+supported for the <code>txt</code> argument of <code>jsonlite::fromJSON()</code> (typically, a
+file path or JSON string).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subject</code></td>
+<td>
+<p>An optional subject claim. Specify this if you wish to use the
+service account represented by <code>path</code> to impersonate the <code>subject</code>, who is
+a normal user. Before this can work, an administrator must grant the service
+account domain-wide authority. Identify the user to impersonate via their
+email, e.g. <code>subject = "user@example.com"</code>. Note that gargle automatically
+adds the non-sensitive <code>"https://www.googleapis.com/auth/userinfo.email"</code>
+scope, so this scope must be enabled for the service account, along with
+any other <code>scopes</code> being requested.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scopes</code></td>
+<td>
+<p>One or more API scopes. Each scope can be specified in full or,
+for Gmail API-specific scopes, in an abbreviated form that is recognized by
+<code>gm_scopes()</code>:
+</p>
+
+<ul>
+<li>
+<p> "full" = "https://mail.google.com/" (the default)
+</p>
+</li>
+<li>
+<p> "gmail.compose" = "https://www.googleapis.com/auth/gmail.compose"
+</p>
+</li>
+<li>
+<p> "gmail.readonly" = "https://www.googleapis.com/auth/gmail.readonly"
+</p>
+</li>
+<li>
+<p> "gmail.labels" = "https://www.googleapis.com/auth/gmail.labels"
+</p>
+</li>
+<li>
+<p> "gmail.send" = "https://www.googleapis.com/auth/gmail.send"
+</p>
+</li>
+<li>
+<p> "gmail.insert" = "https://www.googleapis.com/auth/gmail.insert"
+</p>
+</li>
+<li>
+<p> "gmail.modify" = "https://www.googleapis.com/auth/gmail.modify"
+</p>
+</li>
+<li>
+<p> "gmail.metadata" = "https://www.googleapis.com/auth/gmail.metadata"
+</p>
+</li>
+<li>
+<p> "gmail.settings_basic" = "https://www.googleapis.com/auth/gmail.settings.basic"
+</p>
+</li>
+<li>
+<p> "gmail.settings_sharing" = "https://www.googleapis.com/auth/gmail.settings.sharing"
+</p>
+</li>
+</ul>
+<p>See <a href="https://developers.google.com/gmail/api/auth/scopes">https://developers.google.com/gmail/api/auth/scopes</a> for details on the
+permissions for each scope.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cache</code></td>
+<td>
+<p>Specifies the OAuth token cache. Defaults to the option named
+<code>"gargle_oauth_cache"</code>, retrieved via <code>gargle_oauth_cache()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_oob</code></td>
+<td>
+<p>Whether to use out-of-band authentication (or, perhaps, a
+variant implemented by gargle and known as "pseudo-OOB") when first
+acquiring the token. Defaults to the value returned by
+<code>gargle_oob_default()</code>. Note that (pseudo-)OOB auth only affects
+the initial OAuth dance. If we retrieve (and possibly refresh) a
+cached token, <code>use_oob</code> has no effect.
+</p>
+<p>If the OAuth client is provided implicitly by a wrapper package, its type
+probably defaults to the value returned by
+<code>gargle_oauth_client_type()</code>. You can take control of the client
+type by setting <code>options(gargle_oauth_client_type = "web")</code> or
+<code>options(gargle_oauth_client_type = "installed")</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>token</code></td>
+<td>
+<p>A token with class Token2.0 or an object of
+httr's class <code>request</code>, i.e. a token that has been prepared with
+<code>httr::config()</code> and has a Token2.0 in the
+<code>auth_token</code> component.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Most users, most of the time, do not need to call <code>gm_auth()</code>
+explicitly – it is triggered by the first action that requires
+authorization. Even when called, the default arguments often suffice.
+</p>
+<p>However, when necessary, <code>gm_auth()</code> allows the user to explicitly:
+</p>
+
+<ul>
+<li>
+<p> Declare which Google identity to use, via an <code>email</code> specification.
+</p>
+</li>
+<li>
+<p> Use a service account token or workload identity federation via
+<code>path</code>.
+</p>
+</li>
+<li>
+<p> Bring your own <code>token</code>.
+</p>
+</li>
+<li>
+<p> Customize <code>scopes</code>.
+</p>
+</li>
+<li>
+<p> Use a non-default <code>cache</code> folder or turn caching off.
+</p>
+</li>
+<li>
+<p> Explicitly request out-of-bound (OOB) auth via <code>use_oob</code>.
+</p>
+</li>
+</ul>
+<p>If you are interacting with R within a browser (applies to RStudio
+Server, Posit Workbench, Posit Cloud, and Google Colaboratory), you need
+OOB auth or the pseudo-OOB variant. If this does not happen
+automatically, you can request it explicitly with <code>use_oob = TRUE</code> or,
+more persistently, by setting an option via
+<code>options(gargle_oob_default = TRUE)</code>.
+</p>
+<p>The choice between conventional OOB or pseudo-OOB auth is determined
+by the type of OAuth client. If the client is of the "installed" type,
+<code>use_oob = TRUE</code> results in conventional OOB auth. If the client is of
+the "web" type, <code>use_oob = TRUE</code> results in pseudo-OOB auth. Packages
+that provide a built-in OAuth client can usually detect which type of
+client to use. But if you need to set this explicitly, use the
+<code>"gargle_oauth_client_type"</code> option:
+</p>
+<div class="sourceCode r"><pre>options(gargle_oauth_client_type = "web")       # pseudo-OOB
+# or, alternatively
+options(gargle_oauth_client_type = "installed") # conventional OOB
+</pre></div>
+<p>For details on the many ways to find a token, see
+<code>gargle::token_fetch()</code>. For deeper control over auth, use
+<code>gm_auth_configure()</code> to bring your own OAuth client or API key.
+To learn more about gargle options, see gargle::gargle_options.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other auth functions: 
+<code>gm_auth_configure()</code>,
+<code>gm_deauth()</code>,
+<code>gm_scopes()</code>,
+<code>gmailr-configuration</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# load/refresh existing credentials, if available
+# otherwise, go to browser for authentication and authorization
+gm_auth()
+
+# indicate the specific identity you want to auth as
+gm_auth(email = "jenny@example.com")
+
+# force a new browser dance, i.e. don't even try to use existing user
+# credentials
+gm_auth(email = NA)
+
+# specify the identity, use a 'read only' scope, so it's impossible to
+# send or delete email, and specify a cache folder
+gm_auth(
+  "target.user@example.com",
+  scopes = "gmail.readonly",
+  cache = "some/nice/directory/"
+)
+
+</code></pre>
+
+
+</div>

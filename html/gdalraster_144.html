@@ -1,0 +1,191 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>vsi_sync</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Synchronize a source file/directory with a target file/directory</h2>
+
+<h3>Description</h3>
+
+<p><code>vsi_sync()</code> is a wrapper for <code>VSISync()</code> in the GDAL Common Portability
+Library. The GDAL documentation is given in Details.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">vsi_sync(src, target, show_progress = FALSE, options = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>src</code></td>
+<td>
+<p>Character string. Source file or directory.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>target</code></td>
+<td>
+<p>Character string. Target file or directory.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show_progress</code></td>
+<td>
+<p>Logical scalar. If <code>TRUE</code>, a progress bar will be
+displayed. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>options</code></td>
+<td>
+<p>Character vector of <code>NAME=VALUE</code> pairs (see Details).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>VSISync()</code> is an analog of the Linux <code>rsync</code> utility. In the current
+implementation, <code>rsync</code> would be more efficient for local file copying,
+but <code>VSISync()</code> main interest is when the source or target is a remote
+file system like /vsis3/ or /vsigs/, in which case it can take into account
+the timestamps of the files (or optionally the ETag/MD5Sum) to avoid
+unneeded copy operations.
+This is only implemented efficiently for:
+</p>
+
+<ul>
+<li>
+<p> local filesystem &lt;–&gt; remote filesystem
+</p>
+</li>
+<li>
+<p> remote filesystem &lt;–&gt; remote filesystem (starting with GDAL 3.1)<br>
+Where the source and target remote filesystems are the same and one of
+/vsis3/, /vsigs/ or /vsiaz/. Or when the target is /vsiaz/ and the source
+is /vsis3/, /vsigs/, /vsiadls/ or /vsicurl/ (starting with GDAL 3.8)
+</p>
+</li>
+</ul>
+<p>Similarly to <code>rsync</code> behavior, if the source filename ends with a slash, it
+means that the content of the directory must be copied, but not the
+directory name. For example, assuming "/home/even/foo" contains a file
+"bar", <code>VSISync("/home/even/foo/", "/mnt/media", ...)</code> will create a
+"/mnt/media/bar" file.
+Whereas <code>VSISync("/home/even/foo", "/mnt/media", ...)</code> will create a
+"/mnt/media/foo" directory which contains a bar file.
+</p>
+<p>The <code>options</code> argument accepts a character vector of name=value pairs.
+Currently accepted options are:<br></p>
+
+<ul>
+<li> <p><code>RECURSIVE=NO</code> (the default is <code>YES</code>)
+</p>
+</li>
+<li> <p><code>SYNC_STRATEGY=TIMESTAMP/ETAG/OVERWRITE</code>. Determines which criterion is
+used to determine if a target file must be replaced when it already exists
+and has the same file size as the source. Only applies for a source or
+target being a network filesystem.
+The default is <code>TIMESTAMP</code> (similarly to how 'aws s3 sync' works), that is
+to say that for an upload operation, a remote file is replaced if it has a
+different size or if it is older than the source. For a download operation,
+a local file is replaced if it has a different size or if it is newer than
+the remote file.
+The <code>ETAG</code> strategy assumes that the ETag metadata of the remote file is
+the MD5Sum of the file content, which is only true in the case of /vsis3/
+for files not using KMS server side encryption and uploaded in a single PUT
+operation (so smaller than 50 MB given the default used by GDAL). Only to
+be used for /vsis3/, /vsigs/ or other filesystems using a MD5Sum as ETAG.
+The <code>OVERWRITE</code> strategy (GDAL &gt;= 3.2) will always overwrite the target
+file with the source one.<br></p>
+</li>
+<li> <p><code>NUM_THREADS=integer</code>. Number of threads to use for parallel file
+copying. Only use for when /vsis3/, /vsigs/, /vsiaz/ or /vsiadls/ is
+in source or target. The default is 10 since GDAL 3.3.<br></p>
+</li>
+<li> <p><code>CHUNK_SIZE=integer</code>. Maximum size of chunk (in bytes) to use to split
+large objects when downloading them from /vsis3/, /vsigs/, /vsiaz/
+or /vsiadls/ to local file system, or for upload to /vsis3/, /vsiaz/ or
+/vsiadls/ from local file system. Only used if <code>NUM_THREADS &gt; 1</code>.
+For upload to /vsis3/, this chunk size must be set at least to 5 MB. The
+default is 8 MB since GDAL 3.3.<br></p>
+</li>
+<li> <p><code>x-amz-KEY=value</code>. (GDAL &gt;= 3.5) MIME header to pass during creation of a
+/vsis3/ object.<br></p>
+</li>
+<li> <p><code>x-goog-KEY=value</code>. (GDAL &gt;= 3.5) MIME header to pass during creation of a
+/vsigs/ object.<br></p>
+</li>
+<li> <p><code>x-ms-KEY=value</code>. (GDAL &gt;= 3.5) MIME header to pass during creation of a
+/vsiaz/ or /vsiadls/ object.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>Logical scalar, <code>TRUE</code> on success or <code>FALSE</code> on an error.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>copyDatasetFiles()</code>, <code>vsi_copy_file()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# sample-data is a directory in the git repository for gdalraster that is
+# not included in the R package:
+# https://github.com/USDAForestService/gdalraster/tree/main/sample-data
+# A copy of sample-data in an AWS S3 bucket, and a partial copy in an
+# Azure Blob container, were used to generate the example below.
+
+src &lt;- "/vsis3/gdalraster-sample-data/"
+# s3://gdalraster-sample-data is not public, set credentials
+set_config_option("AWS_ACCESS_KEY_ID", "xxxxxxxxxxxxxx")
+set_config_option("AWS_SECRET_ACCESS_KEY", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+vsi_read_dir(src)
+#&gt; [1] "README.md"
+#&gt; [2] "bl_mrbl_ng_jul2004_rgb_720x360.tif"
+#&gt; [3] "blue_marble_ng_neo_metadata.xml"
+#&gt; [4] "landsat_c2ard_sr_mt_hood_jul2022_utm.json"
+#&gt; [5] "landsat_c2ard_sr_mt_hood_jul2022_utm.tif"
+#&gt; [6] "lf_elev_220_metadata.html"
+#&gt; [7] "lf_elev_220_mt_hood_utm.tif"
+#&gt; [8] "lf_fbfm40_220_metadata.html"
+#&gt; [9] "lf_fbfm40_220_mt_hood_utm.tif"
+
+dst &lt;- "/vsiaz/sampledata"
+set_config_option("AZURE_STORAGE_CONNECTION_STRING",
+                  "&lt;connection_string_for_gdalraster_account&gt;")
+vsi_read_dir(dst)
+#&gt; [1] "lf_elev_220_metadata.html"   "lf_elev_220_mt_hood_utm.tif"
+
+# GDAL VSISync() supports direct copy for /vsis3/ -&gt; /vsiaz/ (GDAL &gt;= 3.8)
+result &lt;- vsi_sync(src, dst, show_progress = TRUE)
+#&gt; 0...10...20...30...40...50...60...70...80...90...100 - done.
+print(result)
+#&gt; [1] TRUE
+vsi_read_dir(dst)
+#&gt; [1] "README.md"
+#&gt; [2] "bl_mrbl_ng_jul2004_rgb_720x360.tif"
+#&gt; [3] "blue_marble_ng_neo_metadata.xml"
+#&gt; [4] "landsat_c2ard_sr_mt_hood_jul2022_utm.json"
+#&gt; [5] "landsat_c2ard_sr_mt_hood_jul2022_utm.tif"
+#&gt; [6] "lf_elev_220_metadata.html"
+#&gt; [7] "lf_elev_220_mt_hood_utm.tif"
+#&gt; [8] "lf_fbfm40_220_metadata.html"
+#&gt; [9] "lf_fbfm40_220_mt_hood_utm.tif"
+
+## End(Not run)
+</code></pre>
+
+
+</div>

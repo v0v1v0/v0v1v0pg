@@ -1,0 +1,151 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>designFactors</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Adds the factors and covariates for a blocked, split-unit design</h2>
+
+<h3>Description</h3>
+
+<p>Add the following  <code>factor</code>s and covariates to a date frame containing imaging data from the Plant Accelerator: Zone, xZone, SHZone, ZLane, ZMainunit, Subunit and xMainPosn. It checks that the numbers of levels of the <code>factor</code>s are consistent with the observed numbers of carts and observations.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">designFactors(data, insertName = NULL, designfactorMethod = "LanePosition", 
+              nzones = 6, nlanesperzone = 4, 
+              nmainunitsperlane = 11, nsubunitspermain = 2)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A <code>data.frame</code> to which are to be added the design 
+<code>factor</code>s and covariates and which must contain the following columns: 
+</p>
+<p>Smarthouse, Snapshot.ID.Tag, xDAP, and, 
+</p>
+<p>if <code>designfactorMethod = "LanePosition"</code>, Lane and Position.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>insertName</code></td>
+<td>
+<p>A <code>character</code> giving the name of the column 
+in the <code>data.frame</code> after which the new <code>factor</code>s 
+and covariates are to be inserted. If <code>NULL</code>, they are added 
+after the last column.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>designfactorMethod</code></td>
+<td>
+<p>A <code>character</code> giving the method to 
+use to obtain the columns for the design <code>factor</code>s Zone, 
+ZLane, Mainunit and Subunit. For <code>LanePosition</code>, it is assumed 
+that (i) Lane can be divided into Zone and ZLane, each with nzones 
+and nlanesperzone levels, respectively, and (ii) Position can be 
+divided into Mainunit and Subunit, each with nmainunitsperlane and 
+nmainunitsperlane levels, respectively. The <code>factor</code> 
+SHZone is formed by combining Smarthouse and Zone and ZMainunit 
+is formed by combining ZLane and Mainunit. For <code>StandardOrder</code>, 
+the <code>factor</code>s Zone, ZLane, Mainunit, Subunit are 
+generated in standard order, with the levels of Subunit changing for 
+every observation and the levels of subsequent changing only after all 
+combinations of the levels of the <code>factor</code>s to its right 
+have been cycled through.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nzones</code></td>
+<td>
+<p>A <code>numeric</code> giving the number of zones in a smarthouse.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nlanesperzone</code></td>
+<td>
+<p>A <code>numeric</code> giving the number of lanes in each zone.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmainunitsperlane</code></td>
+<td>
+<p>A <code>numeric</code> giving the number of mainunits in each lane.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsubunitspermain</code></td>
+<td>
+<p>A <code>numeric</code> giving the number of subunits in a main plot.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>factor</code>s Zone, ZLane, ZMainunit and Subunit are derived for each Smarthouse based on the values of <code>nzones</code>, <code>nlanesperzone</code>, <code>nmainunitsperlane</code>, <code>nsubunitspermain</code>, Zone being the blocks in the split-unit design. Thus, the number of carts in each Smarthouse must be the product of these values and the number of observations must be the product of the numbers of smarthouse, carts and imagings for each cart. If this is not the case, it may be able to be achieved by including in <code>data</code> rows for extra observations that have values for the Snapshot.ID.Tag, Smarthouse, Lane, Position and Time.after.Planting..d. and the remaining columns for these rows have missing values (<code>NA</code>) Then SHZone is formed by combining Smarthouse and Zone and the covariates cZone, cMainPosn and cPosn calculated. The covariate cZone is calculated from Zone and cMainPosn is formed from the mean of cPosn for each main plot.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>data.frame</code> including the columns:
+</p>
+
+<ol>
+<li>
+<p> Smarthouse: <code>factor</code> with levels for the Smarthouse
+</p>
+</li>
+<li>
+<p> Zone: <code>factor</code> dividing the Lanes into groups, usually of 4 lanes
+</p>
+</li>
+<li>
+<p> cZone: numeric corresponding to Zone, centred by subtracting the mean of the unique positions
+</p>
+</li>
+<li>
+<p> SHZone: <code>factor</code> for the combinations of Smarthouse and Zone
+</p>
+</li>
+<li>
+<p> ZLane: <code>factor</code> for the lanes within a Zone
+</p>
+</li>
+<li>
+<p> ZMainunit: <code>factor</code> for the main units within a Zone
+</p>
+</li>
+<li>
+<p> Subunit: <code>factor</code> for the subunits
+</p>
+</li>
+<li>
+<p> cMainPosn: numeric for the main-plot positions within a Lane, centred by subtracting the mean of the unique Positions
+</p>
+</li>
+<li>
+<p> cPosn: numeric for the Positions within a Lane, centred by subtracting the mean of the unique Positions</p>
+</li>
+</ol>
+<h3>Author(s)</h3>
+
+<p>Chris Brien</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(exampleData)
+longi.dat &lt;- prepImageData(data = raw.dat, smarthouse.lev = 1)
+longi.dat &lt;- designFactors(data = longi.dat, insertName = "Reps",
+                           nzones = 1, nlanesperzone = 1, nmainunitsperlane = 10, 
+                           designfactorMethod="StandardOrder")
+</code></pre>
+
+
+</div>

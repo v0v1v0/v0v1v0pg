@@ -1,0 +1,204 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ml_gKRLS</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Machine Learning with gKRLS</h2>
+
+<h3>Description</h3>
+
+<p>This provides a number of functions to use <code>gKRLS</code> (and
+<code>mgcv</code> more generally) as part of machine learning algorithms.
+Integration into <code>SuperLearner</code> and <code>DoubleML</code> (and <code>mlr3</code>)
+is described below.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">SL.mgcv(Y, X, newX, formula, family, obsWeights, bam = FALSE, ...)
+
+## S3 method for class 'SL.mgcv'
+predict(object, newdata, allow_missing_levels = TRUE, ...)
+
+add_bam_to_mlr3()
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>This is not usually directly specified in <code>SL.mgcv</code>, see the
+examples below and documentation in <code>SuperLearner</code> for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>This is not usually directly specified in <code>SL.mgcv</code>, see the
+examples below and documentation in <code>SuperLearner</code> for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newX</code></td>
+<td>
+<p>This is not usually directly specified in <code>SL.mgcv</code>, see the
+examples below and documentation in <code>SuperLearner</code> for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A formula used for <code>gam</code> or <code>bam</code> from
+<code>mgcv</code>. This must be specified, see the examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>This is not usually directly specified in <code>SL.mgcv</code>, see
+the examples below and documentation in <code>SuperLearner</code> for more
+details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obsWeights</code></td>
+<td>
+<p>This is not usually directly specified in <code>SL.mgcv</code>,
+see the examples below and documentation in <code>SuperLearner</code> for more
+details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bam</code></td>
+<td>
+<p>A logical value for whether <code>mgcv::bam</code> should be used
+instead of <code>mgcv::gam</code>. Default is <code>FALSE</code>. For large datasets,
+this can dramatically improve estimation time. Wood et al. (2015) and
+<code>mgcv</code> provide details on <code>bam</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to <code>mgcv::gam</code> and <code>mgcv::bam</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>This is not usually directly specified in <code>SL.mgcv</code>, see
+the examples below and documentation in <code>SuperLearner</code> for more
+details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>This is not usually directly specified in <code>SL.mgcv</code>, see
+the examples below and documentation in <code>SuperLearner</code> for more
+details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allow_missing_levels</code></td>
+<td>
+<p>A logical variable that indicates whether missing
+levels in factors are allowed for prediction. The default is <code>TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><b>Ensembles:</b> <code>SuperLearner</code> integration is provided by
+<code>SL.mgcv</code> and the corresponding predict method. <code>mgcv::bam</code> can be
+enabled by using <code>bam = TRUE</code>. A formula <b>without an outcome</b>
+must be explicitly provided.
+</p>
+<p>Please note that it is often useful to load <code>SuperLearner</code> before
+<code>gKRLS</code> or <code>mgcv</code> to avoid functions including <code>gam</code> and
+<code>s</code> being masked from other packages.
+</p>
+<p><b>Double Machine Learning</b>: <code>DoubleML</code> integration is provided in
+two ways. First, one could load <code>mlr3extralearners</code> to access
+<code>regr.gam</code> and <code>classif.gam</code>.
+</p>
+<p>Second, this package provides <code>mgcv::bam</code> integration directly with a
+slight adaption of the <code>mlr3extralearner</code> implementation (see
+<code>?LearnerClassifBam</code> for more details). These can be either manually
+added to the list of <code>mlr3</code> learners by calling
+<code>add_bam_to_mlr3()</code> or direct usage. Examples are provided below. For
+<code>classif.bam</code> and <code>regr.bam</code>, the formula argument is mandatory.
+</p>
+
+
+<h3>Value</h3>
+
+<p>All three of the returned functions are usually called for use in
+other functions, i.e. creating objects for use in <code>SuperLearner</code> or
+adding <code>bam</code> models to <code>mlr3</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Wood, Simon N., Yannig Goude, and Simon Shaw. 2015. "Generalized Additive
+Models for Large Data Sets." <em>Journal of the Royal Statistical Society:
+Series C (Applied Statistics)</em> 64(1):139-155.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(789)
+N &lt;- 100
+x1 &lt;- rnorm(N)
+x2 &lt;- rbinom(N, size = 1, prob = .2)
+y &lt;- x1^3 - 0.5 * x2 + rnorm(N, 0, 1)
+y &lt;- y * 10
+X &lt;- cbind(x1, x2, x1 + x2 * 3)
+X &lt;- cbind(X, "x3" = rexp(nrow(X)))
+
+if (requireNamespace("SuperLearner", quietly = TRUE)) {
+# Estimate Ensemble with SuperLearner
+  require(SuperLearner)
+  sl_m &lt;- function(...) { SL.mgcv(formula = ~ x1 + x2 + x3, ...) }
+  fit_SL &lt;- SuperLearner::SuperLearner(
+    Y = y, X = data.frame(X),
+    SL.library = "sl_m"
+  )
+  pred &lt;- predict(fit_SL, newdata = data.frame(X))
+}
+# Estimate Double/Debiased Machine Learning
+if (requireNamespace("DoubleML", quietly = TRUE)) {
+  require(DoubleML)
+  # Load the models; for testing *ONLY* have multiplier of 2
+  double_bam_1 &lt;- LearnerRegrBam$new()
+  double_bam_1$param_set$values$formula &lt;- ~ s(x1, x3, bs = "gKRLS", 
+    xt = gKRLS(sketch_multiplier = NULL, sketch_size_raw = 2))
+  double_bam_2 &lt;- LearnerClassifBam$new()
+  double_bam_2$param_set$values$formula &lt;- ~ s(x1, x3, bs = "gKRLS", 
+    xt = gKRLS(sketch_multiplier = NULL, sketch_size_raw = 2))
+
+  # Create data
+  dml_data &lt;- DoubleMLData$new(
+    data = data.frame(X, y),
+    x_cols = c("x1", "x3"), y_col = "y",
+    d_cols = "x2"
+  )
+  # Estimate effects treatment (works for other DoubleML methods)
+  dml_est &lt;- DoubleMLIRM$new(
+    data = dml_data,
+    n_folds = 2,
+    ml_g = double_bam_1,
+    ml_m = double_bam_2
+  )$fit()
+}
+</code></pre>
+
+
+</div>

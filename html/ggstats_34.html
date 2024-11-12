@@ -1,0 +1,195 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>position_likert</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Stack objects on top of each another and center them around 0</h2>
+
+<h3>Description</h3>
+
+<p><code>position_diverging()</code> stacks bars on top of each other and
+center them around zero (the same number of categories are displayed on
+each side).
+<code>position_likert()</code> uses proportions instead of counts. This type of
+presentation is commonly used to display Likert-type scales.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">position_likert(
+  vjust = 1,
+  reverse = FALSE,
+  exclude_fill_values = NULL,
+  cutoff = NULL
+)
+
+position_diverging(
+  vjust = 1,
+  reverse = FALSE,
+  exclude_fill_values = NULL,
+  cutoff = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>vjust</code></td>
+<td>
+<p>Vertical adjustment for geoms that have a position
+(like points or lines), not a dimension (like bars or areas). Set to
+<code>0</code> to align with the bottom, <code>0.5</code> for the middle,
+and <code>1</code> (the default) for the top.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reverse</code></td>
+<td>
+<p>If <code>TRUE</code>, will reverse the default stacking order.
+This is useful if you're rotating both the plot and legend.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exclude_fill_values</code></td>
+<td>
+<p>Vector of values from the variable associated with
+the <code>fill</code> aesthetic that should not be displayed (but still taken into
+account for computing proportions)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cutoff</code></td>
+<td>
+<p>number of categories to be displayed negatively (i.e. on the
+left of the x axis or the bottom of the y axis), could be a decimal value:
+<code>2</code> to display negatively the two first categories, <code>2.5</code> to display
+negatively the two first categories and half of the third, <code>2.2</code> to display
+negatively the two first categories and a fifth of the third (see examples).
+By default (<code>NULL</code>), it will be equal to the number of categories divided
+by 2, i.e. it will be centered.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>It is recommended to use <code>position_likert()</code> with <code>stat_prop()</code>
+and its <code>complete</code> argument (see examples).
+</p>
+
+
+<h3>See Also</h3>
+
+<p>See <code>ggplot2::position_stack()</code> and <code>ggplot2::position_fill()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(ggplot2)
+
+ggplot(diamonds) +
+  aes(y = clarity, fill = cut) +
+  geom_bar(position = "fill") +
+  scale_x_continuous(label = scales::label_percent()) +
+  xlab("proportion")
+
+ggplot(diamonds) +
+  aes(y = clarity, fill = cut) +
+  geom_bar(position = "likert") +
+  scale_x_continuous(label = label_percent_abs()) +
+  scale_fill_likert() +
+  xlab("proportion")
+
+ggplot(diamonds) +
+  aes(y = clarity, fill = cut) +
+  geom_bar(position = "stack") +
+  scale_fill_likert(pal = scales::brewer_pal(palette = "PiYG"))
+
+ggplot(diamonds) +
+  aes(y = clarity, fill = cut) +
+  geom_bar(position = "diverging") +
+  scale_x_continuous(label = label_number_abs()) +
+  scale_fill_likert()
+
+
+# Reverse order -------------------------------------------------------------
+
+ggplot(diamonds) +
+  aes(y = clarity, fill = cut) +
+  geom_bar(position = position_likert(reverse = TRUE)) +
+  scale_x_continuous(label = label_percent_abs()) +
+  scale_fill_likert() +
+  xlab("proportion")
+
+# Custom center -------------------------------------------------------------
+
+ggplot(diamonds) +
+  aes(y = clarity, fill = cut) +
+  geom_bar(position = position_likert(cutoff = 1)) +
+  scale_x_continuous(label = label_percent_abs()) +
+  scale_fill_likert(cutoff = 1) +
+  xlab("proportion")
+
+ggplot(diamonds) +
+  aes(y = clarity, fill = cut) +
+  geom_bar(position = position_likert(cutoff = 3.75)) +
+  scale_x_continuous(label = label_percent_abs()) +
+  scale_fill_likert(cutoff = 3.75) +
+  xlab("proportion")
+
+# Missing items -------------------------------------------------------------
+# example with a level not being observed for a specific value of y
+d &lt;- diamonds
+d &lt;- d[!(d$cut == "Premium" &amp; d$clarity == "I1"), ]
+d &lt;- d[!(d$cut %in% c("Fair", "Good") &amp; d$clarity == "SI2"), ]
+
+# by default, the two lowest bar are not properly centered
+ggplot(d) +
+  aes(y = clarity, fill = cut) +
+  geom_bar(position = "likert") +
+  scale_fill_likert()
+
+# use stat_prop() with `complete = "fill"` to fix it
+ggplot(d) +
+  aes(y = clarity, fill = cut) +
+  geom_bar(position = "likert", stat = "prop", complete = "fill") +
+  scale_fill_likert()
+
+# Add labels ----------------------------------------------------------------
+
+custom_label &lt;- function(x) {
+  p &lt;- scales::percent(x, accuracy = 1)
+  p[x &lt; .075] &lt;- ""
+  p
+}
+
+ggplot(diamonds) +
+  aes(y = clarity, fill = cut) +
+  geom_bar(position = "likert") +
+  geom_text(
+    aes(by = clarity, label = custom_label(after_stat(prop))),
+    stat = "prop",
+    position = position_likert(vjust = .5)
+  ) +
+  scale_x_continuous(label = label_percent_abs()) +
+  scale_fill_likert() +
+  xlab("proportion")
+
+# Do not display specific fill values ---------------------------------------
+# (but taken into account to compute proportions)
+
+ggplot(diamonds) +
+  aes(y = clarity, fill = cut) +
+  geom_bar(position = position_likert(exclude_fill_values = "Very Good")) +
+  scale_x_continuous(label = label_percent_abs()) +
+  scale_fill_likert() +
+  xlab("proportion")
+
+</code></pre>
+
+
+</div>

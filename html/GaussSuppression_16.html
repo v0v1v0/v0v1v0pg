@@ -1,0 +1,472 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GaussSuppressionFromData</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Cell suppression from input data containing inner cells</h2>
+
+<h3>Description</h3>
+
+<p>Aggregates are generated followed by
+primary suppression followed by
+secondary suppression by Gaussian elimination by <code>GaussSuppression</code>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GaussSuppressionFromData(
+  data,
+  dimVar = NULL,
+  freqVar = NULL,
+  ...,
+  numVar = NULL,
+  weightVar = NULL,
+  charVar = NULL,
+  hierarchies = NULL,
+  formula = NULL,
+  maxN = suppressWarnings(formals(c(primary)[[1]])$maxN),
+  protectZeros = suppressWarnings(formals(c(primary)[[1]])$protectZeros),
+  secondaryZeros = suppressWarnings(formals(candidates)$secondaryZeros),
+  candidates = CandidatesDefault,
+  primary = PrimaryDefault,
+  forced = NULL,
+  hidden = NULL,
+  singleton = SingletonDefault,
+  singletonMethod = ifelse(secondaryZeros, "anySumNOTprimary", "anySum"),
+  printInc = TRUE,
+  output = "publish",
+  x = NULL,
+  crossTable = NULL,
+  preAggregate = is.null(freqVar),
+  extraAggregate = preAggregate &amp; !is.null(charVar),
+  structuralEmpty = FALSE,
+  extend0 = FALSE,
+  spec = NULL,
+  specLock = FALSE,
+  freqVarNew = rev(make.unique(c(names(data), "freq")))[1],
+  nUniqueVar = rev(make.unique(c(names(data), "nUnique")))[1],
+  forcedInOutput = "ifNonNULL",
+  unsafeInOutput = "ifForcedInOutput",
+  lpPackage = NULL,
+  aggregatePackage = "base",
+  aggregateNA = TRUE,
+  aggregateBaseOrder = FALSE,
+  rowGroupsPackage = aggregatePackage
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Input data as a data frame</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dimVar</code></td>
+<td>
+<p>The main dimensional variables and additional aggregating variables. This parameter can be  useful when hierarchies and formula are unspecified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>freqVar</code></td>
+<td>
+<p>A single variable holding counts (name or number).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments to be passed to the supplied functions and to <code>ModelMatrix</code> (such as <code>inputInOutput</code> and <code>removeEmpty</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numVar</code></td>
+<td>
+<p>Other numerical variables to be aggregated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weightVar</code></td>
+<td>
+<p>weightVar Weights (costs) to be used to order candidates for secondary suppression</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>charVar</code></td>
+<td>
+<p>Other variables possibly to be used within the supplied functions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hierarchies</code></td>
+<td>
+<p>List of hierarchies, which can be converted by <code>AutoHierarchies</code>.
+Thus, the variables can also be coded by <code>"rowFactor"</code> or <code>""</code>, which correspond to using the categories in the data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A model formula</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxN</code></td>
+<td>
+<p>Suppression parameter. Cells with frequency <code style="white-space: pre;">⁠&lt;= maxN⁠</code> are set as primary suppressed.
+Using the default <code>primary</code> function, <code>maxN</code> is by default set to <code>3</code>. See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>protectZeros</code></td>
+<td>
+<p>Suppression parameter.
+When <code>TRUE</code>, cells with zero frequency or value are set as primary suppressed.
+Using the default <code>primary</code> function, <code>protectZeros</code> is by default set to <code>TRUE</code>. See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>secondaryZeros</code></td>
+<td>
+<p>Suppression parameter.
+When <code>TRUE</code>, cells with zero frequency or value are prioritized to be published so that they are not secondary suppressed.
+Using the default <code>candidates</code> function, <code>secondaryZeros</code> is by default set to <code>FALSE</code>.
+See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>candidates</code></td>
+<td>
+<p>GaussSuppression input or a function generating it (see details) Default: <code>CandidatesDefault</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>primary</code></td>
+<td>
+<p>GaussSuppression input or a function generating it (see details) Default: <code>PrimaryDefault</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>forced</code></td>
+<td>
+<p>GaussSuppression input or a function generating it (see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hidden</code></td>
+<td>
+<p>GaussSuppression input or a function generating it (see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>singleton</code></td>
+<td>
+<p>GaussSuppression input or a function generating it (see details) Default: <code>SingletonDefault</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>singletonMethod</code></td>
+<td>
+<p><code>GaussSuppression</code> input. The default value depends on parameter <code>secondaryZeros</code> which depends on <code>candidates</code> (see details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>printInc</code></td>
+<td>
+<p><code>GaussSuppression</code> input</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output</code></td>
+<td>
+<p>One of <code>"publish"</code> (default), <code>"inner"</code>, <code>"publish_inner"</code>, <code>"publish_inner_x"</code>, <code>"publish_x"</code>,
+<code>"inner_x"</code>, <code>"input2functions"</code> (input to supplied functions),
+<code>"inputGaussSuppression"</code>, <code>"inputGaussSuppression_x"</code>,
+<code>"outputGaussSuppression"</code>  <code>"outputGaussSuppression_x"</code>,
+<code>"primary"</code>,  <code>"secondary"</code> and <code>"all"</code>.
+Here "inner" means input data (possibly pre-aggregated) and
+"x" means dummy matrix (as input parameter x).
+All input to and output from <code>GaussSuppression</code>, except <code>...</code>, are returned when <code>"outputGaussSuppression_x"</code>.
+Excluding x and only input are also possible.
+The code <code>"all"</code> means all relevant output after all the calculations.
+Currently, this means the same as <code>"publish_inner_x"</code> extended with the matrices (or NULL) <code>xExtraPrimary</code>  and <code>unsafe</code>.
+The former matrix is usually made by <code>KDisclosurePrimary</code>.
+This latter matrix contains the columns representing unsafe primary suppressions.
+In addition to <code>x</code> columns corresponding to unsafe in ordinary output (see parameter <code>unsafeInOutput</code> below),
+possible columns from  <code>xExtraPrimary</code> may also be included in the unsafe matrix (see details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p><code>x</code> (<code>modelMatrix</code>) and <code>crossTable</code> can be supplied as input instead of generating it from  <code>ModelMatrix</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>crossTable</code></td>
+<td>
+<p>See above.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>preAggregate</code></td>
+<td>
+<p>When <code>TRUE</code>, the data will be aggregated within the function to an appropriate level.
+This is defined by the dimensional variables according to <code>dimVar</code>, <code>hierarchies</code> or <code>formula</code> and in addition <code>charVar</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extraAggregate</code></td>
+<td>
+<p>When <code>TRUE</code>, the data will be aggregated by the dimensional variables according to <code>dimVar</code>, <code>hierarchies</code> or <code>formula</code>.
+The aggregated data and the corresponding x-matrix will only be used as input to the singleton
+function and <code>GaussSuppression</code>.
+This extra aggregation is useful when parameter <code>charVar</code> is used.
+Supply <code>"publish_inner"</code>, <code>"publish_inner_x"</code>, <code>"publish_x"</code> or <code>"inner_x"</code> as <code>output</code> to obtain extra aggregated results.
+Supply <code>"inner"</code> or <code>"input2functions"</code> to obtain other results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>structuralEmpty</code></td>
+<td>
+<p>When <code>TRUE</code>, output cells with no contributing inner cells (only zeros in column of <code>x</code>)
+are forced to be not primary suppressed.
+Thus, these cells are considered as structural zeros.
+When <code>structuralEmpty</code> is <code>TRUE</code>, the following error message is avoided:
+<code>Suppressed</code> <code>cells</code> <code>with</code> <code>empty</code> <code>input</code> <code>will</code> <code>not</code> <code>be</code> <code>protected.</code>
+<code>Extend</code> <code>input</code> <code>data</code> <code>with</code> <code style="white-space: pre;">⁠zeros?⁠</code>.
+When <code>removeEmpty</code> is <code>TRUE</code> (see "<code>...</code>" below), <code>structuralEmpty</code> is superfluous</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extend0</code></td>
+<td>
+<p>Data is automatically extended by <code>Extend0</code> when <code>TRUE</code>.
+Can also be set to <code>"all"</code> which means that input codes in hierarchies are considered in addition to those in data.
+Parameter <code>extend0</code> can also be specified as a list meaning parameter <code>varGroups</code> to <code>Extend0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spec</code></td>
+<td>
+<p><code>NULL</code> or a named list of arguments that will act as default values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>specLock</code></td>
+<td>
+<p>When <code>TRUE</code>, arguments in <code>spec</code> cannot be changed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>freqVarNew</code></td>
+<td>
+<p>Name of new frequency variable generated when input <code>freqVar</code> is NULL and <code>preAggregate</code> is TRUE.
+Default is <code>"freq"</code> provided this is not found in <code>names(data)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nUniqueVar</code></td>
+<td>
+<p>Name of variable holding the number of unique contributors.
+This variable will be generated in the <code>extraAggregate</code> step.
+Default is <code>"nUnique"</code> provided this is not found in <code>names(data)</code>.
+If an existing variable is passed as input,
+this variable will apply only when <code>preAggregate</code>/<code>extraAggregate</code> is not done.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>forcedInOutput</code></td>
+<td>
+<p>Whether to include <code>forced</code> as an output column.
+One of <code>"ifNonNULL"</code> (default), <code>"always"</code>, <code>"ifany"</code> and <code>"no"</code>.
+In addition, <code>TRUE</code> and <code>FALSE</code> are allowed as alternatives to  <code>"always"</code> and <code>"no"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unsafeInOutput</code></td>
+<td>
+<p>Whether to include <code>usafe</code> as an output column.
+One of <code>"ifForcedInOutput"</code> (default), <code>"always"</code>, <code>"ifany"</code> and <code>"no"</code>.
+In addition, <code>TRUE</code> and <code>FALSE</code> are allowed as alternatives to  <code>"always"</code> and <code>"no"</code>.
+see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lpPackage</code></td>
+<td>
+
+<ul><li> <p><strong><code>lpPackage</code>:</strong>
+When non-NULL, intervals by <code>ComputeIntervals</code>
+will be included in the output.
+See its documentation for valid parameter values for 'lpPackage'.
+If, additionally, at least one of the two <code>RangeLimitsDefault</code> parameters below is specified,
+further suppression will be performed to satisfy the interval width requirements.
+Then, the values in the output variable <code>suppressed_integer</code> means:
+no suppression (0),
+primary suppression (1),
+secondary suppression (2),
+additional suppression applied by an interval algorithm limited to linearly independent cells (3),
+and further suppression according to the final gauss algorithm (4).
+Intervals, <code style="white-space: pre;">⁠[lo_1, up_1]⁠</code>, are intervals calculated prior to additional suppression.
+</p>
+
+<ul>
+<li> <p><strong><code>rangePercent</code>:</strong> Required interval width expressed as a percentage
+</p>
+</li>
+<li> <p><strong><code>rangeMin</code>:</strong> Minimum required width of the interval
+</p>
+<div class="sourceCode"><pre>         Please note that interval calculations may have a 
+         different interface in future versions.
+</pre></div>
+</li>
+</ul>
+</li></ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aggregatePackage</code></td>
+<td>
+<p>Package used to preAggregate/extraAggregate.
+Parameter <code>pkg</code> to <code>aggregate_by_pkg</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aggregateNA</code></td>
+<td>
+<p>Whether to include NAs in the grouping variables while preAggregate/extraAggregate.
+Parameter <code>include_na</code> to <code>aggregate_by_pkg</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aggregateBaseOrder</code></td>
+<td>
+<p>Parameter <code>base_order</code> to <code>aggregate_by_pkg</code>,
+used when preAggregate/extraAggregate.
+The parameter does not affect the ordering of ordinary output.
+Therefore, the default is set to <code>FALSE</code> to avoid unnecessary sorting operations.
+The parameter will have impact when, e.g <code>output = "inner"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rowGroupsPackage</code></td>
+<td>
+<p>Parameter <code>pkg</code> to <code>RowGroups</code>.
+The parameter is input to <code>Formula2ModelMatrix</code>
+via <code>ModelMatrix</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The supplied functions for generating <code>GaussSuppression</code> input takes the following arguments:
+<code>crossTable</code>,  <code>x</code>, <code>freq</code>, <code>num</code>, <code>weight</code>, <code>maxN</code>, <code>protectZeros</code>, <code>secondaryZeros</code>, <code>data</code>, <code>freqVar</code>, <code>numVar</code>, <code>weightVar</code>, <code>charVar</code>, <code>dimVar</code>
+<code>aggregatePackage</code>, <code>aggregateNA</code>, <code>aggregateBaseOrder</code>, <code>rowGroupsPackage</code>, and <code>...</code>.
+where the two first are  <code>ModelMatrix</code> outputs (<code>modelMatrix</code> renamed to <code>x</code>).
+The vector, <code>freq</code>, is aggregated counts (<code>t(x) %*% data[[freqVar]]</code>).
+In addition, the supplied <code>singleton</code> function also takes <code>nUniqueVar</code> and (output from) <code>primary</code> as input.
+</p>
+<p>Similarly, <code>num</code>, is a data frame of aggregated numerical variables.
+It is possible to supply several primary functions joined by <code>c</code>, e.g. (<code>c(FunPrim1, FunPrim2)</code>).
+All <code>NA</code>s returned from any of the functions force the corresponding cells not to be primary suppressed.
+</p>
+<p>The effect of <code>maxN</code> , <code>protectZeros</code> and <code>secondaryZeros</code> depends on the supplied functions where these parameters are used.
+Their default values are inherited from the default values of the first <code>primary</code> function (several possible) or,
+in the case of <code>secondaryZeros</code>, the <code>candidates</code> function.
+When defaults cannot be inherited, they are set to <code>NULL</code>.
+In practice the function <code>formals</code> are still used to generate the defaults when <code>primary</code> and/or <code>candidates</code> are not functions.
+Then <code>NULL</code> is correctly returned, but <code>suppressWarnings</code> are needed.
+</p>
+<p>Singleton handling can be turned off by <code>singleton = NULL</code> or <code>singletonMethod = "none"</code>.
+Both of these choices are identical in the sense that <code>singletonMethod</code> is set to <code>"none"</code> whenever <code>singleton</code> is <code>NULL</code> and vice versa.
+</p>
+<p>Information about uncertain primary suppressions due to forced cells can be found
+as described by parameters <code>unsafeInOutput</code> and <code>output</code>  (<code style="white-space: pre;">⁠= "all"⁠</code>).
+When forced cells affect singleton problems, this is not implemented.
+Some information can be seen from warnings.
+This can also be seen by choosing <code>output = "secondary"</code> together
+with <code>unsafeInOutput = "ifany"</code> or <code>unsafeInOutput = "always"</code>.
+Then, negative indices from <code>GaussSuppression</code> using
+<code>unsafeAsNegative = TRUE</code> will be included in the output.
+Singleton problems may, however, be present even if it cannot be seen as warning/output.
+In some cases, the problems can be detected by <code>GaussSuppressDec</code>.
+</p>
+<p>In some cases, cells that are forced, hidden, or primary suppressed can overlap.
+For these situations, forced has precedence over hidden and primary.
+That is, if a cell is both forced and hidden, it will be treated as a forced cell and thus published.
+Similarly, any primary suppression of a forced cell will be ignored
+(see parameter <code>whenPrimaryForced</code> to <code>GaussSuppression</code>).
+It is, however, meaningful to combine primary and hidden.
+Such cells will be protected while also being assigned the <code>NA</code> value in the <code>suppressed</code> output variable.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Aggregated data with suppression information
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Øyvind Langsrud and Daniel Lupp
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+z1 &lt;- SSBtoolsData("z1")
+GaussSuppressionFromData(z1, 1:2, 3)
+
+z2 &lt;- SSBtoolsData("z2")
+GaussSuppressionFromData(z2, 1:4, 5, protectZeros = FALSE)
+
+
+# Data as in GaussSuppression examples
+df &lt;- data.frame(values = c(1, 1, 1, 5, 5, 9, 9, 9, 9, 9, 0, 0, 0, 7, 7), 
+                 var1 = rep(1:3, each = 5), var2 = c("A", "B", "C", "D", "E"))
+
+GaussSuppressionFromData(df, c("var1", "var2"), "values")
+GaussSuppressionFromData(df, c("var1", "var2"), "values", formula = ~var1 + var2, maxN = 10)
+GaussSuppressionFromData(df, c("var1", "var2"), "values", formula = ~var1 + var2, maxN = 10,
+      protectZeros = TRUE, # Parameter needed by SingletonDefault and default not in primary  
+      primary = function(freq, crossTable, maxN, ...) 
+                   which(freq &lt;= maxN &amp; crossTable[[2]] != "A" &amp; crossTable[, 2] != "C"))
+                   
+# Combining several primary functions 
+# Note that NA &amp; c(TRUE, FALSE) equals c(NA, FALSE)                      
+GaussSuppressionFromData(df, c("var1", "var2"), "values", formula = ~var1 + var2, maxN = 10, 
+       primary = c(function(freq, maxN, protectZeros = TRUE, ...) freq &gt;= 45,
+                   function(freq, maxN, ...) freq &lt;= maxN,
+                   function(crossTable, ...) NA &amp; crossTable[[2]] == "C",  
+                   function(crossTable, ...) NA &amp; crossTable[[1]]== "Total" 
+                                                &amp; crossTable[[2]]== "Total"))                    
+                   
+# Similar to GaussSuppression examples
+GaussSuppressionFromData(df, c("var1", "var2"), "values", formula = ~var1 * var2, 
+       candidates = NULL, singleton = NULL, protectZeros = FALSE, secondaryZeros = TRUE)
+GaussSuppressionFromData(df, c("var1", "var2"), "values", formula = ~var1 * var2, 
+       singleton = NULL, protectZeros = FALSE, secondaryZeros = FALSE)
+GaussSuppressionFromData(df, c("var1", "var2"), "values", formula = ~var1 * var2, 
+       protectZeros = FALSE, secondaryZeros = FALSE)
+
+              
+# Examples with zeros as singletons
+z &lt;- data.frame(row = rep(1:3, each = 3), col = 1:3, freq = c(0, 2, 5, 0, 0, 6:9))
+GaussSuppressionFromData(z, 1:2, 3, singleton = NULL) 
+GaussSuppressionFromData(z, 1:2, 3, singletonMethod = "none") # as above 
+GaussSuppressionFromData(z, 1:2, 3)
+GaussSuppressionFromData(z, 1:2, 3, protectZeros = FALSE, secondaryZeros = TRUE, singleton = NULL)
+GaussSuppressionFromData(z, 1:2, 3, protectZeros = FALSE, secondaryZeros = TRUE)      
+</code></pre>
+
+
+</div>

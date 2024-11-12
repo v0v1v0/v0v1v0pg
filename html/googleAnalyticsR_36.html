@@ -1,0 +1,208 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ga_data</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Google Analytics Data for GA4 (App+Web)</h2>
+
+<h3>Description</h3>
+
+<p><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental"><img src="../help/figures/lifecycle-experimental.svg" alt="[Experimental]"></a>
+</p>
+<p>Fetches Google Analytics from the Data API for Google Analytics 4 (Previously App+Web)
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ga_data(
+  propertyId,
+  metrics,
+  date_range = NULL,
+  dimensions = NULL,
+  dim_filters = NULL,
+  dimensionDelimiter = "/",
+  met_filters = NULL,
+  orderBys = NULL,
+  limit = 100,
+  page_size = 100000L,
+  realtime = FALSE,
+  metricAggregations = NULL,
+  raw_json = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>propertyId</code></td>
+<td>
+<p>A GA4 property Id</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metrics</code></td>
+<td>
+<p>The metrics to request - see ga_meta - set to NULL to only see dimensions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>date_range</code></td>
+<td>
+<p>A vector with start and end dates in YYYY-MM-DD format - can send in up to four date ranges at once</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dimensions</code></td>
+<td>
+<p>The dimensions to request - see ga_meta</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dim_filters</code></td>
+<td>
+<p>Filter on the dimensions of the request - a filter object created by ga_data_filter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dimensionDelimiter</code></td>
+<td>
+<p>If combining dimensions in one column, the delimiter for the value field</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>met_filters</code></td>
+<td>
+<p>Filter on the metrics of the request - a filter object created by ga_data_filter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>orderBys</code></td>
+<td>
+<p>How to order the response - an order object created by ga_data_order</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>limit</code></td>
+<td>
+<p>The number of rows to return - use -1 to return all rows</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>page_size</code></td>
+<td>
+<p>The size of API pages - default is 100000L rows</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>realtime</code></td>
+<td>
+<p>If TRUE then will call the real-time reports, that have a more limited set of dimensions/metrics - see <a href="https://developers.google.com/analytics/devguides/reporting/data/v1/realtime-basics">valid real-time dimensions</a></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metricAggregations</code></td>
+<td>
+<p>Default NULL, pass in character vector of one or multiple of <code>c("TOTAL","MAXIMUM","MINIMUM","COUNT")</code> to return extra metadata</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>raw_json</code></td>
+<td>
+<p>You can send in the raw JSON string for a Data API request which will skip all checks</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This is the main function to call the Google Analytics 4 Data API.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data.frame tibble, including attributes metadata, metricAggregations and rowCount.  Use ga_data_aggregations to extract the data.frames of metricAggregations
+</p>
+
+
+<h3>See Also</h3>
+
+<p><a href="https://developers.google.com/analytics/devguides/reporting/data/v1">Documentation on Data API</a>
+</p>
+<p>Other GA4 functions: 
+<code>ga_data_filter()</code>,
+<code>ga_data_order()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+
+# send up to 4 date ranges
+multi_date &lt;- ga_data(
+  206670707,
+  metrics = c("activeUsers","sessions"),
+  dimensions = c("date","city","dayOfWeek"),
+  date_range = c("2020-03-31", "2020-04-27", "2020-04-30", "2020-05-27"),
+  dim_filters = ga_data_filter("city"=="Copenhagen"),
+  limit = 100
+  )
+
+
+# metric and dimension expressions
+
+# create your own named metrics
+met_expression &lt;- ga_data(
+  206670707,
+  metrics = c("activeUsers","sessions",sessionsPerUser = "sessions/activeUsers"),
+  dimensions = c("date","city","dayOfWeek"),
+  date_range = c("2020-03-31", "2020-04-27"),
+  limit = 100
+  )
+
+# create your own aggregation dimensions
+dim_expression &lt;- ga_data(
+  206670707,
+  metrics = c("activeUsers","sessions"),
+  dimensions = c("date","city","dayOfWeek", cdow = "city/dayOfWeek"),
+  date_range = c("2020-03-31", "2020-04-27"),
+  limit = 100
+  )
+  
+# run a real-time report (no date dimension allowed) 
+# includes metricAggregation metadata
+realtime &lt;- ga_data(
+  206670707,
+  metrics = "activeUsers",
+  dimensions = c("city","unifiedScreenName"),
+  limit = 100,
+  realtime = TRUE,
+  metricAggregations = c("TOTAL","MAXIMUM","MINIMUM"))
+
+# extract meta data from the table
+ga_data_aggregations(realtime)
+
+# add ordering
+a &lt;- ga_data_order(-sessions)
+b &lt;- ga_data_order(-dayOfWeek, type = "NUMERIC")
+
+ga_data(
+  206670707,
+  metrics = c("activeUsers","sessions"),
+  dimensions = c("date","city","dayOfWeek"),
+  date_range = c("2020-03-31", "2020-04-27"),
+  orderBys = c(a, b)
+  )
+
+## End(Not run)
+
+
+</code></pre>
+
+
+</div>

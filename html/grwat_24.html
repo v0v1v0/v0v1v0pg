@@ -1,0 +1,177 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gr_separate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Advanced hydrograph separation</h2>
+
+<h3>Description</h3>
+
+<p>Separates the runoff into genetic components: groundwater, thaw, rain and spring.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gr_separate(df, params = gr_get_params(), debug = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p><code>data.frame</code> with four columns: date, runoff, temperature, precipitation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>params</code></td>
+<td>
+<p><code>list</code> of separation parameters, as returned by <code>gr_get_params()</code> function. Can also be a <code>list</code> of such <code>list</code>s if modified parameters are required for some years. In this case the length of <code>params</code> must be equal to the number of calendar years in <code>df</code> or be equal to <code>1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>debug</code></td>
+<td>
+<p>Boolean. If <code>TRUE</code> then additional attributes <code>jittered</code> and <code>params</code> are written to the output <code>data.frame</code>. <code>jittered</code> is an integer vector of years for which the separation parameters were randomly jittered. <code>params</code> is a list of separation parameter lists used for each year (some o those may have been jittered). Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>data.frame</code> with 11 columns:</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+   <strong>Column</strong> </td>
+<td style="text-align: left;"> <strong>Description</strong> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>Date</code> </td>
+<td style="text-align: left;"> date </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>Q</code> </td>
+<td style="text-align: left;"> total runoff </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>Temp</code> </td>
+<td style="text-align: left;"> temperature </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>Prec</code> </td>
+<td style="text-align: left;"> precipitation </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>Qbase</code> </td>
+<td style="text-align: left;"> baseflow </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>Quick</code> </td>
+<td style="text-align: left;"> quickflow </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>Qspri</code> </td>
+<td style="text-align: left;"> spring flood </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>Qrain</code> </td>
+<td style="text-align: left;"> rain floods </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>Qthaw</code> </td>
+<td style="text-align: left;"> thaw floods </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>Season</code> </td>
+<td style="text-align: left;"> a season of the year </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>Year</code> </td>
+<td style="text-align: left;"> a water-resources year </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(grwat)
+
+data(spas) # example Spas-Zagorye data is included with grwat package
+head(spas)
+
+# separate
+sep = gr_separate(spas, params = gr_get_params(reg = 'center'))
+
+# Visualize
+gr_plot_sep(sep, c(1978, 1989)) 
+
+# Debug mode gives access to additional information
+sep_debug = gr_separate(spas, 
+                        params = gr_get_params(reg = 'center'), 
+                        debug = TRUE)
+
+# a vector of years with jittered params
+jit = attributes(sep_debug)$jittered
+print(jit)
+
+# actual params used for each year
+parlist = attributes(sep_debug)$params
+partab = do.call(dplyr::bind_rows, parlist) # View as table
+head(partab)
+
+# extract and tweak parameters for selected year
+p = parlist[['1989']]
+p$grad1 = 1
+p$grad2 = 2.5
+
+# use tweaked parameters for all years
+sep_debug = gr_separate(spas, params = p, debug = TRUE)
+
+# Visualize
+gr_plot_sep(sep_debug, c(1978, 1989)) 
+
+# actual params used for each year
+parlist = attributes(sep_debug)$params
+
+# tweak parameters for selected year
+parlist[['1989']]$grad1 = 3
+parlist[['1989']]$grad2 = 6
+
+# set the sprecdays parameter for multiple years
+parlist = gr_set_param(parlist, sprecdays, 
+                       years = c(1978, 1989:1995), 
+                       value = 15)
+
+# set the spcomp parameter for all years
+parlist = gr_set_param(parlist, spcomp, value = 2.5)
+
+# use the list of parameters for separation
+sep_debug = gr_separate(spas, params = parlist, debug = TRUE)
+
+# Visualize
+gr_plot_sep(sep_debug, c(1978, 1989))
+
+
+
+</code></pre>
+
+
+</div>

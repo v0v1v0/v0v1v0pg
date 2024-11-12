@@ -1,0 +1,246 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gem_3_2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some Simple 3-by-2 General Equilibrium Models</h2>
+
+<h3>Description</h3>
+
+<p>Some simple 3-by-2 general equilibrium models with a firm and a consumer.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gem_3_2(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>References</h3>
+
+<p>http://www.econ.ucla.edu/riley/MAE/Course/SolvingForTheWE.pdf
+</p>
+<p>He Zhangyong, Song Zheng (2010, ISBN: 9787040297270) Advanced Macroeconomics. Beijing: Higher Education Press.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+ge.CD &lt;- sdm2(
+  A = function(state) {
+    ## the vector of demand coefficients of the firm
+    a1 &lt;- CD_A(alpha = 2, Beta = c(0, 0.5, 0.5), state$p)
+    ## the vector of demand coefficients of the consumer
+    a2 &lt;- c(1, 0, 0)
+    cbind(a1, a2)
+  },
+  B = matrix(c(
+    1, 0,
+    0, 0,
+    0, 0
+  ), 3, 2, TRUE),
+  S0Exg = matrix(c(
+    NA, NA,
+    NA, 100,
+    NA, 100
+  ), 3, 2, TRUE),
+  names.commodity = c("prod", "cap", "lab"),
+  names.agent = c("firm", "consumer"),
+  numeraire = "prod"
+)
+
+ge.CD$p
+ge.CD$z
+ge.CD$D
+ge.CD$S
+
+#### Example 2 in the ucla reference
+## By introducing a new factor of production (called land here)
+## a firm with diminishing returns to scale can be converted into
+## a firm with constant returns to scale.
+ge2.CD &lt;- sdm2(
+  A = function(state) {
+    a.firm &lt;- CD_A(alpha = 6, Beta = c(0, 0.5, 0.5), state$p)
+    a.consumer &lt;- CD_A(alpha = 1, Beta = c(0.2, 0.8, 0), state$p)
+    cbind(a.firm, a.consumer)
+  },
+  B = matrix(c(
+    1, 0,
+    0, 0,
+    0, 0
+  ), 3, 2, TRUE),
+  S0Exg = matrix(c(
+    NA, NA,
+    NA, 81,
+    NA, 1
+  ), 3, 2, TRUE),
+  names.commodity = c("prod", "lab", "land"),
+  names.agent = c("firm", "consumer"),
+  numeraire = "prod"
+)
+
+ge2.CD$p
+ge2.CD$z
+ge2.CD$D
+ge2.CD$S
+
+####
+ge.SCES &lt;- sdm2(
+  A = function(state) {
+    a1 &lt;- SCES_A(es = 0.5, alpha = 1, Beta = c(0, 0.5, 0.5), p = state$p)
+    a2 &lt;- c(1, 0, 0)
+    cbind(a1, a2)
+  },
+  B = matrix(c(
+    1, 0,
+    0, 0,
+    0, 0
+  ), 3, 2, TRUE),
+  S0Exg = matrix(c(
+    NA, NA,
+    NA, 100,
+    NA, 100
+  ), 3, 2, TRUE),
+  names.commodity = c("prod", "cap", "lab"),
+  names.agent = c("firm", "consumer"),
+  numeraire = "prod"
+)
+
+ge.SCES$p
+ge.SCES$z
+ge.SCES$D
+ge.SCES$S
+
+####
+ge2.SCES &lt;- sdm2(
+  A = function(state) {
+    a1 &lt;- SCES_A(es = 0.5, alpha = 1, Beta = c(0.2, 0.4, 0.4), p = state$p)
+    a2 &lt;- c(1, 0, 0)
+    cbind(a1, a2)
+  },
+  B = matrix(c(
+    1, 0,
+    0, 0,
+    0, 0
+  ), 3, 2, TRUE),
+  S0Exg = matrix(c(
+    NA, NA,
+    NA, 100,
+    NA, 100
+  ), 3, 2, TRUE),
+  names.commodity = c("prod", "cap", "lab"),
+  names.agent = c("firm", "consumer"),
+  numeraire = "prod"
+)
+
+ge2.SCES$p
+ge2.SCES$z
+ge2.SCES$D
+ge2.SCES$S
+
+#### nested production function
+dst.firm &lt;- node_new(
+  "prod",
+  type = "Leontief",
+  a = c(0.2, 0.8),
+  "prod", "cc1"
+)
+node_set(dst.firm, "cc1",
+         type = "SCES",
+         es = 0.5, alpha = 1, beta = c(0.5, 0.5),
+         "cap", "lab"
+)
+
+dst.consumer &lt;- node_new(
+  "util",
+  type = "Leontief", a = 1,
+  "prod"
+)
+
+ge3.SCES &lt;- sdm2(
+  A = list(dst.firm, dst.consumer),
+  B = matrix(c(
+    1, 0,
+    0, 0,
+    0, 0
+  ), 3, 2, TRUE),
+  S0Exg = matrix(c(
+    NA, NA,
+    NA, 100,
+    NA, 100
+  ), 3, 2, TRUE),
+  names.commodity = c("prod", "cap", "lab"),
+  names.agent = c("firm", "consumer"),
+  numeraire = "prod"
+)
+
+ge3.SCES$p
+ge3.SCES$z
+ge3.SCES$D
+ge3.SCES$S
+
+#### a model with a quasilinear utility function (see He and Song, 2010, page 19).
+alpha.firm &lt;- 2
+beta.cap.firm &lt;- 0.6
+beta.lab.firm &lt;- 1 - beta.cap.firm
+theta.consumer &lt;- 0.8
+lab.supply &lt;- 2
+cap.supply &lt;- 1
+
+ge &lt;- sdm2(
+  A = function(state) {
+    a1 &lt;- CD_A(alpha.firm, rbind(0, beta.lab.firm, beta.cap.firm), state$p)
+
+    demand.lab.prod &lt;- QL_demand(
+      w = state$w[2], p = state$p[2:1], # the prices of lab and prod
+      alpha = 1, beta = theta.consumer, type = "CRRA"
+    )
+    a2 &lt;- c(demand.lab.prod[2:1], 0)
+    cbind(a1, a2)
+  },
+  B = matrix(c(
+    1, 0,
+    0, 0,
+    0, 0
+  ), 3, 2, TRUE),
+  S0Exg = matrix(c(
+    NA, NA,
+    NA, lab.supply,
+    NA, cap.supply
+  ), 3, 2, TRUE),
+  names.commodity = c("prod", "lab", "cap"),
+  names.agent = c("firm", "consumer"),
+  numeraire = "prod"
+)
+
+ge$p
+ge$z
+ge$D
+ge$S
+
+# the equilibrium leisure
+lab.supply - (beta.lab.firm * (alpha.firm * cap.supply^beta.cap.firm)^(1 - theta.consumer))^
+  (1 / (beta.cap.firm + beta.lab.firm * theta.consumer))
+
+# the equilibrium price of labor
+w &lt;- ((1 - beta.cap.firm)^(1 - beta.cap.firm) * (alpha.firm * cap.supply^beta.cap.firm))^
+  (theta.consumer / (beta.cap.firm + (1 - beta.cap.firm) * theta.consumer))
+
+# the equilibrium price of capital goods
+beta.cap.firm * w^(1 / theta.consumer) / cap.supply
+
+</code></pre>
+
+
+</div>

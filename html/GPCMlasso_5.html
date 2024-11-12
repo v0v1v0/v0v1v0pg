@@ -1,0 +1,137 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.GPCMlasso</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict function for GPCMlasso</h2>
+
+<h3>Description</h3>
+
+<p>Predict function for a <code>GPCMlasso</code> object. 
+Predictions can be linear predictors or probabilities separately for each person and each item.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'GPCMlasso'
+predict(
+  object,
+  coefs = NULL,
+  newdata = NULL,
+  type = c("link", "response"),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p><code>GPCMlasso</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coefs</code></td>
+<td>
+<p>Optional vector of coefficients, can be filled with a specific 
+row from <code>object$coefficients</code>. If not specified, <code>coefs</code> are specififed to be
+the BIC-optimal coefficients or, if cross-validation was performed, the optimal 
+coefficients according to cross-validation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>List possibly containing slots Y, X, Z1 and Z2 to use new data for prediction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Type "link" gives vectors of linear predictors for separate categories 
+(of length $k_i-1$) and type "response" gives the respective probabilities (of length $k_i$).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further predict arguments.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Results are lists of vectors with length equal to the number 
+of response categories $k_i$ in case of
+probabilities (<code>type="response"</code>) or 
+$k_i-1$ in case of linear predictors (<code>type="link"</code>).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Gunther Schauberger<br><a href="mailto:gunther@stat.uni-muenchen.de">gunther@stat.uni-muenchen.de</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GPCMlasso</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(tenseness_small)
+
+## formula for simple model without covariates
+form.0 &lt;- as.formula(paste("cbind(",paste(colnames(tenseness_small)[1:5],collapse=","),")~0"))
+
+######
+## fit simple RSM where loglikelihood and score function are evaluated parallel on 2 cores
+rsm.0 &lt;- GPCMlasso(form.0, tenseness_small, model = "RSM", 
+control= ctrl_GPCMlasso(cores=2))
+rsm.0
+
+## Not run: 
+## formula for model with covariates (and DIF detection)
+form &lt;- as.formula(paste("cbind(",paste(colnames(tenseness_small)[1:5],collapse=","),")~."))
+
+######
+## fit GPCM model with 10 different tuning parameters
+gpcm &lt;- GPCMlasso(form, tenseness_small, model = "GPCM", 
+                  control = ctrl_GPCMlasso(l.lambda = 10))
+gpcm
+plot(gpcm)
+pred.gpcm &lt;- predict(gpcm)
+trait.gpcm &lt;- trait.posterior(gpcm)
+
+######
+## fit RSM, detect differential step functioning (DSF)
+rsm.DSF &lt;- GPCMlasso(form, tenseness_small, model = "RSM", DSF = TRUE, 
+                     control = ctrl_GPCMlasso(l.lambda = 10))
+rsm.DSF
+plot(rsm.DSF)
+
+## create binary data set
+tenseness_small_binary &lt;- tenseness_small
+tenseness_small_binary[,1:5][tenseness_small[,1:5]&gt;1] &lt;- 2
+
+######
+## fit and cross-validate Rasch model
+set.seed(1860)
+rm.cv &lt;- GPCMlasso(form, tenseness_small_binary, model = "RM", cv = TRUE, 
+                   control = ctrl_GPCMlasso(l.lambda = 10))
+rm.cv
+plot(rm.cv)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

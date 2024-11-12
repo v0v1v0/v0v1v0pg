@@ -1,0 +1,192 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>add_p.tbl_summary</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Add p-values</h2>
+
+<h3>Description</h3>
+
+<p>Adds p-values to tables created by <code>tbl_summary()</code> by comparing values across groups.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'tbl_summary'
+add_p(
+  x,
+  test = NULL,
+  pvalue_fun = label_style_pvalue(digits = 1),
+  group = NULL,
+  include = everything(),
+  test.args = NULL,
+  adj.vars = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>(<code>tbl_summary</code>)<br>
+table created with <code>tbl_summary()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test</code></td>
+<td>
+<p>(<code>formula-list-selector</code>)<br>
+Specifies the statistical tests to perform for each variable, e.g.
+<code>list(all_continuous() ~ "t.test", all_categorical() ~ "fisher.test")</code>.
+</p>
+<p>See below for details on default tests and ?tests for details on available
+tests and creating custom tests.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pvalue_fun</code></td>
+<td>
+<p>(<code>function</code>)<br>
+Function to round and format p-values. Default is <code>label_style_pvalue()</code>.
+The function must have a numeric vector input, and return a string that is
+the rounded/formatted p-value (e.g. <code>pvalue_fun = label_style_pvalue(digits = 2)</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>(<code>tidy-select</code>)<br>
+Variable name of an ID or grouping variable. The column can be used to
+calculate p-values with correlated data.
+Default is <code>NULL</code>. See tests for methods that utilize the <code>group</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include</code></td>
+<td>
+<p>(<code>tidy-select</code>)<br>
+Variables to include in output. Default is <code>everything()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test.args</code></td>
+<td>
+<p>(<code>formula-list-selector</code>)<br>
+Containing additional arguments to pass to tests that accept arguments.
+For example, add an argument for all t-tests, use
+<code>test.args = all_tests("t.test") ~ list(var.equal = TRUE)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adj.vars</code></td>
+<td>
+<p>(<code>tidy-select</code>)<br>
+Variables to include in adjusted calculations (e.g. in ANCOVA models).
+Default is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>These dots are for future extensions and must be empty.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a gtsummary table of class <code>"tbl_summary"</code>
+</p>
+
+
+<h3>test argument</h3>
+
+<p>See the ?tests help file for details on available tests and creating custom tests.
+The ?tests help file also includes pseudo-code for each test to be clear
+precisely how the calculation is performed.
+</p>
+<p>The default test used in <code>add_p()</code> primarily depends on these factors:
+</p>
+
+<ul>
+<li>
+<p> whether the variable is categorical/dichotomous vs continuous
+</p>
+</li>
+<li>
+<p> number of levels in the <code>tbl_summary(by)</code> variable
+</p>
+</li>
+<li>
+<p> whether the <code>add_p(group)</code> argument is specified
+</p>
+</li>
+<li>
+<p> whether the <code>add_p(adj.vars)</code> argument is specified
+</p>
+</li>
+</ul>
+<h4>Specified neither <code>add_p(group)</code> nor <code>add_p(adj.vars)</code>
+</h4>
+
+
+<ul>
+<li> <p><code>"wilcox.test"</code> when <code>by</code> variable has two levels and variable is continuous.
+</p>
+</li>
+<li> <p><code>"krustkal.test"</code> when <code>by</code> variable has more than two levels and variable is continuous.
+</p>
+</li>
+<li> <p><code>"chisq.test.no.correct"</code> for categorical variables with all expected cell counts &gt;=5,
+and <code>"fisher.test"</code> for categorical variables with any expected cell count &lt;5.
+</p>
+</li>
+</ul>
+<h4>Specified <code>add_p(group)</code> and not <code>add_p(adj.vars)</code>
+</h4>
+
+
+<ul><li> <p><code>"lme4"</code> when <code>by</code> variable has two levels for all summary types.
+</p>
+</li></ul>
+<p><em>There is no default for grouped data when <code>by</code> variable has more than two levels.</em>
+<em>Users must create custom tests for this scenario.</em>
+</p>
+
+
+
+<h4>Specified <code>add_p(adj.vars)</code> and not <code>add_p(group)</code>
+</h4>
+
+
+<ul><li> <p><code>"ancova"</code> when variable is continuous and <code>by</code> variable has two levels.
+</p>
+</li></ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Example 1 ----------------------------------
+trial |&gt;
+  tbl_summary(by = trt, include = c(age, grade)) |&gt;
+  add_p()
+
+# Example 2 ----------------------------------
+trial |&gt;
+  select(trt, age, marker) |&gt;
+  tbl_summary(by = trt, missing = "no") |&gt;
+  add_p(
+    # perform t-test for all variables
+    test = everything() ~ "t.test",
+    # assume equal variance in the t-test
+    test.args = all_tests("t.test") ~ list(var.equal = TRUE)
+  )
+
+</code></pre>
+
+
+</div>

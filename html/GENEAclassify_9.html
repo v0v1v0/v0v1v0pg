@@ -1,0 +1,295 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>classifyGENEA</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Classify Data into Categories defined in an rpart GENEA fit</h2>
+
+<h3>Description</h3>
+
+<p>Perform classification on segmented GENEActiv bin data using an 
+rpart GENEA training fit.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">classifyGENEA(
+  testfile,
+  start = NULL,
+  end = NULL,
+  Use.Timestamps = FALSE,
+  radians = FALSE,
+  mmap.load = (.Machine$sizeof.pointer &gt;= 8),
+  trainingfit = trainingFit,
+  newdata,
+  allprobs = FALSE,
+  setinf = 100,
+  outputname = "_classified",
+  outputdir = "GENEAclassification",
+  datacols = "default",
+  changepoint = c("UpDownDegrees", "TempFreq", "UpDownFreq", "UpDownMean", "UpDownVar",
+    "UpDownMeanVar", "DegreesMean", "DegreesVar", "DegreesMeanVar",
+    "UpDownMeanVarDegreesMeanVar", "UpDownMeanVarMagMeanVar"),
+  penalty = "Manual",
+  pen.value1 = 40,
+  pen.value2 = 400,
+  intervalseconds = 30,
+  mininterval = 5,
+  samplefreq = 100,
+  filterorder = 2,
+  boundaries = c(0.5, 5),
+  Rp = 3,
+  plot.it = FALSE,
+  hysteresis = 0.1,
+  stft_win = 10,
+  plot.seg = FALSE,
+  plot.seg.outputfile = "Changepoint",
+  verbose = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>testfile</code></td>
+<td>
+<p>character string stating path to a GENEActiv bin file, or a folder 
+containing GENEActiv bin files.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>Where to start reading observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>end</code></td>
+<td>
+<p>Where to end reading observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Use.Timestamps</code></td>
+<td>
+<p>To use timestamps as the start and end time values this has to be set to TRUE. (Default FALSE)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>radians</code></td>
+<td>
+<p>calculate degrees rotation in radians.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mmap.load</code></td>
+<td>
+<p>Default is (.Machine$sizeof.pointer &gt;= 8). see <code>mmap</code> for more details</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trainingfit</code></td>
+<td>
+<p>a GENEA rpart object created by <code>createGENEAmodel</code> 
+that gives the decision tree that was fitted from the training data. 
+These are the parameters used to predict the new data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>a new data frame that is to be classified (provide instead of testfile). 
+The data must contain the <code>features</code> named in the trainingfit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allprobs</code></td>
+<td>
+<p>single logical should all estimated probabilities be 
+reported rather than probability of selected class (default <code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>setinf</code></td>
+<td>
+<p>single numeric an arbitrary value to replace Inf in calculated 
+columns or NA to ignore Inf values. (default 100).
+-setinf is used to replace -Inf. Alternatively, use setinf NULL to leave Inf as is.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outputname</code></td>
+<td>
+<p>file name root (excluding extension) for saving the 
+classification output (default "classified").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outputdir</code></td>
+<td>
+<p>absolute or relative path to directory in which artifacts 
+(plot and changes files) should be created or <code>NULL</code> 
+(default "GENEAclassification").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>datacols</code></td>
+<td>
+<p>a vector constructed 'column.summary' or 'default'. See <code>segmentation</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>changepoint</code></td>
+<td>
+<p>defines the change point analysis to use. UpDownDegrees performs the change point analysis on the variance of arm elevation and wrist rotation. TempFreq performs a change point on the variance in the temeprature and Frequency (Typically better for sleep behaviours)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalty</code></td>
+<td>
+<p>single characgter, the penalty to use for changepoint detection. default ("SIC")</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pen.value1</code></td>
+<td>
+<p>Value of the type 1 error required when penalty is "Asymptotic".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pen.value2</code></td>
+<td>
+<p>Default set as NULL and so equals pen.value1 if no input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intervalseconds</code></td>
+<td>
+<p>An integer number of seconds between 5 and 30 during which at most one changepoint may occur.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mininterval</code></td>
+<td>
+<p>single numeric that defines the smallest changepoint initially found. Passed to <code>cpt.var</code> as the variable minseglen</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>samplefreq</code></td>
+<td>
+<p>The sampling frequency of the data, in hertz,
+when calculating the step number. (default 100)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filterorder</code></td>
+<td>
+<p>The order of the filter applied with respect to the cheby options.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boundaries</code></td>
+<td>
+<p>to passed to the filter in the step counting algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Rp</code></td>
+<td>
+<p>the decibel level that the cheby filter takes. see <code>cheby1</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot.it</code></td>
+<td>
+<p>(logical) Creates a plot showing the zero crossings counted by the step counting algorithm#' @param Centre Centres the xz signal about 0 when set to True.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hysteresis</code></td>
+<td>
+<p>The hysteresis applied after zero crossing. (default 100mg)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stft_win</code></td>
+<td>
+<p>numeric for the window to calculate the frequency of an event using the <code>stft</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot.seg</code></td>
+<td>
+<p>(logical) Creates a plot displaying the changepoint locations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot.seg.outputfile</code></td>
+<td>
+<p>The name of the png file created that shows the change points on a positionals plots.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>single logical should additional progress reporting be 
+printed at the console (default <code>TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>other arguments to be passed to <code>dataImport</code>, 
+<code>segmentation</code> and other functions</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function will apply the rules determined by the rpart GENEA 
+decision tree passed to argument trainingfit to the columns 
+of newdata to classify into classes 
+(view using <code>"levels"</code>).
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function will return the data frame that was provided as newdata with 
+additional columns. </p>
+
+<ol>
+<li> <p><code>Class</code>, a factor indicating that the predicted category of the segment
+</p>
+</li>
+<li> <p><code>p.Class</code>, estimated probability that the prediction is correct
+</p>
+</li>
+</ol>
+<p>Alternatively, by setting argument allprobs to TRUE, a column constructed 
+'p.level' containing the estimated probability of each possible class 
+will be returned instead.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## segData &lt;- read.csv(system.file(package = "GENEAclassify", 
+##       "testdata", "trainingData9.csv"))
+## The training fit can be created by provided the file path to the training data
+## in the function getTrainingData - see the help file for more details
+## Uses the fitted decision tree to predict the segmented data
+## class9 &lt;- classifyGENEA(testfile = "trainingData9.csv",
+##                         newdata = segData, 
+##                         trainingfit = trainingFit)
+## head(class9)
+## table(class9$Class)
+</code></pre>
+
+
+</div>

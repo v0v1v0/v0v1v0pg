@@ -1,0 +1,181 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>idwST</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Inverse Distance Weighting (IDW) function for spatio-temporal prediction.
+</h2>
+
+<h3>Description</h3>
+
+<p>This function performs spatio-temporal interpolation. Here <em>idwST</em> is in a local neighborhood. This interpolation method considers the value of a point can be obtained from the weighted sum of values of the regionalized variable of closest neighbors. The general formula for the IDW is given by:
+</p>
+<p style="text-align: center;"><code class="reqn">
+\hat{z}_0(st)=\sum_{i=1}^n \lambda_i z_i(st)
+</code>
+</p>
+
+<p>The expression for determining the weights is:
+</p>
+<p style="text-align: center;"><code class="reqn">
+\lambda_i = \frac{d_{i0}^{-p}}{\sum_{i=1}^n d_{i0}^{-p}}
+</code>
+</p>
+
+<p>The weight is controlled by a factor <em>p</em> with each increment of the distance, <code class="reqn">d_{i0}</code> is the distance between the prediction position and each of the measured positions.
+</p>
+<p>The expression <code class="reqn">d_{i0}</code> can be obtained by:
+</p>
+<p style="text-align: center;"><code class="reqn">
+d_{i0}=\sqrt{(x_{i}-x_{0})^2+(y_{i}-y_{0})^2+C\cdot (t_{i}-t_{0})^2}
+</code>
+</p>
+
+<p><code class="reqn">x</code>, <code class="reqn">y</code> and <code class="reqn">t</code> correspond to the spatio-temporal coordinates, <em>p</em> (factor.p) and <em>C</em> factors defined below.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">idwST(formula, data, newdata, n.neigh, C, factor.p, progress)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>formula that defines a detrended linear model, use <code class="reqn">z_{st}</code><code>~1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>SpatialPointsDataFrame: should contain the spatio-temporal dependent variable, independent variables (statics and/or dynamics), spatial coordinates and the time as an integer or numerical variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>data frame or spatial object with prediction/simulation spatio-temporal locations; should contain attribute columns with the independent variables (if present) and (if locations is a formula) the coordinates and time with names, as defined in locations where you want to generate new predictions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.neigh</code></td>
+<td>
+<p>number of nearest observations that should be used for a <em>idwST</em>
+prediction, where nearest is defined in terms of the spatio-temporal locations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>C</code></td>
+<td>
+<p>numeric; associated to time factor, we recommend using the parameter found by
+minimizing the root-mean-square prediction errors using cross-validation. Using <em>idwST.cv</em> and <code>optimize</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>factor.p</code></td>
+<td>
+<p>numeric; specify the inverse distance weighting power (<em>p</em> is the exponent that influences the weighting or optimal smoothing parameter)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress</code></td>
+<td>
+<p>whether a progress bar shall be printed for spatio-temporal inverse-distance weighted function; default=TRUE</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>idwST function generates individual spatio-temporal predictions from IDW spatio-temporal interpolation. IDW is a type of deterministic method for interpolation, the assigned values to unknown points are calculated with a weighted average of the values available at the known points.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Attributes columns contain coordinates, time, predictions, and the variance
+column contains NA's
+</p>
+
+
+<h3>References</h3>
+
+<p>Li L, Losser T, Yorke C, Piltner R. (2014). <em>Fast inverse distance weighting-based spatiotemporal interpolation: a web-based application of interpolating daily fine particulate matter PM2:5 in the contiguous U.S. using parallel programming and k-d tree.</em> Int. J. Environ. Res. Public Health, 11: 9101-9141. <a href="https://www.mdpi.com/journal/ijerph">[link]</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Loading Croatia data
+data(croatia2008)
+coordinates(croatia2008) &lt;- ~x+y
+
+# prediction case: one point
+point &lt;- data.frame(670863,5043464,5)
+names(point) &lt;- c("x","y","t")
+
+coordinates(point) &lt;- ~x+y
+idwST(MTEMP~1, data=croatia2008, newdata=point, n.neigh=60, C=1, factor.p=2)
+
+## Not run: 
+# prediction case: a grid of points Croatia (year 2008)
+data(croatia)
+points &lt;- spsample(croatia, n=5000, type="regular")
+
+data(croatia2008)
+coordinates(croatia2008)&lt;-~x+y
+
+GridsT &lt;- vector(mode = "list", length = 12)
+
+for(i in 1:12){
+GridsT[[i]] &lt;- data.frame(points@coords,i)
+names(GridsT[[i]]) &lt;- c("x","y","t")
+}
+
+idw.croatia &lt;- data.frame(matrix(NA, ncol = 14, nrow=nrow(GridsT[[1]])))
+pb &lt;- txtProgressBar(min = 0, max = 12, char = "=", style = 3)
+for(i in 1:12){
+coordinates(GridsT[[i]]) &lt;- c("x", "y")
+idw.croatia[,i+2] &lt;- idwST(MTEMP~1, croatia2008, newdata=GridsT[[i]], n.neigh=10, C=1,
+                          factor.p=2, progress=FALSE)[,4]
+setTxtProgressBar(pb, i)
+}
+close(pb)
+
+idw.croatia[,1:2] &lt;- GridsT[[1]]@coords
+nam &lt;- paste(c("ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"),
+             2008,sep="")
+names(idw.croatia) &lt;- c("x","y",nam)
+
+coordinates(idw.croatia) &lt;- c("x", "y")
+gridded(idw.croatia) &lt;- TRUE
+
+# show prediction map
+pal2 &lt;- colorRampPalette(c("blue3", "wheat1", "red3"))
+
+p1 &lt;- spplot(idw.croatia[,1:12], cuts=30, col.regions=pal2(35), colorkey=F,
+            scales = list(draw =T,cex=0.6, abbreviate=TRUE,minlength=1), pch=0.3,
+            cex.lab=0.3, cex.title=0.3, auto.key = F, main = "Earth's average
+            temperature IDW map 2008", key.space=list(space="right", cex=0.8))
+
+split.screen( rbind(c(0, 1,0,1), c(1,1,0,1)))
+split.screen(c(1,2), screen=1)-&gt; ind
+screen( ind[1])
+p1
+screen( ind[2])
+image.plot(legend.only=TRUE, legend.width=0.5, col=pal2(100),
+           smallplot=c(0.7,0.75, 0.3,0.7), zlim=c(min(idw.croatia@data),
+           max(idw.croatia@data)), axis.args = list(cex.axis = 0.7))
+close.screen( all=TRUE)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

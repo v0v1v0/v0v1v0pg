@@ -1,0 +1,546 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>hyperblm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting Linear Models with Hyperbolic Errors</h2>
+
+<h3>Description</h3>
+
+<p>Fits linear models with hyperbolic errors. Can be used to carry out
+linear regression for data exhibiting heavy tails and skewness.
+Displays the histogram, log-histogram (both with fitted error
+distribution), Q-Q plot and residuals vs. fitted values plot for the
+fitted linear model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">hyperblm(formula, data, subset, weights, na.action,
+         xx = FALSE, y = FALSE, contrasts = NULL,
+         offset, method = "Nelder-Mead",
+         startMethod = "Nelder-Mead", startStarts = "BN",
+         paramStart = NULL,
+         maxiter = 100, tolerance = 0.0001,
+         controlBFGS = list(maxit = 1000),
+         controlNM = list(maxit = 10000),
+         maxitNLM = 10000,
+         controlCO = list(), silent = TRUE, ...)
+
+## S3 method for class 'hyperblm'
+print(x, digits = max(3, getOption("digits")-3), ...)
+
+## S3 method for class 'hyperblm'
+coef(object, ...)
+
+## S3 method for class 'hyperblm'
+plot(x, breaks = "FD",
+                        plotTitles = c("Residuals vs Fitted Values",
+                                       "Histogram of residuals",
+                                       "Log-Histogram of residuals",
+                                       "Q-Q Plot"),
+                        ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>an object of class <code>"formula"</code> (or one that
+can be coerced to that class): a symbolic description of the
+model to be fitted.  The details of model specification are given
+under ‘Details’.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>an optional data frame, list or environment (or object
+coercible by <code>as.data.frame</code> to a data frame) containing
+the variables in the model.  If not found in <code>data</code>, the
+variables are taken from <code>environment(formula)</code>,
+typically the environment from which <code>lm</code> is called.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>an optional vector specifying a subset of observations
+to be used in the fitting process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>an optional vector of weights to be used in the fitting
+process.  Should be <code>NULL</code> or a numeric vector.
+If non-NULL, weighted least squares is used with weights
+<code>weights</code> (that is, minimizing <code>sum(w*e^2)</code>); otherwise
+ordinary least squares is used.  See also ‘Details’,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>A function which indicates what should happen
+when the data contain <code>NA</code>s.  The default is set by
+the <code>na.action</code> setting of <code>options</code>, and is
+<code>na.fail</code> if that is unset.  The ‘factory-fresh’
+default is <code>na.omit</code>.  Another possible value is
+<code>NULL</code>, no action.  Value <code>na.exclude</code> can be useful.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xx, y</code></td>
+<td>
+<p>Logicals. If <code>TRUE</code>, the corresponding components of the
+fit (the explanatory matrix and the response vector) are returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>An optional list. See the <code>contrasts.arg</code>
+of <code>model.matrix.default</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>An optional vector. See <b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Character. Possible values are <code>"BFGS"</code>,
+<code>"Nelder-Mead"</code> and <code>"nlm"</code>. See <b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startMethod</code></td>
+<td>
+<p>Character. Possible values are <code>"BFGS"</code> and
+<code>"Nelder-Mead"</code>. See <b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startStarts</code></td>
+<td>
+<p>Character. Possible values are <code>"BN"</code>,
+<code>"FN"</code>, <code>"SL"</code>, <code>"US"</code> and <code>"MoM"</code>. See
+<b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>paramStart</code></td>
+<td>
+<p>An optional vector. A vector of parameter
+start values for the optimization routine. See <b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiter</code></td>
+<td>
+<p>Numeric. The maximum number of two-stage optimization
+alternating iterations. See <b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tolerance</code></td>
+<td>
+<p>Numeric. The two-stage optimization convergence
+ratio. See <b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>controlBFGS, controlNM</code></td>
+<td>
+<p>Lists. Lists of control parameters for
+<code>optim</code> when using corresponding (BFGS, Nelder-Mead) optimisation
+method in first stage. See <code>optim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxitNLM</code></td>
+<td>
+<p>Numeric. The maximum number of iterations for the NLM
+optimizer.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>controlCO</code></td>
+<td>
+<p>List. A list of control parameters for
+<code>constrOptim</code> in second stage.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>silent</code></td>
+<td>
+<p>Logical. If <code>TRUE</code>, the error messgae of optimizer will
+not be displayed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of class <code>"hyperblm"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class <code>"hyperblm"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>breaks</code></td>
+<td>
+<p>May be a vector, a single number or a character
+string. See <code>hist</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plotTitles</code></td>
+<td>
+<p>Titles to appear above the plots.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Numeric. Desired number of digits when the object is
+printed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Passes additional arguments to function
+<code>hyperbFitStand</code>, <code>optim</code> and
+<code>constrOptim</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Models for <code>hyperblm</code> are specified symbolically.  A typical
+model has the form <code>response ~ terms</code> where <code>response</code> is
+the (numeric) response vector and <code>terms</code> is a series of terms
+which specifies a linear predictor for <code>response</code>.  A terms
+specification of the form <code>first + second</code> indicates all the
+terms in <code>first</code> together with all the terms in <code>second</code>
+with duplicates removed.  A specification of the form
+<code>first:second</code> indicates the set of terms obtained by taking the
+interactions of all terms in <code>first</code> with all terms in
+<code>second</code>.  The specification <code>first*second</code> indicates the
+<em>cross</em> of <code>first</code> and <code>second</code>.  This is the same as
+<code>first + second + first:second</code>.
+</p>
+<p>If the formula includes an <code>offset</code>, this is evaluated and
+subtracted from the response.
+</p>
+<p>If <code>response</code> is a matrix a linear model is fitted separately by
+least-squares to each column of the matrix.
+</p>
+<p>See <code>model.matrix</code> for some further details.  The terms in
+the formula will be re-ordered so that main effects come first,
+followed by the interactions, all second-order, all third-order and so
+on.
+</p>
+<p>A formula has an implied intercept term.  To remove this use either
+<code>y ~ x - 1</code> or <code>y ~ 0 + x</code>.  See <code>formula</code> for
+more details of allowed formulae.
+</p>
+<p>Non-<code>NULL</code> <code>weights</code> can be used to indicate that different
+observations have different variances (with the values in
+<code>weights</code> being inversely proportional to the variances); or
+equivalently, when the elements of <code>weights</code> are positive
+integers <code class="reqn">w_i</code>, that each response <code class="reqn">y_i</code> is the mean of
+<code class="reqn">w_i</code> unit-weight observations (including the case that there are
+<code class="reqn">w_i</code> observations equal to <code class="reqn">y_i</code> and the data have been
+summarized).
+</p>
+<p><code>hyperblm</code> calls the lower level function
+<code>hyperblmFit</code> for the actual numerical computations.
+</p>
+<p>All of <code>weights</code>, <code>subset</code> and <code>offset</code> are evaluated
+in the same way as variables in <code>formula</code>, that is first in
+<code>data</code> and then in the environment of <code>formula</code>.
+</p>
+<p><code>hyperblmFit</code> uses a two-stage alternating optimization
+routine. The quality of parameter start values (especially the error
+distribution parameters) is crucial to the routine's convergence. The
+user can specify the start values via the <code>paramStart</code> argument,
+otherwise the function finds reliable start values by calling the
+<code>hyperbFitStand</code> function.
+</p>
+<p><code>startMethod</code> in the argument list is the optimization method for
+function <code>hyperbFitStandStart</code> which finds the start
+values for function <code>hyperbFitStand</code>. It is set to
+<code>"Nelder-Mead"</code> by default due to the robustness of this
+optimizer. The <code>"BFGS"</code> method is also implemented as it is
+relatively fast to converge. Since <code>"BFGS"</code> method is a
+quasi-Newton method it will not as robust and for some data will not
+achieve convergence.
+</p>
+<p><code>startStarts</code> is the method used to find the start values for function
+<code>hyperbFitStandStart</code> which includes:
+</p>
+
+<dl>
+<dt><code>"BN"</code></dt>
+<dd>
+<p>A method from Barndorff-Nielsen (1977) based on
+estimates of <code class="reqn">\psi</code> and <code class="reqn">\gamma</code> the absolute
+slopes of the left and right asymptotes to the log density function</p>
+</dd>
+<dt><code>"FN"</code></dt>
+<dd>
+<p>Based on a fitted normal distribution as it is a
+limit of the hyperbolic distribution</p>
+</dd>
+<dt><code>"SL"</code></dt>
+<dd>
+<p>Based on a fitted skew-Laplace distribution for
+which the log density has the form of two straight line with
+absolute slopes <code class="reqn">1/\alpha</code>, <code class="reqn">1/\beta</code></p>
+</dd>
+<dt><code>"MoM"</code></dt>
+<dd>
+<p>A method of moment approach</p>
+</dd>
+<dt><code>"US"</code></dt>
+<dd>
+<p>User specified</p>
+</dd>
+</dl>
+<p><code>method</code> is the method used in stage one of the two-stage
+alternating optimization routine. As the <code>startMethod</code>, it is set
+to <code>"Nelder-Mead"</code> by default. Besides <code>"BFGS"</code>,<code>"nlm"</code>
+is also implemented as a alternative. Since <code>BFGS</code> method is a
+quasi-Newton method it will not as robust and for some data will not
+achieve convergence.
+</p>
+<p>If the maximum of the ratio the change of the individual coefficients
+is smaller than <code>tolerance</code> then the routine assumes convergence,
+otherwise if the alternating iteration number exceeds <code>maxiter</code>
+with the maximum of the ratio the change of the individual
+coefficients larger than <code>tolerance</code>, the routine is considered
+not to have converged.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>hyperblm</code> returns an object of class <code>"hyperblm"</code> which is a list
+containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p>A named vector of regression coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distributionParams</code></td>
+<td>
+<p>A named vector of fitted hyperbolic error
+distribution parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>The fitted values from the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p>The remainder after subtracting fitted values from
+response.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mle</code></td>
+<td>
+<p>The maximum likelihood value of the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>The optimization method for stage one.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>paramStart</code></td>
+<td>
+<p>The start values of parameters that the user
+specified (only where relevant).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residsParamStart</code></td>
+<td>
+<p>The start values of parameters obtained by
+<code>hyperbFitStand</code> (only where relevant).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The matched call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms</code></td>
+<td>
+<p>The <code>terms</code> object used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>The contrasts used (only where relevant).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlevels</code></td>
+<td>
+<p>The levels of the factors used in the fitting (only where
+relevant).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>The offset used (only where relevant)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xNames</code></td>
+<td>
+<p>The names of each explanatory variables. If explanatory
+variables don't have names then they will be named <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yVec</code></td>
+<td>
+<p>The response vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xMatrix</code></td>
+<td>
+<p>The explanatory variables matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterations</code></td>
+<td>
+<p>Number of two-stage alternating iterations to
+convergence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convergence</code></td>
+<td>
+<p>The convergence code for two stage optimization: 0
+is the system converged, 1 is first stage does not converge, 2 is
+second stage does not converge, 3 is the both stages do not
+converge.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>breaks</code></td>
+<td>
+<p>The cell boundaries found by a call the
+<code>hist</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>David Scott <a href="mailto:d.scott@auckland.ac.nz">d.scott@auckland.ac.nz</a>,
+Xinxing Li <a href="mailto:xli053@aucklanduni.ac.nz">xli053@aucklanduni.ac.nz</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Barndorff-Nielsen, O. (1977)
+Exponentially decreasing distributions for the logarithm of particle size,
+<em>Proc. Roy. Soc. Lond.</em>,
+A<b>353</b>, 401–419.
+</p>
+<p>Prause, K. (1999). <em>The generalized hyperbolic models:
+Estimation, financial derivatives and risk measurement</em>.
+PhD Thesis, Mathematics Faculty, University of Freiburg.
+</p>
+<p>Trendall, Richard (2005). <em>hypReg: A Function for Fitting a Linear
+Regression Model in R with Hyperbolic Error</em>.
+Masters Thesis, Statistics Faculty, University of Auckland.
+</p>
+<p>Paolella, Marc S. (2007). <em>Intermediate Probability: A Computational
+Approach</em>. pp. 415 -Chichester: Wiley.
+</p>
+<p>Scott, David J. and Würtz, Diethelm and Chalabi, Yohan, (2011).
+<em>Fitting the Hyperbolic Distribution with R: A Case Study of
+Optimization Techniques</em>. In preparation.
+</p>
+<p>Stryhn, H. and Christensen, J. (2003). <em>Confidence intervals by
+the profile likelihood method, with applications in veterinary
+epidemiology</em>.
+ISVEE X.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>print.hyperblm</code> prints the regression result in a table.
+<code>coef.hyperblm</code> obtains the regression coefficients and
+error distribution parameters of the fitted model.
+<code>summary.hyperblm</code> obtains a summary output of class
+<code>hyperblm</code> object.
+<code>print.summary.hyperblm</code> prints the summary output in a
+table.
+<code>plot.hyperblm</code> obtains a residual vs fitted value plot, a
+histgram of residuals with error distribution density curve on top, a
+histgram of log residuals with error distribution error density curve
+on top and a QQ plot.
+<code>hyperblmFit</code>, <code>optim</code>, <code>nlm</code>,
+<code>constrOptim</code>, <code>hist</code>,
+<code>hyperbFitStand</code>, <code>hyperbFitStandStart</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">### stackloss data example
+## Not run: 
+ airflow &lt;- stackloss[, 1]
+ temperature &lt;- stackloss[, 2]
+ acid &lt;- stackloss[, 3]
+ stack &lt;- stackloss[, 4]
+
+ hyperblm.fit &lt;- hyperblm(stack ~ airflow + temperature + acid)
+
+ coef.hyperblm(hyperblm.fit)
+ plot.hyperblm(hyperblm.fit, breaks = 20)
+ summary.hyperblm(hyperblm.fit, hessian = FALSE)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

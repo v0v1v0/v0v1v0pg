@@ -1,0 +1,257 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cv.grpreg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Cross-validation for grpreg/grpsurv</h2>
+
+<h3>Description</h3>
+
+<p>Performs k-fold cross validation for penalized regression models with
+grouped covariates over a grid of values for the regularization parameter
+lambda.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cv.grpreg(
+  X,
+  y,
+  group = 1:ncol(X),
+  ...,
+  nfolds = 10,
+  seed,
+  fold,
+  returnY = FALSE,
+  trace = FALSE
+)
+
+cv.grpsurv(
+  X,
+  y,
+  group = 1:ncol(X),
+  ...,
+  nfolds = 10,
+  seed,
+  fold,
+  se = c("quick", "bootstrap"),
+  returnY = FALSE,
+  trace = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>The design matrix, as in <code>grpreg()</code>/<code>grpsurv()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The response vector (or matrix), as in <code>grpreg()</code>/<code>grpsurv()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>The grouping vector, as in <code>grpreg()</code>/<code>grpsurv()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to <code>grpreg()</code>/<code>grpsurv()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nfolds</code></td>
+<td>
+<p>The number of cross-validation folds.  Default is 10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>You may set the seed of the random number generator in order to
+obtain reproducible results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fold</code></td>
+<td>
+<p>Which fold each observation belongs to.  By default the
+observations are randomly assigned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>returnY</code></td>
+<td>
+<p>Should cv.grpreg()/cv.grpsurv() return the fitted
+values from the cross-validation folds?  Default is FALSE; if TRUE, this
+will return a matrix in which the element for row i, column j is the fitted
+value for observation i from the fold in which observation i was excluded
+from the fit, at the jth value of lambda.  NOTE: For <code>cv.grpsurv()</code>, the
+rows of <code>Y</code> are ordered by time on study, and therefore will not
+correspond to the original order of observations pased to <code>cv.grpsurv</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>If set to TRUE, cv.grpreg will inform the user of its progress
+by announcing the beginning of each CV fold.  Default is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se</code></td>
+<td>
+<p>For <code>cv.grpsurv()</code>, the method by which the cross-valiation
+standard error (CVSE) is calculated.  The 'quick' approach is based on a
+rough approximation, but can be calculated more or less instantly.  The
+'bootstrap' approach is more accurate, but requires additional computing
+time.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function calls <code>grpreg()</code> or <code>grpsurv()</code> <code>nfolds</code> times, each
+time leaving out 1/<code>nfolds</code> of the data.  The cross-validation error is
+based on the deviance;
+<a href="https://pbreheny.github.io/grpreg/articles/models.html">see here for more details</a>.
+</p>
+<p>For Gaussian and Poisson responses, the folds are chosen according to simple
+random sampling.  For binomial responses, the numbers for each outcome class
+are balanced across the folds; i.e., the number of outcomes in which
+<code>y</code> is equal to 1 is the same for each fold, or possibly off by 1 if
+the numbers do not divide evenly.  This approach is used for Cox regression
+as well to balance the amount of censoring cross each fold.
+</p>
+<p>For Cox models, <code>cv.grpsurv</code> uses the approach of calculating the full
+Cox partial likelihood using the cross-validated set of linear predictors.
+Other approaches to cross-validation for the Cox regression model have been
+proposed in the literature; the strengths and weaknesses of the various
+methods for penalized regression in the Cox model are the subject of current
+research.  A simple approximation to the standard error is provided,
+although an option to bootstrap the standard error (<code>se='bootstrap'</code>)
+is also available.
+</p>
+<p>As in <code>grpreg()</code>, seemingly unrelated regressions/multitask learning can
+be carried out by setting <code>y</code> to be a matrix, in which case groups are
+set up automatically (see <code>grpreg()</code> for details), and
+cross-validation is carried out with respect to rows of <code>y</code>.  As
+mentioned in the details there, it is recommended to standardize the
+responses prior to fitting.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object with S3 class <code>"cv.grpreg"</code> containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>cve</code></td>
+<td>
+<p>The error for each value of <code>lambda</code>, averaged across the
+cross-validation folds.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cvse</code></td>
+<td>
+<p>The estimated standard error associated
+with each value of for <code>cve</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>The sequence of
+regularization parameter values along which the cross-validation error was
+calculated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>The fitted <code>grpreg</code> object for the whole data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fold</code></td>
+<td>
+<p>The fold assignments for cross-validation for each observation;
+note that for <code>cv.grpsurv</code>, these are in terms of the ordered
+observations, not the original observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min</code></td>
+<td>
+<p>The index of
+<code>lambda</code> corresponding to <code>lambda.min</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.min</code></td>
+<td>
+<p>The
+value of <code>lambda</code> with the minimum cross-validation error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>null.dev</code></td>
+<td>
+<p>The deviance for the intercept-only model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pe</code></td>
+<td>
+<p>If <code>family="binomial"</code>, the cross-validation prediction error for
+each value of <code>lambda</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Patrick Breheny
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>grpreg()</code>, <code>plot.cv.grpreg()</code>, <code>summary.cv.grpreg()</code>,
+<code>predict.cv.grpreg()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(Birthwt)
+X &lt;- Birthwt$X
+y &lt;- Birthwt$bwt
+group &lt;- Birthwt$group
+
+cvfit &lt;- cv.grpreg(X, y, group)
+plot(cvfit)
+summary(cvfit)
+coef(cvfit) ## Beta at minimum CVE
+
+cvfit &lt;- cv.grpreg(X, y, group, penalty="gel")
+plot(cvfit)
+summary(cvfit)
+
+</code></pre>
+
+
+</div>

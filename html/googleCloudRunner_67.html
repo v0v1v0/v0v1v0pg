@@ -1,0 +1,277 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cr_deploy_run</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Deploy to Cloud Run</h2>
+
+<h3>Description</h3>
+
+<p>Deploy R api plumber scripts, HTML files or other images create the Docker image, add the build to Cloud Build and deploy to Cloud Run
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cr_deploy_run(
+  local,
+  remote = basename(local),
+  dockerfile = NULL,
+  image_name = remote,
+  tag = "$BUILD_ID",
+  region = cr_region_get(),
+  bucket = cr_bucket_get(),
+  projectId = cr_project_get(),
+  launch_browser = interactive(),
+  timeout = 600L,
+  kaniko_cache = TRUE,
+  pre_steps = NULL,
+  post_steps = NULL,
+  ...
+)
+
+cr_deploy_html(
+  html_folder,
+  remote = basename(html_folder),
+  image_name = remote,
+  tag = "$BUILD_ID",
+  region = cr_region_get(),
+  bucket = cr_bucket_get(),
+  projectId = cr_project_get(),
+  launch_browser = interactive(),
+  timeout = 600L,
+  ...
+)
+
+cr_deploy_plumber(
+  api,
+  remote = basename(api),
+  dockerfile = NULL,
+  image_name = remote,
+  tag = "$BUILD_ID",
+  region = cr_region_get(),
+  bucket = cr_bucket_get(),
+  projectId = cr_project_get(),
+  launch_browser = interactive(),
+  timeout = 600L,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>local</code></td>
+<td>
+<p>A folder containing the scripts and Dockerfile to deploy to Cloud Run</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remote</code></td>
+<td>
+<p>The folder on Google Cloud Storage, and the name of the service on Cloud Run</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dockerfile</code></td>
+<td>
+<p>An optional Dockerfile built to support the script.  Not needed if 'Dockerfile' exists in folder.  If supplied will be copied into deployment folder and called "Dockerfile"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>image_name</code></td>
+<td>
+<p>The gcr.io image name that will be deployed and/or built</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tag</code></td>
+<td>
+<p>The tag or tags to be attached to the pushed image - can use <code>Build</code> macros</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>region</code></td>
+<td>
+<p>The Cloud Run endpoint set by CR_REGION env arg</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bucket</code></td>
+<td>
+<p>The Cloud Storage bucket that will hold the code</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>projectId</code></td>
+<td>
+<p>The projectId where it all gets deployed to</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>launch_browser</code></td>
+<td>
+<p>Whether to launch the logs URL in a browser once deployed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timeout</code></td>
+<td>
+<p>Amount of time that this build should be allowed to run, to second</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kaniko_cache</code></td>
+<td>
+<p>If TRUE will use kaniko cache for Docker builds.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pre_steps</code></td>
+<td>
+<p>Other cr_buildstep to run before the docker build</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>post_steps</code></td>
+<td>
+<p>Other cr_buildstep to run after the docker build</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Arguments passed on to <code>cr_buildstep_run</code>
+</p>
+
+<dl>
+<dt><code>name</code></dt>
+<dd>
+<p>Name for deployment on Cloud Run</p>
+</dd>
+<dt><code>image</code></dt>
+<dd>
+<p>The name of the image to create or use in deployment - <code>gcr.io</code></p>
+</dd>
+<dt><code>allowUnauthenticated</code></dt>
+<dd>
+<p>TRUE if can be reached from public HTTP address. If FALSE will configure a service-email called <code>(name)-cloudrun-invoker@(project-id).iam.gserviceaccount.com</code></p>
+</dd>
+<dt><code>concurrency</code></dt>
+<dd>
+<p>How many connections each container instance can serve. Can be up to 80.</p>
+</dd>
+<dt><code>port</code></dt>
+<dd>
+<p>Container port to receive requests at. Also sets the $PORT environment variable. Must be a number between 1 and 65535, inclusive. To unset this field, pass the special value "default".</p>
+</dd>
+<dt><code>max_instances</code></dt>
+<dd>
+<p>the desired maximum nuimber of container instances. "default" is 1000, you can get more if you requested a quota instance.  For Shiny instances on Cloud Run, this needs to be 1.</p>
+</dd>
+<dt><code>memory</code></dt>
+<dd>
+<p>The format for size is a fixed or floating point number followed by a unit: G, M, or K corresponding to gigabyte, megabyte, or kilobyte, respectively, or use the power-of-two equivalents: Gi, Mi, Ki corresponding to gibibyte, mebibyte or kibibyte respectively. The default is 256Mi</p>
+</dd>
+<dt><code>cpu</code></dt>
+<dd>
+<p>1 or 2 CPUs for your instance</p>
+</dd>
+<dt><code>env_vars</code></dt>
+<dd>
+<p>Environment arguments passed to the Cloud Run container at runtime.  Distinct from <code>env</code> that run at build time.</p>
+</dd>
+<dt><code>gcloud_args</code></dt>
+<dd>
+<p>a character string of arguments that can be sent to the gcloud command not covered by other parameters of this function</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>html_folder</code></td>
+<td>
+<p>the folder containing all the html</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>api</code></td>
+<td>
+<p>A folder containing the R script using plumber called api.R and all its dependencies</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>These deploy containers to Cloud Run, a scale 0-to-millions container-as-a-service on Google Cloud Platform.
+</p>
+
+
+<h3>cr_deploy_html</h3>
+
+<p>Deploy html files to a nginx server on Cloud Run.
+</p>
+<p>Supply the html folder to host it on Cloud Run.  Builds the dockerfile with the html within it, then deploys to Cloud Run
+</p>
+<p>Will add a <code>default.template</code> file to the html folder that holds the nginx configuration
+</p>
+
+
+<h3>cr_deploy_plumber</h3>
+
+<p>The entrypoint for CloudRun will be via a plumber script called api.R - this should be included in your local folder to deploy.
+From that api.R you can source or call other resources in the same folder, using relative paths.
+</p>
+<p>The function will create a local folder called "deploy" and a tar.gz of that folder which is what is being uploaded to Google Cloud Storage
+</p>
+
+
+<h3>See Also</h3>
+
+<p>For scheduling Cloud Run apps cr_run_schedule_http
+</p>
+<p>cr_deploy_run_website which has more features like rending Rmd files and deploying upon each git commit
+</p>
+<p>Other Deployment functions: 
+<code>cr_deploy_docker_trigger()</code>,
+<code>cr_deploy_docker()</code>,
+<code>cr_deploy_packagetests()</code>,
+<code>cr_deploy_pkgdown()</code>,
+<code>cr_deploy_run_website()</code>,
+<code>cr_deploy_r()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+cr_project_set("my-project")
+cr_region_set("europe-west1")
+cr_bucket_set("my-bucket")
+cr_deploy_run(system.file("example/", package = "googleCloudRunner"))
+
+## End(Not run)
+## Not run: 
+cr_project_set("my-project")
+cr_region_set("europe-west1")
+cr_bucket_set("my-bucket")
+
+cr_deploy_html("my_folder")
+
+## End(Not run)
+## Not run: 
+cr_project_set("my-project")
+cr_region_set("europe-west1")
+cr_bucket_set("my-bucket")
+
+cr_deploy_plumber(system.file("example/", package = "googleCloudRunner"))
+
+## End(Not run)
+</code></pre>
+
+
+</div>

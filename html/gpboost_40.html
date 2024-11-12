@@ -1,0 +1,111 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gpb.save</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Save GPBoost model</h2>
+
+<h3>Description</h3>
+
+<p>Save GPBoost model
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gpb.save(booster, filename, start_iteration = NULL, num_iteration = NULL,
+  save_raw_data = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>booster</code></td>
+<td>
+<p>Object of class <code>gpb.Booster</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filename</code></td>
+<td>
+<p>saved filename</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start_iteration</code></td>
+<td>
+<p>int or NULL, optional (default=NULL)
+Start index of the iteration to predict.
+If NULL or &lt;= 0, starts from the first iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_iteration</code></td>
+<td>
+<p>int or NULL, optional (default=NULL)
+Limit number of iterations in the prediction.
+If NULL, if the best iteration exists and start_iteration is NULL or &lt;= 0, the
+best iteration is used; otherwise, all iterations from start_iteration are used.
+If &lt;= 0, all iterations from start_iteration are used (no limits).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_raw_data</code></td>
+<td>
+<p>If TRUE, the raw data (predictor / covariate data) for the Booster is also saved.
+Enable this option if you want to change <code>start_iteration</code> or <code>num_iteration</code> at prediction time after loading.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional named arguments passed to the <code>predict()</code> method of
+the <code>gpb.Booster</code> object passed to <code>object</code>. 
+This is only used when there is a gp_model and when save_raw_data=FALSE</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>gpb.Booster
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Fabio Sigrist, authors of the LightGBM R package
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(gpboost)
+data(GPBoost_data, package = "gpboost")
+
+# Train model and make prediction
+gp_model &lt;- GPModel(group_data = group_data[,1], likelihood = "gaussian")
+bst &lt;- gpboost(data = X, label = y, gp_model = gp_model, nrounds = 16,
+               learning_rate = 0.05, max_depth = 6, min_data_in_leaf = 5,
+               verbose = 0)
+pred &lt;- predict(bst, data = X_test, group_data_pred = group_data_test[,1],
+                predict_var= TRUE, pred_latent = TRUE)
+# Save model to file
+filename &lt;- tempfile(fileext = ".json")
+gpb.save(bst,filename = filename)
+# Load from file and make predictions again
+bst_loaded &lt;- gpb.load(filename = filename)
+pred_loaded &lt;- predict(bst_loaded, data = X_test, group_data_pred = group_data_test[,1],
+                       predict_var= TRUE, pred_latent = TRUE)
+# Check equality
+pred$fixed_effect - pred_loaded$fixed_effect
+pred$random_effect_mean - pred_loaded$random_effect_mean
+pred$random_effect_cov - pred_loaded$random_effect_cov
+
+</code></pre>
+
+
+</div>

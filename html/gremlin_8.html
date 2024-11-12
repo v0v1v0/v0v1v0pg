@@ -1,0 +1,171 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>deltaSE</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Delta Method to Calculate Standard Errors for Functions of (Co)variances.</h2>
+
+<h3>Description</h3>
+
+<p>Calculates the standard error for results of simple mathematical functions of
+(co)variance parameters using the delta method.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">deltaSE(calc, object, scale = c("theta", "nu"))
+
+## Default S3 method:
+deltaSE(calc, object, scale = c("theta", "nu"))
+
+## S3 method for class 'formula'
+deltaSE(calc, object, scale = c("theta", "nu"))
+
+## S3 method for class 'list'
+deltaSE(calc, object, scale = c("theta", "nu"))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>calc</code></td>
+<td>
+<p>A character <code>expression</code>, <code>formula</code>, or list (of
+<code>formula</code> or <code>expression</code>) expressing the mathematical function
+of (co)variance component for which to calculate standard errors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A fitted model object of <code>class</code> ‘gremlin’.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>A <code>character</code> indicating whether to calculate the function
+and standard error on the original data scale (“theta”) or
+on the underlying scale to which (co)variance components are transformed
+for the model fitting calculations (“nu”). Defaults to
+“theta” if not specified.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The delta method (e.g., Lynch and Walsh 1998, Appendix 1; Ver Hoef 2012) uses
+a Taylor series expansion to approximate the moments of a function of
+parameters. Here, a second-order Taylor series expansion is implemented to
+approximate the standard error for a function of (co)variance parameters.
+Partial first derivatives of the function are calculated by algorithmic
+differentiation with <code>deriv</code>.
+</p>
+<p>Though <code>deltaSE</code> can calculate standard errors for non-linear functions
+of (co)variance parameters from a fitted <code>gremlin</code> model, it is limited
+to non-linear functions constructed by mathematical operations such as the
+arithmetic operators <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code> and <code>^</code>,
+and single-variable functions such as  <code>exp</code> and <code>log</code>. See 
+<code>deriv</code> for more information.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>data.frame</code> containing the “Estimate” and
+“Std. Error” for the mathematical function(s) of (co)variance
+components.
+</p>
+
+
+<h3>Methods (by class)</h3>
+
+
+<ul>
+<li> <p><code>default</code>: Default method
+</p>
+</li>
+<li> <p><code>formula</code>: Formula method
+</p>
+</li>
+<li> <p><code>list</code>: List method
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p><a href="mailto:matthewwolak@gmail.com">matthewwolak@gmail.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Lynch, M. and B. Walsh 1998. Genetics and Analysis of Quantitative Traits.
+Sinauer Associates, Inc., Sunderland, MA, USA.
+</p>
+<p>Ver Hoef, J.M. 2012. Who invented the delta method? The American
+Statistician 66:124-127. DOI: 10.1080/00031305.2012.687494
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>deriv</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">  # Calculate the sum of the variance components 
+    grS &lt;- gremlin(WWG11 ~ sex - 1, random = ~ sire, data = Mrode11)
+    deltaSE(Vsum ~ V1 + V2, grS)
+    deltaSE("V1 + V2", grS)  #&lt;-- alternative
+
+  # Calculate standard deviations (with standard errors) from variances
+    ## Uses a `list` as the first (`calc`) argument
+    ### All 3 below: different formats to calculate the same values
+    deltaSE(list(SD1 ~ sqrt(V1), SDresid ~ sqrt(V2)), grS)  #&lt;-- formulas
+    deltaSE(list(SD1 ~ sqrt(G.sire), SDresid ~ sqrt(ResVar1)), grS) 
+    deltaSE(list("sqrt(V1)", "sqrt(V2)"), grS)  #&lt;-- list of character expressions
+
+  # Additive Genetic Variance calculated from observed Sire Variance
+    ## First simulate Full-sib data
+    set.seed(359)
+    noff &lt;- 5     #&lt;-- number of offspring in each full-sib family
+    ns &lt;- 100     #&lt;-- number of sires/full-sib families
+    VA &lt;- 1       #&lt;-- additive genetic variance
+    VR &lt;- 1       #&lt;-- residual variance
+    datFS &lt;- data.frame(id = paste0("o", seq(ns*noff)),
+      sire = rep(paste0("s", seq(ns)), each = noff))
+    ## simulate mid-parent breeding value (i.e., average of sire and dam BV)
+    ### mid-parent breeding value = 0.5 BV_sire + 0.5 BV_dam
+    #### var(mid-parent BV) = 0.25 var(BV_sire) + 0.25 var(BV_dam) = 0.5 var(BV) 
+    datFS$midParBV &lt;- rep(rnorm(ns, 0, sqrt(0.5*VA)), each = noff)
+    ## add to this a Mendelian sampling deviation to get each offspring BV
+    datFS$BV &lt;- rnorm(nrow(datFS), datFS$midParBV, sqrt(0.5*VA))
+    datFS$r &lt;- rnorm(nrow(datFS), 0, sqrt(VR))  #&lt;-- residual deviation
+    datFS$pheno &lt;- rowSums(datFS[, c("BV", "r")]) 
+    # Analyze with a sire model
+    grFS &lt;- gremlin(pheno ~ 1, random = ~ sire, data = datFS)
+    # calculate VA as 2 times the full-sib/sire variance
+    deltaSE(VAest ~ 2*V1, grFS)
+    # compare to expected value and simulated value
+    VA  #&lt;-- expected
+    var(datFS$BV)  #&lt;-- simulated (includes Monte Carlo error)
+
+  # Example with `deltaSE(..., scale = "nu")
+  ## use to demonstrate alternative way to do same calculation of inverse
+  ## Average Information matrix of theta scale parameters when lambda = TRUE
+  ### what is done inside gremlin::nuVar2thetaVar_lambda 
+    dOut &lt;- deltaSE(thetaV1 ~ V1*V2, grS, "nu")  #&lt;-- V2 is sigma2e
+    aiFnOut &lt;- nuVar2thetaVar_lambda(grS)[1]  #&lt;-- variance (do sqrt below)
+    stopifnot(abs(dOut[, "Std. Error"] - sqrt(aiFnOut)) &lt; 1e-10)
+
+</code></pre>
+
+
+</div>

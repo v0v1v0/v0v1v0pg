@@ -1,0 +1,182 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>findpeaks</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Find local extrema</h2>
+
+<h3>Description</h3>
+
+<p>Return peak values and their locations of the vector <code>data</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">findpeaks(
+  data,
+  MinPeakHeight = .Machine$double.eps,
+  MinPeakDistance = 1,
+  MinPeakWidth = 1,
+  MaxPeakWidth = Inf,
+  DoubleSided = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>the data, expected to be a vector or one-dimensional array.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MinPeakHeight</code></td>
+<td>
+<p>Minimum peak height (non-negative scalar). Only peaks
+that exceed this value will be returned. For data taking positive and
+negative values use the option <code>DoubleSided</code>. Default:
+<code>.Machine$double.eps</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MinPeakDistance</code></td>
+<td>
+<p>Minimum separation between peaks (positive integer).
+Peaks separated by less than this distance are considered a single peak.
+This distance is also used to fit a second order polynomial to the peaks to
+estimate their width, therefore it acts as a smoothing parameter. The
+neighborhood size is equal to the value of <code>MinPeakDistance</code>. Default:
+1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MinPeakWidth</code></td>
+<td>
+<p>Minimum width of peaks (positive integer). The width of
+the peaks is estimated using a parabola fitted to the neighborhood of each
+peak. The width is calculated with the formula <code class="reqn">a * (width - x0)^{2} =
+1</code>, where a is the the concavity of the parabola and x0 its vertex.
+Default: 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MaxPeakWidth</code></td>
+<td>
+<p>Maximum width of peaks (positive integer). Default:
+<code>Inf</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DoubleSided</code></td>
+<td>
+<p>Tells the function that data takes positive and negative
+values. The baseline for the peaks is taken as the mean value of the
+function. This is equivalent as passing the absolute value of the data
+after removing the mean. Default: FALSE</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Peaks of a positive array of <code>data</code> are defined as local maxima. For
+double-sided data, they are maxima of the positive part and minima of the
+negative part. <code>data</code> is expected to be a one-dimensional vector.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list containing the following elements:
+</p>
+
+<dl>
+<dt>pks</dt>
+<dd>
+<p>The value of data at the peaks.</p>
+</dd>
+<dt>loc</dt>
+<dd>
+<p>The index indicating the position of the peaks.</p>
+</dd>
+<dt>parabol</dt>
+<dd>
+<p>A list containing the parabola fitted to each returned peak.
+The list has two fields, <code>x</code> and <code>pp</code>. The field <code>pp</code>
+contains the coefficients of the 2nd degree polynomial and <code>x</code> the
+extrema of the interval where it was fitted.</p>
+</dd>
+<dt>height</dt>
+<dd>
+<p>The estimated height of the returned peaks (in units of
+data).</p>
+</dd>
+<dt>baseline</dt>
+<dd>
+<p>The height at which the roots of the returned peaks were
+calculated (in units of data).</p>
+</dd>
+<dt>roots</dt>
+<dd>
+<p>The abscissa values (in index units) at which the parabola
+fitted to each of the returned peaks realizes its width as defined below.</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Juan Pablo Carbajal, <a href="mailto:carbajal@ifi.uzh.ch">carbajal@ifi.uzh.ch</a>.<br>
+Conversion to R by Geert van Boxtel, <a href="mailto:G.J.M.vanBoxtel@gmail.com">G.J.M.vanBoxtel@gmail.com</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">### demo 1
+t &lt;- 2 * pi * seq(0, 1,length = 1024)
+y &lt;- sin(3.14 * t) + 0.5 * cos(6.09 * t) +
+     0.1 * sin(10.11 * t + 1 / 6) + 0.1 * sin(15.3 * t + 1 / 3)
+
+data1 &lt;- abs(y) # Positive values
+peaks1 &lt;- findpeaks(data1)
+
+data2 &lt;- y # Double-sided
+peaks2 &lt;- findpeaks(data2, DoubleSided = TRUE)
+peaks3 &lt;- findpeaks (data2, DoubleSided = TRUE, MinPeakHeight = 0.5)
+
+op &lt;- par(mfrow=c(1,2))
+plot(t, data1, type="l", xlab="", ylab="")
+points(t[peaks1$loc], peaks1$pks, col = "red", pch = 1)
+plot(t, data2, type = "l", xlab = "", ylab = "")
+points(t[peaks2$loc], peaks2$pks, col = "red", pch = 1)
+points(t[peaks3$loc], peaks3$pks, col = "red", pch = 4)
+legend ("topleft", "0: &gt;2*sd, x: &gt;0.5", bty = "n",
+        text.col = "red")
+par (op)
+title("Finding the peaks of smooth data is not a big deal")
+
+## demo 2
+t &lt;- 2 * pi * seq(0, 1, length = 1024)
+y &lt;- sin(3.14 * t) + 0.5 * cos(6.09 * t) + 0.1 *
+     sin(10.11 * t + 1 / 6) + 0.1 * sin(15.3 * t + 1 / 3)
+data &lt;- abs(y + 0.1*rnorm(length(y),1))   # Positive values + noise
+peaks1 &lt;- findpeaks(data, MinPeakHeight=1)
+dt &lt;- t[2]-t[1]
+peaks2 &lt;- findpeaks(data, MinPeakHeight=1, MinPeakDistance=round(0.5/dt))
+op &lt;- par(mfrow=c(1,2))
+plot(t, data, type="l", xlab="", ylab="")
+points (t[peaks1$loc],peaks1$pks,col="red", pch=1)
+plot(t, data, type="l", xlab="", ylab="")
+points (t[peaks2$loc],peaks2$pks,col="red", pch=1)
+par (op)
+title(paste("Noisy data may need tuning of the parameters.\n",
+            "In the 2nd example, MinPeakDistance is used\n",
+            "as a smoother of the peaks"))
+
+</code></pre>
+
+
+</div>

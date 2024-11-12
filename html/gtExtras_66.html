@@ -1,0 +1,192 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gt_two_column_layout</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a two-column layout from a list of two gt tables</h2>
+
+<h3>Description</h3>
+
+<p>This function takes a <code>list()</code> of two gt-tables and returns
+them as a two-column layout. The expectation is that the user either supplies
+two tables like <code>list(table1, table2)</code>, or passes the output of <code>gt_double_table()</code>
+into this function. The user should indicate whether they want to return the
+HTML to R's viewer with <code>output = "viewer"</code> to "view" the final output, or to
+save to disk as a <code>.png</code> via <code style="white-space: pre;">⁠output = "save".⁠</code> Note that this is a relatively
+complex wrapper around <code>htmltools::div()</code> + <code>webshot2::webshot()</code>. Additional
+arguments can be passed to <code>webshot2::webshot()</code> if the automatic output is not
+satisfactory. In most situations, modifying the <code>vwidth</code> argument is sufficient
+to get the desired output, but all arguments to <code>webshot2::webshot()</code> are
+available by their original name via the passed <code>...</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gt_two_column_layout(
+  tables = NULL,
+  output = "viewer",
+  filename = NULL,
+  path = NULL,
+  vwidth = 992,
+  vheight = 600,
+  ...,
+  zoom = 2,
+  expand = 5
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>tables</code></td>
+<td>
+<p>A <code>list()</code> of two tables, typically supplied by <code>gt_double_table()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output</code></td>
+<td>
+<p>A character string indicating the desired output, either <code>"save"</code> to save it to disk via <code>webshot</code>, <code>"viewer"</code> to return it to the RStudio Viewer, or <code>"html"</code> to return the raw HTML.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filename</code></td>
+<td>
+<p>The filename of the table, must contain <code>.png</code> and only used if <code>output = "save"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>path</code></td>
+<td>
+<p>An optional path of where to save the printed <code>.png</code>, used in conjunction with <code>filename</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vwidth</code></td>
+<td>
+<p>Viewport width. This is the width of the browser "window" when passed to <code>webshot2::webshot()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vheight</code></td>
+<td>
+<p>Viewport height This is the height of the browser "window" when passed to <code>webshot2::webshot()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to <code>webshot2::webshot()</code>, only to be used if <code>output = "save"</code>, saving the two-column layout tables to disk as a <code>.png</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zoom</code></td>
+<td>
+<p>Argument to <code>webshot2::webshot()</code>. A number specifying the zoom factor. A zoom factor of 2 will result in twice as many pixels vertically and horizontally. Note that using 2 is not exactly the same as taking a screenshot on a HiDPI (Retina) device: it is like increasing the zoom to 200 doubling the height and width of the browser window. This differs from using a HiDPI device because some web pages load different, higher-resolution images when they know they will be displayed on a HiDPI device (but using zoom will not report that there is a HiDPI device).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expand</code></td>
+<td>
+<p>Argument to <code>webshot2::webshot()</code>. A numeric vector specifying how many pixels to expand the clipping rectangle by. If one number, the rectangle will be expanded by that many pixels on all sides. If four numbers, they specify the top, right, bottom, and left, in that order. When taking screenshots of multiple URLs, this parameter can also be a list with same length as url with each element of the list containing a single number or four numbers to use for the corresponding URL.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Saves a <code>.png</code> to disk if <code>output = "save"</code>, returns HTML to the viewer via <code>htmltools::browsable()</code> when <code>output = "viewer"</code>, or returns raw HTML if <code>output = "html"</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<p>Add row numbers and drop some columns
+</p>
+<div class="sourceCode r"><pre>library(gt)
+my_cars &lt;- mtcars %&gt;%
+  dplyr::mutate(row_n = dplyr::row_number(), .before = mpg) %&gt;%
+  dplyr::select(row_n, mpg:drat)
+</pre></div>
+<p>Create two tables, just split half/half
+</p>
+<div class="sourceCode r"><pre>tab1 &lt;- my_cars %&gt;%
+  dplyr::slice(1:16) %&gt;%
+  gt() %&gt;%
+  gtExtras::gt_color_rows(columns = row_n, domain = 1:32)
+
+tab2 &lt;- my_cars %&gt;%
+  dplyr::slice(17:32) %&gt;%
+  gt() %&gt;%
+  gtExtras::gt_color_rows(columns = row_n, domain = 1:32)
+</pre></div>
+<p>Put the tables in a list and then pass list to the <code>gt_two_column_layout</code> function.
+</p>
+<div class="sourceCode r"><pre>listed_tables &lt;- list(tab1, tab2)
+
+gt_two_column_layout(listed_tables)
+</pre></div>
+<p>A better option - write a small function, use <code>gt_double_table()</code> to generate
+the tables and then pass it to <code>gt_double_table()</code>
+</p>
+<div class="sourceCode r"><pre>my_gt_fn &lt;- function(x) {
+  gt(x) %&gt;%
+    gtExtras::gt_color_rows(columns = row_n, domain = 1:32)
+}
+
+my_tables &lt;- gt_double_table(my_cars, my_gt_fn, nrows = nrow(my_cars) / 2)
+</pre></div>
+<p>This will return it to the viewer
+</p>
+<div class="sourceCode r"><pre>gt_two_column_layout(my_tables)
+</pre></div>
+<p>If you wanted to save it out instead, could use the code below
+</p>
+<div class="sourceCode r"><pre>gt_two_column_layout(my_tables, output = "save",
+                     filename = "basic-two-col.png",
+                      vwidth = 550, vheight = 620)
+</pre></div>
+
+
+<h3>Figures</h3>
+
+<p><img src="../help/figures/basic-two-col.png" width="60%" alt="basic-two-col.png"></p>
+
+
+<h3>See Also</h3>
+
+<p>Other Utilities: 
+<code>add_text_img()</code>,
+<code>fa_icon_repeat()</code>,
+<code>fmt_pad_num()</code>,
+<code>fmt_pct_extra()</code>,
+<code>fmt_symbol_first()</code>,
+<code>generate_df()</code>,
+<code>gt_add_divider()</code>,
+<code>gt_badge()</code>,
+<code>gt_double_table()</code>,
+<code>gt_duplicate_column()</code>,
+<code>gt_fa_column()</code>,
+<code>gt_fa_rank_change()</code>,
+<code>gt_fa_rating()</code>,
+<code>gt_fa_repeats()</code>,
+<code>gt_highlight_cols()</code>,
+<code>gt_highlight_rows()</code>,
+<code>gt_img_border()</code>,
+<code>gt_img_circle()</code>,
+<code>gt_img_multi_rows()</code>,
+<code>gt_img_rows()</code>,
+<code>gt_index()</code>,
+<code>gt_merge_stack_color()</code>,
+<code>gt_merge_stack()</code>,
+<code>gtsave_extra()</code>,
+<code>img_header()</code>,
+<code>pad_fn()</code>,
+<code>tab_style_by_grp()</code>
+</p>
+
+
+</div>

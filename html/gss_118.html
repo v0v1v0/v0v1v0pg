@@ -1,0 +1,172 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mkterm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Assembling Model Terms for Smoothing Spline ANOVA Models
+</h2>
+
+<h3>Description</h3>
+
+<p>Assemble numerical functions for calculating model terms in a
+smoothing spline ANOVA model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mkterm(mf, type)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mf</code></td>
+<td>
+<p>Model frame of the model formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>List specifying the type of spline for each variable.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For a <b>factor</b> <code>x</code>, <code>type$x</code> is ignored;
+<code>mkrk.ordinal</code> is used if <code>is.ordered(x)==TRUE</code> and
+<code>mkrk.nominal</code> is used otherwise.  Factors with 3 or
+more levels are penalized.
+</p>
+<p>For a <b>numerical vector</b> <code>x</code>, <code>type$x</code> is of the form
+<code>type.x</code> for <code>type.x</code>=<code>"cubic"</code>, <code>"linear"</code>,
+or of the form <code>list(type.x, range)</code> for
+<code>type.x</code>=<code>"per"</code>, <code>"cubic.per"</code>, <code>"linear.per"</code>,
+<code>"cubic"</code>, <code>"linear"</code>; <code>"per"</code> is short for
+<code>"cubic.per"</code>.  See <code>mkfun.poly</code> for the functions
+used.  For <code>type.x</code> missing, the <b>default</b> is <code>"cubic"</code>.
+For <code>range</code> missing with <code>type.x</code>=<code>"cubic"</code>,
+<code>"linear"</code>, the <b>default</b> is
+<code>c(min(x),max(x))+c(-1,1)*(max(x)-mimn(x))*.05</code>.
+</p>
+<p>For a <b>numerical matrix</b> <code>x</code>, <code>type$x</code> is of the form
+<code>type.x</code> or <code>list(type.x, order)</code> for
+<code>type.x</code>=<code>"tp"</code>, <code>"sphere"</code>, or of the form
+<code>list("tp",list(order=order,mesh=mesh,weight=weight))</code>.  See
+<code>mkfun.tp</code> for the functions used.  For <code>type.x</code>
+missing, the <b>default</b> is <code>"tp"</code>.  For <code>order</code>
+missing, the <b>default</b> is <code>2</code>.  For <code>mesh</code> and
+<code>weight</code> missing with <code>type.x</code>=<code>"tp"</code> and
+<code>order</code> given, the <b>defaults</b> are <code>mesh</code>=<code>x</code> and
+<code>weight</code>=<code>1</code>.
+</p>
+<p>For a <b>numerical vector</b> or <b>numerical matrix</b> <code>x</code>,
+one may also use <code>type$x</code> of the form
+<code>list("custom",list(nphi=nphi,mkphi=mkphi,mkrk=mkrk,env=env))</code>;
+<code>nphi</code> is the null space dimension <em>excluding the
+constant</em>, and <code>mkphi</code> is ignored if <code>nphi</code>=0.  See
+examples below.  This feature allows the use of other marginal
+constructions; one may modify <code>mkphi.cubic</code> or
+<code>mkphi.tp.p</code> for <code>mkphi</code> and modify
+<code>mkrk.cubic</code> or <code>mkrk.sphere</code> for
+<code>mkrk</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list object with an element <code>labels</code> containing the labels
+of all model terms.  For each of the model terms, there is an
+element holding the numerical functions for calculating the
+unpenalized and penalized parts within the term.
+</p>
+
+
+<h3>Background</h3>
+
+<p>Tensor-product splines are constructed based on the model formula
+and the marginal reproducing kernels, as described in Gu (2002,
+Sec. 2.4).  The marginal variables can be factors, numerical
+vectors, and numerical matrices, as specified in the details
+section.
+</p>
+<p>One-way ANOVA decompositions are built in the supported marginal
+constructions, in which one has the constant, a "nonparametric
+contrast," and possibly also a "parametric contrast."  To the
+"nonparametric contrast" there corresponds a reproducing kernal
+<code>rk</code>, and to a "parametric contrast" there corresponds a set
+of null space basis <code>phi</code>.  The reproducing kernels and null
+space basis on the product domain can be constructed from the
+marginal <code>rk</code> and <code>phi</code> in a systematic manner.
+</p>
+<p>The marginal one-way ANOVA structures induce a multi-way ANOVA
+structure on the product domain, with model terms consisting of
+unpenalized "parametric contrasts" and/or penalized "nonparametric
+contrasts."  One only needs to construct <code>rk</code>'s and
+<code>phi</code>'s associated with the model terms implied by the model
+formula.
+</p>
+
+
+<h3>Note</h3>
+
+<p>For a <b>numerical vector</b> <code>x</code> in <code>ssden</code>,
+the default <code>range</code> is <code>domain$x</code>.
+</p>
+<p>For a <b>numerical matrix</b> <code>x</code> with
+<code>type.x</code>=<code>"sphere"</code>, it is assumed that
+<code>dim(x)[2]==2</code>, <code>x[,1]</code> between [-90,90] the latitude in
+degrees, and <code>x[,2]</code> between [-180,180] the longitude in
+degrees.
+</p>
+<p>For <b>backward compatibility</b>, one may set <code>type="cubic"</code>,
+<code>"linear"</code>, or <code>"tp"</code>, but then the default parameters can
+not be overridden; the type is simply duplicated for each variable.
+</p>
+
+
+<h3>References</h3>
+
+<p>Gu, C. (2013), <em>Smoothing Spline ANOVA Models (2nd Ed)</em>.  New
+York: Springer-Verlag.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## cubic marginals
+x1 &lt;- rnorm(100); x2 &lt;- rnorm(100); y &lt;- 3+5*sin(x1-2*x2)+rnorm(x1)
+fit &lt;- ssanova0(y~x1*x2)
+## the same fit
+fit1 &lt;- ssanova0(y~x1*x2,type=list(x1="cubic"))
+## the same fit one more time
+par &lt;- list(nphi=1,mkphi=mkphi.cubic,mkrk=mkrk.cubic,
+            env=c(min(x2),max(x2))+c(-1,1)*(max(x2)-min(x2))*.05)
+fit2 &lt;- ssanova0(y~x1*x2,type=list(x2=list("custom",par)))
+## Clean up
+## Not run: rm(x1,x2,y,fit,fit1,par,fit2)
+
+## cubic and thin-plate marginals
+x1 &lt;- rnorm(100); x2 &lt;- matrix(rnorm(200),100,2)
+y &lt;- 3+5*sin(x1-2*x2[,1]*x2[,2])+rnorm(x1)
+fit &lt;- ssanova0(y~x1*x2)
+## the same fit
+fit1 &lt;- ssanova0(y~x1*x2,type=list(x2="tp"))
+## the same fit one more time
+mkphi.tp1 &lt;- function(x) mkphi.tp(x$dm,x$ord,x$mesh,x$wt)
+mkrk.tp1 &lt;- function(x) mkrk.tp(x$dm,x$ord,x$mesh,x$wt)
+env &lt;- list(dm=2,ord=2,mesh=x2,wt=1)
+par &lt;- list(nphi=2,mkphi=mkphi.tp1,mkrk=mkrk.tp1,env=env)
+fit2 &lt;- ssanova0(y~x1*x2,type=list(x2=list("custom",par)))
+## Clean up
+## Not run: rm(x1,x2,y,fit,fit1,mkphi.tp1,mkrk.tp1,env,par,fit2)
+</code></pre>
+
+
+</div>

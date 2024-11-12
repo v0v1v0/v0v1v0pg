@@ -1,0 +1,138 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>quantify.gain</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Quantify Gain Based on Period 1 and Period 2 Prediction</h2>
+
+<h3>Description</h3>
+
+<p>Calculates effect curve, offset curve, and gain curve, and quantifies gain by
+using both period 1 and period 2 prediction results.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">quantify.gain(p1.res, p2.res, ratedPW, AEP, pw.freq, freq.id = 3)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>p1.res</code></td>
+<td>
+<p>A list containing the period 1 analysis results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p2.res</code></td>
+<td>
+<p>A list containing the period 2 prediction results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ratedPW</code></td>
+<td>
+<p>A kW value that describes the (common) rated power of the
+selected turbines (REF and CTR-b).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>AEP</code></td>
+<td>
+<p>A kWh value describing the annual energy production from a single
+turbine.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pw.freq</code></td>
+<td>
+<p>A matrix or a dataframe that includes power output bins and
+corresponding frequency in terms of the accumulated hours during an annual
+period.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>freq.id</code></td>
+<td>
+<p>An integer indicating the column number of <code>pw.freq</code> that
+describes the frequency of power bins in terms of the accumulated hours
+during an annual period. By default, this parameter is set to 3.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The function returns a list containing the following. </p>
+
+<dl>
+<dt><code>effectCurve</code></dt>
+<dd>
+<p>A vector of length <code class="reqn">m</code> illustrating REF
+turbine's power output difference between period 1 and 2, where <code class="reqn">m</code> is
+the number of power bins.</p>
+</dd> <dt><code>offsetCurve</code></dt>
+<dd>
+<p>A vector of length
+<code class="reqn">m</code> illustrating CTR-b turbine's power output difference between period
+1 and 2.</p>
+</dd> <dt><code>gainCurve</code></dt>
+<dd>
+<p>A vector of length <code class="reqn">m</code> illustrating
+the bin-wise gain. Equivalent to <code>effCurve - offCurve</code>.</p>
+</dd>
+<dt><code>gain</code></dt>
+<dd>
+<p>A scalar representing the final gain after offset
+adjustment (derived from <code>gainCurve</code>).</p>
+</dd> <dt><code>effect</code></dt>
+<dd>
+<p>A scalar
+representing the initial effect without offset correction (derived from
+<code>effCurve</code>).</p>
+</dd> <dt><code>offset</code></dt>
+<dd>
+<p>A scalar representing the offset
+value for the final gain quantification (derived from <code>offCurve</code>).</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>H. Hwangbo, Y. Ding, and D. Cabezon, 'Machine Learning Based
+Analysis and Quantification of Potential Power Gain from Passive Device
+Installation,' arXiv:1906.05776 [stat.AP], Jun. 2019.
+<a href="https://arxiv.org/abs/1906.05776">https://arxiv.org/abs/1906.05776</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">df.ref &lt;- with(wtg, data.frame(time = time, turb.id = 1, wind.dir = D,
+ power = y, air.dens = rho))
+df.ctrb &lt;- with(wtg, data.frame(time = time, turb.id = 2, wind.spd = V,
+ power = y))
+df.ctrn &lt;- df.ctrb
+df.ctrn$turb.id &lt;- 3
+
+data &lt;- arrange.data(df.ref, df.ctrb, df.ctrn, p1.beg = '2014-10-24',
+ p1.end = '2014-10-25', p2.beg = '2014-10-25', p2.end = '2014-10-26',
+ k.fold = 2)
+
+p1.res &lt;- analyze.p1(data$train, data$test, ratedPW = 1000)
+p2.res &lt;- analyze.p2(data$per1, data$per2, p1.res$opt.cov)
+
+res &lt;- quantify.gain(p1.res, p2.res, ratedPW = 1000, AEP = 300000, pw.freq = pw.freq)
+
+res$effect - res$offset #This should be equivalent to the final gain below.
+res$gain
+
+res$gainCurve #This shows the bin-wise gain (after offset adjustment).
+
+</code></pre>
+
+
+</div>

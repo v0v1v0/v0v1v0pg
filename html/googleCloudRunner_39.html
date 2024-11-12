@@ -1,0 +1,119 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cr_buildtrigger_pubsub</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a buildtrigger pub/sub object</h2>
+
+<h3>Description</h3>
+
+<p>Create a trigger from a Pub/Sub topic
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cr_buildtrigger_pubsub(
+  topic,
+  serviceAccountEmail = NULL,
+  projectId = cr_project_get()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>topic</code></td>
+<td>
+<p>The name of the Cloud Pub/Sub topic or a Topic object from topics_get</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>serviceAccountEmail</code></td>
+<td>
+<p>Service account that will make the push request.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>projectId</code></td>
+<td>
+<p>The GCP project the topic is created within</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>When using a PubSub trigger, you can use data within your PubSub message in substitution variables within the build.  The data from pubsub is available in the variable value: <code>$(body.message.data.x)</code> when x is a field in the pubsub message.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other BuildTrigger functions: 
+<code>BuildTrigger()</code>,
+<code>GitHubEventsConfig()</code>,
+<code>cr_buildtrigger_copy()</code>,
+<code>cr_buildtrigger_delete()</code>,
+<code>cr_buildtrigger_edit()</code>,
+<code>cr_buildtrigger_get()</code>,
+<code>cr_buildtrigger_list()</code>,
+<code>cr_buildtrigger_repo()</code>,
+<code>cr_buildtrigger_run()</code>,
+<code>cr_buildtrigger_webhook()</code>,
+<code>cr_buildtrigger()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# create build object
+cloudbuild &lt;- system.file("cloudbuild/cloudbuild_substitutions.yml",
+  package = "googleCloudRunner"
+)
+the_build &lt;- cr_build_make(cloudbuild)
+
+# this build includes substitution variables that read from pubsub message var1
+the_build
+
+# using googlePubSubR to create pub/sub topic if needed
+## Not run: 
+library(googlePubsubR)
+pubsub_auth()
+topics_create("test-topic")
+
+## End(Not run)
+
+# create build trigger that will work from pub/subscription
+pubsub_trigger &lt;- cr_buildtrigger_pubsub("test-topic")
+pubsub_trigger
+## Not run: 
+cr_buildtrigger(the_build, name = "pubsub-triggered-subs", trigger = pubsub_trigger)
+
+## End(Not run)
+
+# make base64 encoded json for pubsub
+library(jsonlite)
+library(googlePubsubR)
+
+# the message with the var1 that will be passed into the Cloud Build via substitution
+message &lt;- toJSON(list(var1 = "hello mum"))
+
+# turning into JSON and encoding
+send_me &lt;- msg_encode(message)
+## Not run: 
+# send a PubSub message with the encoded data message
+topics_publish(PubsubMessage(send_me), "test-topic")
+
+# did it work? After a while should see logs if it did
+cr_buildtrigger_logs("pubsub-triggered-subs")
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

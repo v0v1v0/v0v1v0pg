@@ -1,0 +1,289 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemInputOutputTable_5_4</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A General Equilibrium Model based on a 5×4 Input-Output Table (see Zhang Xin, 2017, Table 8.6.1)</h2>
+
+<h3>Description</h3>
+
+<p>This is a general equilibrium model based on a 5×4 input-output table (see Zhang Xin, 2017, Table 8.6.1).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemInputOutputTable_5_4(
+  dstl,
+  supply.labor = 850,
+  supply.capital = 770,
+  names.commodity = c("agri", "manu", "serv", "lab", "cap"),
+  names.agent = c("agri", "manu", "serv", "hh")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dstl</code></td>
+<td>
+<p>a demand structure tree list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>supply.labor</code></td>
+<td>
+<p>the supply of labor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>supply.capital</code></td>
+<td>
+<p>the supply of capital.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names.commodity</code></td>
+<td>
+<p>names of commodities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names.agent</code></td>
+<td>
+<p>names of agents.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Given a 5×4 input-output table (e.g., see Zhang Xin, 2017, Table 8.6.1), this model calculates
+the corresponding general equilibrium.
+This input-output table contains 3 production sectors and one household.
+The household consumes products and supplies labor and capital.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A general equilibrium which is a list with the following elements:
+</p>
+
+<ul>
+<li>
+<p> D - the demand matrix, also called the input table. Wherein the benchmark prices are used.
+</p>
+</li>
+<li>
+<p> DV - the demand value matrix, also called the value input table. Wherein the current price is used.
+</p>
+</li>
+<li>
+<p> SV - the supply value matrix, also called the value output table. Wherein the current price is used.
+</p>
+</li>
+<li>
+<p> ... - some elements returned by the CGE::sdm function
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Zhang Xin (2017, ISBN: 9787543227637) Principles of Computable General Equilibrium Modeling and Programming (Second Edition). Shanghai: Gezhi Press. (In Chinese)
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+es.agri &lt;- 0.2 # the elasticity of substitution
+es.manu &lt;- 0.3
+es.serv &lt;- 0.1
+
+es.VA.agri &lt;- 0.25
+es.VA.manu &lt;- 0.5
+es.VA.serv &lt;- 0.8
+
+d.agri &lt;- c(260, 345, 400, 200, 160)
+d.manu &lt;- c(320, 390, 365, 250, 400)
+d.serv &lt;- c(150, 390, 320, 400, 210)
+d.hh &lt;- c(635, 600, 385, 0, 0)
+# d.hh &lt;- c(635, 600, 100, 0, 0)
+
+IT &lt;- cbind(d.agri, d.manu, d.serv, d.hh)
+OT &lt;- matrix(c(
+  1365, 0, 0, 0,
+  0, 1725, 0, 0,
+  0, 0, 1470, 0,
+  0, 0, 0, 850,
+  0, 0, 0, 770
+), 5, 4, TRUE)
+
+dimnames(IT) &lt;- dimnames(OT) &lt;-
+  list(
+    c("agri", "manu", "serv", "lab", "cap"),
+    c("agri", "manu", "serv", "hh")
+  )
+
+addmargins(IT)
+addmargins(OT)
+
+dst.agri &lt;- node_new("sector.agri",
+                     type = "SCES", es = es.agri,
+                     alpha = 1,
+                     beta = prop.table(
+                       c(sum(d.agri[1:3]), sum(d.agri[4:5]))
+                     ),
+                     "cc1.agri", "cc2.agri"
+)
+node_set(dst.agri, "cc1.agri",
+         type = "Leontief",
+         a = prop.table(d.agri[1:3]),
+         "agri", "manu", "serv"
+)
+node_set(dst.agri, "cc2.agri",
+         type = "SCES", es = es.VA.agri,
+         alpha = 1,
+         beta = prop.table(d.agri[4:5]),
+         "lab", "cap"
+)
+
+
+dst.manu &lt;- node_new("sector.manu",
+                     type = "SCES", es = es.manu,
+                     alpha = 1,
+                     beta = prop.table(
+                       c(sum(d.manu[1:3]), sum(d.manu[4:5]))
+                     ),
+                     "cc1.manu", "cc2.manu"
+)
+node_set(dst.manu, "cc1.manu",
+         type = "Leontief",
+         a = prop.table(d.manu[1:3]),
+         "agri", "manu", "serv"
+)
+node_set(dst.manu, "cc2.manu",
+         type = "SCES", es = es.VA.manu,
+         alpha = 1,
+         beta = prop.table(d.manu[4:5]),
+         "lab", "cap"
+)
+
+dst.serv &lt;- node_new("sector.serv",
+                     type = "SCES", es = es.serv,
+                     alpha = 1,
+                     beta = prop.table(
+                       c(sum(d.serv[1:3]), sum(d.serv[4:5]))
+                     ),
+                     "cc1.serv", "cc2.serv"
+)
+node_set(dst.serv, "cc1.serv",
+         type = "Leontief",
+         a = prop.table(d.serv[1:3]),
+         "agri", "manu", "serv"
+)
+node_set(dst.serv, "cc2.serv",
+         type = "SCES", es = es.VA.serv,
+         alpha = 1,
+         beta = prop.table(d.serv[4:5]),
+         "lab", "cap"
+)
+
+##
+dst.hh &lt;- node_new("sector.hh",
+                   type = "SCES", es = 0.5,
+                   alpha = 1,
+                   beta = prop.table(d.hh[1:3]),
+                   "agri", "manu", "serv"
+)
+
+dstl &lt;- list(dst.agri, dst.manu, dst.serv, dst.hh)
+
+ge &lt;- gemInputOutputTable_5_4(dstl)
+
+#### labor supply increase
+geLSI &lt;- gemInputOutputTable_5_4(dstl, supply.labor = 850 * 1.08)
+geLSI$p
+geLSI$z / ge$z
+
+## capital supply change
+ge.CSC &lt;- sdm2(
+  A = dstl,
+  B = matrix(c(
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1,
+    0, 0, 0, 1
+  ), 5, 4, TRUE),
+  S0Exg = {
+    tmp &lt;- matrix(NA, 5, 4)
+    tmp[4, 4] &lt;- 850
+    tmp[5, 4] &lt;- 770
+    tmp
+  },
+  names.commodity = c("agri", "manu", "serv", "lab", "cap"),
+  names.agent = c("agri", "manu", "serv", "hh"),
+  numeraire = "lab",
+  ts = TRUE,
+  numberOfPeriods = 100,
+  maxIteration = 1,
+  z0 = c(1365, 1725, 1470, 1620),
+  p0 = rep(1, 5),
+  policy = function(time, state) {
+    if (time &gt;= 5) {
+      state$S[5, 4] &lt;- 880
+    }
+    state
+  }
+)
+
+matplot(ge.CSC$ts.p, type = "l")
+matplot(ge.CSC$ts.z, type = "l")
+
+## economic fluctuation: a sticky-price path
+de &lt;- sdm2(
+  A = dstl,
+  B = matrix(c(
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1,
+    0, 0, 0, 1
+  ), 5, 4, TRUE),
+  S0Exg = {
+    tmp &lt;- matrix(NA, 5, 4)
+    tmp[4, 4] &lt;- 850
+    tmp[5, 4] &lt;- 770
+    tmp
+  },
+  names.commodity = c("agri", "manu", "serv", "lab", "cap"),
+  names.agent = c("agri", "manu", "serv", "hh"),
+  numeraire = "lab",
+  ts = TRUE,
+  numberOfPeriods = 50,
+  maxIteration = 1,
+  z0 = c(1365, 1725, 1470, 1620),
+  p0 = rep(1, 5),
+  policy = list(
+    function(time, state) {
+      if (time &gt;= 5) {
+        state$S[5, 4] &lt;- 880
+      }
+      state
+    },
+    makePolicyStickyPrice(0.5)
+  ),
+  priceAdjustmentVelocity = 0
+)
+
+matplot(de$ts.p, type = "o", pch = 20)
+matplot(de$ts.z, type = "o", pch = 20)
+
+</code></pre>
+
+
+</div>

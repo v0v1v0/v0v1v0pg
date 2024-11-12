@@ -1,0 +1,136 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>coord_serialaxes</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Serial axes coordinates</h2>
+
+<h3>Description</h3>
+
+<p>It is mainly used to visualize the high dimensional data set
+either on the parallel coordinate or the radial coordinate.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">coord_serialaxes(
+  axes.layout = c("parallel", "radial"),
+  scaling = c("data", "variable", "observation", "none"),
+  axes.sequence = character(0L),
+  positive = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>axes.layout</code></td>
+<td>
+<p>Serial axes layout, either "parallel" or "radial".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scaling</code></td>
+<td>
+<p>One of <code>data</code>, <code>variable</code>, <code>observation</code> or
+<code>none</code> (not suggested the layout is the same with <code>data</code>)
+to specify how the data is scaled.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>axes.sequence</code></td>
+<td>
+<p>A vector with variable names that defines the axes sequence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>positive</code></td>
+<td>
+<p>If <code>y</code> is set as the density estimate, where the smoothed curved is faced to,
+right (<code>positive</code>) or left (<code>negative</code>) as vertical layout;
+up (<code>positive</code>) or down (<code>negative</code>) as horizontal layout?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>other arguments used to modify layers</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Serial axes coordinate system (parallel or radial) is different from the
+Cartesian coordinate system or its transformed system (say <code>polar</code> in <code>ggplot2</code>)
+since it does not have a formal transformation
+(i.e. in polar coordinate system, "x = rcos(theta)", "y = rsin(theta)").
+In serial axes coordinate system, mapping aesthetics does not really require "x" or "y". Any "non-aesthetics"
+components passed in the <code>mapping</code> system will be treated as an individual axis.
+</p>
+<p>To project a common <code>geom</code> layer on such serialaxes,
+users can customize function <code>add_serialaxes_layers</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a <code>ggproto</code> object
+</p>
+
+
+<h3>Potential Risk</h3>
+
+<p>In package <code>ggmulti</code>, the function <code>ggplot_build.gg</code> is provided.
+At the <code>ggplot</code> construction time, the system will call <code>ggplot_build.gg</code>
+first. If the plot input is not a <code>CoordSerialaxes</code> coordinate system, the next method
+<code>ggplot_build.ggplot</code> will be called to build a "gg" plot; else
+some geometric transformations will be applied first, then the next method
+<code>ggplot_build.ggplot</code> will be executed. So, the potential risk is, if some other packages
+e.g. <code>foo</code>, also provide a function <code>ggplot_build.gg</code> that is used for their
+specifications but the namespace is beyond the <code>ggmulti</code> (<code>ggmulti:::ggplot_build.gg</code> is
+covered), error may occur. If so, please consider using the
+<code>geom_serialaxes</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(require("dplyr")) {
+# Data
+nba &lt;- NBAstats2021 %&gt;%
+  mutate(
+    dPTS = PTS - OPTS,
+    dREB = REB - OREB,
+    dAST = AST - OAST,
+    dTO = TO - OTO
+  )
+# set sequence by `axes.sequence`
+p &lt;- ggplot(nba,
+            mapping = aes(
+              dPTS = dPTS,
+              dREB = dREB,
+              dAST = dAST,
+              dTO = dTO,
+              colour = Win
+            )) +
+       geom_path(alpha = 0.2) +
+       coord_serialaxes(axes.layout = "radial") +
+       scale_color_gradient(low="blue", high="red")
+p
+# quantile layer
+p + geom_quantiles(quantiles = c(0.5),
+                   colour = "green", linewidth = 1.2)
+
+# facet
+p +
+  facet_grid(Playoff ~ CONF)
+}
+</code></pre>
+
+
+</div>

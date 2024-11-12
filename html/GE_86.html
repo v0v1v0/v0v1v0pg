@@ -1,0 +1,165 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemNonexcludability</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some Examples Illustrating Non-excludability</h2>
+
+<h3>Description</h3>
+
+<p>Some examples illustrating non-rival goods with non-excludability.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemNonexcludability(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>See Also</h3>
+
+<p><cite>gemNonrivalry_Uncongestiblity</cite>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+dst.firm0 &lt;- node_new(
+  "non-rival services",
+  type = "Leontief", a = 1,
+  "labor"
+)
+
+dst.consumer1 &lt;- node_new(
+  "util",
+  type = "SCES", es = 1, # es = 0
+  alpha = 1, beta = c(0.75, 0.25),
+  "serv1", "labor"
+)
+
+dst.consumer2 &lt;- node_new(
+  "util",
+  type = "SCES", es = 1, # es = 0
+  alpha = 1, beta = c(0.5, 0.5),
+  "serv2", "labor"
+)
+
+f.CD &lt;- function(policy = NULL) {
+  ge &lt;- sdm2(
+    A = list(dst.firm0, dst.consumer1, dst.consumer2),
+    B = matrix(c(
+      1, 0, 0,
+      1, 0, 0,
+      0, 0, 0
+    ), 3, 3, TRUE),
+    S0Exg = matrix(c(
+      NA, NA, NA,
+      NA, NA, NA,
+      NA, 60, 60
+    ), 3, 3, TRUE),
+    names.commodity = c("serv1", "serv2", "labor"),
+    names.agent = c("firm", "consumer1", "consumer2"),
+    numeraire = "labor",
+    policy = policy
+  )
+
+  cat("ge$p:\n")
+  print(round(ge$p, 5))
+  cat("ge$z:\n")
+  print(round(ge$z, 5))
+  cat("ge$D:\n")
+  print(addmargins(round(ge$D, 5), 2))
+  cat("ge$S:\n")
+  print(addmargins(round(ge$S, 5), 2))
+}
+
+f.CD()
+
+# Suppose consumer 2 is a free rider.
+policy.nonexcludability &lt;- function(state) {
+  state$S[2, 3] &lt;- state$S[2, 1]
+  state$S[2, 1] &lt;- 0
+  state
+}
+f.CD(policy.nonexcludability)
+
+## Assume that both consumers have the same linear utility
+# function x1 + 1.25 * x2, wherein x1 is the quantity
+# of service and x2 is the quantity of labor.
+
+dst.firm1 &lt;- node_new(
+  "serv1",
+  type = "Leontief", a = 0.8,
+  "labor"
+)
+
+dst.firm2 &lt;- node_new(
+  "serv2",
+  type = "Leontief", a = 0.8,
+  "labor"
+)
+
+dst.consumer1 &lt;- node_new(
+  "util",
+  type = "Leontief", a = 1,
+  "serv1"
+)
+
+dst.consumer2 &lt;- node_new(
+  "util",
+  type = "Leontief", a = 1,
+  "serv2"
+)
+
+f.linear &lt;- function(policy = NULL) {
+  ge &lt;- sdm2(
+    A = list(
+      dst.firm0, dst.consumer1, dst.consumer2,
+      dst.firm1, dst.firm2
+    ),
+    B = matrix(c(
+      1, 0, 0, 1, 0,
+      1, 0, 0, 0, 1,
+      0, 0, 0, 0, 0
+    ), 3, 5, TRUE),
+    S0Exg = matrix(c(
+      NA, NA, NA, NA, NA,
+      NA, NA, NA, NA, NA,
+      NA, 60, 60, NA, NA
+    ), 3, 5, TRUE),
+    names.commodity = c("serv1", "serv2", "labor"),
+    names.agent = c("firm.public", "consumer1", "consumer2", "firm1", "firm2"),
+    numeraire = "labor",
+    policy = policy
+  )
+
+  cat("ge$p:\n")
+  print(round(ge$p, 5))
+  cat("ge$z:\n")
+  print(round(ge$z, 5))
+  cat("ge$D:\n")
+  print(addmargins(round(ge$D, 5), 2))
+  cat("ge$S:\n")
+  print(addmargins(round(ge$S, 5), 2))
+}
+
+f.linear()
+
+# Suppose consumer 2 is a free rider.
+f.linear(policy.nonexcludability)
+
+</code></pre>
+
+
+</div>

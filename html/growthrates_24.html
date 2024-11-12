@@ -1,0 +1,210 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>extcoef_logistic</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Extended Set of Coefficients of a Logistic Growth Model</h2>
+
+<h3>Description</h3>
+
+<p>Estimate model-specific derived parameters of the logistic growth
+model
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">extcoef_logistic(object, quantile = 0.95, time = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>model object fited by <code>fit_growthmodel</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quantile</code></td>
+<td>
+<p>fraction of the capacity parameter (<code>K</code>) for the quantile method</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>2-valued vector of the search interval for the independent
+variable (<code>time</code>).
+Note: this needs to be set this manually if saturation is not
+reached within the observation time period taken from the data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>reserved for future extensions</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function returns the estimated parameters of a logistic growth model
+(<code>y0</code>, <code>mumax</code>, <code>K</code>) and a series of estimates for the time
+of approximate saturation.
+The estimates are defined as follows:
+</p>
+
+<ul>
+<li> <p><code>turnpoint</code>: time of turnpoint (50% saturation)
+</p>
+</li>
+<li> <p><code>sat1</code>: time of the minimum of the 2nd derivative
+</p>
+</li>
+<li> <p><code>sat2</code>: time of the intercept between the steepest increase
+(the tangent at <code>mumax</code>) and the carrying capacity <code>K</code>
+</p>
+</li>
+<li> <p><code>sat3</code>: time when a quantile of <code>K</code> (default 0.95)
+is reached
+</p>
+</li>
+</ul>
+<p>This function is normally not directly called by the user.
+It is usually called indirectly from <code>coef</code> or <code>results</code> if
+<code>extended=TRUE</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>vector that contains the fitted parameters and some
+derived characteristics (extended parameters) of the logistic
+function.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The estimates for the turnpoint and the time of approximate saturation
+(<code>sat1</code>, <code>sat2</code>, <code>sat3</code>) may be unreliable, if saturation
+is not reached within the observation time period. See example below.
+A set of extended parameters exists currently only for the standard logistic
+growth model (<code>grow_logistic</code>).
+The code and naming of the parameters is preliminary and may change in
+future versions.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## =========================================================================
+## The 'extended parameters' are usually derived
+## =========================================================================
+
+data(antibiotic)
+
+## fit a logistic model to a single data set
+dat &lt;- subset(antibiotic, conc==0.078 &amp; repl=="R4")
+
+parms &lt;- c(y0=0.01, mumax=0.2, K=0.5)
+fit &lt;- fit_growthmodel(grow_logistic, parms, dat$time, dat$value)
+coef(fit, extended=TRUE)
+
+## fit the logistic to all data sets
+myData &lt;- subset(antibiotic, repl=="R3")
+parms &lt;- c(y0=0.01, mumax=0.2, K=0.5)
+all &lt;- all_growthmodels(value ~ time | conc,
+                         data = myData, FUN=grow_logistic,
+                         p = parms, ncores = 2)
+
+
+par(mfrow=c(3,4))
+plot(all)
+results(all, extended=TRUE)
+## we see that the the last 3 series (10...12) do not go into saturation
+## within the observation time period.
+
+## We can try to extend the search range:
+results(all[10:12], extended=TRUE, time=c(0, 5000))
+
+
+## =========================================================================
+## visualisation how the 'extended parameters' are derived
+## =========================================================================
+
+# Derivatives of the logistic:
+#   The 1st and 2nd derivatives are internal functions of the package.
+#   They are used here for the visualisation of the algorithm.
+
+deriv1 &lt;- function(time, y0, mumax, K) {
+  ret &lt;- (K*mumax*y0*(K - y0)*exp(mumax * time))/
+    ((K + y0 * (exp(mumax * time) - 1))^2)
+  unname(ret)
+}
+
+deriv2 &lt;- function(time, y0, mumax, K) {
+  ret &lt;- -(K * mumax^2 * y0 * (K - y0) * exp(mumax * time) *
+             (-K + y0 * exp(mumax * time) + y0))/
+    (K + y0 * (exp(mumax * time) - 1))^3
+  unname(ret)
+}
+## =========================================================================
+
+data(bactgrowth)
+## extract one growth experiment by name
+dat &lt;- multisplit(bactgrowth, c("strain", "conc", "replicate"))[["D:0:1"]]
+
+
+## unconstraied fitting
+p &lt;- c(y0 = 0.01, mumax = 0.2, K = 0.1) # start parameters
+fit1 &lt;- fit_growthmodel(FUN = grow_logistic, p = p, dat$time, dat$value)
+summary(fit1)
+p &lt;- coef(fit1, extended=TRUE)
+
+## copy parameters to separate variables to improve readability ------------
+y0 &lt;-    p["y0"]
+mumax &lt;- p["mumax"]
+K  &lt;-    p["K"]
+turnpoint &lt;- p["turnpoint"]
+sat1 &lt;-  p["sat1"]  # 2nd derivative
+sat2 &lt;-  p["sat2"]  # intercept between steepest increase and K
+sat3 &lt;-  p["sat3"]  # a given quantile of K, default 95\%
+
+## show saturation values in growth curve and 1st and 2nd derivatives ------
+opar &lt;- par(no.readonly=TRUE)
+par(mfrow=c(3, 1), mar=c(4,4,0.2,0))
+plot(fit1)
+
+## 95% saturation
+abline(h=0.95*K, col="magenta", lty="dashed")
+
+## Intercept between steepest increase and 100% saturation
+b &lt;- deriv1(turnpoint, y0, mumax, K)
+a &lt;- K/2 - b*turnpoint
+abline(a=a, b=b, col="orange", lty="dashed")
+abline(h=K, col="orange", lty="dashed")
+points(sat2, K, pch=16, col="orange")
+points(turnpoint, K/2, pch=16, col="blue")
+
+## sat2 is the minimum of the 2nd derivative
+abline(v=c(turnpoint, sat1, sat2, sat3),
+       col=c("blue", "grey", "orange", "magenta"), lty="dashed")
+
+## plot the derivatives
+with(dat, plot(time, deriv1(time, y0, mumax, K), type="l", ylab="y'"))
+abline(v=c(turnpoint, sat1), col=c("blue", "grey"), lty="dashed")
+
+with(dat, plot(time, deriv2(time, y0, mumax, K), type="l",  ylab="y''"))
+abline(v=sat1, col="grey", lty="dashed")
+par(opar)
+
+</code></pre>
+
+
+</div>

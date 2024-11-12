@@ -1,0 +1,133 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>DP_SBM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Degree profile graph matching with community detection.</h2>
+
+<h3>Description</h3>
+
+<p>Given two community-structured networks, this function first
+applies a spectral clustering method <em>SCORE</em> to detect perceivable
+communities and then applies <em>DPmatching</em> or <em>EEpost</em> to match
+different communities. More details are in <em>SCORE</em>, <em>DPmatching</em>
+and <em>EEpost</em>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">DP_SBM(
+  A,
+  B,
+  K,
+  fun = c("DPmatching", "EEpost"),
+  rep = NULL,
+  tau = NULL,
+  d = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>A, B</code></td>
+<td>
+<p>Two 0/1 addjacency matrices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>A positive integer, the number of communities in <code>A</code> and <code>B</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fun</code></td>
+<td>
+<p>A graph matching algorithm. Choices include
+<em>DPmatching</em> and <em>EEpost</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rep</code></td>
+<td>
+<p>A parameter if choosing <em>EEpost</em> as the initial graph matching algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p>Optional parameter if choosing <em>EEpost</em> as the initial graph matching
+algorithm. The default value is <code class="reqn">rep/10</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>Optional parameter if choosing <em>EEpost</em> as the initial graph
+matching algorithm. The default value is 1.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The graphs to be matched are expected to have community structures.
+The result is the collection of all possible permutations on
+<code>{1,...,K}</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of matching results for all possible permutations on <code>{1,...,K}</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">### Here we use graphs under stochastic block model(SBM).
+set.seed(2020)
+K = 2; n = 30; s = 1;
+P  = matrix(c(1/2, 1/4, 1/4, 1/2), byrow = TRUE, nrow = K)
+### define community label matrix Pi
+distribution = c(1, 2);
+l = sample(distribution, n, replace=TRUE, prob = c(1/2, 1/2))
+Pi = matrix(0, n, 2) # label matrix
+for (i in 1:n){
+  Pi[i, l[i]] = 1
+  }
+### define the expectation of the parent graph's adjacency matrix
+Omega = Pi %*% P %*% t(Pi)
+### construct the parent graph G
+G = matrix(runif(n*n, 0, 1), nrow = n)
+G = G - Omega
+temp = G
+G[which(temp &gt;0)] = 0
+G[which(temp &lt;=0)] = 1
+diag(G) = 0
+G[lower.tri(G)] = t(G)[lower.tri(G)];
+### Sample Graphs Generation
+### generate graph A from G
+dA = matrix(rbinom(n*n, 1, s), nrow = n, ncol=n)
+dA[lower.tri(dA)] = t(dA)[lower.tri(dA)]
+A1 = G*dA
+indA = sample(1:n, n, replace = FALSE)
+labelA = l[indA]
+A = A1[indA, indA]
+### similarly, generate graph B from G
+dB = matrix(rbinom(n*n, 1, s), nrow = n, ncol=n)
+dB[lower.tri(dB)] = t(dB)[lower.tri(dB)]
+B1 = G*dB
+indB = sample(1:n, n, replace = FALSE)
+labelB = l[indB]
+B = B1[indB, indB]
+DP_SBM(A = A, B = B, K = 2, fun = "EEpost", rep = 10, d = 3)
+
+</code></pre>
+
+
+</div>

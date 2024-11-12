@@ -1,0 +1,324 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gbmt</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimation of a group-based multivariate trajectory model</h2>
+
+<h3>Description</h3>
+
+<p>Estimation of a group-based multivariate trajectory model through the Expectation-Maximization (EM) algorithm. Missing values are allowed and the panel may be unbalanced.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gbmt(x.names, unit, time, ng=1, d=2, data, scaling=2, pruning=TRUE, nstart=NULL,
+  tol=1e-4, maxit=1000, quiet=FALSE)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x.names</code></td>
+<td>
+<p>Character vector including the names of the indicators.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unit</code></td>
+<td>
+<p>Character indicating the name of the variable identifying the units.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>Character indicating the name of the variable identifying the time points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ng</code></td>
+<td>
+<p>Positive integer value indicating the number of groups to create. Default is 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>Positive integer value indicating the polynomial degree of group trajectories. Default is 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Object of class <code>data.frame</code> containing the variables indicated in arguments <code>x.names</code>, <code>unit</code> and <code>time</code>. The variable indicated in argument <code>unit</code> must be of type 'character' or 'factor' and cannot contain missing values. The variable indicated in argument <code>time</code> must be of type 'numeric' or 'Date' and cannot contain missing values. Variables indicated in argument <code>x.names</code> must be of type 'numeric' and may contain missing values. Variables indicated in argument <code>x.names</code> which are completely missing or not present in <code>data</code> will be ignored. The time points may differ across units (unbalanced panel) but they must be unique within units.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scaling</code></td>
+<td>
+<p>Normalisation method, that should be indicated as: 0 (no normalisation), 1 (centering), 2 (standardization), 3 (ratio to the mean) and 4 (logarithmic ratio to the mean). Default is 2 (standardization). See 'Details'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pruning</code></td>
+<td>
+<p>Logical value indicating whether non-significant polynomial terms should be dropped. Default is <code>TRUE</code>. See 'Details'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nstart</code></td>
+<td>
+<p>Positive integer value indicating the number of random restarts of the EM algorithm. If <code>NULL</code> (the default), the EM algorithm is started from the solution of a hierarchical cluster with Ward's linkage.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>Positive value indicating the tolerance of the EM algorithm. Default is 1e-4.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>Positive integer value indicating the maximum number of iterations of the EM algorithm. Default is 1000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>Logical value indicating whether prompt messages should be suppressed. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Let <code class="reqn">Y_1,\ldots,Y_k,\ldots,Y_K</code> be the considered indicators and <code class="reqn">\mbox{y}_{i,t}=(y_{i,t,1},\ldots,y_{i,t,k},\ldots,y_{i,t,K})'</code> denote their observation on unit <code class="reqn">i</code> (<code class="reqn">i=1,\ldots,n</code>) at time <code class="reqn">t</code> (<code class="reqn">t=1,\ldots,T</code>).
+Also, let <code class="reqn">\bar{y}_{i,k}</code> and <code class="reqn">s_{i,k}</code> be, respectively, sample mean and sample standard deviation of indicator <code class="reqn">Y_k</code> for unit <code class="reqn">i</code> across the whole period of observation.
+Each indicator is normalized within units according to one among the following normalisation methods:
+</p>
+<p>0) no normalisation:
+</p>
+<p style="text-align: center;"><code class="reqn">y^*_{i,t,k}=y_{i,t,k}</code>
+</p>
+
+<p>1) centering:
+</p>
+<p style="text-align: center;"><code class="reqn">y^*_{i,t,k}=y_{i,t,k}-\bar{y}_{i,k}</code>
+</p>
+
+<p>2) standardization:
+</p>
+<p style="text-align: center;"><code class="reqn">y^*_{i,t,k}=\frac{y_{i,t,k}-\bar{y}_{i,k}}{s_{i,k}}</code>
+</p>
+
+<p>3) ratio to the mean:
+</p>
+<p style="text-align: center;"><code class="reqn">y^*_{i,t,k}=\frac{y_{i,t,k}}{\bar{y}_{i,k}}</code>
+</p>
+
+<p>4) logarithmic ratio to the mean:
+</p>
+<p style="text-align: center;"><code class="reqn">y^*_{i,t,k}=\log\left(\frac{y_{i,t,k}}{\bar{y}_{i,k}}\right)\approx\frac{y_{i,t,k}-\bar{y}_{i,k}}{\bar{y}_{i,k}}</code>
+</p>
+
+<p>Normalisation is required if the trajectories have different levels across units. When indicators have different scales of measurement, standardization is needed to compare the measurements of different indicators. Ratio to the mean and logaritmic ratio to the mean allow comparisons among different indicators as well, but they can be applied only in case of strictly positive measurements.
+</p>
+<p>Denote the hypothesized groups as <code class="reqn">j=1,\ldots,J</code> and let <code class="reqn">G_i</code> be a latent variable taking value <code class="reqn">j</code> if unit <code class="reqn">i</code> belongs to group <code class="reqn">j</code>.
+A group-based multivariate trajectory model with polynomial degree <code class="reqn">d</code> is defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">\mbox{y}^*_{i,t}\mid G_i=j\sim\mbox{MVN}\left(\mu_j,\Sigma_j\right)\hspace{.9cm}j=1,\ldots,J</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\mu_j=\mbox{B}_j'\left(1,t,t^2,\ldots,t^d\right)'</code>
+</p>
+
+<p>where <code class="reqn">\mbox{B}_j</code> is the <code class="reqn">(d+1)\times K</code> matrix of regression coefficients in group <code class="reqn">j</code>, and <code class="reqn">\Sigma_j</code> is the <code class="reqn">K \times K</code> covariance matrix of the indicators in group <code class="reqn">j</code>.
+The likelihood of the model is:
+</p>
+<p style="text-align: center;"><code class="reqn">\mathcal{L}(\mbox{B}_1,\ldots,\mbox{B}_J,\Sigma_1,\ldots,\Sigma_J,\pi_1,\ldots,\pi_J)=\prod_{i=1}^n\left[\sum_{j=1}^J\pi_j \prod_{t=1}^T\phi(\mbox{y}^*_{i,t}\mid \mbox{B}_j,\Sigma_j)\right]</code>
+</p>
+
+<p>where <code class="reqn">\phi(\mbox{y}^*_{i,t}\mid \mbox{B}_j,\Sigma_j)</code> is the multivariate Normal density of <code class="reqn">\mbox{y}^*_{i,t}</code> in group <code class="reqn">j</code>, and <code class="reqn">\pi_j</code> is the prior probability of group <code class="reqn">j</code>.
+The posterior probability of group <code class="reqn">j</code> for unit <code class="reqn">i</code> is computed as:
+</p>
+<p style="text-align: center;"><code class="reqn">\mbox{Pr}(G_i=j\mid \mbox{y}^*_i)\equiv\pi_{i,j}=\frac{\widehat{\pi}_j \prod_{t=1}^{T}\phi(\mbox{y}^*_{i,t}\mid \widehat{\mbox{B}}_j,\widehat{\Sigma}_j)}{\sum_{j=1}^J\widehat{\pi}_j \prod_{t=1}^{T}\phi(\mbox{y}^*_{i,t}\mid \widehat{\mbox{B}}_j,\widehat{\Sigma}_j)}</code>
+</p>
+
+<p>where the hat symbol above a parameter denotes the estimated value for that parameter.
+See the vignette of the package and Magrini (2022) for details on maximum likelihood estimation through the EM algorithm.
+</p>
+<p>S3 methods available for class <code>gbmt</code> include:
+</p>
+
+<ul>
+<li>
+<p><code>print</code>: to see the estimated regression coefficients for each group;
+</p>
+</li>
+<li>
+<p><code>summary</code>: to obtain the summary of the linear regressions (a list with one component for each group and each indicator);
+</p>
+</li>
+<li>
+<p><code>plot</code>: to display estimated and predicted trajectories. See plot.gbmt for details;
+</p>
+</li>
+<li>
+<p><code>coef</code>: to see the estimated coefficients (a list with one component for each group);
+</p>
+</li>
+<li>
+<p><code>fitted</code>: to obtain the fitted values, equating to the estimated group trajectories (a list with one component for each group);
+</p>
+</li>
+<li>
+<p><code>residuals</code>: to obtain the residuals (a list with one component for each group);
+</p>
+</li>
+<li>
+<p><code>predict</code>: to perform prediction on trajectories. See predict.gbmt for details.
+</p>
+</li>
+<li>
+<p><code>logLik</code>: to get the log likelihood;
+</p>
+</li>
+<li>
+<p><code>AIC</code>, <code>extractAIC</code>: to get the Akaike information criterion;
+</p>
+</li>
+<li>
+<p><code>BIC</code>: to get the Bayesian information criterion.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>An object of class <code>gbmt</code>, including the following components:
+</p>
+
+<ul>
+<li>
+<p><code>call</code>: list including details on the call.
+</p>
+</li>
+<li>
+<p><code>prior</code>: vector including the estimated prior probabilities.
+</p>
+</li>
+<li>
+<p><code>beta</code>: list of matrices, one for each group, including the estimated regression coefficients.
+</p>
+</li>
+<li>
+<p><code>Sigma</code>: list of matrices, one for each group, including the estimated covariance matrix of the indicators.
+</p>
+</li>
+<li>
+<p><code>posterior</code>: matrix including posterior probabilities.
+</p>
+</li>
+<li>
+<p><code>Xmat</code>: the model matrix employed for each indicator in each group.
+</p>
+</li>
+<li>
+<p><code>fitted</code>: list of matrices, one for each group, including the estimated group trajectories.
+</p>
+</li>
+<li>
+<p><code>reg</code>: list of objects of class <code>lm</code>, one for each group and each indicator, including the fitted regressions.
+</p>
+</li>
+<li>
+<p><code>assign</code>: vector indicating the assignement of the units to the groups.
+</p>
+</li>
+<li>
+<p><code>assign.list</code>: list indicating the assignement of the units to the groups.
+</p>
+</li>
+<li>
+<p><code>logLik</code>: log-likelihood of the model.
+</p>
+</li>
+<li>
+<p><code>npar</code>: total number of free parameters in the model.
+</p>
+</li>
+<li>
+<p><code>ic</code>: information criteria for the model (see Magrini, 2022 for details.
+</p>
+</li>
+<li>
+<p><code>appa</code>: average posterior probability of assignments (APPA) for the model.
+</p>
+</li>
+<li>
+<p><code>data.orig</code>: data provided to argument <code>data</code>.
+</p>
+</li>
+<li>
+<p><code>data.scaled</code>: data after normalization.
+</p>
+</li>
+<li>
+<p><code>data.imputed</code>: data after imputation of missing values, equal to <code>data.orig</code> if there are no missing data.
+</p>
+</li>
+<li>
+<p><code>em</code>: matrix with one row for each run of the EM algorithm, including log-likelihood, number of iterations and convergence status (1=yes, 0=no).
+
+
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>A. Magrini (2022). Assessment of agricultural sustainability in European Union countries: A group-based multivariate trajectory approach. <em>Advances in Statistical Analysis</em>, published online: March 2022. DOI: 10.1007/s10182-022-00437-9
+</p>
+
+
+<h3>See Also</h3>
+
+<p>plot.gbmt; predict.gbmt.</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(agrisus2)
+
+# names of indicators (just a subset for illustration)
+varNames &lt;- c("TFP_2005", "NetCapital_GVA",
+  "Income_rur", "Unempl_rur", "GHG_UAA", "GNB_N_UAA")
+
+# model with 2 degrees and 3 groups using the imputed dataset
+# - log ratio to the mean is used as normalisation (scaling=4), thus values
+#   represent relative changes with respect to country averages (see Magrini, 2022)
+# - by default, standardization (scaling=2) is used.
+m3_2 &lt;- gbmt(x.names=varNames, unit="Country", time="Year", d=2, ng=3, data=agrisus2, scaling=4)
+
+## NOT RUN: same model with multiple random restarts
+#m3_2r &lt;- gbmt(x.names=varNames, unit="Country", time="Year", d=2, ng=3, data=agrisus2,
+#  scaling=4, nstart=10)
+
+# resulting groups
+m3_2$assign.list
+
+# estimated group trajectories
+m3_2$fitted
+
+# summary of regressions by group
+summary(m3_2)
+
+# fit a model with 4 groups
+m4_2 &lt;- gbmt(x.names=varNames, unit="Country", time="Year", d=2, ng=4, data=agrisus2,
+  scaling=4)
+rbind(m3_2$ic, m4_2$ic)  ## comparison
+</code></pre>
+
+
+</div>

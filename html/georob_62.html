@@ -1,0 +1,549 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gencorr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Variogram Models</h2>
+
+<h3>Description</h3>
+
+<p>The function <code>gencorr</code> computes intrinsic or
+stationary isotropic generalized correlations (= negative semi-variances
+computed with sill (variance) parameter equal to 1) for a set of basic
+variogram models formerly made available by the function <code>RFfctn</code> of
+the now archived <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> package <span class="pkg">RandomFields</span>.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gencorr(x, variogram.model, param)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a numeric vector with scaled lag distances, i.e. lag distances
+divided by the range parameter <code>param["scale"]</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variogram.model</code></td>
+<td>
+<p>a character keyword defining the variogram model.
+Currently, the following models are implemented:<br><code>"RMaskey"</code>, <code>"RMbessel"</code>, <code>"RMcauchy"</code>,
+<code>"RMcircular"</code>, <code>"RMcubic"</code>, <code>"RMdagum"</code>, <br><code>"RMdampedcos"</code>, <code>"RMdewijsian"</code>, <code>"RMexp"</code> (default),
+<code>"RMfbm"</code>, <code>"RMgauss"</code>, <br><code>"RMgencauchy"</code>,
+<code>"RMgenfbm"</code>, <code>"RMgengneiting"</code>, <code>"RMgneiting"</code>,
+<code>"RMlgd"</code>, <br><code>"RMmatern"</code>, <code>"RMpenta"</code>, <code>"RMqexp"</code>,
+<code>"RMspheric"</code>, <code>"RMstable"</code>, <code>"RMwave"</code>, <br><code>"RMwhittle"</code>, see <em>Details</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>a named numeric vector with values of the additional
+parameters of the variogram models such as the smoothness parameter of
+the Whittle-Matérn model, see <code>param.names for the names of
+  these parameters</code>.  Note that some variogram models (e.g.
+<code>"RMcircular"</code>) do not have any additional parameters.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The name and parametrization of the variogram models originate from the
+function <code>RFfctn</code> of <span class="pkg">RandomFields</span>.  The equations and further
+information are taken (with minor modifications) from the help pages of
+the respective functions of the archived <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> package <span class="pkg">RandomFields</span>,
+version 3.3.14 (<cite>Schlather et al., 2022</cite>).  Note that the variance
+(sill, <code>param["variance"]</code>) and the range parameters
+(<code>param["scale"]</code>) are assumed to be equal to 1 in the following
+formulae, and <code class="reqn">x</code> is the lag distance.  The variogram functions are
+stationary and are valid for any number of dimensions if not mentioned
+otherwise.
+</p>
+<p>The following  intrinsic or stationary isotropic variogram
+functions <code class="reqn">\gamma(x)</code> are implemented in <code>gencorr</code>:
+</p>
+
+<ul>
+<li> <p><code>RMaskey</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x)= 1 - (1-x)^\alpha 1_{[0,1]}(x)
+    </code>
+</p>
+
+<p><code class="reqn">1_{[0,1]}(x)</code> is the indicator function equal to 1 for <code class="reqn">x \in
+    [0,1]</code> and 0 otherwise.  This variogram function is
+valid for dimension <code class="reqn">d</code> if <code class="reqn">\alpha \ge (d+1)/2</code>.  For
+<code class="reqn">\alpha=1</code> we get the well-known triangle (or tent) model, which is
+only valid on the real line.
+</p>
+</li>
+<li> <p><code>RMbessel</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = 1 - 2^\nu \Gamma(\nu+1) x^{-\nu} J_\nu(x)
+    </code>
+</p>
+
+<p>where <code class="reqn">\nu \ge \frac{d-2}2</code>, <code class="reqn">\Gamma</code> denotes
+the gamma function and <code class="reqn">J_\nu</code> is a Bessel function of first kind.
+This models a hole effect (see <cite>Chilès and Delfiner, 1999,
+p. 92</cite>).
+An important case is <code class="reqn">\nu=-0.5</code> which gives the variogram
+function
+</p>
+<p style="text-align: center;"><code class="reqn">\gamma(x)= 1 - \cos(x)</code>
+</p>
+
+<p>and which is only valid for <code class="reqn">d=1</code> (this equals <code>RMdampedcos</code>
+for <code class="reqn">\lambda = 0</code>).
+A second important case is <code class="reqn">\nu=0.5</code> with variogram function
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = \left(1 - \frac{\sin(x)}{x}\right) 1_{x&gt;0}
+    </code>
+</p>
+
+<p>which is valid for <code class="reqn">d \le 3</code>. This coincides with <code>RMwave</code>.
+</p>
+</li>
+<li> <p><code>RMcauchy</code>
+</p>
+<p style="text-align: center;"><code class="reqn">\gamma(x) = 1 - (1 + x^2)^{-\gamma}</code>
+</p>
+
+<p>where <code class="reqn">\gamma &gt; 0</code>.  The parameter <code class="reqn">\gamma</code> determines the
+asymptotic power law.  The smaller <code class="reqn">\gamma</code>, the longer the
+long-range dependence.  The generalized Cauchy Family
+(<code>RMgencauchy</code>) includes this family for the choice <code class="reqn">\alpha =
+    2</code> and <code class="reqn">\beta = 2 \gamma</code>.
+</p>
+</li>
+<li> <p><code>RMcircular</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = 1 - \left(1 -\frac{2}{\pi} \left(x \sqrt{1-x^2} + \arcsin(x)\right)\right) 1_{[0,1]}(x)
+    </code>
+</p>
+
+<p>This variogram function is valid only for dimensions <code class="reqn">d \le 2</code>.
+</p>
+</li>
+<li> <p><code>RMcubic</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = 1 - (1-7 x^2 + 8.75 x^3 - 3.5 x^5 + 0.75 x^7) 1_{[0,1]}(x)
+    </code>
+</p>
+
+<p>The model is only valid for dimensions <code class="reqn">d \le 3</code>.  It is a 2 times
+differentiable variogram function with compact support (see
+<cite>Chilès and Delfiner, 1999, p. 84</cite>).
+</p>
+</li>
+<li> <p><code>RMdagum</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = (1+x^{-\beta})^{-\gamma / \beta}
+    </code>
+</p>
+
+<p>The parameters <code class="reqn">\beta</code> and <code class="reqn">\gamma</code> can be varied in the
+intervals <code class="reqn">(0,1]</code> and <code class="reqn">(0,1)</code>, respectively.  Like the
+generalized Cauchy model (<code>RMgencauchy</code>) the Dagum family can be
+used to model separately fractal dimension and Hurst effect
+(see <cite>Berg et al., 2008</cite>).
+</p>
+</li>
+<li> <p><code>RMdampedcos</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = 1 - \exp(-\lambda x) \cos(x)
+    </code>
+</p>
+
+<p>The model is valid for any dimension <code class="reqn">d</code>.  However, depending on
+the dimension of the random field the following bound
+<code class="reqn">
+      \lambda \ge 1/{\tan(\pi/(2d))}
+    </code> has to be respected.
+This variogram function models a hole effect
+(see <cite>Chilès and Delfiner, 1999, p. 92</cite>).
+For <code class="reqn">\lambda = 0</code> we obtain
+</p>
+<p style="text-align: center;"><code class="reqn">\gamma(x)= 1 - \cos(x)</code>
+</p>
+<p> which is only valid
+for <code class="reqn">d=1</code> and corresponds to <code>RMbessel</code> for <code class="reqn">\nu=-0.5</code>.
+</p>
+</li>
+<li> <p><code>RMdewijsian</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = \log(1 + x^{\alpha})
+    </code>
+</p>
+
+<p>where <code class="reqn">\alpha \in (0,2]</code>.  This is an intrinsic variogram function.
+Originally, the logarithmic model <code class="reqn">\gamma(x)
+    = \log(x)</code> was named after de Wijs and
+reflects a principle of
+similarity (see  <cite>Chilès and Delfiner, 1999, p. 90</cite>).  But
+note that <code class="reqn">\gamma(x) = \log(x)</code> is not
+a valid variogram function.
+</p>
+</li>
+<li> <p><code>RMexp</code>
+</p>
+<p style="text-align: center;"><code class="reqn">\gamma(x) = 1 - e^{-x}</code>
+</p>
+
+<p>This model is a special case of the Whittle model
+(<code>RMwhittle</code>) if <code class="reqn">\nu=0.5</code>
+and of the stable family (<code>RMstable</code>)
+if <code class="reqn">\nu = 1</code>. Moreover, it is the continuous-time analogue
+of the first order auto-regressive time series covariance structure.
+</p>
+</li>
+<li> <p><code>RMfbm</code>
+</p>
+<p style="text-align: center;"><code class="reqn">\gamma(x) = x^\alpha</code>
+</p>
+
+<p>where <code class="reqn">\alpha \in (0,2)</code>.  This is an
+intrinsically stationary variogram function.  For <code class="reqn">\alpha=1</code>
+we get a variogram function corresponding to a standard
+Brownian Motion.  For <code class="reqn">\alpha \in (0,2)</code> the
+quantity <code class="reqn">H = \frac{\alpha}{2}</code> is called Hurst index
+and determines the fractal dimension <code class="reqn">D = d + 1 - H</code> of the corresponding
+Gaussian sample paths where <code class="reqn">d</code> is the
+dimension of the random field
+(see <cite>Chilès and Delfiner, 1999, p. 89</cite>).
+</p>
+</li>
+<li> <p><code>RMgauss</code>
+</p>
+<p style="text-align: center;"><code class="reqn">\gamma(x) = 1 - e^{-x^2}</code>
+</p>
+
+<p>The Gaussian model has an infinitely differentiable variogram
+function.  This smoothness is artificial.  Furthermore, this often
+leads to singular matrices and therefore numerically instable
+procedures (see <cite>Stein, 1999, p. 29</cite>).  The Gaussian model is included in
+the stable class (<code>RMstable</code>) for the choice <code class="reqn">\alpha = 2</code>.
+</p>
+</li>
+<li> <p><code>RMgencauchy</code>
+</p>
+<p style="text-align: center;"><code class="reqn">\gamma(x) = 1 - (1 + x^\alpha)^{-\beta/\alpha}</code>
+</p>
+
+<p>where <code class="reqn">\alpha \in (0,2]</code> and <code class="reqn">\beta &gt;
+    0</code>.  This model has a smoothness parameter <code class="reqn">\alpha</code> and
+a parameter <code class="reqn">\beta</code> which determines the asymptotic power law.
+More precisely, this model admits simulating random fields where
+fractal dimension <em>D</em> of the Gaussian sample path and Hurst
+coefficient <em>H</em> can be chosen independently (compare also with
+<code>RMlgd</code>): Here, we have <code class="reqn">D = d + 1 - \alpha/2, \alpha \in
+    (0,2]</code> and <code class="reqn"> H = 1 -
+    \beta/2, \beta &gt; 0</code>.  The smaller <code class="reqn">\beta</code>, the longer the
+long-range dependence.  The variogram function is very regular
+near the origin, because its Taylor expansion only contains even terms
+and reaches its sill slowly.  Note that the Cauchy Family
+(<code>RMcauchy</code>) is included in this family for the choice <code class="reqn">\alpha
+    = 2</code> and <code class="reqn">\beta = 2 \gamma</code>.
+</p>
+</li>
+<li> <p><code>RMgenfbm</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = (1 + x^{\alpha})^{\delta/\alpha} - 1
+    </code>
+</p>
+
+<p>where <code class="reqn">\alpha \in (0,2)</code> and <code class="reqn">\delta \in
+    (0,1)</code>. This is an intrinsic variogram function.
+</p>
+</li>
+<li> <p><code>RMgengneiting</code>
+This is a family of stationary models whose elements are specified by
+the two parameters <code class="reqn">\kappa</code> and <code class="reqn">\mu</code> with <code class="reqn">\kappa</code> being a
+non-negative integer and <code class="reqn">\mu \ge \frac{d}{2}</code> with
+<code class="reqn">d</code> denoting the dimension of the random field (the models can be
+used for any dimension).  Let <code class="reqn">\beta = \mu + 2\kappa +1/2</code>.
+</p>
+<p>For <code class="reqn">\kappa = 0</code> the model equals the Askey model (<code>RMaskey</code>)
+and is therefore not implemented.
+</p>
+<p>For <code class="reqn">\kappa = 1</code> the model is given by
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = 1 - \left(1+\beta x \right)(1-x)^{\beta} 1_{[0,1]}(x),
+        \qquad \beta = \mu +2.5,
+    </code>
+</p>
+
+<p>If <code class="reqn">\kappa = 2</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = 1 - \left(1 + \beta x + \frac{\beta^{2} - 1}{3}
+        x^{2} \right)(1-x)^{\beta} 1_{[0,1]}(x), \qquad
+        \beta = \mu+4.5,
+    </code>
+</p>
+
+<p>and for <code class="reqn">\kappa = 3</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = 1 - \left( 1 + \beta x + \frac{(2\beta^{2}-3)}{5} x^{2}+
+        \frac{(\beta^2 - 4)\beta}{15} x^{3} \right)(1-x)^\beta 1_{[0,1]}(x),
+        \beta = \mu+6.5,
+    </code>
+</p>
+
+<p>A special case of this family is <code>RMgneiting</code> (with
+<code class="reqn">s = 1</code> there) for the choice <code class="reqn">\kappa = 3, \mu =
+    3/2</code>.
+</p>
+</li>
+<li> <p><code>RMgneiting</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = 1 - (1 + 8 s x + 25 s^2 x^2 + 32 s^3 x^3)(1-s x)^8
+    </code>
+</p>
+
+<p>if <code class="reqn">0 \le x \le \frac{1}{s}</code> and
+</p>
+<p style="text-align: center;"><code class="reqn">\gamma(x)= 1</code>
+</p>
+<p> otherwise.  Here,
+<code class="reqn">s=0.301187465825</code>.   This variogram function is
+valid only for dimensions less than or equal to 3.  It is 6 times
+differentiable and has compact support.  This model is an alternative
+to <code>RMgauss</code> as its graph is hardly distinguishable from the graph
+of the Gaussian model, but possesses neither the mathematical nor the
+numerical disadvantages of the Gaussian model.  It is a special case of
+<code>RMgengneiting</code> for the choice <code class="reqn">\kappa=3, \mu=1.5</code>.
+</p>
+</li>
+<li> <p><code>RMlgd</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = \frac{\beta}{\alpha + \beta} x^{\alpha} 1_{[0,1]}(x) +
+        (1 - \frac{\alpha}{\alpha + \beta} x^{-\beta}) 1_{x&gt;1}(x)
+    </code>
+</p>
+
+<p>where <code class="reqn">\beta &gt;0</code> and <code class="reqn">0 &lt; \alpha \le (3-d)/2</code>, with <code class="reqn">d</code> denoting the dimension of the random field.
+The model is only valid for dimension <code class="reqn">d=1,2</code>.  This model admits
+simulating random fields where fractal dimension <code class="reqn">D</code> of the
+Gaussian sample and Hurst coefficient <code class="reqn">H</code> can be chosen
+independently (compare also <code>RMgencauchy</code>): Here, the random field
+has fractal dimension <code class="reqn">D = d+1 - \alpha/2</code> and Hurst coefficient
+<code class="reqn">H = 1-\beta/2</code> for <code class="reqn">0&lt; \beta \le 1</code>.
+</p>
+</li>
+<li> <p><code>RMmatern</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = 1 - \frac{2^{1-\nu}}{\Gamma(\nu)} (\sqrt{2\nu}x)^\nu
+        K_\nu(\sqrt{2\nu}x)
+    </code>
+</p>
+
+<p>where <code class="reqn">\nu &gt; 0</code> and <code class="reqn">K_\nu</code> is the modified Bessel function of
+second kind.  This is one of 3 possible parametrizations (Whittle,
+Matérn, Handcock-Wallis) of the Whittle-Matérn model.  The
+Whittle-Matérn model is the model of choice if the smoothness of a
+random field is to be parametrized: the sample paths of a Gaussian
+random field with this covariance structure are <code class="reqn">m</code> times
+differentiable if and only if <code class="reqn">\nu &gt; m</code> (see <cite>Gneiting and Guttorp,
+2010, p.  24</cite>).  Furthermore, the fractal dimension <code class="reqn">D</code> of the
+Gaussian sample paths is determined by <code class="reqn">\nu</code>: We have <code class="reqn">D = d +
+    1 - \nu, \nu \in (0,1)</code> and <code class="reqn">D = d</code>
+for <code class="reqn">\nu &gt; 1</code> where <code class="reqn">d</code> is the dimension of the random
+field (see <cite>Stein, 1999, p. 32</cite>).  If <code class="reqn">\nu=0.5</code> the Matérn
+model equals <code>RMexp</code>.  For <code class="reqn">\nu</code> tending to <code class="reqn">\infty</code> a
+rescaled Gaussian model <code>RMgauss</code> appears as limit for the
+Handcock-Wallis parametrization.
+</p>
+</li>
+<li> <p><code>RMpenta</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = 1 - \left(1 - \frac{22}{3}x^{2} + 33 x^{4} - \frac{77}{2} x^{5} +
+        \frac{33}{2} x^{7} - \frac{11}{2} x^{9} + \frac{5}{6}x^{11}\right) 1_{[0,1]}(x)
+    </code>
+</p>
+
+<p>The model is only valid for dimensions <code class="reqn">d \le 3</code>.  It has
+a 4 times differentiable variogram function with compact support (cf.
+<cite>Chilès and Delfiner, 1999, p. 84</cite>).
+</p>
+</li>
+<li> <p><code>RMqexp</code>
+</p>
+<p style="text-align: center;"><code class="reqn">\gamma(x)= 1 - \frac{2 e^{-x} - \alpha e^{-2x}}{ 2 - \alpha }</code>
+</p>
+
+<p>where <code class="reqn">\alpha \in [0,1]</code>.
+</p>
+</li>
+<li> <p><code>RMspheric</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = 1 - \left(1 - \frac{3}{2} x + \frac{1}{2} x^3\right)  1_{[0,1]}(x)
+    </code>
+</p>
+
+<p>This variogram model is valid only for dimensions less than or equal
+to 3 and has compact support.
+</p>
+</li>
+<li> <p><code>RMstable</code>
+</p>
+<p style="text-align: center;"><code class="reqn">\gamma(x) = 1 - e^{-x^\alpha}</code>
+</p>
+
+<p>where <code class="reqn">\alpha \in (0,2]</code>.  The parameter
+<code class="reqn">\alpha</code> determines the fractal dimension <code class="reqn">D</code> of the Gaussian
+sample paths: <code class="reqn">D = d + 1 - \alpha/2</code> where <code class="reqn">d</code> is the dimension
+of the random field.  For <code class="reqn">\alpha &lt; 2</code> the Gaussian sample paths
+are not differentiable (see <cite>Gelfand et al., 2010, p.  25</cite>).  The stable
+family includes the exponential model (<code>RMexp</code>) for <code class="reqn">\alpha =
+    1</code> and the Gaussian model ( <code>RMgauss</code>) for <code class="reqn">\alpha = 2</code>.
+</p>
+</li>
+<li> <p><code>RMwave</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x) = \left(1 - \frac{\sin(x)}{x}\right) 1_{x&gt;0}
+    </code>
+</p>
+
+<p>The model is only valid for dimensions <code class="reqn">d \le 3</code>.  It is a special
+case of <code>RMbessel</code> for <code class="reqn">\nu = 0.5</code>.  This variogram models a
+hole effect (see <cite>Chilès and Delfiner, 1999, p. 92</cite>).
+</p>
+</li>
+<li> <p><code>RMwhittle</code>
+</p>
+<p style="text-align: center;"><code class="reqn">
+      \gamma(x)=1 - \frac{2^{1- \nu}}{\Gamma(\nu)} x^{\nu}K_{\nu}(x)
+    </code>
+</p>
+
+<p>where <code class="reqn">\nu &gt; 0</code> and <code class="reqn">K_\nu</code> is the modified Bessel function of
+second kind.  This is one of 3 possible parametrizations (Whittle,
+Matérn, Handcock-Wallis) of the
+Whittle-Matérn model, for further details, see
+information for entry <code>RMmatern</code> above.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>A numeric vector with generalized correlations (= negative semi-variances
+computed with variance parameter <code>param["variance"] = 1</code>).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Andreas Papritz <a href="mailto:papritz@retired.ethz.ch">papritz@retired.ethz.ch</a></p>
+
+
+<h3>References</h3>
+
+<p>Berg, C., Mateau, J., Porcu, E. (2008) The dagum family of isotropic
+correlation functions, <em>Bernoulli</em>, <b>14</b>, 1134–1149,
+<a href="https://doi.org/10.3150/08-BEJ139">doi:10.3150/08-BEJ139</a>.
+</p>
+<p>Chilès, J.-P., Delfiner, P. (1999) <em>Geostatistics
+Modeling Spatial Uncertainty</em>, Wiley, New York,
+<a href="https://doi.org/10.1002/9780470316993">doi:10.1002/9780470316993</a>.
+</p>
+<p>Gneiting, T. (2002) Compactly supported correlation functions.
+<em>Journal of Multivariate Analysis</em>, <b>83</b>, 493–508,
+<a href="https://doi.org/10.1006/jmva.2001.2056">doi:10.1006/jmva.2001.2056</a>.
+</p>
+<p>Gneiting, T., Schlather, M. (2004) Stochastic models which separate
+fractal dimension and Hurst effect.  <em>SIAM review</em> <b>46</b>,
+269–282, <a href="https://doi.org/10.1137/S0036144501394387">doi:10.1137/S0036144501394387</a>.
+</p>
+<p>Gneiting, T., Guttorp, P. (2010) Continuous Parameter Stochastic Process
+Theory, In Gelfand, A. E., Diggle, P. J., Fuentes, M., Guttrop, P. (Eds.)
+<em>Handbook of Spatial Statistics</em>, CRC Press, Boca Raton, p. 17–28,
+<a href="https://doi.org/10.1201/9781420072884">doi:10.1201/9781420072884</a>.
+</p>
+<p>Schlather M., Malinowski A., Oesting M., Boecker D., Strokorb K., Engelke
+S., Martini J., Ballani F., Moreva O., Auel J., Menck P.J., Gross S.,
+Ober U., Ribeiro P., Ripley B.D., Singleton R., Pfaff B., R Core Team
+(2022).  <em>RandomFields: Simulation and Analysis of Random Fields</em>.
+<span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> package version 3.3.14,
+<a href="https://cran.r-project.org/src/contrib/Archive/RandomFields/">https://cran.r-project.org/src/contrib/Archive/RandomFields/</a>.
+</p>
+<p>Stein, M. L. (1999) <em>Interpolation of Spatial Data: Some Theory for
+Kriging</em>, Springer, New York, <a href="https://doi.org/10.1007/978-1-4612-1494-6">doi:10.1007/978-1-4612-1494-6</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>georobPackage</code> for a description of the model and a brief summary of the algorithms;
+</p>
+<p><code>georob</code> for (robust) fitting of spatial linear models;
+</p>
+<p><code>georobObject</code> for a description of the class <code>georob</code>;
+</p>
+<p><code>profilelogLik</code> for computing profiles of Gaussian likelihoods;
+</p>
+<p><code>plot.georob</code> for display of RE(ML) variogram estimates;
+</p>
+<p><code>control.georob</code> for controlling the behaviour of <code>georob</code>;
+</p>
+<p><code>georobModelBuilding</code> for stepwise building models of class <code>georob</code>;
+</p>
+<p><code>cv.georob</code> for assessing the goodness of a fit by <code>georob</code>;
+</p>
+<p><code>georobMethods</code> for further methods for the class <code>georob</code>;
+</p>
+<p><code>predict.georob</code> for computing robust Kriging predictions;
+</p>
+
+<p><code>lgnpp</code> for unbiased back-transformation of Kriging prediction
+of log-transformed data;
+</p>
+<p><code>georobSimulation</code> for simulating realizations of a Gaussian process
+from model fitted by <code>georob</code>; and finally
+</p>
+<p><code>sample.variogram</code> and <code>fit.variogram.model</code>
+for robust estimation and modelling of sample variograms.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## scaled lag distances
+x &lt;- seq(0, 3, length.out = 100)
+
+## generalized correlations stable model
+y &lt;- gencorr(x, variogram.model = "RMstable", param = c(alpha = 1.5))
+plot(x, y)
+
+## generalized correlations circular model
+y &lt;- gencorr(x, variogram.model = "RMcircular")
+plot(x, y)
+</code></pre>
+
+
+</div>

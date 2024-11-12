@@ -1,0 +1,143 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GlowMapper</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>GlowMapper</h2>
+
+<h3>Description</h3>
+
+<p>This class provides a framework for creating scatter plots based on a glow simulation. Points are mapped with a gaussian gradient to a raster with specified dimensions and properties.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre>m &lt;- GlowMapper$new(xdim=1000, ydim=800, blend_mode = "screen", contrast_limit = 1e5, nthreads = 1)
+
+m$map(x, y, radius, intensity = 1, distance_exponent = 2, xlimits = c(NA_real_, NA_real_), ylimits = c(NA_real_, NA_real_), append = FALSE)
+
+m$output_raw(saturation = NA_real_)
+
+m$output_dataframe(saturation = NA_real_)
+
+m$aspect()
+
+m$xlim()
+
+m$ylim()
+</pre>
+
+
+<h3>Arguments</h3>
+
+
+<dl>
+<dt>xdim</dt>
+<dd>
+<p>- The first dimension of the output matrix raster.</p>
+</dd>
+<dt>ydim</dt>
+<dd>
+<p>- The second dimension of the output matrix raster.</p>
+</dd>
+<dt>blend_mode</dt>
+<dd>
+<p>- Either screen or additive blending mode. See details.</p>
+</dd>
+<dt>contrast_limit</dt>
+<dd>
+<p>- Determines the distance to search from a point. You shouldn't need to change this unless you have a lot of points in the plot stacked on top of each other.</p>
+</dd>
+<dt>nthreads</dt>
+<dd>
+<p>- Number of threads to use.</p>
+</dd>
+<dt>x</dt>
+<dd>
+<p>- X coordinate of points.</p>
+</dd>
+<dt>y</dt>
+<dd>
+<p>- Y coordinate of points.</p>
+</dd>
+<dt>radius</dt>
+<dd>
+<p>- Relative spread of glow intensity. The radius should be proportional to the x and y-ranges of the plot. Values between 1/10 to 1/100 of the range of the plot generally produce good results.</p>
+</dd>
+<dt>intensity</dt>
+<dd>
+<p>- Maximum intensity at the center of a point.</p>
+</dd>
+<dt>distance_exponent</dt>
+<dd>
+<p>- Exponent of the distance calculation when calculating intensities. A value of 2 corresponds to euclidean distance; a value of 1 corresponds to manhattan distance.</p>
+</dd>
+<dt>xlimits</dt>
+<dd>
+<p>- The x-limits of the output plot. If NA, the limits are +/- 5% of the maximum and minimum points.</p>
+</dd>
+<dt>ylimits</dt>
+<dd>
+<p>- The y-limits of the output plot. If NA, the limits are +/- 5% of the maximum and minimum points.</p>
+</dd>
+<dt>append</dt>
+<dd>
+<p> - Whether to add to the existing output or overwrite.</p>
+</dd>
+<dt>saturation</dt>
+<dd>
+<p>- When retrieving the output with <code>$output_raw</code> or <code>$output_dataframe</code>, maximum intensity values are capped at the given value. This is often useful when using additive blend mode to increase contrast.</p>
+</dd>
+</dl>
+<h3>Details</h3>
+
+<p><code>$new()</code> creates a new GlowMapper object, which holds parameters, plotting data, and the output (a matrix of glow intensities). Creates a canvas to plot point data. With additive blending, the intensities of each point are added arithmetically, which is how light intensities are added in the physical world. This is equivalent to an fast/approximate un-normalized 2D kernel density estimate. 
+</p>
+<p>With "screen" blending,  two intensities are added according to the formula: <code>I_out = 1 - (1-I_a)*(1-I_b)</code>. Both additive blending and screen blending are commutative operations, meaning the order of points in a plot does not affect the output.
+</p>
+<p>Screen blending can often improve contrast in a plot and is the default. 
+</p>
+<p><code>$map()</code> maps points to the canvas. 
+</p>
+<p><code>$output_raw()</code> output raw matrix rasters. Useful for plotting in base R.
+</p>
+<p><code>$output_dataframe()</code> output the raster as a dataframe with XY coordinates. This is meant to pipe directly into ggplot.
+</p>
+<p><code>$aspect()</code>, <code>$xlim()</code>, <code>$ylim()</code> return the aspect ratio, x-limits and y-limits of the raster. These functions are intended to be used with plotting functions (e.g. <code>ggplot2::coord_fixed()</code>) so that the output raster is not distorted. See example below.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Plot Data: x,y,r
+x &lt;- numeric(length=50)
+y &lt;- numeric(length=50)
+r &lt;- numeric(length=50)
+for(t in 1:50) {
+  xy &lt;- exp(1i * t/2 - t/12)
+  x[t] &lt;- Re(xy)
+  y[t] &lt;- Im(xy)
+  r[t] &lt;- sqrt(x[t]^2 + y[t]^2)
+}
+
+# New class object
+m &lt;- GlowMapper$new(xdim=500, ydim = 400, blend_mode = "screen")
+
+# Map data on to raster
+m$map(x=x, y=y, intensity = 1, radius = r/4 + 0.1, distance_exponent = 2)
+
+# Output raster data as a dataframe
+pd &lt;- m$output_dataframe(saturation = 1)
+
+# Plot with ggplot
+ggplot(pd, aes(x = x, y = y, fill = value)) + 
+  geom_raster(show.legend = FALSE) +
+  scale_fill_gradientn(colors=additive_alpha(c("black", "purple", "white"))) +
+  coord_fixed(ratio = m$aspect(), xlim = m$xlim(), ylim = m$ylim(), expand = FALSE) + 
+  theme_night(bgcolor = "black")
+</code></pre>
+
+
+</div>

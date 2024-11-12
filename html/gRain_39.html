@@ -1,0 +1,184 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>grain-main</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create Bayesian network</h2>
+
+<h3>Description</h3>
+
+<p>Create Bayesian network  (grain objects (graphical independence network)).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">grain(x, ...)
+
+## S3 method for class 'cpt_spec'
+grain(x, control = list(), smooth = 0, compile = TRUE, details = 0, ...)
+
+## S3 method for class 'CPTspec'
+grain(x, control = list(), smooth = 0, compile = TRUE, details = 0, ...)
+
+## S3 method for class 'pot_spec'
+grain(x, control = list(), smooth = 0, compile = TRUE, details = 0, ...)
+
+## S3 method for class 'igraph'
+grain(
+  x,
+  control = list(),
+  smooth = 0,
+  compile = TRUE,
+  details = 0,
+  data = NULL,
+  ...
+)
+
+## S3 method for class 'dModel'
+grain(
+  x,
+  control = list(),
+  smooth = 0,
+  compile = TRUE,
+  details = 0,
+  data = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An argument to build an independence network
+from. Typically a list of conditional probability tables, a DAG
+or an undirected graph. In the two latter cases, data must also
+be provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments, currently not used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>A list defining controls, see 'details' below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smooth</code></td>
+<td>
+<p>A (usually small) number to add to the counts of a
+table if the grain is built from a graph plus a dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compile</code></td>
+<td>
+<p>Should network be compiled.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>details</code></td>
+<td>
+<p>Debugging information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>An optional data set (currently must be an array/table)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If 'smooth' is non-zero then entries of 'values' which a
+zero are replaced by the value of 'smooth' - BEFORE any
+normalization takes place.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class "grain"
+</p>
+
+
+<h3>Note</h3>
+
+<p>A change from earlier versions of this package is that grain
+objects are now compiled upon creation.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Søren Højsgaard, <a href="mailto:sorenh@math.aau.dk">sorenh@math.aau.dk</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Søren Højsgaard (2012). Graphical Independence
+Networks with the gRain Package for R. Journal of Statistical
+Software, 46(10), 1-26.
+<a href="https://www.jstatsoft.org/v46/i10/">https://www.jstatsoft.org/v46/i10/</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cptable</code>, <code>compile.grain</code>,
+<code>propagate.grain</code>, <code>setFinding</code>,
+<code>setEvidence</code>, <code>getFinding</code>,
+<code>pFinding</code>, <code>retractFinding</code>,
+<code>extract_cpt</code>, <code>extract_pot</code>,
+<code>compileCPT</code>, <code>compilePOT</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Create network from conditional probability tables CPTs:
+
+yn   &lt;- c("yes", "no")
+a    &lt;- cpt(~asia,                  values=c(1,99), levels=yn)
+t.a  &lt;- cpt(~tub + asia,            values=c(5,95,1,99), levels=yn)
+s    &lt;- cpt(~smoke,                 values=c(5,5), levels=yn)
+l.s  &lt;- cpt(~lung + smoke,          values=c(1,9,1,99), levels=yn)
+b.s  &lt;- cpt(~bronc + smoke,         values=c(6,4,3,7), levels=yn)
+e.lt &lt;- cpt(~either + lung + tub,   values=c(1,0,1,0,1,0,0,1), levels=yn)
+x.e  &lt;- cpt(~xray + either,         values=c(98,2,5,95), levels=yn)
+d.be &lt;- cpt(~dysp + bronc + either, values=c(9,1,7,3,8,2,1,9), levels=yn)
+cpt_list  &lt;- list(a, t.a, s, l.s, b.s, e.lt, x.e, d.be)
+chest_cpt &lt;- compileCPT(cpt_list)
+## Alternative: chest_cpt &lt;- compileCPT(a, t.a, s, l.s, b.s, e.lt, x.e, d.be)
+
+chest_bn  &lt;- grain(chest_cpt)
+
+## Create network from data and graph specification.
+
+data(lizard, package="gRbase")
+
+## From a DAG: height &lt;- species -&gt; diam
+daG &lt;- dag(~species + height:species + diam:species)
+
+## From an undirected graph UG : [height:species][diam:species]
+uG  &lt;- ug(~height:species + diam:species)
+
+liz_ug   &lt;- grain(uG, data=lizard)
+liz_dag  &lt;- grain(daG, data=lizard)
+</code></pre>
+
+
+</div>

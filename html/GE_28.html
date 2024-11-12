@@ -1,0 +1,204 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemCapitalAccumulation</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some Examples of Spot Market Clearing Paths with Capital Accumulation</h2>
+
+<h3>Description</h3>
+
+<p>Some examples of spot market clearing paths (alias instantaneous equilibrium paths) with capital accumulation.
+The economy contains a production firm, a capital-leasing firm and a consumer.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemCapitalAccumulation(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>See Also</h3>
+
+
+<p><code>gemPersistentTechnologicalProgress</code>
+
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### a 3-by-3 example
+dst.firm1 &lt;- node_new(
+  "prod",
+  type = "CD", alpha = 2, beta = c(0.5, 0.5),
+  "cap", "cc1"
+)
+node_set(dst.firm1, "cc1",
+  type = "Leontief", a = 1,
+  "lab"
+)
+
+dst.consumer &lt;- dst.firm2 &lt;- node_new(
+  "util",
+  type = "Leontief", a = 1,
+  "prod"
+)
+
+dstl &lt;- list(dst.firm1, dst.consumer, dst.firm2)
+
+B &lt;- matrix(c(
+  1, 0, 0.5,
+  0, 0, 1,
+  0, 0, 0
+), 3, 3, TRUE)
+
+S0Exg &lt;- matrix(c(
+  NA, NA, NA,
+  NA, NA, NA,
+  NA, 100, NA
+), 3, 3, TRUE)
+
+ge &lt;- sdm2(
+  A = dstl,
+  B = B,
+  S0Exg = S0Exg,
+  names.commodity = c("prod", "cap", "lab"),
+  names.agent = c("firm1", "laborer", "firm2"),
+  numeraire = "prod",
+  z0 = c(100, 0, 50),
+  policy = policyMarketClearingPrice,
+  maxIteration = 1,
+  numberOfPeriods = 30,
+  ts = TRUE
+)
+
+matplot((ge$ts.z), type = "o", pch = 20)
+matplot((ge$ts.p), type = "o", pch = 20)
+
+## a MCP with labor supply change
+ge &lt;- sdm2(
+  A = dstl,
+  B = B,
+  S0Exg = S0Exg,
+  names.commodity = c("prod", "cap", "lab"),
+  names.agent = c("firm1", "laborer", "firm2"),
+  numeraire = "prod",
+  z0 = c(400, 200, 400),
+  policy = list(
+    function(time, state) {
+      if (time &gt;= 5) state$S[3, 2] &lt;- 150
+      state
+    },
+    policyMarketClearingPrice
+  ),
+  maxIteration = 1,
+  numberOfPeriods = 30,
+  ts = TRUE
+)
+
+matplot((ge$ts.z), type = "o", pch = 20)
+matplot((ge$ts.p), type = "o", pch = 20)
+
+## a MCP with transitory technological progress
+ge &lt;- sdm2(
+  A = dstl,
+  B = B,
+  S0Exg = S0Exg,
+  names.commodity = c("prod", "cap", "lab"),
+  names.agent = c("firm1", "laborer", "firm2"),
+  numeraire = "prod",
+  z0 = c(400, 200, 400),
+  policy = list(
+    function(time, A) {
+      if (time == 5) {
+        A[[1]]$alpha &lt;- 3
+      } else {
+        A[[1]]$alpha &lt;- 2
+      }
+    },
+    policyMarketClearingPrice
+  ),
+  maxIteration = 1,
+  numberOfPeriods = 30,
+  ts = TRUE
+)
+
+matplot((ge$ts.z), type = "o", pch = 20)
+matplot((ge$ts.p), type = "o", pch = 20)
+
+## a MCP with permanent technological progress
+ge &lt;- sdm2(
+  A = dstl,
+  B = B,
+  S0Exg = S0Exg,
+  names.commodity = c("prod", "cap", "lab"),
+  names.agent = c("firm1", "laborer", "firm2"),
+  numeraire = "prod",
+  z0 = c(400, 200, 400),
+  policy = list(
+    function(time, A) {
+      if (time &gt;= 5) {
+        A[[1]]$alpha &lt;- 3
+      } else {
+        A[[1]]$alpha &lt;- 2
+      }
+    },
+    policyMarketClearingPrice
+  ),
+  maxIteration = 1,
+  numberOfPeriods = 30,
+  ts = TRUE
+)
+
+matplot((ge$ts.z), type = "o", pch = 20)
+matplot((ge$ts.p), type = "o", pch = 20)
+
+#### A 4-by-4 example wherein the capital goods
+#### have a useful life of two periods.
+ge &lt;- sdm2(
+  A = function(state) {
+    a.firm1 &lt;- CD_A(alpha = 2, Beta = c(0, 0.5, 0.5, 0), state$p)
+    a.consumer &lt;- c(1, 0, 0, 0)
+    a.firm2 &lt;- c(1, 0, 0, 0)
+    a.firm3 &lt;- c(0, 0, 0, 1)
+    cbind(a.firm1, a.consumer, a.firm2, a.firm3)
+  },
+  B = matrix(c(
+    1, 0, 0, 0,
+    0, 0, 1, 1,
+    0, 0, 0, 0,
+    0, 0, 1, 0
+  ), 4, 4, TRUE),
+  S0Exg = matrix(c(
+    NA, NA, NA, NA,
+    NA, NA, NA, NA,
+    NA, 100, NA, NA,
+    NA, NA, NA, NA
+  ), 4, 4, TRUE),
+  names.commodity = c("prod", "cap", "lab", "prod.used"),
+  names.agent = c("firm1", "consumer", "firm2", "firm3"),
+  numeraire = "prod",
+  policy = policyMarketClearingPrice,
+  z0 = c(100, 100, 100, 100),
+  ts = TRUE,
+  numberOfPeriods = 30,
+  maxIteration = 1
+)
+
+matplot(ge$ts.z, type = "o", pch = 20)
+
+</code></pre>
+
+
+</div>

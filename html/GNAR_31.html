@@ -1,0 +1,111 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>nacf</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Computes the Network Autocorrelation Function (NACF)
+
+</h2>
+
+<h3>Description</h3>
+
+<p>Computes the NACF for a choice of lag <code class="reqn">h</code> and r-stage depth <code class="reqn">r</code>, the NACF is given by
+<code class="reqn">
+  \mathrm{nacf}(h, r) = \frac{\sum_{t=1}^{T - h} ( \boldsymbol{X}_{t + h} - \boldsymbol{\overline{X}})^{T} \big ( \mathbf{W} \odot \mathbf{S}_r + \mathbf{I_d} \big )
+    ( \boldsymbol{X}_{t} - \boldsymbol{\overline{X}})}
+    {\sum_{t=1}^{T}  ( \boldsymbol{X}_{t} - \boldsymbol{\overline{X}})^{T} \big \{ \big (1 + \lambda \big) \mathbf{I_d} \big \} ( \boldsymbol{X}_{t} - \boldsymbol{\overline{X}})},
+</code>
+where <code class="reqn">\lambda = \bigg [ \underset{j = 1, \dots, d}{\max} \big \{\sum_{i = 1}^d [(\mathbf{W} \odot \mathbf{W})]_{i j} \big \} \bigg ]^{\frac{1}{2}}</code> is the autocovariance bound of the GNAR process.
+
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  nacf(h, s, weight_matrix, stages_tensor, nts_data)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>h</code></td>
+<td>
+<p>Lag (i.e., time-steps behind) at which the NACF is computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s</code></td>
+<td>
+<p>r-stage depth at which the NACF is computed (i.e., shortest distance between nodes).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight_matrix</code></td>
+<td>
+<p>Weight matrix of the GNAR process, each entry corresponds to the weight between two nodes; see <code>weights_matrix</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stages_tensor</code></td>
+<td>
+<p>List of r-stage adjacency matrices <code class="reqn">\mathbf{S}_r</code>, the order is ascending.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nts_data</code></td>
+<td>
+<p>Network time series observations, the number of rows is equal to the number of time steps, and the number of columns is equal to the number of series (variables).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If the network time series contains missing values, then the weights matrix and <code class="reqn">\lambda</code> are adjusted, so that missing values do not contribute to the network autocorrelation. This is done by setting to zero the weights which correspond to a missing value and computing the new weight matrix and <code class="reqn">\lambda</code> value.
+
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a number between <code class="reqn">-1</code> and <code class="reqn">1</code>, which measures the linear correlation between lagged network observations - i.e., <code class="reqn">\mathrm{nacf}(h, r)</code>.
+
+
+
+
+
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Daniel Salnikov and Guy Nason.
+
+</p>
+
+
+<h3>References</h3>
+
+<p>Nason, G.P., Salnikov, D. and Cortina-Borja, M. (2023)
+New tools for network time series with an application to COVID-19
+hospitalisations. <a href="https://arxiv.org/abs/2312.00530">https://arxiv.org/abs/2312.00530</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#
+# Compute the NACF with respect to a stationary GNAR simulation
+#
+gnar_simulation &lt;- GNARsim(n = 100, net=fiveNet, alphaParams = list(rep(0.35, 5)), 
+                           betaParams = list(c(0.25)), sigma=1)
+W = weights_matrix(fiveNet)
+stages_list = get_k_stages_adjacency_tensor(as.matrix(GNARtoigraph(fiveNet)), 3)
+# NACF
+nacf(3, 1, W, stages_list, gnar_simulation)
+</code></pre>
+
+
+</div>

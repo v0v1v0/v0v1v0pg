@@ -1,0 +1,121 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemTax_VAT_IncomeTax_5_4</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A General Equilibrium Model with Value-added Tax and Income Tax</h2>
+
+<h3>Description</h3>
+
+<p>A general equilibrium model with value-added tax and income tax.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemTax_VAT_IncomeTax_5_4(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+vat.rate &lt;- 0.2 # value-added tax rate
+income.tax.rate &lt;- 0.2
+
+dst.manu &lt;- node_new("output",
+                     type = "FIN",
+                     rate = c(5 / 6, vat.rate),
+                     "cc1", "vat"
+)
+node_set(dst.manu, "cc1",
+         type = "SCES",
+         es = 0.5, alpha = 1,
+         beta = c(0.25, 0.75),
+         "lab", "cap"
+)
+
+dst.serv &lt;- node_new("output",
+                     type = "FIN",
+                     rate = c(5 / 6, vat.rate),
+                     "cc1", "vat"
+)
+node_set(dst.serv, "cc1",
+         type = "SCES",
+         es = 0.5, alpha = 1,
+         beta = c(0.75, 0.25),
+         "lab", "cap"
+)
+
+dst.household &lt;- node_new("util",
+                          type = "SCES",
+                          es = 0.5, alpha = 1,
+                          beta = c(0.2, 0.8),
+                          "manu", "serv"
+)
+
+dst.government &lt;- node_new("util",
+                           type = "SCES",
+                           es = 0.5, alpha = 1,
+                           beta = c(0.5, 0.5),
+                           "manu", "serv"
+)
+
+dstl &lt;- list(dst.manu, dst.serv, dst.household, dst.government)
+
+ge &lt;- sdm2(
+  A = dstl,
+  B = diag(c(1, 1, 0, 0), 5, 4),
+  S0Exg = matrix(c(
+    NA, NA, NA, NA,
+    NA, NA, NA, NA,
+    NA, NA, 360 * (1 - income.tax.rate), 360 * income.tax.rate,
+    NA, NA, 240 * (1 - income.tax.rate), 240 * income.tax.rate,
+    NA, NA, NA, 120
+  ), 5, 4, TRUE),
+  names.commodity = c("manu", "serv", "lab", "cap", "vat"),
+  names.agent = c("manu", "serv", "household", "government"),
+  numeraire = "lab"
+)
+
+ge$p
+ge$z
+addmargins(ge$DV)
+addmargins(ge$SV)
+
+## VAT rate reduction
+dst.manu$rate &lt;- dst.serv$rate &lt;- c(5 / 6, vat.rate = 0.1)
+
+ge.new &lt;- sdm2(
+  A = dstl,
+  B = diag(c(1, 1, 0, 0), 5, 4),
+  S0Exg = matrix(c(
+    NA, NA, NA, NA,
+    NA, NA, NA, NA,
+    NA, NA, 360 * (1 - income.tax.rate), 360 * income.tax.rate,
+    NA, NA, 240 * (1 - income.tax.rate), 240 * income.tax.rate,
+    NA, NA, NA, 120
+  ), 5, 4, TRUE),
+  names.commodity = c("manu", "serv", "lab", "cap", "vat"),
+  names.agent = c("manu", "serv", "household", "government"),
+  numeraire = "lab"
+)
+
+ge.new$p
+ge.new$z
+addmargins(ge.new$DV)
+addmargins(ge.new$SV)
+
+</code></pre>
+
+
+</div>

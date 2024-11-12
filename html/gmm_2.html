@@ -1,0 +1,96 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bread</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bread for sandwiches</h2>
+
+<h3>Description</h3>
+
+<p>Computes the bread of the sandwich covariance matrix
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'gmm'
+bread(x, ...)
+## S3 method for class 'gel'
+bread(x, ...)
+## S3 method for class 'tsls'
+bread(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A fitted model of class <code>gmm</code> or <code>gel</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments when <code>bread</code> is applied to another class object</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>When the weighting matrix is not the optimal one, the covariance matrix of the estimated coefficients is:
+<code class="reqn">(G'WG)^{-1} G'W V W G(G'WG)^{-1}</code>, 
+where <code class="reqn">G=d\bar{g}/d\theta</code>, <code class="reqn">W</code> is the matrix of weights, and <code class="reqn">V</code> is the covariance matrix of the moment function. Therefore, the bread is <code class="reqn">(G'WG)^{-1}</code>, which is the second derivative of the objective function. 
+</p>
+<p>The method if not yet available for <code>gel</code> objects.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code class="reqn">k \times k</code> matrix (see details). 
+</p>
+
+
+<h3>References</h3>
+
+<p>Zeileis A (2006), Object-oriented Computation of Sandwich Estimators.
+<em>Journal of Statistical Software</em>, <b>16</b>(9), 1–16.
+URL <a href="https://doi.org/10.18637/jss.v016.i09">doi:10.18637/jss.v016.i09</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># See \code{\link{gmm}} for more details on this example.
+# With the identity matrix 
+# bread is the inverse of (G'G)
+
+n &lt;- 1000
+x &lt;- rnorm(n, mean = 4, sd = 2)
+g &lt;- function(tet, x)
+        {
+        m1 &lt;- (tet[1] - x)
+        m2 &lt;- (tet[2]^2 - (x - tet[1])^2)
+        m3 &lt;- x^3 - tet[1]*(tet[1]^2 + 3*tet[2]^2)
+        f &lt;- cbind(m1, m2, m3)
+        return(f)
+        }
+Dg &lt;- function(tet, x)
+        {
+        jacobian &lt;- matrix(c( 1, 2*(-tet[1]+mean(x)), -3*tet[1]^2-3*tet[2]^2,0, 2*tet[2],
+				-6*tet[1]*tet[2]), nrow=3,ncol=2)
+        return(jacobian)
+        }
+
+res &lt;- gmm(g, x, c(0, 0), grad = Dg,weightsMatrix=diag(3))
+G &lt;- Dg(res$coef, x)
+bread(res)
+solve(crossprod(G))
+</code></pre>
+
+
+</div>

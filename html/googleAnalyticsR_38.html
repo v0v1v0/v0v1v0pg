@@ -1,0 +1,165 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ga_data_filter</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Filter DSL for GA4 filters</h2>
+
+<h3>Description</h3>
+
+<p>Use with ga_data to create filters
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ga_data_filter(x)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Filter DSL enabled syntax or the output of a previous call to this function - see examples</p>
+</td>
+</tr></table>
+<h3>Details</h3>
+
+<p>This uses a specific filter DSL syntax to create GA4 filters that can be passed to ga_data arguments <code>dim_filters</code> or <code>met_filters</code>. Ensure that the fields you use are either all metrics or all dimensions.
+</p>
+<p>The syntax uses operators and the class of the value you are setting (string, numeric or logical) to construct the filter expression object.
+</p>
+<p>Fields including custom fields for your propertyId can be imported if you fetch them via <code>ga_meta("data", propertyId = 12345)</code> before you construct a filter.  If you do not want filters to be validated, then send them in as strings ("field").
+</p>
+<p>The DSL rules are:
+</p>
+
+<ul>
+<li>
+<p>Single filters can be used without wrapping in filter expressions
+</p>
+</li>
+<li>
+<p>A single filter syntax is <code>(field) (operator) (value)</code>
+</p>
+</li>
+<li>
+<p>(field) is a dimension or metric for your web property, which you can review via ga_meta
+</p>
+</li>
+<li>
+<p>(field) can be validated if you fetch metadata before you construct the filter.  If you do this, you can call the fields without quote strings e.g. <code>city</code> and not <code>"city"</code>
+</p>
+</li>
+<li>
+<p>(operator) for metrics can be one of: <code style="white-space: pre;">⁠==, &gt;, &gt;=, &lt;, &lt;=⁠</code>
+</p>
+</li>
+<li>
+<p>(operator) for dimensions can be one of: <code style="white-space: pre;">⁠==, \%begins\%, \%ends\%, \%contains\%, \%in\%, \%regex\%, \%regex_partial\%⁠</code> for dimensions
+</p>
+</li>
+<li>
+<p>dimension (operator) are by default case sensitive.  Make them case insensitive by using UPPER case variations <code style="white-space: pre;">⁠\%BEGINS\%, \%ENDS\%, ...⁠</code> or <code style="white-space: pre;">⁠===⁠</code> for exact matches
+</p>
+</li>
+<li>
+<p>(value) can be strings (<code>"dim1"</code>), numerics (<code>55</code>), string vectors (<code>c("dim1", "dim2")</code>), numeric vectors (<code>c(1,2,3)</code>) or boolean (<code>TRUE</code>) - the type will created different types of filters - see examples
+</p>
+</li>
+<li>
+<p>Create filter expressions for multiple filters when using the operators: <code style="white-space: pre;">⁠&amp;, |, !⁠</code> for logical combinations of AND, OR and NOT respectively. 
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>A <code>FilterExpression</code> object suitable for use in ga_data
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other GA4 functions: 
+<code>ga_data()</code>,
+<code>ga_data_order()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+# start by calling ga_meta("data") to put valid field names in your environment
+meta &lt;- ga_meta("data")
+
+# if you have custom fields, supply your propertyId to ga_meta()
+custom_meta &lt;- ga_meta("data", propertyId = 206670707)
+custom_meta[grepl("^customEvent", custom_meta$apiName),]
+
+## End(Not run)
+## filter clauses
+# OR string filter
+ga_data_filter(city=="Copenhagen" | city == "London")
+# inlist string filter
+ga_data_filter(city==c("Copenhagen","London"))
+# AND string filters
+ga_data_filter(city=="Copenhagen" &amp; dayOfWeek == "5")
+# ! - invert string filter
+ga_data_filter(!(city=="Copenhagen" | city == "London"))
+
+# multiple filter clauses
+f1 &lt;- ga_data_filter(city==c("Copenhagen","London","Paris","New York") &amp;
+               (dayOfWeek=="5" | dayOfWeek=="6")) 
+               
+# build up complicated filters
+f2 &lt;- ga_data_filter(f1 | sessionSource=="google")
+f3 &lt;- ga_data_filter(f2 &amp; !sessionMedium=="cpc")
+f3
+
+## numeric filter types
+# numeric equal filter
+ga_data_filter(sessions==5)
+# between numeric filter
+ga_data_filter(sessions==c(5,6))
+# greater than numeric
+ga_data_filter(sessions &gt; 0)
+# greater than or equal
+ga_data_filter(sessions &gt;= 1)
+# less than numeric
+ga_data_filter(sessions &lt; 100)
+# less than or equal numeric
+ga_data_filter(sessions &lt;= 100)
+
+## string filter types
+# begins with string
+ga_data_filter(city %begins% "Cope")
+# ends with string
+ga_data_filter(city %ends% "hagen")
+# contains string
+ga_data_filter(city %contains% "ope")
+# regex (full) string
+ga_data_filter(city %regex% "^Cope")
+# regex (partial) string
+ga_data_filter(city %regex_partial% "ope")
+
+# by default string filters are case sensitive.  
+# Use UPPERCASE operator to make then case insensitive
+
+# begins with string (case insensitive)
+ga_data_filter(city %BEGINS% "cope")
+# ends with string (case insensitive)
+ga_data_filter(city %ENDS% "Hagen")
+# case insensitive exact
+ga_data_filter(city %==%"coPENGhagen")
+
+# avoid validation by making fields strings
+ga_data_filter("city" %==%"coPENGhagen")
+
+</code></pre>
+
+
+</div>

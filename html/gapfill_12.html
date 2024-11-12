@@ -1,0 +1,311 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Gapfill</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Main Function for Gap-Filling</h2>
+
+<h3>Description</h3>
+
+<p>The function fills (predicts) missing values in satellite data.
+We illustrate it with MODIS NDVI data,
+but it can also be applied to other data, that is recorded at equally spaced points in time.
+Moreover, the function provides infrastructure for the development of new gap-fill algorithms.
+The predictions of the missing values are based on a subset-predict procedure, i.e.,
+each missing value is predicted separately by
+(1) selecting a subset of the data to a neighborhood around the missing value and
+(2) predicting the values based on that subset.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">Gapfill(
+  data,
+  fnSubset = Subset,
+  fnPredict = Predict,
+  iMax = Inf,
+  nPredict = 1L,
+  subset = "missing",
+  clipRange = c(-Inf, Inf),
+  dopar = FALSE,
+  verbose = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Numeric array with four dimensions. The input (satellite) data to be gap-filled.
+Missing values should be encoded as <code>NA</code>. When using the default <code>Subset</code> and <code>Predict</code>
+functions, the data should have the dimensions: x coordinate, y coordinate, seasonal index (e.g., day of the year), and year.
+See the <code>ndvi</code> dataset for an example.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fnSubset</code></td>
+<td>
+<p>Function to subset the <code>data</code> around a missing value.
+See <code>Subset</code> and Extend for more information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fnPredict</code></td>
+<td>
+<p>Function to predict a missing value based on the return value of <code>fnSubset</code>.
+See <code>Predict</code> and Extend for more information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iMax</code></td>
+<td>
+<p>Integer vector of length 1.
+The maximum number of iterations until <code>NA</code> is returned as predicted value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nPredict</code></td>
+<td>
+<p>Integer vector of length 1. Specifies the length of the vector returned from <code>fnPredict</code>.
+Values larger than 1 may increase memory usage considerably.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>If <code>"missing"</code> (default), all missing values of <code>data</code> are replaced by predictions. 
+If <code>"observed"</code>, all observed values of <code>data</code> are replaced by predictions.
+If a logical array of dimension <code>dim(data)</code> or 
+a vector with positive integers, the elements <code>data[subset]</code> are replaced by predictions.
+Note that independently of the specified subset all provided values in <code>data</code> are used to inform the predictions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clipRange</code></td>
+<td>
+<p>Numeric vector of length 2.
+Specifies the lower and the upper bound of the filled data.
+Values outside this range are clipped accordingly.
+If <code>nPredict</code> is larger than 2, only the first return value of <code>fnPredict</code> will be clipped.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dopar</code></td>
+<td>
+<p>Logical vector of length 1.
+If <code>TRUE</code>, the <code>%dopar%</code> construct from the R package foreach is used.
+This allows the function to predict several missing values in parallel,
+if a parallel back-end (e.g., from the R package doParallel or doMpi) is available.
+See the example below and <code>foreach</code> for more information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical vector of length 1.
+If <code>TRUE</code> (default), messages are printed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to <code>fnSubset</code> and <code>fnPredict</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The predictions of the missing values are based on a subset-predict procedure, i.e.,
+each missing value is predicted separately by
+(1) selecting a subset of the data to a
+neighborhood around it and (2) predicting the values based on
+that subset. The following gives more information on this subset-predict strategy.<br>
+Missing values are often unevenly distributed in <code>data</code>.
+Therefore, the size of a reasonable subset may be different depending on the position of the considered missing value.  
+The search strategy to find that subset is encoded in <code>fnSubset</code>.
+The function returns different subsets depending on the argument <code>i</code>.
+The decision whether a subset is suitable and the prediction itself is
+implemented in <code>fnPredict</code>.
+To be more specific, the subset-predict procedure loops over the following two steps to predict one missing value:
+</p>
+
+<dl>
+<dt>(1) </dt>
+<dd>
+<p>The function <code>fnSubset</code> is provided with the argument <code>i = i</code> (where <code>i &lt;- 0</code> in the first iteration) and
+returns a subset around the missing value.</p>
+</dd>
+<dt>(2) </dt>
+<dd>
+<p>The function <code>fnPredict</code> decides whether the subset contains enough information to predict the missing value.
+If so, the predicted value is returned.
+Otherwise, the function returns <code>NA</code> and the algorithm increases <code>i</code> by one (<code>i &lt;- i + 1</code>)
+before continuing with step (1).</p>
+</dd>
+</dl>
+<p>The procedure stops if one of the following criteria is met:
+</p>
+
+<ul>
+<li> <p><code>fnPredict</code> returns a non-<code>NA</code> value,
+</p>
+</li>
+<li> <p><code>iMax</code> tries have been completed,
+</p>
+</li>
+<li> <p><code>fnSubset</code> returns the same subset two times in a row. 
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>List of length 4 with the entries:
+</p>
+
+<ul>
+<li>
+<p><code>fill</code> contains the gap-filled data.
+If <code>nPredict = 1</code>, <code>fill</code> is an array of dimension <code>dim(data)</code>,
+otherwise the array is of dimension <code>c(dim(data), nPredict)</code>.
+</p>
+</li>
+<li>
+<p><code>mps</code> integer vector of length equaling the number of predicted values.
+Contains the (1 dimensional) indices of the predicted values.
+</p>
+</li>
+<li>
+<p><code>time</code> list of length 4 containing timing information.
+</p>
+<ul>
+<li>
+<p><code>start</code> start date and time.
+</p>
+</li>
+<li>
+<p><code>end</code> end date and time.
+</p>
+</li>
+<li>
+<p><code>elapsedMins</code> elapsed minutes.
+</p>
+</li>
+<li>
+<p><code>elapsedSecsPerNA</code> elapsed seconds per predicted value.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p><code>call</code> call used to produce the object.
+</p>
+</li>
+</ul>
+<h3>Note</h3>
+
+<p>The default <code>Predict</code> function implements the prediction of the missing value
+and can also return lower and upper bounds of an approximated 90% prediction interval.
+See the help page of <code>Predict</code> for more information on the prediction interval.
+The example section below shows how the prediction interval can be calculated and displayed.  
+</p>
+<p>To tailor the procedure to a specific dataset, it might be necessary to
+adapt the subset and/or the prediction strategy.
+On the one hand, this can be done by changing the default arguments of <code>Subset</code> and
+<code>Predict</code> through the argument <code>...</code> of <code>Gapfill</code>.
+See the help of the corresponding functions for more information about their arguments.
+On the other hand, the user can define a new subset and predict functions, and pass them to <code>Gapfill</code>
+through the arguments <code>fnSubset</code> and <code>fnPredict</code>.
+See Extend for more information. 
+</p>
+<p>The current implementation of <code>Subset</code> does not take into account
+that values at the boundaries of <code>data</code> can be neighboring to each other.
+For example, if global data (entire sphere) are considered,
+<code>data[1,1,,]</code> is a neighbor of <code>data[dim(data)[1], dim(data)[2],,]</code>.
+Similar considerations apply when data are available for an entire year. 
+To take this into account, the <code>Subset</code> function can be redefined accordingly or
+the data can be augmented.
+</p>
+<p>There are two strategies to run the gap-filling in parallel.
+The first one is to set the argument <code>dopar</code> of <code>Gapfill</code> to <code>TRUE</code> and
+to use an openMP or MPI parallel back-end.
+The parallel back-end needs to be setup before the call to <code>Gapfill</code>.
+An example using the R package <code>doParallel</code> is given below.
+Note that there exist other parallel back-ends implemented in other packages; such as, e.g., the package <code>doMpi</code>.
+Some parallel back-ends are platform dependent. 
+While this approach shortens the process time by distributing the computational workload,
+it does not reduce the memory footprint of the procedure.
+The second strategy, which also reduces memory usage, is to split the <code>data</code> into several independent chunks.
+Whether data chunks are independent or not depends on the function provided to <code>fnSubset</code>. 
+For example, the default <code>Subset</code> function never includes data that
+is further apart from the missing value than 1 seasonal index.
+Hence, <code>data[,,1:3,]</code> can be used to gap-fill <code>data[,,2,]</code>.<br></p>
+
+
+<h3>Author(s)</h3>
+
+<p>Florian Gerber, <a href="mailto:flora.fauna.gerber@gmail.com">flora.fauna.gerber@gmail.com</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>F. Gerber, R. de Jong, M. E. Schaepman, G. Schaepman-Strub, and R. Furrer (2018)
+in IEEE Transactions on Geoscience and Remote Sensing, pp. 1-13, doi: <a href="https://doi.org/10.1109/TGRS.2017.2785240">10.1109/TGRS.2017.2785240</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>Extend</code>, <code>Subset-Predict</code>, <code>Image</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+out &lt;- Gapfill(ndvi, clipRange = c(0, 1))
+
+## look at input and output
+str(ndvi)
+str(out)
+Image(ndvi)
+Image(out$fill)
+
+## run on 2 cores in parallel
+if(require(doParallel)){
+  registerDoParallel(2)
+  out &lt;- Gapfill(ndvi, dopar = TRUE)
+}
+
+## return also the prediction interval
+out &lt;- Gapfill(ndvi, nPredict = 3, predictionInterval = TRUE)
+
+## dimension has changed according to 'nPredict = 3'
+dim(out$fill)
+
+## clip values outside the valid parameter space [0,1].
+out$fill[out$fill &lt; 0] &lt;- 0
+out$fill[out$fill &gt; 1] &lt;- 1
+
+## images of the output:
+## predicted NDVI
+Image(out$fill[,,,,1])
+## lower bound of the prediction interval
+Image(out$fill[,,,,2])
+## upper bound of the prediction interval
+Image(out$fill[,,,,3])
+## prediction interval length
+Image(out$fill[,,,,3] - out$fill[,,,,2])
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

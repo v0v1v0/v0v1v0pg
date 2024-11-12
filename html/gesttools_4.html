@@ -1,0 +1,264 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gestMultiple</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>G-Estimation for a Time-Varying Outcome</h2>
+
+<h3>Description</h3>
+
+<p>Performs g-estimation of a structural nested mean model (SNMM), based on the outcome regression methods described
+in Sjolander and Vansteelandt (2016) and Dukes and Vansteelandt (2018). We assume a dataset with a time-varying outcome that is either binary or continuous,
+time-varying and/or baseline confounders, and a time-varying exposure that is either binary, continuous or categorical.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gestMultiple(
+  data,
+  idvar,
+  timevar,
+  Yn,
+  An,
+  Cn = NA,
+  outcomemodels,
+  propensitymodel,
+  censoringmodel = NULL,
+  type,
+  EfmVar = NA,
+  cutoff = NA,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data frame in long format containing the data to be analysed. See description for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idvar</code></td>
+<td>
+<p>Character string specifying the name of the ID variable in data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timevar</code></td>
+<td>
+<p>Character string specifying the name of the time variable in the data.
+Note that timevar must specify time periods as integer values starting from 1 (must not begin at 0).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Yn</code></td>
+<td>
+<p>Character string specifying the name of the time-varying outcome variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>An</code></td>
+<td>
+<p>Character string specifying the name of the time-varying exposure variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Cn</code></td>
+<td>
+<p>Optional character string specifying the name of the censoring indicator variable. The variable specified in Cn should be a numeric vector taking values 0 or 1, with 1 indicating censored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcomemodels</code></td>
+<td>
+<p>a list of formulas or formula objects specifying the outcome models for Yn prior to adjustment by propensity score.
+The i'th entry of the list specifies the outcome model for the i step counterfactuals. See description for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>propensitymodel</code></td>
+<td>
+<p>A formula or formula object specifying the propensity score model for An.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>censoringmodel</code></td>
+<td>
+<p>A formula or formula object specifying the censoring model for Cn.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Value from 1-4 specifying SNMM type to fit. See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>EfmVar</code></td>
+<td>
+<p>Character string specifying the name of the effect modifying variable for types 2 or 4.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cutoff</code></td>
+<td>
+<p>An integer taking value from 1 up to T, where T is the maximum value of timevar.
+Instructs the function to estimate causal effects based only on exposures up to <code>cutoff</code> time periods prior to
+the outcome.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments, currently not in use.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Suppose a series of time periods <code class="reqn">1,\ldots,T+1</code> whereby a time-varying exposure and confounder (<code class="reqn">A_t</code> and <code class="reqn">L_t</code>) are measured over times <code class="reqn">t=1,\ldots,T</code> and
+a time varying outcome <code class="reqn">Y_s</code> is measured over times <code class="reqn">s=2,\ldots,T+1</code>. Define <code class="reqn">c=s-t</code> as the step length, that is the number of time periods separating an exposure measurement, and subsequent outcome measurement.
+By using the transform <code class="reqn">t=s-c</code>, <code>gestmult</code> estimates the causal parameters <code class="reqn">\psi</code> of a SNMM of the form
+</p>
+<p style="text-align: center;"><code class="reqn">E\{Y_s(\bar{a}_{s-c},0)-Y_s(\bar{a}_{s-c-1},0)|\bar{a}_{s-c-1},\bar{l}_{s-c}\}=\psi z_{sc}a_{s-c} \; \forall c=1,\ldots,T\; and\; \forall s&gt;c</code>
+</p>
+
+<p>if Y is continuous or
+</p>
+<p style="text-align: center;"><code class="reqn">\frac{E(Y_s(\bar{a}_{s-c},0)|\bar{a}_{s-c-1},\bar{l}_{s-c})}{E(Y_s(\bar{a}_{s-c-1},0)|\bar{a}_{s-c-1},\bar{l}_{s-c})}=exp(\psi z_{sc}a_{s-c}) \; \forall c=1,\ldots,T\; and \; \forall s&gt;c </code>
+</p>
+
+<p>if Y is binary. The SNMMs form is defined by the parameter <code class="reqn">z_{sc}</code>, which can be controlled by the input <code>type</code> as follows
+</p>
+
+<ul>
+<li>
+<p><code>type=1</code> sets <code class="reqn">z_{sc}=1</code>. This implies that <code class="reqn">\psi</code> is now the effect of exposure at any time t on all subsequent outcome periods.
+</p>
+</li>
+<li>
+<p><code>type=2</code> sets <code class="reqn">z_{sc}=c(1,l_{s-c})</code> and adds affect modification by the variable named in <code>EfmVar</code>, which we denote <code class="reqn">l_t</code>. Now <code class="reqn">\psi=c(\psi_0,\psi_1)</code> where <code class="reqn">\psi_0</code> is the effect of exposure at any time t on all subsequent outcome periods, when <code class="reqn">l_{s-c}=0</code> at all times t, modified by
+<code class="reqn">\psi_1</code> for each unit increase in <code class="reqn">l_{s-c}</code> at all times t. Note that effect modification
+is currently only supported for binary or continuous confounders.
+</p>
+</li>
+<li>
+<p><code>type=3</code> can posit a time-varying causal effect for each value of <code class="reqn">c</code>, that is the causal effect for the exposure on outcome <code class="reqn">c</code> time periods later.
+We set <code class="reqn">z_{sc}</code> to a vector of zeros of length T with a 1 in the <code class="reqn">c=s-t</code>'th position. Now <code class="reqn">\psi=c(\psi_{1},\ldots,\psi_{T})</code>
+where <code class="reqn">\psi_(c)</code> is the effect of exposure on outcome <code class="reqn">c</code> time periods later for all outcome periods <code class="reqn">s&gt;c</code> that is <code class="reqn">A_{s-c}</code> on <code class="reqn">Y_s</code>.
+</p>
+</li>
+<li>
+<p><code>type=4</code> allows for a time-varying causal effect that can be modified by <code>EfmVar</code>, denoted <code class="reqn">l_t</code>, that is it allows for both time-varying effects and effect modification. It sets <code class="reqn">z_{sc}</code> to a vector of zeros of length T with <code class="reqn">c(1,l_{s-c})</code> in the <code class="reqn">c=s-t</code>'th position.
+Now <code class="reqn">\psi=(\underline{\psi_1},\ldots,\underline{\psi_T})</code> where <code class="reqn">\underline{\psi_c}=c(\psi_{0c},\psi_{1c})</code>. Here <code class="reqn">\psi_{0c}</code> is the effect of exposure on outcome <code class="reqn">c</code> time periods later, given <code class="reqn">l_{s-c}=0</code> for all <code class="reqn">s&gt;c</code>, modified by
+<code class="reqn">\psi_{1c}</code> for each unit increase in <code class="reqn">l_{s-c}</code> for all <code class="reqn">s&gt;c</code>. Note that effect modification
+is currently only supported for binary or continuous confounders.
+</p>
+</li>
+</ul>
+<p>The data must be in long format, where we assume the convention that each row with <code>time=t</code> contains <code class="reqn">A_t,L_t</code> and <code class="reqn">C_{t+1},Y_{t+1}</code>. That is the censoring indicator for each row
+should indicate that a user is censored AFTER time t and the outcome indicates the first outcome that occurs AFTER <code class="reqn">A_t</code> and <code class="reqn">L_t</code> are measured.
+For example, data at time 1, should contain <code class="reqn">A_1</code>, <code class="reqn">L_1</code>, <code class="reqn">Y_{2}</code>, and optionally <code class="reqn">C_2</code>. If either A or Y are binary, they must be written as numeric vectors taking values either 0 or 1.
+The same is true for any covariate that is used for effect modification.<br>
+The data must be rectangular with a row entry for every individual for each exposure time 1 up to T. Data rows after censoring should be empty apart from the ID and time variables. This can be done using the function <code>FormatData</code>.<br>
+The input outcomemodels should be a list with T elements (the number of exposure times), where element i describes the outcome model for up to the i step counterfactual outcomes, that is the model is fitted to all counterfactuals up to <code>Y_{s-i}</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>List of the fitted causal parameters of the posited SNMM. These are labeled as follows for each SNMM type, where An is
+set to the name of the exposure variable, i is the current value of c, and EfmVar is the effect modifying variable.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td>
+<code>type=1</code> </td>
+<td>
+<p>An: The effect of exposure at any time t on outcome at all subsequent times.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td>
+<code>type=2</code> </td>
+<td>
+<p>An: The effect of exposure on outcome at any time t, when EfmVar is set to zero, on all subsequent outcome times.<br>
+An:EfmVar: The effect modification by EfmVar, the additional effect of A on all subsequent Y for each unit increase in EfmVar at all times t. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td>
+<code>type=3</code> </td>
+<td>
+<p>c=i.An: The effect of exposure at any time t on outcome <code>c=i</code> time periods later.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td>
+<code>type=4</code> </td>
+<td>
+<p>c=i.An: The effect of exposure at any time t on outcome <code>c=i</code> time periods later, when EfmVar is set to zero.<br>
+c=i.An:EfmVar: The effect modification by EfmVar, the additional effect of exposure on outcome c=i time periods later for each unit increase in EfmVar.</p>
+</td>
+</tr>
+</table>
+<p>The function also returns a summary of the propensity scores and censoring scores via <code>PropensitySummary</code> and <code>CensoringSummary</code>,
+along with <code>Data</code>, holding the original dataset with the propensity and censoring scores as a tibble dataset.
+</p>
+
+
+<h3>References</h3>
+
+<p>Vansteelandt, S., &amp; Sjolander, A. (2016). Revisiting g-estimation of the Effect of a Time-varying Exposure Subject to Time-varying Confounding, Epidemiologic Methods, 5(1), 37-56. &lt;doi:10.1515/em-2015-0005&gt;.
+</p>
+<p>Dukes, O., &amp; Vansteelandt, S. (2018). A Note on g-Estimation of Causal Risk Ratios, American Journal of Epidemiology, 187(5), 1079–1084. &lt;doi:10.1093/aje/kwx347&gt;.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">datas &lt;- dataexamples(n = 1000, seed = 123, Censoring = FALSE)
+data &lt;- datas$datagestmult
+data &lt;- FormatData(
+  data = data, idvar = "id", timevar = "time", An = "A",
+  varying = c("Y", "A", "L"), GenerateHistory = TRUE, GenerateHistoryMax = 1
+)
+idvar &lt;- "id"
+timevar &lt;- "time"
+Yn &lt;- "Y"
+An &lt;- "A"
+Cn &lt;- NA
+outcomemodels &lt;- list("Y~A+L+U+Lag1A", "Y~A+L+U+Lag1A", "Y~A+L+U")
+propensitymodel &lt;- c("A~L+U+as.factor(time)+Lag1A")
+censoringmodel &lt;- NULL
+EfmVar &lt;- NA
+gestMultiple(data, idvar, timevar, Yn, An, Cn, outcomemodels, propensitymodel,
+  censoringmodel = NULL, type = 1, EfmVar,
+  cutoff = NA
+)
+
+# Example with censoring
+datas &lt;- dataexamples(n = 1000, seed = 123, Censoring = TRUE)
+data &lt;- datas$datagestmult
+data &lt;- FormatData(
+  data = data, idvar = "id", timevar = "time", An = "A", Cn = "C",
+  varying = c("Y", "A", "L"), GenerateHistory = TRUE, GenerateHistoryMax = 1
+)
+Cn &lt;- "C"
+EfmVar &lt;- "L"
+outcomemodels &lt;- list("Y~A+L+U+A:L+Lag1A", "Y~A+L+U+A:L+Lag1A", "Y~A+L+U+A:L")
+censoringmodel &lt;- c("C~L+U+as.factor(time)")
+gestMultiple(data, idvar, timevar, Yn, An, Cn, outcomemodels, propensitymodel,
+  censoringmodel = censoringmodel, type = 2, EfmVar,
+  cutoff = 2
+)
+</code></pre>
+
+
+</div>

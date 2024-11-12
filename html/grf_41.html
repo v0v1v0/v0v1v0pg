@@ -1,0 +1,126 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.causal_survival_forest</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict with a causal survival forest forest</h2>
+
+<h3>Description</h3>
+
+<p>Gets estimates of tau(X) using a trained causal survival forest.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'causal_survival_forest'
+predict(
+  object,
+  newdata = NULL,
+  num.threads = NULL,
+  estimate.variance = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>The trained forest.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>Points at which predictions should be made. If NULL, makes out-of-bag
+predictions on the training set instead (i.e., provides predictions at
+Xi using only trees that did not use the i-th training example). Note
+that this matrix should have the number of columns as the training
+matrix, and that the columns must appear in the same order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num.threads</code></td>
+<td>
+<p>Number of threads used in training. If set to NULL, the software
+automatically selects an appropriate amount.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimate.variance</code></td>
+<td>
+<p>Whether variance estimates for <code class="reqn">\hat\tau(x)</code> are desired
+(for confidence intervals).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments (currently ignored).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Vector of predictions along with optional variance estimates.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Train a causal survival forest targeting a Restricted Mean Survival Time (RMST)
+# with maximum follow-up time set to `horizon`.
+n &lt;- 2000
+p &lt;- 5
+X &lt;- matrix(runif(n * p), n, p)
+W &lt;- rbinom(n, 1, 0.5)
+horizon &lt;- 1
+failure.time &lt;- pmin(rexp(n) * X[, 1] + W, horizon)
+censor.time &lt;- 2 * runif(n)
+Y &lt;- pmin(failure.time, censor.time)
+D &lt;- as.integer(failure.time &lt;= censor.time)
+# Save computation time by constraining the event grid by discretizing (rounding) continuous events.
+cs.forest &lt;- causal_survival_forest(X, round(Y, 2), W, D, horizon = horizon)
+# Or do so more flexibly by defining your own time grid using the failure.times argument.
+# grid &lt;- seq(min(Y), max(Y), length.out = 150)
+# cs.forest &lt;- causal_survival_forest(X, Y, W, D, horizon = horizon, failure.times = grid)
+
+# Predict using the forest.
+X.test &lt;- matrix(0.5, 10, p)
+X.test[, 1] &lt;- seq(0, 1, length.out = 10)
+cs.pred &lt;- predict(cs.forest, X.test)
+
+# Predict on out-of-bag training samples.
+cs.pred &lt;- predict(cs.forest)
+
+# Predict with confidence intervals; growing more trees is now recommended.
+c.pred &lt;- predict(cs.forest, X.test, estimate.variance = TRUE)
+
+# Compute a doubly robust estimate of the average treatment effect.
+average_treatment_effect(cs.forest)
+
+# Compute the best linear projection on the first covariate.
+best_linear_projection(cs.forest, X[, 1])
+
+# See if a causal survival forest succeeded in capturing heterogeneity by plotting
+# the TOC and calculating a 95% CI for the AUTOC.
+train &lt;- sample(1:n, n / 2)
+eval &lt;- -train
+train.forest &lt;- causal_survival_forest(X[train, ], Y[train], W[train], D[train], horizon = horizon)
+eval.forest &lt;- causal_survival_forest(X[eval, ], Y[eval], W[eval], D[eval], horizon = horizon)
+rate &lt;- rank_average_treatment_effect(eval.forest,
+                                      predict(train.forest, X[eval, ])$predictions)
+plot(rate)
+paste("AUTOC:", round(rate$estimate, 2), "+/", round(1.96 * rate$std.err, 2))
+
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,294 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gwr.bootstrap</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bootstrap GWR</h2>
+
+<h3>Description</h3>
+
+<p>This function implements bootstrap methods to test for coefficient variability 
+found from GWR under model assumptions for each of four null hypotheses: MLR, 
+ERR, SMA and LAG models.  Global test statistic results are found, as well local 
+observation-specific test results that can be mapped. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gwr.bootstrap(formula, data, kernel = "bisquare", approach = "AIC",
+                 R = 99, k.nearneigh = 4, adaptive = FALSE, p = 2,
+                 theta = 0, longlat = FALSE, dMat, verbose = FALSE,
+                 parallel.method = FALSE, parallel.arg = NULL)
+
+## S3 method for class 'gwrbsm'
+print(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Regression model formula of a formula object </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a Spatial*DataFrame, i.e. SpatialPointsDataFrame or SpatialPolygonsDataFrame as defined in package <span class="pkg">sp</span>, or a sf object defined in package <span class="pkg">sf</span></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kernel</code></td>
+<td>
+<p>function chosen as follows:
+</p>
+<p>gaussian: wgt = exp(-.5*(vdist/bw)^2);
+</p>
+<p>exponential: wgt = exp(-vdist/bw);
+</p>
+<p>bisquare: wgt = (1-(vdist/bw)^2)^2 if vdist &lt; bw, wgt=0 otherwise;
+</p>
+<p>tricube: wgt = (1-(vdist/bw)^3)^3 if vdist &lt; bw, wgt=0 otherwise; 
+</p>
+<p>boxcar: wgt=1 if dist &lt; bw, wgt=0 otherwise</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>approach</code></td>
+<td>
+<p>specified by CV for cross-validation approach or by AIC corrected (AICc) approach</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>number of random samples reapted in the bootstrap procedure</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k.nearneigh</code></td>
+<td>
+<p>number of nearest neighbours concerned in calbrating ERR, SMA and LAG models</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adaptive</code></td>
+<td>
+<p>if TRUE calculate an adaptive kernel where the bandwidth (bw) corresponds to the number of nearest neighbours (i.e. adaptive distance); default is FALSE, where a fixed kernel is found (bandwidth is a fixed distance)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>the power of the Minkowski distance, default is 2, i.e. the Euclidean distance</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>an angle in radians to rotate the coordinate system, default is 0</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>longlat</code></td>
+<td>
+<p>if TRUE, great circle distances will be calculated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dMat</code></td>
+<td>
+<p>a pre-specified distance matrix, it can be calculated by the function <code>gw.dist</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>if TRUE and bandwidth selection is undertaken, the bandwidth searches are reported</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>an object of class “gwrbsm”, returned by the function gwr.bootstrap</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel.method</code></td>
+<td>
+<p> FALSE as default, and the calibration will be conducted traditionally via the serial technique, 
+"omp": multi-thread technique with the OpenMP API, 
+"cluster": multi-process technique with the <span class="pkg">parallel</span> package,
+"cuda": parallel computing technique with CUDA</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel.arg</code></td>
+<td>
+<p> if parallel.method is not FALSE, then set the argument by following:
+if parallel.method is "omp", parallel.arg refers to the number of threads used, and its default value is 
+the number of cores - 1;
+if parallel.method is "cluster", parallel.arg refers to the number of R sessions used, and its default value is 
+the number of cores - 1;
+if parallel.method is "cuda",  parallel.arg refers to the number of calibrations  included in each group, 
+but note a too large value may cause the overflow of GPU memory. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments passed through (unused)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list of class “gwrbsm”:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Regression model formula of a formula object </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>results</code></td>
+<td>
+<p>modified statistics reported from comparisons between GWR and MLR, ERR, SMA and LAG</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SDF</code></td>
+<td>
+<p>a SpatialPointsDataFrame (may be gridded), or 
+SpatialPolygonsDataFrame object (see package “sp”), or sf object  (see package “sf”) integrated with 
+regression.points, GWR coefficient estimates, y
+value,predicted values, coefficient standard errors and bootstrap p-values in its “data” slot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timings</code></td>
+<td>
+<p>starting and ending time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>this.call</code></td>
+<td>
+<p>the function call used.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>This function implements the bootstrap methods introduced in Harris et al. (2017). 
+It provides a global test statistic (the modified one given in Harris et al. 2017)
+and a complementary localised version that can be mapped. The bootstrap methods 
+test for coefficient variability found from GWR under model assumptions for each 
+of four null hypotheses: i) multiple linear regression model (MLR); ii) simultaneous
+autoregressive error model (ERR); iii) moving average error model (SMA) and iv) simultaneous
+autoregressive lag model (LAG).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Binbin Lu <a href="mailto:binbinlu@whu.edu.cn">binbinlu@whu.edu.cn</a></p>
+
+
+<h3>References</h3>
+
+<p>Harris, P., Brunsdon, C., Lu, B., Nakaya, T., &amp; Charlton, M. (2017). Introducing 
+bootstrap methods to investigate coefficient non-stationarity in spatial regression 
+models. Spatial Statistics, 21, 241-261.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+#Example with the Georgia educational attainment data
+data(Georgia)
+data(GeorgiaCounties)
+coords &lt;- cbind(Gedu.df$X, Gedu.df$Y)
+Gedu.spdf &lt;- SpatialPointsDataFrame(coords, Gedu.df)
+#Make a SpatialPolygonDataFrame
+require(RColorBrewer)
+gSRDF &lt;- SpatialPolygonsDataFrame(polygons(Gedu.counties), over(Gedu.counties, 
+                                  Gedu.spdf),match.ID=T)  
+mypalette.1 &lt;- brewer.pal(11,"Spectral")
+X11(width=9,height=8)                   
+spplot(gSRDF, names(gSRDF)[c(5,7:9)], col.regions=mypalette.1,
+cuts=10, par.settings=list(fontsize=list(text=15)),
+main=expression(paste("Georgia educational attainment predictor data")))
+bsm.res &lt;- gwr.bootstrap(PctBach~PctRural+PctEld+PctFB+PctPov, gSRDF, 
+                         R=999, longlat=T)
+bsm.res
+#local bootstrap tests with respect to: MLR, ERR, SMA and LAG models.
+mypalette.local.test &lt;- brewer.pal(10,"Spectral")
+X11(width=12,height=16)
+spplot(bsm.res$SDF, names(bsm.res$SDF)[14:17], col.regions=mypalette.local.test,
+cuts=9, par.settings=list(fontsize=list(text=15)),
+main=expression(paste("Local p-values for each coefficient of the MLR model 
+                       null hypothesis")))
+
+X11(width=12,height=16)
+spplot(bsm.res$SDF, names(bsm.res$SDF)[19:22], col.regions=mypalette.local.test,
+cuts=9, par.settings=list(fontsize=list(text=15)),
+main=expression(paste("Local p-values for each coefficient of the ERR model 
+                       null hypothesis")))
+X11(width=12,height=16)
+spplot(bsm.res$SDF, names(bsm.res$SDF)[24:27], col.regions=mypalette.local.test,
+cuts=9, par.settings=list(fontsize=list(text=15)),
+main=expression(paste("Local p-values for each coefficient of the SMA model null
+                       hypothesis")))
+
+X11(width=12,height=16)
+spplot(bsm.res$SDF, names(bsm.res$SDF)[29:32], col.regions=mypalette.local.test,
+cuts=9, par.settings=list(fontsize=list(text=15)),
+main=expression(paste("Local p-values for each coefficient of the LAG model null
+                       hypothesis")))
+################################################################################
+#Example with Dublin voter data
+data(DubVoter)
+X11(width=9,height=8)                   
+spplot(Dub.voter, names(Dub.voter)[c(5,7,9,10)], col.regions=mypalette.1,
+cuts=10, par.settings=list(fontsize=list(text=15)),
+main=expression(paste("Dublin voter turnout predictor data")))
+bsm.res1 &lt;- gwr.bootstrap(GenEl2004~LARent+Unempl+Age18_24+Age25_44, Dub.voter
+                         , R=999)
+bsm.res1
+
+#local bootstrap tests with respect to: MLR, ERR, SMA and LAG models.
+X11(width=11,height=8)
+spplot(bsm.res1$SDF, names(bsm.res1$SDF)[14:17], col.regions=mypalette.local.test,
+cuts=9, par.settings=list(fontsize=list(text=15)),
+main=expression(paste("Local p-values for each coefficient of the MLR model null
+                        hypothesis")))
+X11(width=11,height=8)
+spplot(bsm.res1$SDF, names(bsm.res1$SDF)[19:22], col.regions=mypalette.local.test,
+cuts=9, par.settings=list(fontsize=list(text=15)),
+main=expression(paste("Local p-values for each coefficient of the ERR model null
+                        hypothesis")))
+X11(width=11,height=8)
+spplot(bsm.res1$SDF, names(bsm.res1$SDF)[24:27], col.regions=mypalette.local.test,
+cuts=9, par.settings=list(fontsize=list(text=15)),
+main=expression(paste("Local p-values for each coefficient of the SMA model 
+                            null hypothesis")))
+X11(width=11,height=8)
+spplot(bsm.res1$SDF, names(bsm.res1$SDF)[29:32], col.regions=mypalette.local.test,
+cuts=9, par.settings=list(fontsize=list(text=15)),
+main=expression(paste("Local p-values for each coefficient of the LAG model 
+                            null hypothesis")))
+
+## End(Not run)
+</code></pre>
+
+
+</div>

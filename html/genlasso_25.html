@@ -1,0 +1,319 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>genlasso</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Compute the generalized lasso solution path for arbitrary penalty matrix
+</h2>
+
+<h3>Description</h3>
+
+<p>This function computes the solution path of the generalized lasso
+problem for an arbitrary penalty matrix. Speciality functions exist
+for the trend filtering and fused lasso problems; see
+<code>trendfilter</code> and <code>fusedlasso</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">genlasso(y, X, D, approx = FALSE, maxsteps = 2000, minlam = 0,
+         rtol = 1e-07, btol = 1e-07, eps = 1e-4, verbose = FALSE,
+         svd = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+
+<p>a numeric response vector.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>an optional matrix of predictor variables, with observations along
+the rows, and variables along the columns. If missing, <code>X</code> is
+assumed to be the identity matrix. If the passed <code>X</code> does not
+have full column rank, then a warning is given, and a small ridge
+penalty is added to the generalized lasso criterion before the path
+is computed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>D</code></td>
+<td>
+
+<p>a penalty matrix. Its number of columns must be equal to the number
+of columns of <code>X</code>, or if no <code>X</code> is given, the length of 
+<code>y</code>. This can be a sparse matrix from <code>Matrix</code> package,
+but this will be ignored (converted to a dense matrix) if <code>D</code>
+is row rank deficient or if <code>X</code> is specified. See "Details"
+below. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>approx</code></td>
+<td>
+
+<p>a logical variable indicating if the approximate solution path
+should be used (with no dual coordinates leaving the boundary).
+Default is <code>FALSE</code>. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxsteps</code></td>
+<td>
+
+<p>an integer specifying the maximum number of steps for the algorithm
+to take before termination. Default is 2000. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minlam</code></td>
+<td>
+
+<p>a numeric variable indicating the value of lambda at which the path
+should terminate. Default is 0.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rtol</code></td>
+<td>
+
+<p>a numeric variable giving the tolerance for determining the rank of
+a matrix: if a diagonal value in the R factor of a QR decomposition
+is less than R, in absolute value, then it is considered zero. Hence
+making rtol larger means being less stringent with determination of
+matrix rank. In general, do not change this unless you know what you
+are getting into! Default is 1e-7.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>btol</code></td>
+<td>
+
+<p>a numeric variable giving the tolerance for accepting "late" hitting
+and leaving times: future hitting times and leaving times should always 
+be less than the current knot in the path, but sometimes for numerical
+reasons they are larger; any computed hitting or leaving time larger 
+than the current knot + btol is thrown away. Hence making btol larger
+means being less stringent withthe determination of hitting and leaving 
+times. Again, in general, do not change this unless you know what you 
+are getting into! Default is 1e-7.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+
+<p>a numeric variable indicating the multiplier for the ridge penalty,
+in the case that <code>X</code> is column rank deficient. Default is
+1e-4. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>a logical variable indicating if progress should be reported after
+each knot in the path. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>svd</code></td>
+<td>
+
+<p>a logical variable indicating if the genlasso function should use 
+singular value decomposition to solve least squares problems at each
+path step, which is slower, but should be more stable.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The generalized lasso estimate minimizes the criterion
+</p>
+<p style="text-align: center;"><code class="reqn">
+    1/2 \|y - X \beta\|_2^2 + \lambda \|D \beta\|_1.
+  </code>
+</p>
+
+<p>The solution <code class="reqn">\hat{\beta}</code> is computed as a function of
+the regularization parameter <code class="reqn">\lambda</code>. The advantage of the
+<code>genlasso</code> function lies in its flexibility, i.e., the user can
+specify any penalty matrix <code>D</code> of their choosing. However, for a
+trend filtering problem or a fused lasso problem, it is strongly
+recommended to use one of the speciality functions,
+<code>trendfilter</code> or <code>fusedlasso</code>. When compared
+to these functions, <code>genlasso</code> is not as numerically stable and
+much less efficient.
+</p>
+<p>Note that, when <code>D</code> is passed as a sparse matrix, the linear 
+systems that arise at each step of the path algorithm are solved
+separately via a sparse solver. The usual strategy (when <code>D</code> is 
+simply a matrix) is to maintain a matrix factorization of <code>D</code>,
+and solve these systems by (or downdating) this factorization, as
+these linear systems are highly related. Therefore,
+when <code>D</code> is sufficiently sparse and structured, it can be
+advantageous to pass it as a sparse matrix; but if <code>D</code> is truly
+dense, passing it as a sparse matrix will be highly inefficient. 
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns an object of class "genlasso", a list with at least following
+components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+
+<p>values of lambda at which the solution path changes slope,
+i.e., kinks or knots.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+
+<p>a matrix of primal coefficients, each column corresponding to a knot
+in the solution path.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+
+<p>a matrix of fitted values, each column corresponding to a knot in
+the solution path.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>u</code></td>
+<td>
+
+<p>a matrix of dual coefficients, each column corresponding to a knot
+in the solution path.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hit</code></td>
+<td>
+
+<p>a vector of logical values indicating if a new variable in the dual
+solution hit the box contraint boundary. A value of <code>FALSE</code>
+indicates a variable leaving the boundary. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+
+<p>a vector giving an unbiased estimate of the degrees of freedom of
+the fit at each knot in the solution path.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+
+<p>the observed response vector. Useful for plotting and other
+methods.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>completepath</code></td>
+<td>
+
+<p>a logical variable indicating whether the complete path was
+computed (terminating the path early with the <code>maxsteps</code> or
+<code>minlam</code> options results in a value of <code>FALSE</code>).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bls</code></td>
+<td>
+
+<p>the least squares solution, i.e., the solution at lambda = 0. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+
+<p>the matched call.
+</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Taylor B. Arnold and Ryan J. Tibshirani
+</p>
+
+
+<h3>References</h3>
+
+<p>Tibshirani, R. J. and Taylor, J. (2011), "The solution path of the
+generalized lasso", Annals of Statistics 39 (3) 1335–1371.
+</p>
+<p>Arnold, T. B. and Tibshirani, R. J. (2014), "Efficient implementations
+of the generalized lasso dual path algorithm", arXiv: 1405.3222.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>trendfilter</code>, <code>fusedlasso</code>,
+<code>coef.genlasso</code>, <code>predict.genlasso</code>,
+<code>plot.genlasso</code> 
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Using the generalized lasso to run a standard lasso regression
+# (for example purposes only! for pure lasso problems, use LARS
+# instead)
+set.seed(1)
+n = 100
+p = 10
+X = matrix(rnorm(n*p),nrow=n)
+y = 3*X[,1] + rnorm(n)
+D = diag(1,p)
+out = genlasso(y,X,D)
+coef(out, lambda=sqrt(n*log(p)))
+</code></pre>
+
+
+</div>

@@ -1,0 +1,221 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cols_merge_uncert</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Merge columns to a value-with-uncertainty column</h2>
+
+<h3>Description</h3>
+
+<p><code>cols_merge_uncert()</code> is a specialized variant of <code>cols_merge()</code>. It takes as
+input a base value column (<code>col_val</code>) and either: (1) a single uncertainty
+column, or (2) two columns representing lower and upper uncertainty bounds.
+These columns will be essentially merged in a single column (that of
+<code>col_val</code>). What results is a column with values and associated
+uncertainties, and any columns specified in <code>col_uncert</code> are hidden from
+appearing the output table.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cols_merge_uncert(
+  data,
+  col_val,
+  col_uncert,
+  rows = everything(),
+  sep = " +/- ",
+  autohide = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p><em>The gt table data object</em>
+</p>
+<p><code style="white-space: pre;">⁠obj:&lt;gt_tbl&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>This is the <strong>gt</strong> table object that is commonly created through use of the
+<code>gt()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col_val</code></td>
+<td>
+<p><em>Column to target for base values</em>
+</p>
+<p><code style="white-space: pre;">⁠&lt;column-targeting expression&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>The column that contains values for the start of the range. While select
+helper functions such as <code>starts_with()</code> and <code>ends_with()</code> can be used for
+column targeting, it's recommended that a single column name be used. This
+is to ensure that exactly one column is provided here.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col_uncert</code></td>
+<td>
+<p><em>Column or columns to target for uncertainty values</em>
+</p>
+<p><code style="white-space: pre;">⁠&lt;column-targeting expression&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>The most common case involves supplying a single column with uncertainties;
+these values will be combined with those in <code>col_val</code>. Less commonly, the
+lower and upper uncertainty bounds may be different. For that case, two
+columns representing the lower and upper uncertainty values away from
+<code>col_val</code>, respectively, should be provided. While select helper functions
+such as <code>starts_with()</code> and <code>ends_with()</code> can be used for column targeting,
+it's recommended that one or two column names be explicitly provided in a
+vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rows</code></td>
+<td>
+<p><em>Rows to target</em>
+</p>
+<p><code style="white-space: pre;">⁠&lt;row-targeting expression&gt;⁠</code> // <em>default:</em> <code>everything()</code>
+</p>
+<p>In conjunction with <code>columns</code>, we can specify which of their rows should
+participate in the merging process. The default <code>everything()</code> results in
+all rows in <code>columns</code> being formatted. Alternatively, we can supply a
+vector of row IDs within <code>c()</code>, a vector of row indices, or a select
+helper function (e.g. <code>starts_with()</code>, <code>ends_with()</code>, <code>contains()</code>,
+<code>matches()</code>, <code>num_range()</code>, and <code>everything()</code>). We can also use
+expressions to filter down to the rows we need
+(e.g., <code style="white-space: pre;">⁠[colname_1] &gt; 100 &amp; [colname_2] &lt; 50⁠</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sep</code></td>
+<td>
+<p><em>Separator text for uncertainties</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <em>default:</em> <code>" +/- "</code>
+</p>
+<p>The separator text that contains the uncertainty mark for a single
+uncertainty value. The default value of <code>" +/- "</code> indicates that an
+appropriate plus/minus mark will be used depending on the output context.
+Should you want this special symbol to be taken literally, it can be
+supplied within the <code>I()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>autohide</code></td>
+<td>
+<p><em>Automatic hiding of the <code>col_uncert</code> column(s)</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;logical&gt;⁠</code> // <em>default:</em> <code>TRUE</code>
+</p>
+<p>An option to automatically hide any columns specified in <code>col_uncert</code>. Any
+columns with their state changed to 'hidden' will behave the same as
+before, they just won't be displayed in the finalized table.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>gt_tbl</code>.
+</p>
+
+
+<h3>Comparison with other column-merging functions</h3>
+
+<p>This function could be somewhat replicated using <code>cols_merge()</code> in the case
+where a single column is supplied for <code>col_uncert</code>, however,
+<code>cols_merge_uncert()</code> employs the following specialized semantics for <code>NA</code>
+handling:
+</p>
+
+<ol>
+<li> <p><code>NA</code>s in <code>col_val</code> result in missing values for the merged column (e.g.,
+<code>NA</code> + <code>0.1</code> = <code>NA</code>)
+</p>
+</li>
+<li> <p><code>NA</code>s in <code>col_uncert</code> (but not <code>col_val</code>) result in base values only for
+the merged column (e.g., <code>12.0</code> + <code>NA</code> = <code>12.0</code>)
+</p>
+</li>
+<li> <p><code>NA</code>s both <code>col_val</code> and <code>col_uncert</code> result in missing values for the
+merged column (e.g., <code>NA</code> + <code>NA</code> = <code>NA</code>)
+</p>
+</li>
+</ol>
+<p>Any resulting <code>NA</code> values in the <code>col_val</code> column following the merge
+operation can be easily formatted using <code>sub_missing()</code>.
+</p>
+<p>This function is part of a set of four column-merging functions. The other
+three are the general <code>cols_merge()</code> function and the specialized
+<code>cols_merge_range()</code> and <code>cols_merge_n_pct()</code> functions. These functions
+operate similarly, where the non-target columns can be optionally hidden from
+the output table through the <code>hide_columns</code> or <code>autohide</code> options.
+</p>
+
+
+<h3>Examples</h3>
+
+<p>Let's use the <code>exibble</code> dataset to create a simple, two-column <strong>gt</strong> table
+(keeping only the <code>num</code> and <code>currency</code> columns). We'll format the <code>num</code>
+column with the <code>fmt_number()</code> function. Next we merge the <code>currency</code> and
+<code>num</code> columns into the <code>currency</code> column; this will contain a base value and
+an uncertainty and it's all done using the <code>cols_merge_uncert()</code> function.
+After the merging process, the column label for the <code>currency</code> column is
+updated with <code>cols_label()</code> to better describe the content.
+</p>
+<div class="sourceCode r"><pre>exibble |&gt;
+  dplyr::select(num, currency) |&gt;
+  dplyr::slice(1:7) |&gt;
+  gt() |&gt;
+  fmt_number(
+    columns = num,
+    decimals = 3,
+    use_seps = FALSE
+  ) |&gt;
+  cols_merge_uncert(
+    col_val = currency,
+    col_uncert = num
+  ) |&gt;
+  cols_label(currency = "value + uncert.")
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_cols_merge_uncert_1.png" alt="This image of a table was generated from the first code example in the `cols_merge_uncert()` help file." style="width:100%;"><h3>Function ID</h3>
+
+<p>5-15
+</p>
+
+
+<h3>Function Introduced</h3>
+
+<p><code>v0.2.0.5</code> (March 31, 2020)
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other column modification functions: 
+<code>cols_add()</code>,
+<code>cols_align()</code>,
+<code>cols_align_decimal()</code>,
+<code>cols_hide()</code>,
+<code>cols_label()</code>,
+<code>cols_label_with()</code>,
+<code>cols_merge()</code>,
+<code>cols_merge_n_pct()</code>,
+<code>cols_merge_range()</code>,
+<code>cols_move()</code>,
+<code>cols_move_to_end()</code>,
+<code>cols_move_to_start()</code>,
+<code>cols_nanoplot()</code>,
+<code>cols_unhide()</code>,
+<code>cols_units()</code>,
+<code>cols_width()</code>
+</p>
+
+
+</div>

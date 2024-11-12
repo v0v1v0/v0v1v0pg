@@ -1,0 +1,162 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tsls</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Two stage least squares estimation</h2>
+
+<h3>Description</h3>
+
+<p>Function to estimate a linear model by the two stage least squares method.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tsls(g,x,data)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>g</code></td>
+<td>
+<p>A formula describing the linear regression model (see details below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>The matrix of instruments (see details below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data.frame or a matrix with column names (Optionnal). </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function just calls <code>gmm</code> with the option vcov="iid". It just simplifies the the implementation of 2SLS. The users don't have to worry about all the options offered in <code>gmm</code>. The model is 
+</p>
+<p style="text-align: center;"><code class="reqn">
+Y_i = X_i\beta + u_i
+</code>
+</p>
+
+<p>In the first step, <code>lm</code>  is used to regress <code class="reqn">X_i</code> on the set of instruments <code class="reqn">Z_i</code>. The second step also uses <code>lm</code> to regress <code class="reqn">Y_i</code> on the fitted values of the first step. 
+</p>
+
+
+<h3>Value</h3>
+
+<p>'tsls' returns an object of 'class' '"tsls"' which inherits from  class '"gmm"'.
+</p>
+<p>The functions 'summary' is used to obtain and print a summary of the results.  It also compute the J-test of overidentying restriction
+</p>
+<p>The object of class "gmm" is a list containing at least:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p><code class="reqn">k\times 1</code> vector of coefficients</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p>the residuals, that is response minus fitted values if "g" is a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>the fitted mean values if "g" is a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov</code></td>
+<td>
+<p>the covariance matrix of the coefficients</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>objective</code></td>
+<td>
+<p>the value of the objective function <code class="reqn">\| var(\bar{g})^{-1/2}\bar{g}\|^2</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms</code></td>
+<td>
+<p>the <code>terms</code> object used when g is a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the matched call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>if requested, the response used (if "g" is a formula).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>if requested, the model matrix used if "g" is a formula or the data if "g" is a function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>if requested (the default), the model frame used if "g" is a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algoInfo</code></td>
+<td>
+<p>Information produced by either <code>optim</code> or <code>nlminb</code> related to the convergence if "g" is a function. It is printed by the <code>summary.gmm</code> method.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Hansen, L.P. (1982),
+Large Sample Properties of Generalized Method of Moments Estimators.
+<em>Econometrica</em>, <b>50</b>,
+1029-1054,
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+n &lt;- 1000
+e &lt;- arima.sim(n,model=list(ma=.9))
+C &lt;- runif(n,0,5)
+Y &lt;- rep(0,n)
+Y[1] = 1 + 2*C[1] + e[1]
+for (i in 2:n){
+Y[i] = 1 + 2*C[i] + 0.9*Y[i-1] + e[i]
+}
+Yt &lt;- Y[5:n]
+X &lt;- cbind(C[5:n],Y[4:(n-1)])
+Z &lt;- cbind(C[5:n],Y[3:(n-2)],Y[2:(n-3)],Y[1:(n-4)]) 
+
+res &lt;- tsls(Yt~X,~Z)
+res
+
+</code></pre>
+
+
+</div>

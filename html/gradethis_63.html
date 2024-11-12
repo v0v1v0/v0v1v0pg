@@ -1,0 +1,171 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>user_object</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Functions for interacting with objects created by student and solution code</h2>
+
+<h3>Description</h3>
+
+<p>Functions for interacting with objects created by student and solution code
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">user_object_get(x, mode = "any", ..., check_env = parent.frame())
+
+solution_object_get(x, mode = "any", ..., check_env = parent.frame())
+
+user_object_exists(x, mode = "any", ..., check_env = parent.frame())
+
+solution_object_exists(x, mode = "any", ..., check_env = parent.frame())
+
+user_object_list(
+  mode = "any",
+  exclude_envir = .envir_prep,
+  ...,
+  check_env = parent.frame()
+)
+
+solution_object_list(
+  mode = "any",
+  exclude_envir = .envir_prep,
+  ...,
+  check_env = parent.frame()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object name, given as a quoted character string.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mode</code></td>
+<td>
+<p>character specifying the <code>mode</code> of objects to
+consider.  Passed to <code>exists</code> and <code>get</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exclude_envir</code></td>
+<td>
+<p>An environment.
+Objects that appear in <code>exclude_envir</code> will be excluded from results.
+Defaults to <code>.envir_prep</code>.
+Use <code>exclude_envir = NULL</code> to include all objects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to underlying functions:
+</p>
+
+<ul>
+<li>
+<p> For <code>user_object_exists()</code> and <code>solution_object_exists()</code>, <code>exists()</code>
+</p>
+</li>
+<li>
+<p> For <code>user_object_get()</code> and <code>solution_object_get()</code>, <code>get()</code>
+</p>
+</li>
+<li>
+<p> For <code>user_object_list()</code> and <code>solution_object_list()</code>,
+<code>ls.str()</code>
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check_env</code></td>
+<td>
+<p>The environment from which to retrieve
+<code>.envir_result</code> and <code>.envir_prep</code>.
+Most users of <span class="pkg">gradethis</span> will not need to use this argument.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>For <code>user_object_get()</code> and <code>solution_object_get()</code>, the object.
+If the object is not found, an error.
+</p>
+<p>For <code>user_object_exists()</code> and <code>solution_object_exists()</code>,
+a <code>TRUE</code>/<code>FALSE</code> value.
+</p>
+<p>For <code>user_object_list()</code> and <code>solution_object_list()</code>,
+a character vector giving the names of the objects
+created by the student or solution code.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">user_code &lt;- quote({
+  # ```{r example}
+  x &lt;- "I'm student code!"
+  y &lt;- list(1, 2, 3)
+  z &lt;- function() print("Hello World!")
+  # ```
+})
+
+solution_code &lt;- quote({
+  # ```{r example-solution}
+  x &lt;- "I'm solution code!"
+  y &lt;- list("a", "b", "c")
+  z &lt;- function() print("Goodnight Moon!")
+  # ```
+})
+
+exercise &lt;- mock_this_exercise(!!user_code, !!solution_code)
+
+with_exercise(exercise, user_object_list())
+with_exercise(exercise, user_object_exists("x"))
+with_exercise(exercise, user_object_get("x"))
+
+with_exercise(exercise, solution_object_list())
+with_exercise(exercise, solution_object_exists("x"))
+with_exercise(exercise, solution_object_get("x"))
+
+# Use `mode` to find only objects of a certain type ----
+
+with_exercise(exercise, user_object_list(mode = "character"))
+with_exercise(exercise, user_object_list(mode = "list"))
+with_exercise(exercise, user_object_list(mode = "function"))
+
+with_exercise(exercise, user_object_exists("x", mode = "character"))
+with_exercise(exercise, user_object_exists("y", mode = "character"))
+
+with_exercise(exercise, user_object_get("z", mode = "function"))
+
+# By default, `user_object_list()` ignores objects created by setup chunks ----
+
+setup_code &lt;- rlang::expr({
+  # ```{r example-setup}
+  setup_data &lt;- mtcars
+  # ```
+})
+
+setup_exercise &lt;- mock_this_exercise(
+  !!user_code, !!solution_code, setup_exercise = !!setup_code
+)
+
+with_exercise(setup_exercise, user_object_list())
+
+## You can disable this by setting `exclude_envir = NULL` ----
+
+with_exercise(setup_exercise, user_object_list(exclude_envir = NULL))
+</code></pre>
+
+
+</div>

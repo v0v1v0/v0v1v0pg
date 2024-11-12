@@ -1,0 +1,202 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sfTruncated</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Truncated, trimmed and gapped spending functions</h2>
+
+<h3>Description</h3>
+
+<p>The functions <code>sfTruncated()</code> and <code>sfTrimmed</code> apply any other
+spending function over a restricted range. This allows eliminating spending
+for early interim analyses when you desire not to stop for the bound being
+specified; this is usually applied to eliminate early tests for a positive
+efficacy finding. The truncation can come late in the trial if you desire to
+stop a trial any time after, say, 90 percent of information is available and
+an analysis is performed. This allows full Type I error spending if the
+final analysis occurs early. Both functions set cumulative spending to 0
+below a 'spending interval' in the interval [0,1], and set cumulative
+spending to 1 above this range. <code>sfTrimmed()</code> otherwise does not change
+an input spending function that is specified; probably the preferred and
+more intuitive method in most cases. <code>sfTruncated()</code> resets the time
+scale on which the input spending function is computed to the 'spending
+interval.'
+</p>
+<p><code>sfGapped()</code> allows elimination of analyses after some time point in
+the trial; see details and examples.
+</p>
+<p><code>sfTrimmed</code> simply computes the value of the input spending function
+and parameters in the sub-range of [0,1], sets spending to 0 below this
+range and sets spending to 1 above this range.
+</p>
+<p><code>sfGapped</code> spends outside of the range provided in trange. Below
+trange, the input spending function is used. Above trange, full spending is
+used; i.e., the first analysis performed above the interval in trange is the
+final analysis. As long as the input spending function is strictly
+increasing, this means that the first interim in the interval trange is the
+final interim analysis for the bound being specified.
+</p>
+<p><code>sfTruncated</code> compresses spending into a sub-range of [0,1]. The
+parameter <code>param$trange</code> specifies the range over which spending is to
+occur. Within this range, spending is spent according to the spending
+function specified in <code>param$sf</code> along with the corresponding spending
+function parameter(s) in <code>param$param</code>. See example using
+<code>sfLinear</code> that spends uniformly over specified range.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sfTruncated(alpha, t, param)
+
+sfTrimmed(alpha, t, param)
+
+sfGapped(alpha, t, param)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Real value <code class="reqn">&gt; 0</code> and no more than 1. Normally,
+<code>alpha=0.025</code> for one-sided Type I error specification or
+<code>alpha=0.1</code> for Type II error specification. However, this could be set
+to 1 if for descriptive purposes you wish to see the proportion of spending
+as a function of the proportion of sample size or information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t</code></td>
+<td>
+<p>A vector of points with increasing values from 0 to 1, inclusive.
+Values of the proportion of sample size or information for which the
+spending function will be computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>a list containing the elements sf (a spendfn object such as
+sfHSD), trange (the range over which the spending function increases from 0
+to 1; 0 &lt;= trange[1]&lt;trange[2] &lt;=1; for sfGapped, trange[1] must be &gt; 0),
+and param (null for a spending function with no parameters or a scalar or
+vector of parameters needed to fully specify the spending function in sf).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of type <code>spendfn</code>. See <code>vignette("SpendingFunctionOverview")</code>
+for further details.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The gsDesign technical manual is available at
+<a href="https://keaven.github.io/gsd-tech-manual/">https://keaven.github.io/gsd-tech-manual/</a>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Keaven Anderson <a href="mailto:keaven_anderson@merck.com">keaven_anderson@merck.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Jennison C and Turnbull BW (2000), <em>Group Sequential
+Methods with Applications to Clinical Trials</em>. Boca Raton: Chapman and Hall.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>vignette("SpendingFunctionOverview")</code>, <code>gsDesign</code>,
+<code>vignette("gsDesignPackageOverview")</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+# Eliminate efficacy spending forany interim at or before 20 percent of information.
+# Complete spending at first interim at or after 80 percent of information.
+tx &lt;- (0:100) / 100
+s &lt;- sfHSD(alpha = .05, t = tx, param = 1)$spend
+x &lt;- data.frame(t = tx, Spending = s, sf = "Original spending")
+param &lt;- list(trange = c(.2, .8), sf = sfHSD, param = 1)
+s &lt;- sfTruncated(alpha = .05, t = tx, param = param)$spend
+x &lt;- rbind(x, data.frame(t = tx, Spending = s, sf = "Truncated"))
+s &lt;- sfTrimmed(alpha = .05, t = tx, param = param)$spend
+x &lt;- rbind(x, data.frame(t = tx, Spending = s, sf = "Trimmed"))
+s &lt;- sfGapped(alpha = .05, t = tx, param = param)$spend
+x &lt;- rbind(x, data.frame(t = tx, Spending = s, sf = "Gapped"))
+ggplot2::ggplot(x, ggplot2::aes(x = t, y = Spending, col = sf)) + 
+ggplot2::geom_line()
+
+
+# now apply the sfTrimmed version in gsDesign
+# initially, eliminate the early efficacy analysis
+# note: final spend must occur at &gt; next to last interim
+x &lt;- gsDesign(
+  k = 4, n.fix = 100, sfu = sfTrimmed,
+  sfupar = list(sf = sfHSD, param = 1, trange = c(.3, .9))
+)
+
+# first upper bound=20 means no testing there
+gsBoundSummary(x)
+
+# now, do not eliminate early efficacy analysis
+param &lt;- list(sf = sfHSD, param = 1, trange = c(0, .9))
+x &lt;- gsDesign(k = 4, n.fix = 100, sfu = sfTrimmed, sfupar = param)
+
+# The above means if final analysis is done a little early, all spending can occur
+# Suppose we set calendar date for final analysis based on
+# estimated full information, but come up with only 97 pct of plan
+xA &lt;- gsDesign(
+  k = x$k, n.fix = 100, n.I = c(x$n.I[1:3], .97 * x$n.I[4]),
+  test.type = x$test.type,
+  maxn.IPlan = x$n.I[x$k],
+  sfu = sfTrimmed, sfupar = param
+)
+# now accelerate without the trimmed spending function
+xNT &lt;- gsDesign(
+  k = x$k, n.fix = 100, n.I = c(x$n.I[1:3], .97 * x$n.I[4]),
+  test.type = x$test.type,
+  maxn.IPlan = x$n.I[x$k],
+  sfu = sfHSD, sfupar = 1
+)
+# Check last bound if analysis done at early time
+x$upper$bound[4]
+# Now look at last bound if done at early time with trimmed spending function
+# that allows capture of full alpha
+xA$upper$bound[4]
+# With original spending function, we don't get full alpha and therefore have
+# unnecessarily stringent bound at final analysis
+xNT$upper$bound[4]
+
+# note that if the last analysis is LATE, all 3 approaches should give the same
+# final bound that has a little larger z-value
+xlate &lt;- gsDesign(
+  k = x$k, n.fix = 100, n.I = c(x$n.I[1:3], 1.25 * x$n.I[4]),
+  test.type = x$test.type,
+  maxn.IPlan = x$n.I[x$k],
+  sfu = sfHSD, sfupar = 1
+)
+xlate$upper$bound[4]
+
+# eliminate futility after the first interim analysis
+# note that by setting trange[1] to .2, the spend at t=.2 is used for the first
+# interim at or after 20 percent of information
+x &lt;- gsDesign(n.fix = 100, sfl = sfGapped, sflpar = list(trange = c(.2, .9), sf = sfHSD, param = 1))
+</code></pre>
+
+
+</div>

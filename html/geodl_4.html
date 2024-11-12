@@ -1,0 +1,132 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>defineMobileUNet</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>defineMobileUNet</h2>
+
+<h3>Description</h3>
+
+<p>Define a UNet architecture for geospatial semantic segmentation with a MobileNet-v2 backbone.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">defineMobileUNet(
+  nCls = 3,
+  pretrainedEncoder = TRUE,
+  freezeEncoder = TRUE,
+  actFunc = "relu",
+  useAttn = FALSE,
+  useDS = FALSE,
+  dcChn = c(256, 128, 64, 32, 16),
+  negative_slope = 0.01
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>nCls</code></td>
+<td>
+<p>Number of classes being differentiated. For a binary classification,
+this can be either 1 or 2. If 2, the problem is treated as a multiclass problem,
+and a multiclass loss metric should be used. Default is 3.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pretrainedEncoder</code></td>
+<td>
+<p>TRUE or FALSE. Whether or not to initialized using pre-trained ImageNet weights for the
+MobileNet-v2 encoder. Default is TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>freezeEncoder</code></td>
+<td>
+<p>TRUE or FALSE. Whether or not to freeze the encoder during training. The default is TRUE.
+If TRUE, only the decoder component is trained.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>actFunc</code></td>
+<td>
+<p>Defines activation function to use throughout the network (note that MobileNet-v2 layers are
+not impacted). "relu" = rectified linear unit (ReLU); "lrelu" = leaky ReLU; "swish" = swish. Default is "relu".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useAttn</code></td>
+<td>
+<p>TRUE or FALSE. Whether to add attention gates along the skip connections.
+Default is FALSE or no attention gates are added.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useDS</code></td>
+<td>
+<p>TRUE or FALSE. Whether or not to use deep supervision. If TRUE, four predictions are
+made, one at each of the four largest decoder block resolutions, and the predictions are returned as a list object
+containing the 4 predictions. If FALSE, only the final prediction at the original resolution is
+returned. Default is FALSE or deep supervision is not implemented.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dcChn</code></td>
+<td>
+<p>Vector of 4 integers defining the number of output feature
+maps for each of the 4 decoder blocks. Default is 128, 64, 32, and 16.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>negative_slope</code></td>
+<td>
+<p>If actFunc = "lrelu", specifies the negative slope term
+to use. Default is 0.01.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Define a UNet architecture with a MobileNet-v2 backbone or encoder. This UNet implementation was
+inspired by a blog post by Sigrid Keydana available
+<a href="https://blogs.rstudio.com/ai/posts/2021-10-29-segmentation-torch-android/">here</a>. This architecture
+has 6 blocks in the encoder (including the bottleneck) and 5 blocks in the decoder. The user is able to implement
+deep supervision (useDS = TRUE) and attention gates along the skip connections (useAttn = TRUE). This model
+requires three input bands or channels.
+</p>
+
+
+<h3>Value</h3>
+
+<p>ModileUNet model instance as torch nn_module
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+require(torch)
+#Generate example data as torch tensor
+tensorIn &lt;- torch::torch_rand(c(12,3,128,128))
+
+#Instantiate model
+model &lt;- defineMobileUNet(nCls = 3,
+                          pretrainedEncoder = FALSE,
+                          freezeEncoder = FALSE,
+                          actFunc = "relu",
+                          useAttn = TRUE,
+                          useDS = TRUE,
+                          dcChn = c(256,128,64,32,16),
+                          negative_slope = 0.01)
+
+pred &lt;- model(tensorIn)
+
+</code></pre>
+
+
+</div>

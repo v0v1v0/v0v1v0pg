@@ -1,0 +1,189 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemTemporaryEquilibriumPath</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some Examples of Temporary Equilibrium Paths</h2>
+
+<h3>Description</h3>
+
+<p>Some examples of temporary equilibrium paths.
+The temporary equilibrium path consists of a series of temporary equilibria.
+Each temporary equilibrium achieves market clearing, and these markets may include futures markets in addition to spot markets.
+An instantaneous equilibrium path is a temporary equilibrium path that only includes spot markets.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemTemporaryEquilibriumPath(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>References</h3>
+
+<p>Grandmont, J.M. (1977). Temporary General Equilibrium Theory. Econometrica 45, 535-572.
+</p>
+
+
+<h3>See Also</h3>
+
+
+<p><code>policyMarketClearingPrice</code>
+
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### A pure exchange economy.
+## Consumers 1 and 2 each supply 50 units of payoff each period.
+## Consumers have limited foresight into the future and always expect
+## that the supply of consumer 1 will be 50 and the supply of
+## consumer 2 will be 40 in the next period.
+dst.consumer1 &lt;- node_new("util",
+  type = "SCES", es = 2,
+  alpha = 1, beta = c(0.5, 0.5),
+  "payoff1", "payoff2"
+)
+
+dst.consumer2 &lt;- node_new("util",
+  type = "SCES", es = 1,
+  alpha = 1, beta = c(0.5, 0.5),
+  "payoff1", "payoff2"
+)
+
+result &lt;- list()
+for (time in 1:20) {
+  if (time == 1) {
+    S0Exg &lt;- matrix(c(
+      50, 50,
+      50, 40
+    ), 2, 2, TRUE)
+  } else {
+    S0Exg &lt;- rbind(ge$D[2, ] + c(0, 10), c(50, 40))
+  }
+
+  ge &lt;- sdm2(
+    A = list(dst.consumer1, dst.consumer2),
+    B = matrix(0, 2, 2),
+    S0Exg = S0Exg,
+    names.commodity = c("payoff1", "payoff2"),
+    names.agent = c("consumer1", "consumer2"),
+    numeraire = "payoff1"
+  )
+
+  result[[time]] &lt;- ge
+}
+
+sapply(result, \(x) x$p)
+sapply(result, \(x) x$z)
+# lapply(result, \(x) x$D)
+# lapply(result, \(x) x$S)
+
+#### An economy with production.
+dst.consumer &lt;- node_new("util",
+  type = "CD",
+  alpha = 1,
+  beta = c(1 / 3, 2 / 3), # beta = c(1/2, 1/2)
+  "prod1", "prod2"
+)
+
+dst.firm &lt;- node_new("prod2",
+  type = "CD", alpha = 2, beta = c(0.5, 0.5),
+  "prod1", "lab"
+)
+
+result &lt;- list()
+for (time in 1:20) {
+  if (time == 1) {
+    S0Exg &lt;- matrix(c(
+      10, 0,
+      0, NA,
+      100, 0
+    ), 3, 2, TRUE)
+  } else {
+    S0Exg &lt;- matrix(c(
+      ge$D[2, 1], 0,
+      0, NA,
+      100, 0
+    ), 3, 2, TRUE)
+  }
+
+  ge &lt;- sdm2(
+    A = list(dst.consumer, dst.firm),
+    B = matrix(c(
+      0, 0,
+      0, 1,
+      0, 0
+    ), 3, 2, TRUE),
+    S0Exg = S0Exg,
+    names.commodity = c("prod1", "prod2", "lab"),
+    names.agent = c("consumer", "firm"),
+    numeraire = "prod1"
+  )
+
+  result[[time]] &lt;- ge
+}
+
+
+sapply(result, \(x) x$p)
+sapply(result, \(x) x$z)
+# lapply(result, \(x) x$D)
+# lapply(result, \(x) x$S)
+
+##
+result &lt;- list()
+last.output &lt;- 10
+for (time in 1:30) {
+  if (time == 1) {
+    S0Exg &lt;- matrix(c(
+      10, 0,
+      0, last.output,
+      100, 0
+    ), 3, 2, TRUE)
+  } else {
+    S0Exg &lt;- rbind(
+      c(ge$D[2, 1], max(ge$z[2] - last.output, 0)),
+      c(0, last.output),
+      c(100, 0)
+    )
+
+    last.output &lt;- ge$z[2]
+  }
+
+  ge &lt;- sdm2(
+    A = list(dst.consumer, dst.firm),
+    B = matrix(c(
+      0, 0,
+      0, 1,
+      0, 0
+    ), 3, 2, TRUE),
+    # B = matrix(0, 3, 2),
+    S0Exg = S0Exg,
+    names.commodity = c("prod1", "prod2", "lab"),
+    names.agent = c("consumer", "firm"),
+    numeraire = "prod1"
+  )
+
+  result[[time]] &lt;- ge
+}
+sapply(result, \(x) x$p)
+sapply(result, \(x) x$z)
+# lapply(result, \(x) x$D)
+# lapply(result, \(x) x$S)
+
+</code></pre>
+
+
+</div>

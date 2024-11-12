@@ -1,0 +1,371 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>FourPHFfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit four-parameter hill function</h2>
+
+<h3>Description</h3>
+
+<p>Fit a four-parameter hill function
+(El-Kassaby et al. 2008) to cumulative
+germination count data and compute the associated parameters. <script id="MathJax-script" async src="../../mathjaxr/doc/mathjax/es5/tex-chtml-full.js"></script></p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">FourPHFfit(
+  germ.counts,
+  intervals,
+  total.seeds,
+  partial = TRUE,
+  fix.y0 = TRUE,
+  fix.a = TRUE,
+  tmax,
+  xp = c(10, 60),
+  umin = 10,
+  umax = 90,
+  tries = 3
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>germ.counts</code></td>
+<td>
+<p>Germination counts at each time interval. Can be partial
+or cumulative as specified in the argument <code>partial</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intervals</code></td>
+<td>
+<p>The time intervals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>total.seeds</code></td>
+<td>
+<p>Total number of seeds.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>partial</code></td>
+<td>
+<p>logical. If <code>TRUE</code>, <code>germ.counts</code> is considered as
+partial and if <code>FALSE</code>, it is considered as cumulative. Default is
+<code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fix.y0</code></td>
+<td>
+<p>Force the intercept of the y axis through 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fix.a</code></td>
+<td>
+<p>Fix a as the actual maximum germination percentage at the end of
+the experiment.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tmax</code></td>
+<td>
+<p>The time up to which AUC is to be computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xp</code></td>
+<td>
+<p>Germination percentage value(s) for which the corresponding time is
+to be computed as a numeric vector. Default is <code>c(10, 60)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>umin</code></td>
+<td>
+<p>The minimum germination percentage value for computing
+uniformity. Default is <code>10</code>. Seed <strong><code>Details</code></strong>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>umax</code></td>
+<td>
+<p>The maximum germination percentage value for computing
+uniformity. Default is <code>90</code>. Seed <strong><code>Details</code></strong>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tries</code></td>
+<td>
+<p>The number of tries to be attempted to fit the curve. Default is
+3.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The cumulative germination count data of a seed lot can be modelled to fit a
+four-parameter hill function defined as follows
+(El-Kassaby et al. 2008).
+</p>
+\[y = y_{0}+\frac{ax^{b}}{c^{b}+x^{b}}\]
+<p>Where, \(y\) is the cumulative germination percentage at time
+\(x\), \(y_{0}\) is the intercept on the y axis, \(a\) is the
+asymptote, or maximum cumulative germination percentage, which is equivalent
+to germination capacity, \(b\) is a mathematical parameter controlling
+the shape and steepness of the germination curve (the larger the \(b\)
+parameter, the steeper the rise toward the asymptote \(a\), and the
+shorter the time between germination onset and maximum germination), and
+\(c\) is the "half-maximal activation level" which represents the time
+required for 50% of viable seeds to germinate (\(c\) is equivalent to
+the germination speed).
+</p>
+<p>In <code>FourPHFfit</code>, this model has be reparameterized by substituting
+\(b\) with \(e^{\beta}\) to constraint \(b\) to positive
+values only.
+</p>
+\[y = y_{0}+\frac{ax^{e^{\beta}}}{c^{e^{\beta}}+x^{e^{\beta}}}\]
+<p>Where, \(b = e^{\beta}\) and \(\beta = \log_{e}(b)\).
+</p>
+<p>The curve fitting is performed with nonlinear
+<code>gslnls</code> package, a R interface to the
+least-squares optimization with the GNU Scientific Library (GSL) with the
+Levenberg-Marquardt algorithm
+(Chau 2023).
+</p>
+<p>Once this function is fitted to the curve, <code>FourPHFfit</code> computes the
+time to 50% germination of total seeds (<code>t50.total</code>) or viable seeds
+(<code>t50.Germinated</code>). Similarly the time at any percentage of germination
+(in terms of both total and viable seeds) as specified in argument <code>xp</code>
+can be computed.
+</p>
+<p>The time at germination onset (\(lag\)) can be computed as follows.
+</p>
+\[lag = b\sqrt{\frac{-y_{0}c^{b}}{a + y_{0}}}\]
+<p>The value \(D_{lag-50}\) is defined as the duration between the time at
+germination onset (lag) and that at 50% germination (\(c\)).
+</p>
+<p>The time interval between the percentages of viable seeds specified in the
+arguments <code>umin</code> and <code>umin</code> to germinate is computed as uniformity
+(\(U_{t_{max}-t_{min}}\)).
+</p>
+\[U_{t_{max}-t_{min}} = t_{max} - t_{min}\]
+<p>The partial derivative of the four-parameter hill function gives the
+instantaneous rate of germination (\(s\)) as follows.
+</p>
+\[s = \frac{\partial y}{\partial x} =
+\frac{abc^{b}x^{b-1}}{(c^{b}+x^{b})^{2}}\]
+<p>From this function for instantaneous rate of germination, the time at maximum
+germination rate (\(TMGR\)) can be estimated as follows.
+</p>
+\[TMGR = b \sqrt{\frac{c^{b}(b-1)}{b+1}}\]
+<p>TMGR represents the point in time when the instantaneous rate of germination
+starts to decline.
+</p>
+<p>The area under the curve (\(AUC\)) is obined by integration of the
+fitted curve between time 0 and time specified in the argument 'tmax'.
+</p>
+<p>Integration of the fitted curve gives the value of mean germination time
+(\(MGT\)) and the skewness of the germination curve is computed as the
+ratio of \(MGT\) and the time for 50% of viable seeds to germinate
+(\(t_{50}\)).
+</p>
+\[Skewness = \frac{MGT}{t_{50}}\]
+<p>If final germination percentage is less than 10%, a warning is given, as the
+results may not be informative.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with the following components: </p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data frame with
+the data used for computing the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Parameters</code></td>
+<td>
+<p>A data frame of
+parameter estimates, standard errors and p value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Fit</code></td>
+<td>
+<p>A one-row
+data frame with estimates of model fitness such as log likelyhoods, Akaike
+Information Criterion, Bayesian Information Criterion, deviance and
+residual degrees of freedom.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+<p>The asymptote or the maximum
+cumulative germination percentage.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b</code></td>
+<td>
+<p>The mathematical parameter
+controlling the shape and steepness of the germination curve.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c</code></td>
+<td>
+<p>The
+half-maximal activation level.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y0</code></td>
+<td>
+<p>The intercept on the y axis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lag</code></td>
+<td>
+<p>Time at germination onset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Dlag50</code></td>
+<td>
+<p>duration between the
+time at germination onset (lag) and that at 50% germination.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t50.total</code></td>
+<td>
+<p>Time required for 50% of total seeds to germinate. Will
+be <code>NaN</code> if more than 50% of total seeds do not germinate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>txp.total</code></td>
+<td>
+<p>Time required for x% (as specified in argument <code>xp</code>)
+of total seeds to germinate. Will be <code>NaN</code> if more than x% of total
+seeds do not germinate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t50.Germinated</code></td>
+<td>
+<p>Time required for 50%
+of viable/germinated seeds to germinate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>txp.Germinated</code></td>
+<td>
+<p>Time
+required for x% (as specified in argument <code>xp</code>) of viable/germinated
+seeds to germinate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Uniformity</code></td>
+<td>
+<p>Time interval between <code>umin</code>%
+and <code>umax</code>% of viable seeds to germinate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>TMGR</code></td>
+<td>
+<p>Time at
+maximum germination rate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>AUC</code></td>
+<td>
+<p>The estimate of area under the
+curve.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MGT</code></td>
+<td>
+<p>Mean germination time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Skewness</code></td>
+<td>
+<p>Skewness of mean
+germination time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>msg</code></td>
+<td>
+<p>The message from
+<code>gsl_nls</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>isConv</code></td>
+<td>
+<p>Logical value indicating
+whether convergence was achieved.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>The raw fitted model output as a list of class
+<code>gsl_nls</code>.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Chau J (2023).
+“gslnls: GSL Nonlinear Least-Squares Fitting.”<br><br> El-Kassaby YA, Moss I, Kolotelo D, Stoehr M (2008).
+“Seed germination: Mathematical representation and parameters extraction.”
+<em>Forest Science</em>, <b>54</b>(2), 220–227.<br><br> Galassi M (ed.) (2009).
+<em>GNU Scientific Library Reference Manual: For GSL Version 1.12</em>, 3. ed edition.
+Network Theory, Bristol.
+ISBN 978-0-9546120-7-8.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+x &lt;- c(0, 0, 0, 0, 4, 17, 10, 7, 1, 0, 1, 0, 0, 0)
+y &lt;- c(0, 0, 0, 0, 4, 21, 31, 38, 39, 39, 40, 40, 40, 40)
+int &lt;- 1:length(x)
+total.seeds = 50
+
+# From partial germination counts
+#----------------------------------------------------------------------------
+FourPHFfit(germ.counts = x, intervals = int, total.seeds = 50, tmax = 20)
+
+# From cumulative germination counts
+#----------------------------------------------------------------------------
+FourPHFfit(germ.counts = y, intervals = int, total.seeds = 50, tmax = 20,
+           partial = FALSE)
+
+</code></pre>
+
+
+</div>

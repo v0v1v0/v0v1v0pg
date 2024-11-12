@@ -1,0 +1,240 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getGradients.RasterLayer</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Apply gradient-based methodologies to environmental data</h2>
+
+<h3>Description</h3>
+
+<p>This function empowers users to analyze data from various sources,
+including numeric <code>matrix</code>, <code>array</code>s, XYZ-<code>list</code>s,
+<code>SpatRaster</code>s, or <code>RasterLayer</code>s*, by applying gradient-seeking
+methodologies.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'RasterLayer'
+getGradients(x, method = "BelkinOReilly2009", intermediate = FALSE, ...)
+
+## S3 method for class 'SpatRaster'
+getGradients(x, method = "BelkinOReilly2009", intermediate = FALSE, ...)
+
+## S3 method for class 'array'
+getGradients(x, method = "BelkinOReilly2009", intermediate = FALSE, ...)
+
+## Default S3 method:
+getGradients(
+  x,
+  method = "BelkinOReilly2009",
+  intermediate = FALSE,
+  ConvolNormalization = FALSE,
+  ...
+)
+
+getGradients(
+  x,
+  method = c("BelkinOReilly2009", "median_filter", "Agenbag2003-1", "Agenbag2003-2"),
+  intermediate = FALSE,
+  ConvolNormalization = FALSE,
+  ...
+)
+
+## S3 method for class 'list'
+getGradients(x, method = "BelkinOReilly2009", intermediate = FALSE, ...)
+
+## S3 method for class 'matrix'
+getGradients(x, method = "BelkinOReilly2009", intermediate = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of class <code>matrix</code>, <code>array</code>, XYZ <code>list</code>,
+<code>SpatRaster</code> or <code>RasterLayer</code>*. See 'Details.'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p><code>character</code> string indicating the method that will be used.
+For the available methods, see 'Details'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intermediate</code></td>
+<td>
+<p><code>logical</code> indicating whether to get the intermediate
+matrices (<code>TRUE</code>) or just the final one (<code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Extra arguments that will depend on the selected method. See
+Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ConvolNormalization</code></td>
+<td>
+<p><code>logical</code> indicating if convolutions will
+perform a previous normalization (<code>FALSE</code> by default). See Details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <span class="pkg">grec</span> package collaborates with the <span class="pkg">imagine</span> package to execute
+and apply image processing algorithms for identifying oceanic gradients.
+<span class="pkg">imagine</span> furnishes the foundational algorithms, developed efficiently
+utilizing C++ tools. Conversely, <span class="pkg">grec</span> oversees the utilization of these
+coding instruments in the context of oceanic gradient recognition and handles
+the development of input/output methods. In this context, the available methods
+offered by <span class="pkg">grec</span> are contingent on the installed <span class="pkg">grec</span>-<span class="pkg">imagine</span>
+versions.
+</p>
+<p>(*) Due to the deprecation of the <span class="pkg">raster</span> package, <span class="pkg">grec</span> will not be
+supporting the use of <code>RasterLayer</code> in future versions. Instead,
+<span class="pkg">grec</span> will be incorporating support for SpatRaster-class,
+a more recent and actively developed method for working with raster data.
+This change will take effect as soon as <span class="pkg">raster</span> is removed from CRAN.
+</p>
+<p>Until the current version, <code>grec</code> performs four methods:
+</p>
+
+<ol>
+<li> <p><code>BelkinOReilly2009</code> (default): Based on Belkin &amp; O'Reilly (2009)
+article, it uses a Contextual Median Filter (CMF) for smoothing the original
+data before the applying of Sobel filters.
+</p>
+</li>
+<li> <p><code>median_filter</code>: it uses a typical median filter (MF) for
+smoothing the original data. It also allows the user to change the window
+size for median filter (3 as default).
+</p>
+</li>
+<li> <p><code>Agenbag2003-1</code>: Performs method 1 described on Agenbag et al.
+(2003) paper, based on the equation:
+</p>
+<p style="text-align: center;"><code class="reqn">SST_{grad}=\sqrt{(T_{i+1}-T_{i-1})^2 +(T_{j+1}-T_{j-1})^2}</code>
+</p>
+
+</li>
+<li> <p><code>Agenbag2003-2</code>: Performs method 2 described on Agenbag et al.
+(2003) paper, calculating the the standard deviation of the 3x3 neighbor area
+for each pixel.
+</p>
+</li>
+</ol>
+<p>The input data <code>x</code> can be represented in various formats to accommodate
+different data sources. It can be provided as a single numeric <code>matrix</code>
+extracted from an environmental map. Alternatively, it can be represented as
+a three-dimensional XYZ <code>list</code>, where <code>X</code> contains a vector of
+longitudes, <code>Y</code> contains a vector of latitudes, and <code>Z</code> is a matrix
+of dimensions <code>length(x$X)</code> x <code>length(x$Y)</code>. Additionally, it can
+be specified as an array, <code>SpatRaster</code>, or <code>RasterLayer</code>* object.
+If <code>x</code> is an <code>array</code>, it must have three dimensions: longitude (lon),
+latitude (lat), and time. It is not mandatory to define the dimnames. The
+output will maintain all the attributes of the input data.
+</p>
+<p><code>...</code> allows the (advanced) users to modify some aspects of filter
+application. Depending on the selected methodology, some parameters can be
+modified:
+</p>
+
+<dl>
+<dt><strong>times</strong></dt>
+<dd>
+<p><code>numeric</code>. How many times do you want to apply
+the filtering method?</p>
+</dd>
+<dt><strong>kernelValues</strong></dt>
+<dd>
+<p>A <code>numeric</code> vector that will be used for
+convolution to detect vertical and horizontal gradients.</p>
+</dd>
+<dt><strong>radius</strong></dt>
+<dd>
+<p><code>numeric</code>. If <strong>median-filter</strong> method was
+selected, it allows to change the window size of the filter.</p>
+</dd>
+</dl>
+<p>Normalization is a standard practice in convolution to maintain the range of
+output values consistent with the input data. This is achieved by dividing
+the convolution output by the absolute value of the kernel. While
+normalization is recommended to ensure consistent interpretation of results,
+it is disabled by default and can be enabled by setting the
+<code>ConvolNormalization</code> parameter to <code>TRUE</code>.
+</p>
+<p>Finally, Belkin &amp; O'Reilly's work suggests applying a logarithmic
+transformation to the gradient output. This step is not enabled by default,
+as it is primarily intended for chlorophyll data. Users are free to apply the
+transformation manually if it suits their specific needs.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The output will preserve the input class.
+</p>
+
+
+<h3>References</h3>
+
+<p>Belkin, I. M., &amp; O'Reilly, J. E. (2009). An algorithm for oceanic
+front detection in chlorophyll and SST satellite imagery. Journal of Marine
+Systems, 78(3), 319-326 (<a href="https://doi.org/10.1016/j.jmarsys.2008.11.018">doi:10.1016/j.jmarsys.2008.11.018</a>).
+</p>
+<p>Agenbag, J.J., A.J. Richardson, H. Demarcq, P. Freon, S. Weeks,
+and F.A. Shillington. "Estimating Environmental Preferences of South African
+Pelagic Fish Species Using Catch Size- and Remote Sensing Data". Progress in
+Oceanography 59, No 2-3 (October 2003): 275-300.
+(<a href="https://doi.org/10.1016/j.pocean.2003.07.004">doi:10.1016/j.pocean.2003.07.004</a>).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(sst)
+exampleSSTData &lt;- list(x = sst$longitude,
+                       y = sst$latitude,
+                       z = sst$sst[,,1])
+
+data(chl)
+exampleChlData &lt;- list(x = chl$longitude,
+                       y = chl$latitude,
+                       z = chl$chlorophyll[,,1])
+
+# Simple application (over a XYZ list)
+out_sst &lt;- getGradients(x = exampleSSTData)
+out_chl &lt;- getGradients(x = exampleChlData)
+
+# External transformation for chl data
+out_chl$z &lt;- log10(out_chl$z)
+
+par(mfrow = c(2, 2), mar = rep(0, 4), oma = rep(0, 4))
+
+image(exampleSSTData, col = colPalette, axes = FALSE)
+mtext(text = "Original SST", side = 3, line = -2, adj = 0.99, cex = 1.2)
+
+image(out_sst, col = colPalette, axes = FALSE)
+mtext(text = "SST gradient", side = 3, line = -2, adj = 0.99, cex = 1.2)
+
+image(exampleChlData, col = colPalette, axes = FALSE)
+mtext(text = "Original Chlorophyll", side = 3, line = -2, adj = 0.99, cex = 1.2)
+
+image(out_chl, col = colPalette, axes = FALSE)
+mtext(text = "Chlorophyll gradient\n(log scale)", side = 3, line = -4, adj = 0.99,
+      cex = 1.2)
+</code></pre>
+
+
+</div>

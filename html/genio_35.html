@@ -1,0 +1,157 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>write_plink</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Write genotype and sample data into a Plink BED/BIM/FAM file set.</h2>
+
+<h3>Description</h3>
+
+<p>This function writes a genotype matrix (<code>X</code>) and its associated locus (<code>bim</code>) and individual (<code>fam</code>) data tables into three Plink files in BED, BIM, and FAM formats, respectively.
+This function is a wrapper around the more basic functions
+<code>write_bed()</code>,
+<code>write_bim()</code>,
+<code>write_fam()</code>,
+but additionally tests that the data dimensions agree (or stops with an error).
+Also checks that the genotype row and column names agree with the bim and fam tables if they are all present.
+In addition, if <code>bim = NULL</code> or <code>fam = NULL</code>, these are auto-generated using
+<code>make_bim()</code> and
+<code>make_fam()</code>,
+which is useful behavior for simulated data.
+Lastly, the phenotype can be provided as a separate argument and incorporated automatically if <code>fam = NULL</code> (a common scenario for simulated genotypes and traits).
+Below suppose there are <code>m</code> loci and <code>n</code> individuals.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">write_plink(
+  file,
+  X,
+  bim = NULL,
+  fam = NULL,
+  pheno = NULL,
+  verbose = TRUE,
+  append = FALSE,
+  write_phen = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>Output file path, without extensions (each of .bed, .bim, .fam extensions will be added automatically as needed).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>The <code>m</code>-by-<code>n</code> genotype matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bim</code></td>
+<td>
+<p>The tibble or data.frame containing locus information.
+It must contain <code>m</code> rows and these columns: <code>chr</code>, <code>id</code>, <code>posg</code>, <code>pos</code>, <code>ref</code>, <code>alt</code>.
+If <code>NULL</code> (default), it will be quietly auto-generated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fam</code></td>
+<td>
+<p>The tibble or data.frame containing individual information.
+It must contain <code>n</code> rows and these columns: <code>fam</code>, <code>id</code>, <code>pat</code>, <code>mat</code>, <code>sex</code>, <code>pheno</code>.
+If <code>NULL</code> (default), it will be quietly auto-generated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pheno</code></td>
+<td>
+<p>The phenotype to write into the FAM file assuming <code>fam = NULL</code>.
+This must be a length-<code>n</code> vector.
+This will be ignored (with a warning) if <code>fam</code> is provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>If <code>TRUE</code> (default) function reports the paths of the files being written (after autocompleting the extensions).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>append</code></td>
+<td>
+<p>If <code>TRUE</code>, appends loci onto the BED and BIM files (default <code>FALSE</code>).
+In this mode, all individuals must be present in each write (only loci are appended); the FAM file is not overwritten if present, but is required at every write for internal validations.
+If the FAM file already exists, it is not checked to agree with the FAM table provided.
+PHEN file is always unchanged and ignored if <code>append = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>write_phen</code></td>
+<td>
+<p>If <code>TRUE</code> and <code>append = FALSE</code>, writes a .phen file too from the <code>fam</code> data provided or auto-generated (using <code>write_phen()</code>).
+Default <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Invisibly, a named list with items in this order: <code>X</code> (genotype matrix), <code>bim</code> (tibble), <code>fam</code> (tibble).
+This is most useful when either BIM or FAM tables were auto-generated.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>write_bed()</code>,
+<code>write_bim()</code>,
+<code>write_fam()</code>,
+<code>make_bim()</code>,
+<code>make_fam()</code>.
+</p>
+<p>Plink BED/BIM/FAM format reference:
+<a href="https://www.cog-genomics.org/plink/1.9/formats">https://www.cog-genomics.org/plink/1.9/formats</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># to write existing data `X`, `bim`, `fam` into files "data.bed", "data.bim", and "data.fam",
+# run like this:
+# write_plink("data", X, bim = bim, fam = fam)
+
+# The following example is more detailed but also more awkward
+# because (only for these examples) the package must create the file in a *temporary* location
+
+# here is an example for a simulation
+
+# create 10 random genotypes
+X &lt;- rbinom(10, 2, 0.5)
+# replace 3 random genotypes with missing values
+X[sample(10, 3)] &lt;- NA
+# turn into 5x2 matrix
+X &lt;- matrix(X, nrow = 5, ncol = 2)
+
+# simulate a trait for two individuals
+pheno &lt;- rnorm(2)
+
+# write this data to BED/BIM/FAM files
+# output path without extension
+file_out &lt;- tempfile('delete-me-example')
+# here all of the BIM and FAM columns except `pheno` are autogenerated
+write_plink(file_out, X, pheno = pheno)
+
+# delete all three outputs when done
+delete_files_plink( file_out )
+
+</code></pre>
+
+
+</div>

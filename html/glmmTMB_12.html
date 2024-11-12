@@ -1,0 +1,189 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>confint.glmmTMB</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate confidence intervals</h2>
+
+<h3>Description</h3>
+
+<p>Calculate confidence intervals
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'glmmTMB'
+confint(
+  object,
+  parm = NULL,
+  level = 0.95,
+  method = c("wald", "Wald", "profile", "uniroot"),
+  component = c("all", "cond", "zi", "other"),
+  estimate = TRUE,
+  include_nonest = FALSE,
+  parallel = c("no", "multicore", "snow"),
+  ncpus = getOption("profile.ncpus", 1L),
+  cl = NULL,
+  full = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p><code>glmmTMB</code> fitted object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parm</code></td>
+<td>
+<p>which parameters to profile, specified
+</p>
+
+<ul>
+<li>
+<p> by index (position) [<em>after</em> component selection for <code>confint</code>, if any]
+</p>
+</li>
+<li>
+<p> by name (matching the row/column names of <code>vcov(object,full=TRUE)</code>)
+</p>
+</li>
+<li>
+<p> as <code>"theta_"</code> (random-effects variance-covariance parameters), <code>"beta_"</code> (conditional and zero-inflation parameters), or <code>"disp_"</code> or <code>"sigma"</code> (dispersion parameters)
+</p>
+</li>
+</ul>
+<p>Parameter indexing by number may give unusual results when
+some parameters have been fixed using the <code>map</code> argument:
+please report surprises to the package maintainers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>Confidence level.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>'wald', 'profile', or 'uniroot': see Details
+function)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>component</code></td>
+<td>
+<p>Which of the three components 'cond', 'zi' or
+'other' to select. Default is to select 'all'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimate</code></td>
+<td>
+<p>(logical) add a third column with estimate ?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include_nonest</code></td>
+<td>
+<p>include dummy rows for non-estimated (mapped, rank-deficient) parameters?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>method (if any) for parallel computation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncpus</code></td>
+<td>
+<p>number of CPUs/cores to use for parallel computation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl</code></td>
+<td>
+<p>cluster to use for parallel computation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>full</code></td>
+<td>
+<p>CIs for all parameters (including dispersion) ?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments may be passed to <code>profile.glmmTMB</code> (and possibly from there to <code>tmbprofile</code>) or
+<code>tmbroot</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Available methods are
+</p>
+
+<dl>
+<dt>"wald"</dt>
+<dd>
+<p>These intervals are based on the standard errors
+calculated for parameters on the scale
+of their internal parameterization depending on the family. Derived
+quantities such as standard deviation parameters and dispersion
+parameters are back-transformed. It follows that confidence
+intervals for these derived quantities are typically asymmetric.</p>
+</dd>
+<dt>"profile"</dt>
+<dd>
+<p>This method computes a likelihood profile
+for the specified parameter(s) using <code>profile.glmmTMB</code>;
+fits a spline function to each half of the profile; and
+inverts the function to find the specified confidence interval.</p>
+</dd>
+<dt>"uniroot"</dt>
+<dd>
+<p>This method uses the <code>uniroot</code>
+function to find critical values of one-dimensional profile
+functions for each specified parameter.</p>
+</dd>
+</dl>
+<p>At present, "wald" returns confidence intervals for variance
+parameters on the standard deviation/correlation scale, while
+"profile" and "uniroot" report them on the underlying ("theta")
+scale: for each random effect, the first set of parameter values
+are standard deviations on the log scale, while remaining parameters
+represent correlations on the scaled Cholesky scale. For a random
+effects model with two elements (such as a random-slopes model,
+or a random effect of factor with two levels), there is a single
+correlation parameter <code class="reqn">\theta</code>; the correlation is
+equal to <code class="reqn">\rho = \theta/\sqrt{1+\theta^2}</code>.
+For random-effects terms with more than two elements, the mapping
+is more complicated: see https://github.com/glmmTMB/glmmTMB/blob/master/misc/glmmTMB_corcalcs.ipynb
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(sleepstudy, package="lme4")
+model &lt;- glmmTMB(Reaction ~ Days + (1|Subject), sleepstudy)
+model2 &lt;- glmmTMB(Reaction ~ Days + (1|Subject), sleepstudy,
+    dispformula= ~I(Days&gt;8))
+confint(model)  ## Wald/delta-method CIs
+confint(model,parm="theta_")  ## Wald/delta-method CIs
+confint(model,parm=1,method="profile")
+</code></pre>
+
+
+</div>

@@ -1,0 +1,154 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GrammarGetNextSequence</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Grammar Iterator</h2>
+
+<h3>Description</h3>
+
+ 
+<p>Iterates through grammar's valid sequences.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">
+GrammarGetFirstSequence(grammar, 
+            seqStart = NULL, 
+            startSymb = GrammarStartSymbol(grammar),
+            max.depth = GrammarGetDepth(grammar),
+            max.len = GrammarMaxSequenceLen(grammar, max.depth, startSymb))
+
+GrammarGetNextSequence(grammar, 
+            seqStart = NULL, 
+            startSymb = GrammarStartSymbol(grammar),
+            max.depth = GrammarGetDepth(grammar),
+            max.len = GrammarMaxSequenceLen(grammar, max.depth, startSymb))
+  
+is.GrammarOverflow(object)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>grammar</code></td>
+<td>
+
+<p>A <code>grammar</code> object.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seqStart</code></td>
+<td>
+
+<p>The sequence to be incremented. 
+For a value of <code>NULL</code>, the first sequence is returned.
+Partial sequences are completed and returned.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startSymb</code></td>
+<td>
+
+<p>The non-terminal symbol where the generation of a new expression should start.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.depth</code></td>
+<td>
+
+<p>Maximum depth of recursion, in case of a cyclic grammar.
+By default it is limited to the number of production rules in the grammar.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.len</code></td>
+<td>
+
+<p>Maximum length of sequence to return. Used to avoid recursion.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+
+<p>An object to be tested.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+<p><code>GrammarGetFirstSequence</code> returns the first sequence that creates a valid expression
+with the given <code>grammar</code> object.
+<code>GrammarGetNextSequence</code> allows iterating through all valid sequences in a grammar.
+If a <code>seqStart = NULL</code> is used, <code>GrammarGetFirstSequence</code> is called to 
+and the first sequence in the grammar is returned.
+Calling <code>GrammarGetNextSequence</code> or <code>GrammarGetFirstSequence</code> with an incomplete
+sequence returns a full-length sequence starting with the given <code>seqStart</code>.
+</p>
+<p>When <code>GrammarGetNextSequence</code> reaches the last of all valid sequences, it returns
+a <code>GrammarOverflow</code> object. This object can be identified using <code>is.GrammarOverflow</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>GrammarGetFirstSequence</code> returns a numeric vector representing the first sequence of the grammar.
+</p>
+<p><code>GrammarGetNextSequence</code> returns a numeric vector or a <code>GrammarOverflow</code> object.
+</p>
+<p><code>is.GrammarOverflow</code> returns TRUE if <code>object</code> is a <code>GrammarOverflow</code>, otherwise FALSE.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GrammaticalExhaustiveSearch</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Define a simple grammar
+# &lt;expr&gt; ::= &lt;var&gt;&lt;op&gt;&lt;var&gt;
+# &lt;op&gt;   ::= + | - | *
+# &lt;var&gt;  ::= A | B
+ruleDef &lt;- list(expr = gsrule("&lt;var&gt;&lt;op&gt;&lt;var&gt;"),
+                op   = gsrule("+", "-", "*"),
+                var  = gsrule("A", "B"))
+
+# Create a grammar object
+grammarDef &lt;- CreateGrammar(ruleDef)			   
+
+# Iterate and print all valid sequence and expressions
+string &lt;- NULL
+while (TRUE) {
+  string &lt;- GrammarGetNextSequence(grammarDef, string)
+
+  if (is.GrammarOverflow(string)) {
+    break
+  }
+
+  expr &lt;- GrammarMap(string, grammarDef)
+  cat(string, " -&gt; ", as.character(expr), "\n")
+}
+
+# test a partial string
+GrammarGetNextSequence(grammarDef, c(0, 0, 2))
+
+</code></pre>
+
+
+</div>

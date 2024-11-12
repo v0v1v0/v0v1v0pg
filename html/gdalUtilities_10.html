@@ -1,0 +1,178 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gdal_grid</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Interface to GDAL's gdal_grid utility</h2>
+
+<h3>Description</h3>
+
+<p>This function provides an interface mirroring that of the GDAL
+command-line app <code>gdal_grid</code>. For a description of the
+utility and the arguments that it takes, see the documentation at
+<a href="https://gdal.org/programs/gdal_grid.html">https://gdal.org/programs/gdal_grid.html</a>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gdal_grid(
+  src_datasource,
+  dst_filename,
+  ...,
+  ot,
+  of,
+  txe,
+  tye,
+  tr,
+  outsize,
+  a_srs,
+  zfield,
+  z_increase,
+  z_multiply,
+  a,
+  spat,
+  clipsrc,
+  clipsrcsql,
+  clipsrclayer,
+  clipsrcwhere,
+  l,
+  where,
+  sql,
+  co,
+  q,
+  config_options = character(0),
+  dryrun = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>src_datasource</code></td>
+<td>
+<p>Character. Path to a GDAL-supported readable
+datasource.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dst_filename</code></td>
+<td>
+<p>Character. Path to a GDAL-supported output
+file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Here, a placeholder argument that forces users to
+supply exact names of all subsequent formal arguments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ot, of, txe, tye, tr, outsize, a_srs, zfield, z_increase, z_multiply</code></td>
+<td>
+<p>See the GDAL project's
+<a href="https://gdal.org/programs/gdal_grid.html">gdal_grid
+documentation</a> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a, spat, clipsrc, clipsrcsql, clipsrclayer, clipsrcwhere</code></td>
+<td>
+<p>See the
+GDAL project's
+<a href="https://gdal.org/programs/gdal_grid.html">gdal_grid
+documentation</a> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>l, where, sql, co, q</code></td>
+<td>
+<p>See the GDAL project's
+<a href="https://gdal.org/programs/gdal_grid.html">gdal_grid
+documentation</a> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>config_options</code></td>
+<td>
+<p>A named character vector with GDAL config
+options, of the form <code>c(option1=value1, option2=value2)</code>. (See
+<a href="https://gdal.org/user/configoptions.html">here</a> for a
+complete list of supported config options.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dryrun</code></td>
+<td>
+<p>Logical (default <code>FALSE</code>). If <code>TRUE</code>,
+instead of executing the requested call to GDAL, the function
+will print the command-line call that would produce the
+equivalent output.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Silently returns path to <code>dst_filename</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Joshua O'Brien
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Set up file paths
+td &lt;- tempdir()
+dem_file &lt;- file.path(td, "dem.csv")
+vrt_header_file &lt;- file.path(td, "tmp.vrt")
+out_raster &lt;- file.path(td, "tmp.tiff")
+
+## Create file of points with x-, y-, and z-coordinates
+pts &lt;-
+    data.frame(Easting = c(86943.4, 87124.3, 86962.4, 87077.6),
+               Northing = c(891957, 892075, 892321, 891995),
+               Elevation = c(139.13, 135.01, 182.04, 135.01))
+write.csv(pts, file = dem_file, row.names = FALSE)
+
+## Prepare a matching VRT file
+vrt_header &lt;- c(
+'&lt;OGRVRTDataSource&gt;',
+'  &lt;OGRVRTLayer name="dem"&gt;',
+paste0('    &lt;SrcDataSource&gt;',dem_file,'&lt;/SrcDataSource&gt;'),
+'    &lt;GeometryType&gt;wkbPoint&lt;/GeometryType&gt;',
+'    &lt;GeometryField encoding="PointFromColumns" x="Easting" y="Northing" z="Elevation"/&gt;',
+'  &lt;/OGRVRTLayer&gt;',
+'&lt;/OGRVRTDataSource&gt;'
+)
+cat(vrt_header, file = vrt_header_file, sep = "\n")
+
+## Test it out
+gdal_grid(src_datasource = vrt_header_file,
+          dst_filename = out_raster,
+          a = "invdist:power=2.0:smoothing=1.0",
+          txe = c(85000, 89000), tye = c(894000, 890000),
+          outsize = c(400, 400),
+          of = "GTiff", ot = "Float64", l = "dem")
+
+## Check that it works
+if(requireNamespace("terra", quietly = TRUE)) {
+    library(terra)
+    plot(rast(out_raster))
+    text(Northing ~ Easting, data = pts,
+         labels = seq_len(nrow(pts)), cex = 0.7)
+}
+
+</code></pre>
+
+
+</div>

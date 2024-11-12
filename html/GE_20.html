@@ -1,0 +1,345 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemAssetPricing_PUF</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute Asset Market Equilibria with Portfolio Utility Functions for Some Simple Cases</h2>
+
+<h3>Description</h3>
+
+<p>Compute the equilibrium of an asset market by the function sdm2 and by computing marginal utility of assets.
+The argument of the utility function used in the calculation is the asset vector (i.e. portfolio).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemAssetPricing_PUF(S, uf, numeraire = nrow(S), ratio_adjust_coef = 0.1, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>S</code></td>
+<td>
+<p>an n-by-m supply matrix of assets.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>uf</code></td>
+<td>
+<p>a portfolio utility function or a list of m portfolio utility functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numeraire</code></td>
+<td>
+<p>the index of the numeraire commodity.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ratio_adjust_coef</code></td>
+<td>
+<p>a scalar indicating the adjustment velocity of demand structure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A general equilibrium containing a value marginal utility matrix (VMU).
+</p>
+
+
+<h3>References</h3>
+
+<p>Danthine, J. P., Donaldson, J. (2005, ISBN: 9780123693808) Intermediate Financial Theory. Elsevier Academic Press.
+</p>
+<p>Sharpe, William F. (2008, ISBN: 9780691138503) Investors and Markets: Portfolio Choices, Asset Prices, and Investment Advice. Princeton University Press.
+</p>
+<p>https://web.stanford.edu/~wfsharpe/apsim/index.html
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gemAssetPricing_CUF</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### an example of Danthine and Donaldson (2005, section 8.3).
+ge &lt;- gemAssetPricing_PUF(
+  S = matrix(c(
+    10, 5,
+    1, 4,
+    2, 6
+  ), 3, 2, TRUE),
+  uf = function(x) 0.5 * x[1] + 0.9 * (1 / 3 * log(x[2]) + 2 / 3 * log(x[3])),
+  maxIteration = 1,
+  numberOfPeriods = 500,
+  ts = TRUE
+)
+matplot(ge$ts.p, type = "l")
+ge$p
+
+#### an example of Sharpe (2008, chapter 2, case 1)
+asset1 &lt;- c(1, 0, 0, 0, 0)
+asset2 &lt;- c(0, 1, 1, 1, 1)
+asset3 &lt;- c(0, 5, 3, 8, 4) - 3 * asset2
+asset4 &lt;- c(0, 3, 5, 4, 8) - 3 * asset2
+# the unit asset payoff matrix
+UAP &lt;- cbind(asset1, asset2, asset3, asset4)
+
+prob &lt;- c(0.15, 0.25, 0.25, 0.35)
+wt &lt;- prop.table(c(1, 0.96 * prob)) # weights
+
+ge &lt;- gemAssetPricing_PUF(
+  S = matrix(c(
+    49, 49,
+    30, 30,
+    10, 0,
+    0, 10
+  ), 4, 2, TRUE),
+  uf = list(
+    function(portfolio) CES(alpha = 1, beta = wt, x = UAP %*% portfolio, es = 1 / 1.5),
+    function(portfolio) CES(alpha = 1, beta = wt, x = UAP %*% portfolio, es = 1 / 2.5)
+  ),
+  maxIteration = 1,
+  numberOfPeriods = 1000,
+  numeraire = 1,
+  ts = TRUE
+)
+matplot(ge$ts.p, type = "l")
+ge$p
+ge$p[3:4] + 3 * ge$p[2]
+
+#### a 3-by-2 example of asset pricing with two heterogeneous agents who
+## have different beliefs and predict different payoff vectors.
+## the predicted payoff vectors of agent 1 on the two assets.
+asset1.1 &lt;- c(1, 2, 2, 0)
+asset2.1 &lt;- c(2, 2, 0, 2)
+
+## the predicted payoff vectors of agent 2 on the two assets.
+asset1.2 &lt;- c(1, 0, 2, 0)
+asset2.2 &lt;- c(2, 1, 0, 2)
+
+asset3 &lt;- c(1, 1, 1, 1)
+
+## the unit asset payoff matrix of agent 1.
+UAP1 &lt;- cbind(asset1.1, asset2.1, asset3)
+
+## the unit asset payoff matrix of agent 2.
+UAP2 &lt;- cbind(asset1.2, asset2.2, asset3)
+
+mp1 &lt;- colMeans(UAP1)
+Cov1 &lt;- cov.wt(UAP1, method = "ML")$cov
+
+mp2 &lt;- colMeans(UAP2)
+Cov2 &lt;- cov.wt(UAP2, method = "ML")$cov
+
+ge &lt;- gemAssetPricing_PUF(
+  S = matrix(c(
+    1, 5,
+    2, 5,
+    3, 5
+  ), 3, 2, TRUE),
+  uf = list(
+    # the utility function of agent 1.
+    function(x) AMSDP(x, mp1, Cov1, gamma = 0.2, theta = 2),
+    function(x) AMSDP(x, mp2, Cov2) # the utility function of agent 2
+  ),
+  maxIteration = 1,
+  numberOfPeriods = 1000,
+  ts = TRUE
+)
+matplot(ge$ts.p, type = "l")
+ge$p
+ge$VMU
+
+#### another 3-by-2 example.
+asset1.1 &lt;- c(0, 0, 1, 1, 2)
+asset2.1 &lt;- c(1, 2, 1, 2, 0)
+asset3.1 &lt;- c(1, 1, 1, 1, 1)
+
+asset1.2 &lt;- c(0, 0, 1, 2)
+asset2.2 &lt;- c(1, 2, 2, 1)
+asset3.2 &lt;- c(1, 1, 1, 1)
+
+## the unit asset payoff matrix of agent 1.
+UAP1 &lt;- cbind(asset1.1, asset2.1, asset3.1)
+
+## the unit asset payoff matrix of agent 2.
+UAP2 &lt;- cbind(asset1.2, asset2.2, asset3.2)
+
+mp1 &lt;- colMeans(UAP1)
+Cov1 &lt;- cov.wt(UAP1, method = "ML")$cov
+
+mp2 &lt;- colMeans(UAP2)
+Cov2 &lt;- cov.wt(UAP2, method = "ML")$cov
+
+ge &lt;- gemAssetPricing_PUF(
+  S = matrix(c(
+    1, 5,
+    2, 5,
+    3, 5
+  ), 3, 2, TRUE),
+  uf = list(
+    function(x) AMSDP(x, mp1, Cov1), # the utility function of agent 1.
+    function(x) AMSDP(x, mp2, Cov2) # the utility function of agent 2.
+  ),
+  maxIteration = 1,
+  numberOfPeriods = 3000,
+  ts = TRUE
+)
+
+ge$p
+ge$D
+
+#### a 5-by-3 example.
+set.seed(1)
+n &lt;- 5 # the number of asset types
+m &lt;- 3 # the number of agents
+Supply &lt;- matrix(runif(n * m, 10, 100), n, m)
+
+# the risk aversion coefficients of agents.
+gamma &lt;- runif(m, 0.25, 1)
+
+# the predicted mean payoffs, which may be gross return rates, price indices or prices.
+PMP &lt;- matrix(runif(n * m, min = 0.8, max = 1.5), n, m)
+
+# the predicted standard deviations of payoffs.
+PSD &lt;- matrix(runif(n * m, min = 0.01, max = 0.2), n, m)
+PSD[n, ] &lt;- 0
+
+# Suppose the predicted payoff correlation matrices of agents are the same.
+Cor &lt;- cor(matrix(runif(2 * n^2), 2 * n, n))
+Cor[, n] &lt;- Cor[n, ] &lt;- 0
+Cor[n, n] &lt;- 1
+
+# the list of utility functions.
+lst.uf &lt;- list()
+
+make.uf &lt;- function(mp, Cov, gamma) {
+  force(mp)
+  force(Cov)
+  force(gamma)
+  function(x) {
+    AMSDP(x, mp = mp, Cov = Cov, gamma = gamma, theta = 1)
+  }
+}
+
+for (k in 1:m) {
+  sigma &lt;- PSD[, k]
+  if (is.matrix(Cor)) {
+    Cov &lt;- dg(sigma) %*% Cor %*% dg(sigma)
+  } else {
+    Cov &lt;- dg(sigma) %*% Cor[[k]] %*% dg(sigma)
+  }
+
+  lst.uf[[k]] &lt;- make.uf(mp = PMP[, k], Cov = Cov, gamma = gamma[k])
+}
+
+ge &lt;- gemAssetPricing_PUF(
+  S = Supply, uf = lst.uf,
+  priceAdjustmentVelocity = 0.05,
+  policy = makePolicyMeanValue(100),
+  ts = TRUE,
+  tolCond = 1e-04
+)
+
+ge$p
+round(addmargins(ge$D, 2), 3)
+round(addmargins(ge$S, 2), 3)
+ge$VMU
+
+#### a 3-by-2 example.
+asset1 &lt;- c(1, 0, 0)
+asset2 &lt;- c(0, 0, 2)
+asset3 &lt;- c(0, 1, 1)
+
+# the unit asset payoff matrix.
+UAP &lt;- cbind(asset1, asset2, asset3)
+wt &lt;- c(0.5, 0.25, 0.25) # weights
+
+uf &lt;- function(portfolio) {
+  payoff &lt;- UAP %*% portfolio
+  prod(payoff^wt)
+}
+
+ge &lt;- gemAssetPricing_PUF(
+  matrix(c(
+    1, 1,
+    1, 0,
+    0, 2
+  ), 3, 2, TRUE),
+  uf = uf,
+  numeraire = 1
+)
+
+ge$p
+ge$z
+ge$A
+addmargins(ge$D, 2)
+addmargins(UAP %*% ge$D, 2)
+ge$VMU
+
+## a price-control stationary state.
+pcss &lt;- gemAssetPricing_PUF(
+  matrix(c(
+    1, 1,
+    1, 0,
+    0, 2
+  ), 3, 2, TRUE),
+  uf = uf,
+  numeraire = 1,
+  pExg = c(1, 2, 1),
+  maxIteration = 1,
+  numberOfPeriods = 300,
+  ts = TRUE
+)
+
+matplot(pcss$ts.q, type = "l")
+tail(pcss$ts.q, 3)
+addmargins(round(pcss$D, 4), 2)
+pcss$VMU
+
+#### a 2-by-2 example with outside position.
+asset1 &lt;- c(1, 0, 0)
+asset2 &lt;- c(0, 1, 1)
+
+# the unit asset payoff matrix
+UAP &lt;- cbind(asset1, asset2)
+wt &lt;- c(0.5, 0.25, 0.25) # weights
+
+uf1 &lt;- function(portfolio) prod((UAP %*% portfolio + c(0, 0, 2))^wt)
+uf2 &lt;- function(portfolio) prod((UAP %*% portfolio)^wt)
+
+ge &lt;- gemAssetPricing_PUF(
+  S = matrix(c(
+    1, 1,
+    0, 2
+  ), 2, 2, TRUE),
+  uf = list(uf1, uf2),
+  numeraire = 1
+)
+
+ge$p
+ge$z
+uf1(ge$D[,1])
+uf2(ge$D[,2])
+
+</code></pre>
+
+
+</div>

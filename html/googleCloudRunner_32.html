@@ -1,0 +1,209 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cr_buildtrigger</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a new BuildTrigger</h2>
+
+<h3>Description</h3>
+
+<p>Build Triggers are a way to have your builds respond to various events, most commonly a git commit or a pubsub event.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cr_buildtrigger(
+  build,
+  name,
+  trigger,
+  description = paste("cr_buildtrigger: ", Sys.time()),
+  disabled = FALSE,
+  substitutions = NULL,
+  ignoredFiles = NULL,
+  includedFiles = NULL,
+  trigger_tags = NULL,
+  projectId = cr_project_get(),
+  sourceToBuild = NULL,
+  overwrite = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>build</code></td>
+<td>
+<p>The build to trigger created via cr_build_make, or the file location of the cloudbuild.yaml within the trigger source</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name</code></td>
+<td>
+<p>User assigned name of the trigger</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trigger</code></td>
+<td>
+<p>The trigger source created via cr_buildtrigger_repo or a pubsub trigger made with cr_buildtrigger_pubsub or a webhook trigger made with cr_buildtrigger_webhook</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>description</code></td>
+<td>
+<p>Human-readable description of this trigger</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>disabled</code></td>
+<td>
+<p>If true, the trigger will never result in a build</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>substitutions</code></td>
+<td>
+<p>A named list of Build macro variables</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ignoredFiles</code></td>
+<td>
+<p>ignored_files and included_files are file glob matches extended with support for "**".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>includedFiles</code></td>
+<td>
+<p>If any of the files altered in the commit pass the ignored_files</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trigger_tags</code></td>
+<td>
+<p>Tags for the buildtrigger listing</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>projectId</code></td>
+<td>
+<p>ID of the project for which to configure automatic builds</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sourceToBuild</code></td>
+<td>
+<p>A cr_buildtrigger_repo object (but no regex allowed for branch or tag)  This field is currently only used by Webhook, Pub/Sub, Manual, and Cron triggers and is the source of the build will execute upon.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>overwrite</code></td>
+<td>
+<p>If TRUE will overwrite an existing trigger with the same name</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Any source specified in the build will be overwritten to use the trigger as a source (GitHub or Cloud Source Repositories)
+</p>
+<p>If you want multiple triggers for a build, then duplicate the build and create another build under a different name but with a different trigger.  Its easier to keep track of.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other BuildTrigger functions: 
+<code>BuildTrigger()</code>,
+<code>GitHubEventsConfig()</code>,
+<code>cr_buildtrigger_copy()</code>,
+<code>cr_buildtrigger_delete()</code>,
+<code>cr_buildtrigger_edit()</code>,
+<code>cr_buildtrigger_get()</code>,
+<code>cr_buildtrigger_list()</code>,
+<code>cr_buildtrigger_pubsub()</code>,
+<code>cr_buildtrigger_repo()</code>,
+<code>cr_buildtrigger_run()</code>,
+<code>cr_buildtrigger_webhook()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">cr_project_set("my-project")
+cr_bucket_set("my-bucket")
+cloudbuild &lt;- system.file("cloudbuild/cloudbuild.yaml",
+  package = "googleCloudRunner"
+)
+bb &lt;- cr_build_make(cloudbuild)
+
+# repo hosted on GitHub
+gh_trigger &lt;- cr_buildtrigger_repo("MarkEdmondson1234/googleCloudRunner")
+
+# repo mirrored to Cloud Source Repositories
+cs_trigger &lt;- cr_buildtrigger_repo("github_markedmondson1234_googlecloudrunner",
+  type = "cloud_source"
+)
+## Not run: 
+# build with in-line build code
+cr_buildtrigger(bb, name = "bt-github-inline", trigger = gh_trigger)
+
+# build with in-line build code using Cloud Source Repository
+cr_buildtrigger(bb, name = "bt-github-inline", trigger = cs_trigger)
+
+# build pointing to cloudbuild.yaml within the GitHub repo
+cr_buildtrigger("inst/cloudbuild/cloudbuild.yaml",
+  name = "bt-github-file", trigger = gh_trigger
+)
+
+# build with repo mirror from file
+cr_buildtrigger("inst/cloudbuild/cloudbuild.yaml",
+  name = "bt-cs-file", trigger = cs_trigger
+)
+
+## End(Not run)
+
+# creating build triggers that respond to pubsub events
+## Not run: 
+# create a pubsub topic either in webUI or via library(googlePubSubR)
+library(googlePubsubR)
+pubsub_auth()
+topics_create("test-topic")
+
+## End(Not run)
+
+# create build trigger that will work from pub/subscription
+pubsub_trigger &lt;- cr_buildtrigger_pubsub("test-topic")
+pubsub_trigger
+## Not run: 
+# create the build trigger with in-line build
+cr_buildtrigger(bb, name = "pubsub-triggered", trigger = pubsub_trigger)
+# create scheduler that calls the pub/sub topic
+
+cr_schedule("cloud-build-pubsub",
+  "15 5 * * *",
+  pubsubTarget = cr_schedule_pubsub("test-topic")
+)
+
+## End(Not run)
+
+# create a pubsub trigger that uses github as a source of code to build upon
+gh &lt;- cr_buildtrigger_repo("MarkEdmondson1234/googleCloudRunner")
+blist &lt;- cr_build_make(cr_build_yaml(cr_buildstep_r('list.files()')))
+
+## Not run: 
+cr_buildtrigger(blist,
+                name = "pubsub-triggered-github-source",
+                trigger = pubsub_trigger,
+                sourceToBuild = gh)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,174 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GLDreg-package</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+This package fits standard and quantile and accerlerated Failure Time regression 
+models using RS and FMKL/FKML generalised lambda distributions via maximum 
+likelihood estimation and L moment 
+matching.
+</h2>
+
+<h3>Description</h3>
+
+<p>Owing to the rich shapes of GLDs, GLD standard/quantile regression is a 
+competitive flexible model compared to standard/quantile regression. The 
+proposed method has some major advantages: 1) it provides a reference line which 
+is very robust to outliers with the attractive property of zero mean residuals 
+and 2) it gives a unified, elegant quantile regression model from the reference 
+line with smooth regression coefficients across different quantiles. The 
+goodness of fit of the proposed model can be assessed via QQ plots and 
+Kolmogorov-Smirnov tests and Data Driven Smooth Test, to ensure the 
+appropriateness of the statistical inference under consideration. Statistical 
+distributions of coefficients of the GLD regression line are obtained using 
+simulation, and interval estimates are obtained directly from simulated data. 
+</p>
+
+
+<h3>Details</h3>
+
+
+<table>
+<tr>
+<td style="text-align: left;">
+Package: </td>
+<td style="text-align: left;"> GLDreg</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+Type: </td>
+<td style="text-align: left;"> Package</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+Version: </td>
+<td style="text-align: left;"> 1.1.1</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+Date: </td>
+<td style="text-align: left;"> 2024-01-23</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+License: </td>
+<td style="text-align: left;"> CC BY-NC-SA 4.0 </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+</tr>
+</table>
+<p>The primary fitting function for GLD regression model is
+<code>GLD.lm.full</code>. The output of <code>GLD.lm.full</code> can then be
+passed to <code>summaryGraphics.gld.lm</code> to display coefficients of GLD
+regression model graphically. Once a GLD reference model is obtained,  
+quantile regression is obtained using <code>GLD.quantreg</code>.
+</p>
+<p>The corresponding fitting algorithms for survival data are 
+<code>GLD.lm.full.surv</code> which can then be passed to 
+<code>summaryGraphics.gld.surv.lm</code> to display coefficients of GLD
+regression model graphically.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Steve Su &lt;allegro.su@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Su, S. (2015) "Flexible Parametric Quantile Regression Model" Statistics &amp;
+Computing 25 (3). 635-650. doi:10.1007/s11222-014-9457-1   
+</p>
+<p>Su S. (2021) "Flexible parametric accelerated failure time model" J Biopharm Stat. 
+2021 Sep 31(5):650-667. doi:10.1080/10543406.2021.1934854
+</p>
+
+
+<h3>See Also</h3>
+
+<p><span class="pkg">GLDEX</span>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Dummy example
+
+## Create dataset
+
+set.seed(10)
+
+x&lt;-rnorm(200,3,2)
+y&lt;-3*x+rnorm(200)
+
+dat&lt;-data.frame(y,x)
+
+## Fit a FKML GLD regression
+
+example&lt;-GLD.lm(y~x,data=dat,fun=fun.RMFMKL.ml.m,param="fkml")
+
+## Fit FKML GLD regression with 3 simulations
+
+fit&lt;-GLD.lm.full(y~x,data=dat,fun=fun.RMFMKL.ml.m,param="fkml",n.simu=3)
+
+## Find median regression, use empirical method
+
+med.fit&lt;-GLD.quantreg(0.5,fit,slope="fixed",emp=TRUE)
+
+## Not run: 
+
+## Extract the Engel dataset 
+
+library(quantreg)
+data(engel)
+
+## Fit GLD Regression along with simulations
+
+engel.fit.all&lt;-GLD.lm.full(foodexp~income,data=engel,
+param="fmkl",fun=fun.RMFMKL.ml.m)
+
+## Plot coefficient summary
+
+summaryGraphics.gld.lm(engel.fit.all)
+
+## Fit quantile regression from 0.1 to 0.9, with equal spacings between 
+## quantiles
+
+result&lt;-GLD.quantreg(seq(0.1,.9,length=9),engel.fit.all,intercept="fixed")
+
+## Plot quantile regression lines
+
+fun.plot.q(x=engel$income,y=engel$foodexp,fit=engel.fit.all[[1]],result,
+xlab="income",ylab="Food Expense")
+
+## Sometimes the maximum likelihood estimation may fail, for example when 
+## minimum/maximum support of GLD is exactly at the minimum/maximum value of the 
+## dataset, if this the case, try to use the L-moment matching method.
+
+engel.fit.all&lt;-GLD.lm.full(foodexp~income,data=engel,
+param="fmkl",fun=fun.RMFMKL.lm)
+
+## Fit Accelerated Failure Time model to actg data:
+
+actg.rs&lt;-GLD.lm.full.surv(log(time)~factor(txgrp)+hemophil+cd4+priorzdv+age,
+censoring=actg[which(actg$txgrp!=3 &amp; actg$txgrp!=4),]$censor, 
+data=actg[which(actg$txgrp!=3 &amp; actg$txgrp!=4),],
+param="rs",fun=fun.RPRS.ml.m,summary.plot=F,n.simu=1000)
+
+summaryGraphics.gld.surv.lm(actg.rs,label=c("(Intercept)",
+"IDV versus no IDV","Hemophiliac","Baseline CD4",
+"Months of prior \n ZDV use","Age"),exp="TRUE")
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

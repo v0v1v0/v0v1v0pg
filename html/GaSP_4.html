@@ -1,0 +1,326 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Fit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a GaSP model.</h2>
+
+<h3>Description</h3>
+
+<p>Fit (train) a GaSP model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">Fit(
+  x,
+  y,
+  reg_model,
+  sp_model = NULL,
+  cor_family = c("PowerExponential", "Matern"),
+  cor_par = data.frame(0),
+  random_error = c(FALSE, TRUE),
+  sp_var = -1,
+  error_var = -1,
+  nugget = 1e-09,
+  tries = 10,
+  seed = 500,
+  fit_objective = c("Likelihood", "Posterior"),
+  theta_standardized_min = 0,
+  theta_standardized_max = .Machine$double.xmax,
+  alpha_min = 0,
+  alpha_max = 1,
+  derivatives_min = 0,
+  derivatives_max = 3,
+  log_obj_tol = 1e-05,
+  log_obj_diff = 0,
+  lambda_prior = 0.1,
+  model_comparison = c("Objective", "CV")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A data frame containing the input (explanatory variable) training data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A vector or a data frame with one column
+containing the output (response) training data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reg_model</code></td>
+<td>
+<p>The regression model, specified as a formula,
+but note the left-hand side of the formula is unused; see example.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sp_model</code></td>
+<td>
+<p>An optional stochastic process model, specified as a formula,
+but note the left-hand side of the formula and the intercept are unused.
+The default <code>NULL</code> uses all column names in <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cor_family</code></td>
+<td>
+<p>A character string specifying the
+(product, anisoptropic) correlation-function family:
+"PowerExponential" for the power-exponential family
+or "Matern" for the Matern family.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cor_par</code></td>
+<td>
+<p>An optional data frame containing the correlation parameters
+with one row per <code>sp_model</code> term and two columns set up as
+described in <code>GaSPModel</code> Details;
+only used to start the first objective optimization (see Details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>random_error</code></td>
+<td>
+<p>A boolean for the presence or not of a
+random (measurement, white-noise) error term.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sp_var, error_var</code></td>
+<td>
+<p>Starting values of the stochastic process and error variances
+for the first try to optimize the objective (see Details);
+valid (i.e., nonnegative) values will only be used if <code>random_error = TRUE</code>.
+The invalid default value of -1 indicates that a starting value
+will be chosen by <code>Fit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nugget</code></td>
+<td>
+<p>For numerical stability the proportion of the total variance
+due to random error is fixed at this value (<code>random_error = FALSE</code>) or
+bounded below by it (<code>random_error = TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tries</code></td>
+<td>
+<p>Number of optimizations of the objective from different random
+starting points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>The random-number seed to generate starting points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit_objective</code></td>
+<td>
+<p>The objective that <code>Fit</code> attempts to optimize:
+"Likelihood" (maximum likelihood estimation)
+or "Posterior" (Bayesian maximum a posteriori estimation).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta_standardized_min, theta_standardized_max</code></td>
+<td>
+<p>The minimum and maximum of the standardized <code class="reqn">\theta</code> parameter (see Details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha_min, alpha_max</code></td>
+<td>
+<p>The minimum and maximum
+of the <code class="reqn">\alpha</code> parameter of power-exponential.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>derivatives_min, derivatives_max</code></td>
+<td>
+<p>The minimum and maximum
+of the <code class="reqn">\delta</code> parameter of Matern.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log_obj_tol</code></td>
+<td>
+<p>An absolute tolerance for terminating the optimization
+of the log of the objective.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log_obj_diff</code></td>
+<td>
+<p>The critical value for the change in the log objective
+for informal tests during optimization of correlation parameters.
+No testing is done with the default of 0;
+a larger critical value such as 2 may give a more parsimonious model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda_prior</code></td>
+<td>
+<p>The rate parameter of an exponential prior
+for each <code class="reqn">\theta</code> parameter;
+used only if <code>fit_objective = "Posterior"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model_comparison</code></td>
+<td>
+<p>The criterion used to select from multiple solutions
+when <code>tries</code><code class="reqn"> &gt; 1</code>: the objective function ("Objective")
+or leave-one-out cross validation ("CV").</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Fit numerically optimizes the profile objective function
+with respect to the correlation parameters;
+the mean and overall variance parameters are estimated in closed form
+given the correlation parameters.
+</p>
+<p>A <code>cor_par</code> data frame supplied by the user is the starting point
+for the first optimization try.
+If <code>random_error = TRUE</code>,
+then <code>sp_var</code> / (<code>sp_var</code> + <code>error_var</code>) is another
+correlation parameter to be optimized;
+<code>sp_var</code> and <code>error_var</code> values supplied by the user
+will initialize this parameter for the first try.
+</p>
+<p>Set <code>random_error = TRUE</code> to estimate the variance of the
+random (measurement, white-noise) error;
+a small <code>nugget</code> error variance is for numerical stability.
+</p>
+<p>For term <code class="reqn">j</code> in the stochastic-process model,
+the estimate of <code class="reqn">\theta_j</code> is constrained between
+<code>theta_standardized_min</code> / <code class="reqn">r_j^2</code> and
+<code>theta_standardized_max</code> / <code class="reqn">r_j^2</code>,
+where <code class="reqn">r_j</code> is the range of term <code class="reqn">j</code>.
+Note that <code>Fit</code> returns unscaled estimates relating to the original, unscaled inputs.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>GaSPModel</code> object, which is a list with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>The data frame containing the input training data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The training output data, now as a vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reg_model</code></td>
+<td>
+<p>The regression model, now in the form of a data frame.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sp_model</code></td>
+<td>
+<p>The stochastic process model, now in the form of a data frame.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cor_family</code></td>
+<td>
+<p>The correlation family.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cor_par</code></td>
+<td>
+<p>A data frame for the estimated correlation parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>random_error</code></td>
+<td>
+<p>The boolean for the presence or not of a random error term.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sp_var</code></td>
+<td>
+<p>The estimated stochastic process variance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>error_var</code></td>
+<td>
+<p>The estimated random error variance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>A data frame holding the estimated regression-model parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>objective</code></td>
+<td>
+<p>The maximum value found for the objective function:
+the log likelihood (fit_objective = "Likelihood")
+or the log posterior (fit_objective = "Posterior").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cond_num</code></td>
+<td>
+<p>The condition number.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CVRMSE</code></td>
+<td>
+<p>The leave-one-out cross-validation root mean squared error.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Sacks, J., Welch, W.J., Mitchell, T.J., and Wynn, H.P. (1989)
+"Design and Analysis of Computer Experiments", <em>Statistical Science</em>, 4, pp. 409-423,
+doi:10.1214/ss/1177012413.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">x &lt;- borehole$x
+y &lt;- borehole$y
+borehole_fit &lt;- Fit(
+  reg_model = ~1, x = x, y = y, cor_family = "Matern",
+  random_error = FALSE, nugget = 0, fit_objective = "Posterior"
+)
+</code></pre>
+
+
+</div>

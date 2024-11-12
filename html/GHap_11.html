@@ -1,0 +1,156 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ghap.compress</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Compress phased genotype data
+</h2>
+
+<h3>Description</h3>
+
+<p>This function takes phased genotype data and converts them into a compressed binary format.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  ghap.compress(input.file = NULL, out.file,
+                samples.file = NULL, markers.file = NULL,
+                phase.file = NULL, batchsize = NULL,
+                ncores = 1, verbose = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<p>If all input files share the same prefix, the user can use the following shortcut options:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>input.file</code></td>
+<td>
+
+<p>Prefix for input files.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>out.file</code></td>
+<td>
+
+<p>Output file name.
+</p>
+</td>
+</tr>
+</table>
+<p>For backward compatibility, the user can still point to input files separately:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>samples.file</code></td>
+<td>
+
+<p>Individual information.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>markers.file</code></td>
+<td>
+
+<p>Variant map information.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>phase.file</code></td>
+<td>
+
+<p>Phased genotype matrix.
+</p>
+</td>
+</tr>
+</table>
+<p>To turn compression progress-tracking on or off, or to control parallelization of the task please use:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>batchsize</code></td>
+<td>
+
+<p>A numeric value controlling the number of markers to be compressed and written to output at a time (default = nmarkers/10).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+
+<p>A numeric value specifying the number of cores to be used in parallel computing (default = 1).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>A logical value specfying whether log messages should be printed (default = TRUE).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The supported input format is composed of three files with suffix:
+</p>
+
+<ul>
+<li> <p><strong>.samples</strong>: space-delimited file without header containing two mandatory columns: Population and ID. Please notice that the Population column serves solely for the purpose of grouping samples, so the user can define any arbitrary family/cluster/subgroup and use as a "population" tag. This file may further contain three additional columns, which are optional: Sire, Dam and Sex (with code 1 = M and 2 = F). Values "0" and "NA" in these additional columns are treated as missing values. 
+</p>
+</li>
+<li> <p><strong>.markers</strong>: space-delimited file without header containing five mandatory columns: Chromosome, Marker, Position (in bp), Reference Allele (A0) and Alternative Allele (A1). Markers should be sorted by chromosome and position. Repeated positions are tolerated, but the user is warned of their presence in the data. Optionally, the user may provide a file containing an additional column with genetic positions (in cM), which has to be placed between the base pair position and the reference allele columns.
+</p>
+</li>
+<li> <p><strong>.phase</strong>: space-delimited file without header containing the phased genotype matrix. The dimension of the matrix is expected to be <em>m x 2n</em>, where <em>m</em> is the number of markers and <em>n</em> is the number of individuals (i.e., two columns per individual, representing the two phased chromosome alleles). Alleles must be coded as 0 or 1. No missing values are allowed, since imputation is assumed to be part of the phasing procedure.
+</p>
+</li>
+</ul>
+<p>The function outputs a binary file with suffix <strong>.phaseb</strong>. Each allele is stored as a bit in that file. Bits for any given marker are arranged in a sequence of bytes. Since each marker requires storage of 2*nsamples bits, the number of bytes consumed by a single marker in the output file is ceiling(2*nsamples). If the number of alleles is not a multiple of 8, bits in the remainder of the last byte are filled with 0. All functions in GHap were carefully designed to decode the bytes of a marker in such a way that trailing bits are ignored if present.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Yuri Tani Utsunomiya &lt;ytutsunomiya@gmail.com&gt;
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> 
+# #### DO NOT RUN IF NOT NECESSARY ###
+# 
+# # Copy the example data in the current working directory
+# exfiles &lt;- ghap.makefile(dataset = "example",
+#                          format = "raw",
+#                          verbose = TRUE)
+# file.copy(from = exfiles, to = "./")
+# 
+# ### RUN ###
+# 
+# # Compress phase data using prefix
+# ghap.compress(input.file = "example",
+#               out.file = "example")
+# 
+# # Compress phase data using file names
+# ghap.compress(samples.file = "example.samples",
+#               markers.file = "example.markers",
+#               phase.file = "example.phase",
+#               out.file = "example")
+
+</code></pre>
+
+
+</div>

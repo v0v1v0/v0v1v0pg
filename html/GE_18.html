@@ -1,0 +1,308 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemAssetPricingExample</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some Examples of Asset Pricing</h2>
+
+<h3>Description</h3>
+
+<p>These examples illustrate how to find the equilibrium of an asset market by the function sdm2 and by computing marginal utility of assets (see Sharpe, 2008).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemAssetPricingExample(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>A general equilibrium.
+</p>
+
+
+<h3>References</h3>
+
+<p>Danthine, J. P., Donaldson, J. (2005, ISBN: 9780123693808) Intermediate Financial Theory. Elsevier Academic Press.
+</p>
+<p>Sharpe, William F. (2008, ISBN: 9780691138503) Investors and Markets: Portfolio Choices, Asset Prices, and Investment Advice. Princeton University Press.
+</p>
+<p>Xu Gao (2018, ISBN: 9787300258232) Twenty-five Lectures on Financial Economics. Beijing: China Renmin University Press. (In Chinese)
+</p>
+<p>https://web.stanford.edu/~wfsharpe/apsim/index.html
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gemAssetPricing_CUF</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#### an example of Danthine and Donaldson (2005, section 8.3).
+uf &lt;- function(x) 0.5 * x[1] + 0.9 * (1 / 3 * log(x[2]) + 2 / 3 * log(x[3]))
+
+ge &lt;- sdm2(
+  A = function(state) {
+    VMU &lt;- marginal_utility(state$last.A %*% dg(state$last.z), diag(3), uf, state$p)
+    Ratio &lt;- sweep(VMU, 2, colMeans(VMU), "/")
+
+    A &lt;- state$last.A * Ratio
+    prop.table(A, 2)
+  },
+  B = matrix(0, 3, 2),
+  S0Exg = matrix(c(
+    10, 5,
+    1, 4,
+    2, 6
+  ), 3, 2, TRUE),
+  names.commodity = c("asset1", "asset2", "asset3"),
+  names.agent = c("agt1", "agt2"),
+  numeraire = "asset1",
+  ts = TRUE
+)
+
+ge$p
+
+#### an example of Sharpe (2008, chapter 2)
+asset1 &lt;- c(1, 0, 0, 0, 0)
+asset2 &lt;- c(0, 1, 1, 1, 1)
+asset3 &lt;- c(0, 5, 3, 8, 4) - 3 * asset2
+asset4 &lt;- c(0, 3, 5, 4, 8) - 3 * asset2
+# unit asset payoff matrix
+UAP &lt;- cbind(asset1, asset2, asset3, asset4)
+
+prob &lt;- c(0.15, 0.25, 0.25, 0.35)
+wt &lt;- prop.table(c(1, 0.96 * prob)) # weights
+
+gamma.agt1 &lt;- 1.5
+gamma.agt2 &lt;- 2.5
+
+ge &lt;- sdm2(
+  A = function(state) {
+    Payoff &lt;- UAP %*% (state$last.A %*% dg(state$last.z))
+
+    VMU &lt;- marginal_utility(Payoff, UAP, list(
+      function(x) CES(alpha = 1, beta = wt, x = x, es = 1 / gamma.agt1),
+      function(x) CES(alpha = 1, beta = wt, x = x, es = 1 / gamma.agt2)
+    ), price = state$p)
+    Ratio &lt;- sweep(VMU, 2, colMeans(VMU), "/")
+
+    A &lt;- state$last.A * ratio_adjust(Ratio, coef = 0.05, method = "linear")
+
+    A &lt;- prop.table(A, 2)
+  },
+  B = matrix(0, 4, 2),
+  S0Exg = matrix(c(
+    49, 49,
+    30, 30,
+    10, 0,
+    0, 10
+  ), 4, 2, TRUE),
+  names.commodity = c("asset1", "asset2", "asset3", "asset4"),
+  names.agent = c("agt1", "agt2"),
+  numeraire = "asset1"
+)
+
+ge$p
+ge$p[3:4] + 3 * ge$p[2]
+
+#### an example of Xu (2018, section 10.4, P151)
+asset1 &lt;- c(1, 0, 0)
+asset2 &lt;- c(0, 1, 0)
+asset3 &lt;- c(0, 0, 1)
+prob &lt;- c(0.5, 0.5)
+wt &lt;- c(1, prob)
+UAP &lt;- cbind(asset1, asset2, asset3)
+
+gamma.agt1 &lt;- 1
+gamma.agt2 &lt;- 0.5
+
+ge &lt;- sdm2(
+  A = function(state) {
+    Payoff &lt;- UAP %*% (state$last.A %*% dg(state$last.z))
+
+    VMU &lt;- marginal_utility(Payoff, UAP, list(
+      # Here CRRA(...)$u, CRRA(...)$CE and CES functions are interexchangeable.
+      function(x) CRRA(x, gamma = gamma.agt1, p = wt)$u,
+      function(x) CES(alpha = 1, beta = wt, x = x, es = 1 / gamma.agt2)
+    ), state$p)
+    Ratio &lt;- sweep(VMU, 2, colMeans(VMU), "/")
+
+    A &lt;- state$last.A * Ratio
+    prop.table(A, 2)
+  },
+  B = matrix(0, 3, 2),
+  S0Exg = matrix(c(
+    1, 0,
+    0, 0.5,
+    0, 2
+  ), 3, 2, TRUE),
+  names.commodity = c("asset1", "asset2", "asset3"),
+  names.agent = c("agt1", "agt2"),
+  numeraire = "asset1",
+  maxIteration = 1,
+  ts = TRUE
+)
+
+ge$p #c(1, (1 + sqrt(5)) / 4, (1 + sqrt(17)) / 16)
+
+## the same as above.
+dst.agt1 &lt;- node_new("util",
+  type = "CD", alpha = 1, beta = c(0.5, 0.25, 0.25),
+  "asset1", "asset2", "asset3"
+)
+
+dst.agt2 &lt;- node_new("util",
+  type = "CES", alpha = 1, beta = c(2, 1, 1), sigma = 0.5,
+  "asset1", "asset2", "asset3"
+)
+
+ge &lt;- sdm2(
+  A = list(dst.agt1, dst.agt2),
+  B = matrix(0, 3, 2),
+  S0Exg = matrix(c(
+    1, 0,
+    0, 0.5,
+    0, 2
+  ), 3, 2, TRUE),
+  names.commodity = c("asset1", "asset2", "asset3"),
+  names.agent = c("agt1", "agt2"),
+  numeraire = "asset1",
+  maxIteration = 1,
+  ts = TRUE
+)
+
+ge$p
+
+#### an example with production.
+asset1 &lt;- c(1, 0, 0, 0, 0, 0)
+asset2 &lt;- c(0, 1, 0, 0, 0, 0)
+asset3 &lt;- c(0, 0, 1, 3, 1, 2)
+asset4 &lt;- c(0, 0, 4, 2, 6, 2)
+asset5 &lt;- c(0, 0, 1, 0, 2, 0)
+
+# unit asset payoff matrix
+UAP &lt;- cbind(asset1, asset2, asset3, asset4, asset5)
+
+muf1 &lt;- function(x) 1 / x
+muf2 &lt;- function(x) 1 / x * c(0.4, 0.1, 0.2, 0.05, 0.2, 0.05)
+
+ge &lt;- sdm2(
+  A = function(state) {
+    Payoff &lt;- UAP %*% (state$last.A[, 1:2] %*% dg(state$last.z[1:2]))
+
+    VMU &lt;- marginal_utility(Payoff, UAP, muf = list(muf1, muf2), price = state$p)
+    Ratio &lt;- sweep(VMU, 2, colMeans(VMU), "/")
+
+    A &lt;- state$last.A[, 1:2] * ratio_adjust(Ratio, coef = 0.15, method = "linear")
+    A &lt;- prop.table(A, 2)
+
+    a.firm &lt;- CD_A(alpha = 4, Beta = c(0.5, 0.5, 0, 0, 0), state$p)
+    A &lt;- cbind(A, a.firm)
+  },
+  B = matrix(c(
+    0, 0, 0,
+    0, 0, 0,
+    0, 0, 0,
+    0, 0, 0,
+    0, 0, 1
+  ), 5, 3, TRUE),
+  S0Exg = matrix(c(
+    1, 1, NA,
+    1, 2, NA,
+    1, NA, NA,
+    NA, 1, NA,
+    NA, NA, NA
+  ), 5, 3, TRUE),
+  names.commodity = c("asset1", "asset2", "asset3", "asset4", "asset5"),
+  names.agent = c("consumer1", "consumer2", "firm"),
+  numeraire = "asset1"
+)
+
+ge$p
+ge$z
+
+#### an example with demand structure trees.
+asset1 &lt;- c(1, 0, 0, 0, 0)
+asset2 &lt;- c(0, 1, 3, 1, 2)
+asset3 &lt;- c(0, 2, 1, 3, 1)
+
+# the asset unit payoff matrix.
+UAP &lt;- cbind(asset1, asset2, asset3)
+
+dst.consumer1 &lt;- node_new("util",
+                          type = "CES", es = 0.5, alpha = 1, beta = c(0.5, 0.5),
+                          "x1", "u2"
+)
+node_set(dst.consumer1, "u2",
+         type = "CES", es = 0.8, alpha = 1, beta = c(0.6, 0.4),
+         "u2.1", "u2.2"
+)
+node_set(dst.consumer1, "u2.1",
+         type = "CES", es = 1, alpha = 1, beta = c(0.8, 0.2),
+         "x2", "x3"
+)
+node_set(dst.consumer1, "u2.2",
+         type = "CES", es = 1, alpha = 1, beta = c(0.8, 0.2),
+         "x4", "x5"
+)
+
+dst.consumer2 &lt;- node_new("util",
+                          type = "CES", es = 0.5, alpha = 1, beta = c(0.5, 0.5),
+                          "x1", "u2"
+)
+node_set(dst.consumer2, "u2",
+         type = "CES", es = 0.8, alpha = 1, beta = c(0.6, 0.4),
+         "u2.1", "u2.2"
+)
+node_set(dst.consumer2, "u2.1",
+         type = "CES", es = 1, alpha = 1, beta = c(0.2, 0.8),
+         "x2", "x3"
+)
+node_set(dst.consumer2, "u2.2",
+         type = "CES", es = 1, alpha = 1, beta = c(0.2, 0.8),
+         "x4", "x5"
+)
+
+uf1 &lt;- function(x) {
+  names(x) &lt;- paste0("x", seq_along(x))
+  output(dst.consumer1, x)
+}
+
+uf2 &lt;- function(x) {
+  names(x) &lt;- paste0("x", seq_along(x))
+  output(dst.consumer2, x)
+}
+
+ge &lt;- gemAssetPricing_CUF(
+  S = matrix(c(
+    3, 3,
+    1, 0,
+    0, 2
+  ), 3, 2, TRUE),
+  UAP = UAP,
+  uf = list(uf1, uf2)
+)
+
+ge$p
+ge$z
+
+</code></pre>
+
+
+</div>

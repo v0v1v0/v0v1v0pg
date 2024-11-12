@@ -1,0 +1,147 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plot.SAF_summary</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Produce plots of sequential and average PAF</h2>
+
+<h3>Description</h3>
+
+<p>Produce plots of sequential and average PAF
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'SAF_summary'
+plot(
+  x,
+  number_rows = 3,
+  max_PAF = 0.4,
+  min_PAF = 0,
+  point.size = 4,
+  axis.text.size = 6,
+  title.size = 6,
+  axis.title.size = 6,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An SAF_summary R object produced by running the average_paf function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>number_rows</code></td>
+<td>
+<p>integer How many rows of plots will be included on the associated figure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_PAF</code></td>
+<td>
+<p>upper limit of y axis on PAF plots (default = 0.4)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_PAF</code></td>
+<td>
+<p>lower limit of y axis on PAF plots (default = 0)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>point.size</code></td>
+<td>
+<p>size of points on each individual plot (default=4)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>axis.text.size</code></td>
+<td>
+<p>size of axis labels on each plot (default=6)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>title.size</code></td>
+<td>
+<p>size of title on each individual plot (default=6)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>axis.title.size</code></td>
+<td>
+<p>size of titles on each plot (default=6)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other global arguments inherited by that might be passed to the ggplot routine</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A ggplot2 plotting object illustrating average sequential PAF by position and average PAF by risk factor.
+</p>
+
+
+<h3>References</h3>
+
+<p>Ferguson, J., O’Connell, M. and O’Donnell, M., 2020. Revisiting sequential attributable fractions. Archives of Public Health, 78(1), pp.1-9.
+Ferguson, J., Alvarez-Iglesias, A., Newell, J., Hinde, J. and O’Donnell, M., 2018. Estimating average attributable fractions with confidence intervals for cohort and case–control studies. Statistical methods in medical research, 27(4), pp.1141-1152
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(splines)
+library(survival)
+library(parallel)
+options(boot.parallel="snow")
+options(boot.ncpus=2)
+#  Simulated data on occupational and environmental exposure to
+# chronic cough from Eide, 1995
+# First specify the causal graph, in terms of the parents of each node.  Then put into a list
+parent_urban.rural &lt;- c()
+parent_smoking.category &lt;- c("urban.rural")
+parent_occupational.exposure &lt;- c("urban.rural")
+parent_y &lt;- c("urban.rural","smoking.category","occupational.exposure")
+parent_list &lt;- list(parent_urban.rural, parent_smoking.category,
+parent_occupational.exposure, parent_y)
+# also specify nodes of graph, in order from root to leaves
+node_vec &lt;- c("urban.rural","smoking.category","occupational.exposure", "y")
+model_list=automatic_fit(Hordaland_data,
+parent_list=parent_list, node_vec=node_vec, prev=.09)
+out &lt;- average_paf(data=model_list[[length(model_list)]]$data,
+ model_list=model_list,
+parent_list=parent_list, node_vec=node_vec, prev=.09, nperm=10,
+riskfactor_vec = c("urban.rural","occupational.exposure"),ci=FALSE)
+plot(out)
+
+# plot with confidence intervals for average and sequential PAF
+# (This is probably more useful for more than 2 risk factors).
+# Separate axes for each risk factor so confidence intervals can be clearly displayed
+out &lt;- average_paf(data=model_list[[length(model_list)]]$data,
+ model_list=model_list,
+parent_list=parent_list, node_vec=node_vec, prev=.09, nperm=10,
+riskfactor_vec = c("urban.rural","occupational.exposure"),ci=TRUE,boot_rep=8)
+plot(out)
+# Here we plot, with margin of error of point estimate when 50 permutations are used
+out &lt;- average_paf(data=model_list[[length(model_list)]]$data,
+ model_list=model_list,
+parent_list=parent_list, node_vec=node_vec, prev=.09, nperm=50,
+riskfactor_vec = c("urban.rural","occupational.exposure"),ci=FALSE,exact=FALSE)
+plot(out)
+
+</code></pre>
+
+
+</div>

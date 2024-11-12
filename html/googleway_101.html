@@ -1,0 +1,205 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>update_polygons</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Update polygons</h2>
+
+<h3>Description</h3>
+
+<p>Updates specific colours and opacities of specified polygons. Designed to be
+used in a shiny application.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">update_polygons(
+  map,
+  data,
+  id,
+  stroke_colour = NULL,
+  stroke_weight = NULL,
+  stroke_opacity = NULL,
+  fill_colour = NULL,
+  fill_opacity = NULL,
+  info_window = NULL,
+  layer_id = NULL,
+  palette = NULL,
+  legend = F,
+  legend_options = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>map</code></td>
+<td>
+<p>a googleway map object created from <code>google_map()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>data frame containing the data to use in the layer. If Null, the
+data passed into <code>google_map()</code> will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>string representing the column of <code>data</code> containing the id values
+for the shapes. The id values must be present in the original data supplied to in order
+for the shape to be udpated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stroke_colour</code></td>
+<td>
+<p>either a string specifying the column of <code>data</code> containing
+the stroke colour of each shape, or a valid hexadecimal numeric HTML style to
+be applied to all the shapes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stroke_weight</code></td>
+<td>
+<p>either a string specifying the column of <code>data</code> containing
+the stroke weight of each shape, or a number indicating the width of pixels
+in the line to be applied to all the shapes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stroke_opacity</code></td>
+<td>
+<p>either a string specifying the column of <code>data</code> containing
+the stroke opacity of each shape, or a value between 0 and 1 that will be
+applied to all the shapes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fill_colour</code></td>
+<td>
+<p>either a string specifying the column of <code>data</code> containing
+the fill colour of each shape, or a valid hexadecimal numeric HTML style to
+be applied to all the shapes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fill_opacity</code></td>
+<td>
+<p>either a string specifying the column of <code>data</code> containing
+the fill opacity of each shape, or a value between 0 and 1 that will be applied
+to all the shapes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>info_window</code></td>
+<td>
+<p>string specifying the column of data to display in an info
+window when a shape is clicked.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>layer_id</code></td>
+<td>
+<p>single value specifying an id for the layer. Use this value to
+distinguish between shape layers for when using any <code>update_</code> function, and
+for separating legends.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>palette</code></td>
+<td>
+<p>a function, or list of functions, that generates hex colours
+given a single number as an input. See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>legend</code></td>
+<td>
+<p>either a logical indiciating if the legend(s) should be displayed, or
+a named list indicating which colour attributes should be included in the legend.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>legend_options</code></td>
+<td>
+<p>A list of options for controlling the legend.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>Any polygons (as specified by the <code>id</code> argument) that do not exist
+in the <code>data</code> passed into <code>add_polygons()</code> will not be added to the map.
+This function will only update the polygons that currently exist on the map
+when the function is called.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+map_key &lt;- 'your_api_key'
+
+pl_outer &lt;- encode_pl(lat = c(25.774, 18.466,32.321),
+                      lon = c(-80.190, -66.118, -64.757))
+
+pl_inner &lt;- encode_pl(lat = c(28.745, 29.570, 27.339),
+                      lon = c(-70.579, -67.514, -66.668))
+
+pl_other &lt;- encode_pl(c(21,23,22), c(-50, -49, -51))
+
+## using encoded polylines
+df &lt;- data.frame(id = c(1,1,2),
+                 colour = c("#00FF00", "#00FF00", "#FFFF00"),
+                 polyline = c(pl_outer, pl_inner, pl_other),
+                 stringsAsFactors = FALSE)
+
+google_map(key = map_key) %&gt;%
+  add_polygons(data = df, polyline = 'polyline', id = 'id', fill_colour = 'colour')
+
+df_update &lt;- df[, c("id", "colour")]
+df_update$colour &lt;- c("#FFFFFF", "#FFFFFF", "#000000")
+
+google_map(key = map_key) %&gt;%
+  add_polygons(data = df, polyline = 'polyline', id = 'id', fill_colour = 'colour') %&gt;%
+  update_polygons(data = df_update, id = 'id', fill_colour = 'colour')
+
+
+df &lt;- aggregate(polyline ~ id + colour, data = df, list)
+
+google_map(key = map_key) %&gt;%
+  add_polygons(data = df, polyline = 'polyline', fill_colour = 'colour')
+
+google_map(key = map_key) %&gt;%
+  add_polygons(data = df, polyline = 'polyline', id = 'id', fill_colour = 'colour') %&gt;%
+  update_polygons(data = df_update, id = 'id', fill_colour = 'colour')
+
+
+## using coordinates
+df &lt;- data.frame(id = c(rep(1, 6), rep(2, 3)),
+                 lineId = c(rep(1, 3), rep(2, 3), rep(1, 3)),
+                 lat = c(25.774, 18.466, 32.321, 28.745, 29.570, 27.339, 21, 23, 22),
+                 lon = c(-80.190, -66.118, -64.757, -70.579, -67.514, -66.668, -50, -49, -51))
+
+google_map(key = map_key) %&gt;%
+  add_polygons(data = df, lat = 'lat', lon = 'lon', id = 'id', pathId = 'lineId')
+
+google_map(key = map_key) %&gt;%
+  add_polygons(data = df, lat = 'lat', lon = 'lon', id = 'id', pathId = 'lineId') %&gt;%
+  update_polygons(data = df_update, id = 'id', fill_colour = 'colour')
+
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,169 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>estimate_sgsmvar</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Maximum likelihood estimation of a structural GMVAR, StMVAR, or G-StMVAR model
+with preliminary estimates</h2>
+
+<h3>Description</h3>
+
+<p><code>estimate_gsmvar</code> uses a genetic algorithm and variable metric algorithm to estimate the parameters
+of a structural GMVAR, StMVAR, or G-StMVAR model with the method of maximum likelihood and preliminary
+estimates from (typically identified) reduced form or structural GSMVAR model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">estimate_sgsmvar(
+  gsmvar,
+  new_W,
+  ncalls = 16,
+  ncores = 2,
+  maxit = 1000,
+  seeds = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>gsmvar</code></td>
+<td>
+<p>an object of class <code>'gsmvar'</code>, typically created with <code>fitGSMVAR</code> or <code>GSMVAR</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>new_W</code></td>
+<td>
+<p>What should be the constraints on the W-matrix (or equally B-matrix)? Provide a <code class="reqn">(d x d)</code> matrix
+(where <code>d</code> is the number of time series in the system) expressing the constraints such that <code>NA</code> signifies
+that the element is not constrained, strictly positive real number signifies strict positive sign constraint,
+strictly negative real number signified strict negative sign constraints, and zero signifies a zero constraints.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncalls</code></td>
+<td>
+<p>the number of estimation rounds that should be performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>the number of CPU cores to be used in numerical differentiation. Multiple cores
+are not supported on Windows, though.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>the maximum number of iterations in the variable metric algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seeds</code></td>
+<td>
+<p>a length <code>ncalls</code> vector containing the random number generator seed for each call to the genetic algorithm,
+or <code>NULL</code> for not initializing the seed. Exists for creating reproducible results.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The purpose of <code>estimate_gsmvar</code> is to provide a convenient tool to estimate (typically over)identified
+structural GSMVAR models when preliminary estimates are available from a fitted reduced form or structural GMVAR
+model. Often one estimates a two-regime reduced form model and then uses the function <code>gsmvar_to_sgsmvar</code> to
+obtain the corresponding, statistically identified structural model. After obtaining the statistically identified
+structural model, overidentifying constraints may be placed the W-matrix (or equally B-matrix). This function makes
+imposing the overidentifying constraints and estimating the overidentified structural model convenient.
+<strong>Reduced form models can be directly used as lower-triangular Cholesky identified SVARs without having
+to estimate a structural model separately.</strong>
+</p>
+<p><strong>Note that the surface of the log-likelihood function is extremely multimodal, and this function is designed
+to only explore the neighbourhood of the preliminary estimates, so it finds its way reliably to the correct MLE
+only the preliminary estimates are close it in the first place. Use the function directly fitGSMVAR for a more thorough
+search of the parameter space, if necessary.</strong> This function calls <code>fitGSMVAR</code> by construction an initial population to
+the genetic algorithm from a preliminary guess of the new estimates. The smart mutations are set to begin from the
+first generation.
+</p>
+<p>In order to the impose the constraints you wish, it might be useful to first run the model through the functioons
+<code>reorder_W_columns</code> and <code>swap_W_signs</code>. <strong>Particularly check that the sign constraints are readily
+satisfied. If not, the estimated solution might not be correct MLE.</strong>
+</p>
+<p><code>estimate_sgsmvar</code> can also be used to estimate models that are not identified, i.e., one regime models. If it
+supplied with a reduced form model, it will first apply the function <code>gsmvar_to_sgsmvar</code>, then impose the
+constraints and finally estimate the model.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns an object of class <code>'gsmvar'</code> defining the estimated GMVAR, StMVAR, or G-StMVAR model.
+</p>
+
+
+<h3>References</h3>
+
+
+<ul>
+<li>
+<p> Kalliovirta L., Meitz M. and Saikkonen P. 2016. Gaussian mixture vector autoregression.
+<em>Journal of Econometrics</em>, <strong>192</strong>, 485-498.
+</p>
+</li>
+<li>
+<p> Kalliovirta L. and Saikkonen P. 2010. Reliable Residuals for Multivariate Nonlinear
+Time Series Models. <em>Unpublished Revision of HECER Discussion Paper No. 247</em>.
+</p>
+</li>
+<li>
+<p> Virolainen S. (forthcoming). A statistically identified structural vector autoregression with endogenously
+switching volatility regime. <em>Journal of Business &amp; Economic Statistics</em>.
+</p>
+</li>
+<li>
+<p> Virolainen S. 2022. Gaussian and Student's t mixture vector autoregressive model with application to the
+asymmetric effects of monetary policy shocks in the Euro area. Unpublished working
+paper, available as arXiv:2109.13648.
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>fitGSMVAR</code>, <code>GSMVAR</code>, <code>optim</code>,
+<code>profile_logliks</code>, <code>iterate_more</code> <code>gsmvar_to_sgsmvar</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## These are long running examples that use parallel computing!
+## Running the below examples takes 30 seconds
+
+# GMVAR(1,2) model
+fit12 &lt;- fitGSMVAR(gdpdef, p=1, M=2, ncalls=2, seeds=1:2) # Reduced form
+fit12s &lt;- gsmvar_to_sgsmvar(fit12) # Structural
+fit12s
+# Constrain the lower right element of W (or B-matrix) to zero, and for
+# global identification the first elements of each column to strictly positive.
+(new_W &lt;- matrix(c(1, NA, 1, 0), nrow=2))
+new_fit12s &lt;- estimate_sgsmvar(fit12s, new_W, ncalls=2, ncores=2, seeds=1:2)
+new_fit12s # Overidentified model
+
+# Cholesky VAR(1)
+fit11 &lt;- fitGSMVAR(gdpdef, p=1, M=1, ncalls=2, seeds=1:2) # Reduced form
+(new_W &lt;- matrix(c(1, NA, 0, 1), nrow=2))
+new_fit11s &lt;- estimate_sgsmvar(fit11, new_W, ncalls=2, ncores=2, seeds=1:2)
+print(new_fit11s, digits=4)
+# Also: gsmvar_to_sgsmvar(fit11, cholesky=TRUE) gives Cholesky VAR
+
+</code></pre>
+
+
+</div>

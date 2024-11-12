@@ -1,0 +1,669 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>grpnet</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fit a Group Elastic Net Regularized GLM/GAM
+</h2>
+
+<h3>Description</h3>
+
+<p>Fits generalized linear/additive models with a group elastic net penalty using an adaptively bounded gradient descent (ABGD) algorithm (Helwig, 2024). Predictor groups can be manually input (default S3 method) or inferred from the model (S3 "formula" method). The regularization path is computed at a data-generated (default) or user-provided sequence of lambda values. </p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">grpnet(x, ...)
+
+## Default S3 method:
+grpnet(x, 
+       y, 
+       group, 
+       family = c("gaussian", "binomial", "multinomial", "poisson", 
+                  "negative.binomial", "Gamma", "inverse.gaussian"),
+       weights = NULL, 
+       offset = NULL, 
+       alpha = 1, 
+       nlambda = 100,
+       lambda.min.ratio = ifelse(nobs &lt; nvars, 0.05, 0.0001), 
+       lambda = NULL, 
+       penalty.factor = NULL,
+       penalty = c("LASSO", "MCP", "SCAD"),
+       gamma = 4,
+       theta = 1,
+       standardized = !orthogonalized,
+       orthogonalized = TRUE,
+       intercept = TRUE, 
+       thresh = 1e-04, 
+       maxit = 1e05,
+       proglang = c("Fortran", "R"),
+       ...)
+      
+## S3 method for class 'formula'
+grpnet(formula,
+       data, 
+       use.rk = TRUE,
+       family = c("gaussian", "binomial", "multinomial", "poisson", 
+                  "negative.binomial", "Gamma", "inverse.gaussian"),
+       weights = NULL,
+       offset = NULL,
+       alpha = 1,
+       nlambda = 100,
+       lambda.min.ratio = ifelse(nobs &lt; nvars, 0.05, 0.0001),
+       lambda = NULL,
+       penalty.factor = NULL,
+       penalty = c("LASSO", "MCP", "SCAD"),
+       gamma = 4,
+       theta = 1,
+       standardized = !orthogonalized,
+       orthogonalized = TRUE,
+       thresh = 1e-04,
+       maxit = 1e05,
+       proglang = c("Fortran", "R"),
+       ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+
+<p>Model (design) matrix of dimension <code>nobs</code> by <code>nvars</code> (<code class="reqn">n \times p</code>).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+
+<p>Response vector of length <code class="reqn">n</code>. Matrix inputs are allowed for binomial and multinomial families (see "Binomial and multinomial" section).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+
+<p>Group label vector (factor, character, or integer) of length <code class="reqn">p</code>. Predictors with the same label are grouped together for regularization.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+
+<p>Model formula: a symbolic description of the model to be fitted. Uses the same syntax as <code>lm</code> and <code>glm</code>. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>Optional data frame containing the variables referenced in <code>formula</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use.rk</code></td>
+<td>
+
+<p>If <code>TRUE</code> (default), the <code>rk.model.matrix</code> function is used to build the model matrix. Otherwise, the <code>model.matrix</code> function is used to build the model matrix. Additional arguments to the <code>rk.model.matrix</code> function can be passed via the <code>...</code> argument.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+
+<p>Character specifying the assumed distribution for the response variable. Partial matching is allowed. Options include <code>"gaussian"</code> (real-valued response), <code>"binomial"</code> (binary response), <code>"multinomial"</code> (multi-class response), <code>"poisson"</code> (count response), <code>"negative.binomial"</code> (count response), <code>"Gamma"</code> (positive real-valued), or <code>"inverse.gaussian"</code> (positive real-valued). 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+
+<p>Optional vector of length <code class="reqn">n</code> with non-negative weights to use for weighted (penalized) likelihood estimation. Defaults to a vector of ones.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+
+<p>Optional vector of length <code class="reqn">n</code> with an a priori known term to be included in the model's linear predictor. Defaults to a vector of zeros.  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+
+<p>Regularization hyperparameter satisfying <code class="reqn">0 \leq \alpha \leq 1</code> that gives the balance between the group L1 (lasso) and group L2 (ridge) penalty. Setting <code class="reqn">\alpha = 1</code> uses a group lasso penalty, setting <code class="reqn">\alpha = 0</code> uses a group ridge penalty, and setting <code class="reqn">0 &lt; \alpha &lt; 1</code> uses a group elastic net group penalty.  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nlambda</code></td>
+<td>
+
+<p>Number of <code class="reqn">\lambda</code> values to use in the regularization path. Ignored if <code>lambda</code> is provided.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.min.ratio</code></td>
+<td>
+
+<p>The proportion <code class="reqn">0 &lt; \pi &lt; 1</code> that defines the minimum regularization parameter <code class="reqn">\lambda_{\mathrm{min}}</code> as a fraction of the maximum regularization parameter <code class="reqn">\lambda_{\mathrm{max}}</code> via the relationship <code class="reqn">\lambda_{\mathrm{min}} = \pi \lambda_{\mathrm{max}}</code>. Ignored if <code>lambda</code> is provided. Note that <code class="reqn">\lambda_{\mathrm{max}}</code> is defined such that all penalized effects are shrunk to zero.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+
+<p>Optional vector of user-supplied regularization parameter values. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalty.factor</code></td>
+<td>
+
+<p>Default S3 method: vector of length <code class="reqn">K</code> giving the non-negative penalty weight for each predictor group. The order of the weights should correspond to the order of <code>levels(as.factor(group))</code>. Defaults to <code class="reqn">\sqrt{p_k}</code> for all <code class="reqn">k = 1,\ldots,K</code>, where <code class="reqn">p_k</code> is the number of coefficients in the <code class="reqn">k</code>-th group. If <code>penalty.factor[k] = 0</code>, then the <code class="reqn">k</code>-th group is unpenalized, and the corresponding term is always included in the model. 
+</p>
+<p>S3 "formula" method: named list giving the non-negative penalty weight for terms specified in the formula. Incomplete lists are allowed. Any term that is specified in <code>formula</code> but not in <code>penalty.factor</code> will be assigned the default penalty weight of <code class="reqn">\sqrt{p_k}</code>. If <code>penalty.factor$z = 0</code>, then the variable <code>z</code> is unpenalized and always included in the model.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalty</code></td>
+<td>
+
+<p>Character specifying which (group) penalty to use: LASSO , MCP, or SCAD.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+
+<p>Penalty hyperparameter that satisfies <code class="reqn">\gamma &gt; 1</code> for MCP and <code class="reqn">\gamma &gt; 2</code> for SCAD. Ignored for LASSO penalty.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+
+<p>Additional ("size") parameter for negative binomial responses, where the variance function is defined as <code class="reqn">V(\mu) = \mu + \mu^2/ \theta</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standardized</code></td>
+<td>
+
+<p>Logical indicating whether the predictors should be groupwise standardized. If <code>TRUE</code>, each column of <code>x</code> is mean-centered and each predictor group's design matrix is scaled to have a mean-square of one before fitting the model. Regardless of whether standardization is used, the coefficients are always returned on the original data scale.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>orthogonalized</code></td>
+<td>
+
+<p>Logical indicating whether the predictors should be groupwise orthogonalized. If <code>TRUE</code> (default), each predictor group's design matrix is orthonormalized (i.e., <code class="reqn">\mathbf{X}_k^\top \mathbf{X}_k = n \mathbf{I}_k</code>) before fitting the model. Regardless of whether orthogonalization is used, the coefficients are always returned on the original data scale.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+
+<p>Logical indicating whether an intercept term should be included in the model. Note that the intercept is always unpenalized.   
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thresh</code></td>
+<td>
+
+<p>Convergence threshold (tolerance). The algorithm is determined to have converged once the maximum relative change in the coefficients is below this threshold. See "Convergence" section.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+
+<p>Maximum number of iterations to allow.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>proglang</code></td>
+<td>
+
+<p>Which programming language should be used to implement the ABGD algorithm? Options include <code>"Fortran"</code> (default) or <code>"R"</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Additional arguments used by the default or formula method.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Consider a generalized linear model of the form
+</p>
+<p style="text-align: center;"><code class="reqn">
+g(\mu) = \mathbf{X}^\top \boldsymbol\beta
+</code>
+</p>
+
+<p>where <code class="reqn">\mu = E(Y | \mathbf{X})</code> is the conditional expectation of the response <code class="reqn">Y</code> given the predictor vector <code class="reqn">\mathbf{X}</code>, the function <code class="reqn">g(\cdot)</code> is a user-specified (invertible) link function, and <code class="reqn">\boldsymbol\beta</code> are the unknown regression coefficients. Furthermore, suppose that the predictors are grouped, such as
+</p>
+<p style="text-align: center;"><code class="reqn">
+\mathbf{X}^\top \boldsymbol\beta = \sum_{k=1}^K \mathbf{X}_k^\top \boldsymbol\beta_k
+</code>
+</p>
+
+<p>where <code class="reqn">\mathbf{X} = (\mathbf{X}_1, \ldots, \mathbf{X}_K)</code> is the grouped predictor vector, and <code class="reqn">\boldsymbol\beta = (\boldsymbol\beta_1, \ldots, \boldsymbol\beta_K)</code> is the grouped coefficient vector. 
+</p>
+<p>Given <code class="reqn">n</code> observations, this function finds the <code class="reqn">\boldsymbol\beta</code> that minimizes
+</p>
+<p style="text-align: center;"><code class="reqn">
+L(\boldsymbol\beta | \mathbf{D}) + \lambda P_\alpha(\boldsymbol\beta)
+</code>
+</p>
+
+<p>where <code class="reqn">L(\boldsymbol\beta | \mathbf{D})</code> is the loss function with <code class="reqn">\mathbf{D} = \{\mathbf{y}, \mathbf{X}\}</code> denoting the observed data, <code class="reqn">P_\alpha(\boldsymbol\beta)</code> is the group elastic net penalty, and <code class="reqn">\lambda \geq 0</code> is the regularization parameter. 
+</p>
+<p>The loss function has the form 
+</p>
+<p style="text-align: center;"><code class="reqn">
+L(\boldsymbol\beta | \mathbf{D}) = \frac{1}{n} \sum_{i=1}^n w_i \ell_i(\boldsymbol\beta | \mathbf{D}_i)
+</code>
+</p>
+
+<p>where <code class="reqn">w_i &gt; 0</code> are the user-supplied <code>weights</code>, and <code class="reqn">\ell_i(\boldsymbol\beta | \mathbf{D}_i)</code> is the <code class="reqn">i</code>-th observation's contribution to the loss function. Note that <code class="reqn">\ell(\cdot) = -\log(f_Y(\cdot))</code> denotes the negative log-likelihood function for the given <code>family</code>.
+</p>
+<p>The group elastic net penalty function has the form
+</p>
+<p style="text-align: center;"><code class="reqn">
+P_\alpha(\boldsymbol\beta) = \alpha P_1(\boldsymbol\beta) + (1 - \alpha) P_2(\boldsymbol\beta)
+</code>
+</p>
+
+<p>where <code class="reqn">\alpha \in [0,1]</code> is the user-specified <code>alpha</code> value, 
+</p>
+<p style="text-align: center;"><code class="reqn">
+P_1(\boldsymbol\beta) = \sum_{k=1}^K \omega_k \| \boldsymbol\beta_k \|
+</code>
+</p>
+
+<p>is the group lasso penalty with <code class="reqn">\omega_k \geq 0</code> denoting the <code class="reqn">k</code>-th group's <code>penalty.factor</code>, and 
+</p>
+<p style="text-align: center;"><code class="reqn">
+P_2(\boldsymbol\beta) = \frac{1}{2} \sum_{k=1}^K \omega_k \| \boldsymbol\beta_k \|^2
+</code>
+</p>
+
+<p>is the group ridge penalty. Note that <code class="reqn">\| \boldsymbol\beta_k \|^2 = \boldsymbol\beta_k^\top \boldsymbol\beta_k</code> denotes the squared Euclidean norm. When <code>penalty %in% c("MCP", "SCAD")</code>, the group L1 penalty <code class="reqn">P_1(\boldsymbol\beta)</code> is replaced by the group MCP or group SCAD penalty.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>"grpnet"</code> with the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>call </code></td>
+<td>
+<p>matched call</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a0 </code></td>
+<td>
+<p>intercept sequence of length <code>nlambda</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta </code></td>
+<td>
+<p>coefficient matrix of dimension <code>nvars</code> by <code>nlambda</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha </code></td>
+<td>
+<p>balance between the group L1 (lasso) and group L2 (ridge) penalty</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>sequence of regularization parameter values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family </code></td>
+<td>
+<p>exponential family defining the loss function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dev.ratio </code></td>
+<td>
+<p>proportion of (null) deviance explained for each <code>lambda</code> (= 1 - dev / nulldev)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nulldev </code></td>
+<td>
+<p>null deviance for each <code>lambda</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df </code></td>
+<td>
+<p>effective degrees of freedom for each <code>lambda</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nzgrp </code></td>
+<td>
+<p>number of non-zero groups for each <code>lambda</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nzcoef </code></td>
+<td>
+<p>number of non-zero coefficients for each <code>lambda</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xsd </code></td>
+<td>
+<p>standard deviation of x for each group</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ylev </code></td>
+<td>
+<p>levels of response variable (only for binomial and multinomial families)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nobs </code></td>
+<td>
+<p>number of observations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>group label vector</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ngroups </code></td>
+<td>
+<p>number of groups <code class="reqn">K</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>npasses </code></td>
+<td>
+<p>number of iterations for each <code>lambda</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time </code></td>
+<td>
+<p>runtime in seconds to compute regularization path</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset </code></td>
+<td>
+<p>logical indicating if an offset was included</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>args </code></td>
+<td>
+<p>list of input argument values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula </code></td>
+<td>
+<p>input formula (possibly after expansion)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>term.labels </code></td>
+<td>
+<p>terms that appear in formula (if applicable)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rk.args </code></td>
+<td>
+<p>arguments for rk.model.matrix function (if applicable)</p>
+</td>
+</tr>
+</table>
+<h3>S3 "formula" method</h3>
+
+<p><b>Important</b>: When using the S3 "formula" method, the S3 "predict" method forms the model matrix for the predictions by applying the model formula to the new data. As a result, to ensure that the corresponding S3 "predict" method works correctly, some formulaic features should be avoided. 
+</p>
+<p><b>Polynomials</b>: When including polynomial terms, the <code>poly</code> function should be used with option <code>raw = TRUE</code>. Default use of the <code>poly</code> function (with <code>raw = FALSE</code>) will work for fitting the model, but will result in invalid predictions for new data. Polynomials can also be included via the <code>I</code> function, but this isn't recommended because the polynomials terms wouldn't be grouped together, i.e., the terms <code>x</code> and <code>I(x^2)</code> would be treated as two separate groups of size one instead of a single group of size two.
+</p>
+<p><b>Splines</b>: B-splines (and other spline bases) can be included via the S3 "formula" method. However, to ensure reasonable predictions for new data, it is necessary to specify the knots directly. For example, if <code>x</code> is a vector with entries between zero and one, the code <code>bs(x, df = 5)</code> will *not* produce valid predictions for new data, but the code <code>bs(x, knots = c(0.25, 0.5, 0.75), Boundary.knots = c(0, 1))</code> will work as intended. Instead of attempting to integrate a call to <code>bs()</code> or <code>rk()</code> into the model formula, it is recommended that splines be included via the <code>use.rk = TRUE</code> argument.
+</p>
+
+
+<h3>Family argument and link functions</h3>
+
+<p>Unlike the <code>glm</code> function, the <code>family</code> argument of the <code>grpnet</code> function <br>
+* should be a character vector (not a <code>family</code> object) <br>
+* does not allow for specification of a link function 
+</p>
+<p>Currently, there is only one available link function for each <code>family</code>: <br>
+* gaussian (identity): <code class="reqn">\mu = \mathbf{X}^\top \boldsymbol\beta</code> <br>
+* binomial (logit): <code class="reqn">\log(\frac{\pi}{1 - \pi}) = \mathbf{X}^\top \boldsymbol\beta</code> <br>
+* multinomial (symmetric): <code class="reqn">\pi_\ell = \frac{\exp(\mathbf{X}^\top \boldsymbol\beta_\ell)}{\sum_{l = 1}^m \exp(\mathbf{X}^\top \boldsymbol\beta_l)}</code> <br>
+* poisson (log): <code class="reqn">\log(\mu) = \mathbf{X}^\top \boldsymbol\beta</code> <br>
+* negative.binomial (log): <code class="reqn">\log(\mu) = \mathbf{X}^\top \boldsymbol\beta</code> <br>
+* Gamma (log): <code class="reqn">\log(\mu) = \mathbf{X}^\top \boldsymbol\beta</code> <br>
+* inverse.gaussian (log): <code class="reqn">\log(\mu) = \mathbf{X}^\top \boldsymbol\beta</code> <br></p>
+
+
+<h3>Binomial and multinomial</h3>
+
+<p>For <code>"binomial"</code> responses, three different possibilities exist for the input response: <br>
+1. vector coercible into a factor with two levels <br>
+2. matrix with two columns (# successes, # failures) <br>
+3. numeric vector with entries between 0 and 1 <br>
+In this case, the <code>weights</code> argument should be used specify the total number of trials.
+</p>
+<p>For <code>"multinomial"</code> responses, two different possibilities exist for the input reponse: <br>
+1. vector coercible into a factor with more than two levels <br> 
+2. matrix of integers (counts) for each category level <br></p>
+
+
+<h3>Convergence</h3>
+
+<p>The algorithm is determined to have converged once
+</p>
+<p><code class="reqn">\max_j \frac{| \beta_j - \beta_j^{\mathrm{old}} |}{1 + |\beta_j^{\mathrm{old}}|}  &lt; \epsilon </code>
+</p>
+<p>where <code class="reqn">j \in \{1,\ldots,p\}</code> and <code class="reqn">\epsilon</code> is the <code>thresh</code> argument. 
+</p>
+
+
+<h3>Note</h3>
+
+<p>The syntax of (the default S3 method for) this function closely mimics that of the <code>glmnet</code> function in the <b>glmnet</b> package (Friedman, Hastie, &amp; Tibshirani, 2010). 
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Nathaniel E. Helwig &lt;helwig@umn.edu&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Friedman, J.,  Hastie, T., &amp; Tibshirani, R. (2010). Regularization paths for generalized linear models via coordinate descent. <em>Journal of Statistical Software, 33</em>(1), 1-22. <a href="https://doi.org/10.18637/jss.v033.i01">doi:10.18637/jss.v033.i01</a>
+</p>
+<p>Helwig, N. E. (2024). Versatile descent algorithms for group regularization and variable selection in generalized linear models. <em>Journal of Computational and Graphical Statistics</em>. <a href="https://doi.org/10.1080/10618600.2024.2362232">doi:10.1080/10618600.2024.2362232</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plot.grpnet</code> for plotting the regularization path
+</p>
+<p><code>predict.grpnet</code> for predicting from <code>grpnet</code> objects
+</p>
+<p><code>cv.grpnet</code> for k-fold cross-validation of <code>lambda</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">######***######   family = "gaussian"   ######***######
+
+# load data
+data(auto)
+
+# fit model (formula method, response = mpg)
+mod &lt;- grpnet(mpg ~ ., data = auto)
+
+# print regularization path info
+mod
+
+# plot coefficient paths
+plot(mod)
+
+
+
+######***######   family = "binomial"   ######***######
+
+# load data
+data(auto)
+
+# redefine origin (Domestic vs Foreign)
+auto$origin &lt;- ifelse(auto$origin == "American", "Domestic", "Foreign")
+
+# fit model (formula method, response = origin with 2 levels)
+mod &lt;- grpnet(origin ~ ., data = auto, family = "binomial")
+
+# print regularization path info
+mod
+
+# plot coefficient paths
+plot(mod)
+
+
+
+######***######   family = "multinomial"   ######***######
+
+# load data
+data(auto)
+
+# fit model (formula method, response = origin with 3 levels)
+mod &lt;- grpnet(origin ~ ., data = auto, family = "multinomial")
+
+# print regularization path info
+mod
+
+# plot coefficient paths
+plot(mod)
+
+
+
+######***######   family = "poisson"   ######***######
+
+# load data
+data(auto)
+
+# fit model (formula method, response = horsepower)
+mod &lt;- grpnet(horsepower ~ ., data = auto, family = "poisson")
+
+# print regularization path info
+mod
+
+# plot coefficient paths
+plot(mod)
+
+
+
+######***######   family = "negative.binomial"   ######***######
+
+# load data
+data(auto)
+
+# fit model (formula method, response = horsepower)
+mod &lt;- grpnet(horsepower ~ ., data = auto, family = "negative.binomial")
+
+# print regularization path info
+mod
+
+# plot coefficient paths
+plot(mod)
+
+
+
+######***######   family = "Gamma"   ######***######
+
+# load data
+data(auto)
+
+# fit model (formula method, response = mpg)
+mod &lt;- grpnet(mpg ~ ., data = auto, family = "Gamma")
+
+# print regularization path info
+mod
+
+# plot coefficient paths
+plot(mod)
+
+
+
+######***######   family = "inverse.gaussian"   ######***######
+
+# load data
+data(auto)
+
+# fit model (formula method, response = mpg)
+mod &lt;- grpnet(mpg ~ ., data = auto, family = "inverse.gaussian")
+
+# print regularization path info
+mod
+
+# plot coefficient paths
+plot(mod)
+
+</code></pre>
+
+
+</div>

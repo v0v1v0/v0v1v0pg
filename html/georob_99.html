@@ -1,0 +1,736 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fit.variogram.model</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting Model Functions to Sample Variograms</h2>
+
+<h3>Description</h3>
+
+<p>The function <code>fit.variogram.model</code> fits a variogram model to a sample
+variogram by (weighted) non-linear least squares.  The function
+<code>control.fit.variogram.model</code> generates a list with steering parameters which
+control <code>fit.variogram.model</code>.  There are <code>print</code>, <code>summary</code>
+and <code>lines</code> methods for summarizing and displaying fitted variogram
+models.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fit.variogram.model(sv,
+    variogram.model = c("RMexp", "RMaskey", "RMbessel", "RMcauchy",
+        "RMcircular", "RMcubic", "RMdagum", "RMdampedcos", "RMdewijsian",
+        "RMfbm", "RMgauss", "RMgencauchy", "RMgenfbm", "RMgengneiting",
+        "RMgneiting", "RMlgd", "RMmatern", "RMpenta", "RMqexp",
+        "RMspheric", "RMstable", "RMwave", "RMwhittle"),
+    param, fit.param = default.fit.param()[names(param)],
+	  aniso = default.aniso(), fit.aniso = default.fit.aniso(),
+    variogram.object = NULL,
+    max.lag = max(sv[["lag.dist"]]), min.npairs = 30,
+    weighting.method = c("cressie", "equal", "npairs"),
+    control = control.fit.variogram.model(),
+    verbose = 0)
+
+control.fit.variogram.model(maximizer = c("nlminb", "optim"),
+    param.tf = param.transf(), fwd.tf = fwd.transf(),
+    deriv.fwd.tf = dfwd.transf(), bwd.tf = bwd.transf(),
+    hessian = TRUE, optim = control.optim(), nlminb = control.nlminb())
+
+## S3 method for class 'fitted.variogram'
+print(x, digits = max(3, getOption("digits") - 3), ...)
+
+## S3 method for class 'fitted.variogram'
+summary(object, correlation = FALSE, signif = 0.95, ...)
+
+## S3 method for class 'fitted.variogram'
+lines(x, what = c("variogram", "covariance", "correlation"),
+    from = 1.e-6, to, n = 501, xy.angle = 90, xz.angle = 90,
+    col = 1:length(xy.angle), pch = 1:length(xz.angle), lty = "solid", ...)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>sv</code></td>
+<td>
+<p>an object of class <code>sample.variogram</code>, see
+<code>sample.variogram</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variogram.model</code></td>
+<td>
+<p>a character keyword defining the variogram model
+to be fitted.  Currently, most basic variogram models provided formerly
+by the now archived package <span class="pkg">RandomFields</span> can be fitted (see
+<em>Details</em> of <code>georob</code> and <code>gencorr</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>a named numeric vector with initial values of the variogram
+parameters.  The following parameter names are allowed (see
+<em>Details</em> of <code>georob</code> and <code>georobPackage</code> for
+information about the parametrization of variogram models):
+</p>
+
+<ul>
+<li>
+<p><code>variance</code>: variance (sill <code class="reqn">\sigma^2</code>) of the
+auto-correlated component of the Gaussian random field
+<code class="reqn">B(\boldsymbol{s})</code>.
+</p>
+</li>
+<li>
+<p><code>snugget</code>: variance
+(spatial nugget <code class="reqn">\sigma^2_{\mathrm{n}}</code>)
+of the seemingly spatially uncorrelated component of
+<code class="reqn">B(\boldsymbol{s})</code>
+(micro-scale spatial variation; default value<br><code>snugget = 0</code>).
+</p>
+</li>
+<li>
+<p><code>nugget</code>: variance (nugget <code class="reqn">\tau^2</code>) of the
+independent errors
+<code class="reqn">\varepsilon(\boldsymbol{s})</code>.
+</p>
+</li>
+<li>
+<p><code>scale</code>: range parameter (<code class="reqn">\alpha</code>) of the variogram.
+</p>
+</li>
+<li>
+<p>names of additional variogram parameters such as the smoothness
+parameter <code class="reqn">\nu</code> of the Whittle-Matérn model (see
+<code>gencorr</code> and <code>param.names</code>). </p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit.param</code></td>
+<td>
+<p>a named logical vector (or a function such as
+<code>default.fit.param</code> that creates this vector) with the same
+names as used for <code>param</code>, defining which parameters are adjusted
+(<code>TRUE</code>) and which are kept fixed at their initial values
+(<code>FALSE</code>) when fitting the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aniso</code></td>
+<td>
+<p>a named numeric vector with initial values (or a function such as
+<code>default.aniso</code> that creates this vector) for fitting
+geometrically anisotropic variogram models.  The names of <code>aniso</code>
+are matched against the following names (see <em>Details</em> and
+<code>georobPackage</code> for information about the parametrization of
+variogram models):
+</p>
+
+<ul>
+<li>
+<p><code>f1</code>: ratio <code class="reqn">f_1</code> of lengths of second and first
+semi-principal axes of an ellipsoidal surface with constant
+semi-variance in <code class="reqn">\mathrm{I}\!\mathrm{R}^3</code> (default <code>f1 = 1</code>).
+</p>
+</li>
+<li>
+<p><code>f2</code>: ratio <code class="reqn">f_2</code> of lengths of third and first
+semi-principal axes of the semi-variance ellipsoid (default <code>f2 = 1</code>).
+</p>
+</li>
+<li>
+<p><code>omega</code>: azimuth in degrees of the first semi-principal axis
+of the semi-variance ellipsoid (default <code>omega = 90</code>).
+</p>
+</li>
+<li>
+<p><code>phi</code>: 90 degrees minus altitude of the first semi-principal axis
+of the semi-variance ellipsoid (default <code>phi = 90</code>).
+</p>
+</li>
+<li>
+<p><code>zeta</code>: angle in degrees between the second semi-principal
+axis and the direction of the line defined by the intersection
+between the <code class="reqn">x</code>-<code class="reqn">y</code>-plane and the plane orthogonal to the
+first semi-principal axis of the semi-variance ellipsoid through the
+origin (default <code>zeta = 0</code>).
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit.aniso</code></td>
+<td>
+<p>a named logical vector (or a function such as
+<code>default.fit.aniso</code> that creates this vector) with the same
+names as used for <code>aniso</code>, defining which parameters are adjusted
+(<code>TRUE</code>) and which are kept fixed at their initial values
+(<code>FALSE</code>) when fitting the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variogram.object</code></td>
+<td>
+<p>an optional list that defines a possibly nested
+variogram model.  Each component is itself a list with the following
+components:
+</p>
+
+<ul>
+<li>
+<p><code>variogram.model</code>: a character keyword defining the variogram
+model, see respective argument above.
+</p>
+</li>
+<li>
+<p><code>param</code>: a named numeric vector with initial values of the
+variogram parameters, see respective argument above.
+</p>
+</li>
+<li>
+<p><code>fit.param</code>: a named logical vector defining which parameters are
+adjusted, see respective argument above.
+</p>
+</li>
+<li>
+<p><code>aniso</code>: a named numeric vector with initial values for fitting
+geometrically anisotropic variogram models, see respective argument
+above.
+</p>
+</li>
+<li>
+<p><code>fit.param</code>: a named logical vector defining which anisotropy
+parameters are adjusted, see respective argument above.
+</p>
+</li>
+</ul>
+<p>Note that the arguments <code>variogram.model</code>, <code>param</code>,
+<code>fit.param</code>, <code>aniso</code> and<br><code>fit.aniso</code> are ignored when
+<code>variogram.object</code> is passed to <code>fit.variogram.model</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.lag</code></td>
+<td>
+<p>a positive numeric defining the maximum lag distance to be
+used for fitting or plotting variogram models (default all lag classes).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min.npairs</code></td>
+<td>
+<p>a positive integer defining the minimum number of data
+pairs required so that a lag class is used for fitting a variogram
+model (default <code>30</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weighting.method</code></td>
+<td>
+<p>a character keyword defining the weights for
+non-linear least squares.  Possible values are:
+</p>
+
+<ul>
+<li> <p><code>"equal"</code>: no weighting ,
+</p>
+</li>
+<li> <p><code>"npairs"</code>: weighting by number of data pairs in a lag class,
+</p>
+</li>
+<li> <p><code>"cressie"</code>: “Cressie's weights” (default, see
+<cite>Cressie, 1993, sec.  2.6.2</cite>).
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>a positive integer controlling logging of diagnostic
+messages to the console during model fitting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>a list with the components <code>maximizer</code>,
+<code>param.tf</code>, <code>fwd.tf</code>, <code>bwd.tf</code>, <code>hessian</code>,
+<code>optim</code> and <code>nlminb</code>  or a function such as
+<code>control.fit.variogram.model</code> that generates such a list.
+See <code>control.georob</code> for information on
+<code>maximizer</code>, <code>param.tf</code>, <code>fwd.tf</code>,
+<code>bwd.tf</code>, <code>hessian</code>, <code>optim</code> and <code>nlminb</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maximizer</code></td>
+<td>
+<p>a character keyword defining the optimizer for nonlinear
+least squares.  Possible values are <code>nlminb</code> (default)
+or <code>optim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian</code></td>
+<td>
+<p>a logical scalar controlling whether the Hessian should be
+computed at the nonlinear least squares estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param.tf</code></td>
+<td>
+<p>a function such as <code>param.transf</code>, which
+returns a named vector of character strings that define the
+transformations to be applied to the variogram parameters for model
+fitting, see <code>control.georob</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fwd.tf</code></td>
+<td>
+<p>a function such as <code>fwd.transf</code>, which returns
+a named list of invertible functions to be used to transform variogram
+parameters, see <code>control.georob</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deriv.fwd.tf</code></td>
+<td>
+<p>a function such as <code>dfwd.transf</code>, which
+returns a named list of functions corresponding to the first derivatives
+of <code>fwd.tf</code>, see <code>control.georob</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bwd.tf</code></td>
+<td>
+<p>a function such as <code>bwd.transf</code>, which returns
+the named list of inverse functions corresponding to <code>fwd.tf</code>, see
+see <code>control.georob</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nlminb</code></td>
+<td>
+<p>a list of arguments passed to <code>nlminb</code> or a function
+such as <code>control.nlminb</code> that generates such a list (see
+<code>nlminb</code> for allowed arguments).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optim</code></td>
+<td>
+<p>a list of arguments passed to <code>optim</code> or a function
+such as <code>control.optim</code> that generates such a list (see
+<code>optim</code> for allowed arguments).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object, x</code></td>
+<td>
+<p>an object of class <code>fitted.variogram</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>a positive integer indicating the number of decimal digits
+to print.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correlation</code></td>
+<td>
+<p>a logical scalar controlling whether the correlation matrix of
+the fitted variogram parameters is computed (default <code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>signif</code></td>
+<td>
+<p>a numeric with the confidence level for computing
+confidence intervals for variogram parameters (default <code>0.95</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>what</code></td>
+<td>
+<p>a character keyword with the quantity that should be
+displayed (default <code>"variogram"</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>from</code></td>
+<td>
+<p>a numeric with the minimal lag distance used in plotting
+variogram models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>to</code></td>
+<td>
+<p>a numeric with the maximum lag distance used in plotting
+variogram models (default: largest lag distance of current plot).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>a positive integer specifying the number of equally spaced lag
+distances for which semi-variances are evaluated in plotting variogram
+models (default <code>501</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xy.angle</code></td>
+<td>
+<p>a numeric vector with azimuth angles (in degrees,
+clockwise positive from north) in <code class="reqn">x</code>-<code class="reqn">y</code>-plane for which
+semi-variances should be plotted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xz.angle</code></td>
+<td>
+<p>a numeric vector with angles in <code class="reqn">x</code>-<code class="reqn">z</code>-plane (in
+degrees, clockwise positive from zenith to south) for which semi-variances
+should be plotted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col</code></td>
+<td>
+<p>a vector with colours of curves to distinguish curves relating
+to different azimuth angles in <code class="reqn">x</code>-<code class="reqn">y</code>-plane.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pch</code></td>
+<td>
+<p>a vector with the plotting symbols added to lines to
+distinguish curves relating to different angles in
+<code class="reqn">x</code>-<code class="reqn">z</code>-plane.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lty</code></td>
+<td>
+<p>a vector with the line types for plotting variogram models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments passed to methods.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The parametrization of geometrically anisotropic variograms is
+described in detail in <code>georobPackage</code>, and the section
+<em>Details</em> of <code>georob</code> describes how the parameter
+estimates are constrained to permissible ranges.  The same
+mechanisms are used in <code>fit.variogram.model</code>.
+</p>
+<p>The method <code>summary</code> computes confidence intervals of the estimated
+variogram and anisotropy parameters from the Hessian matrix of the residual
+sums of squares, based on the asymptotic normal distribution of least
+squares estimates.  Note that the Hessian matrix with respect to the
+<em>transformed</em> variogram and anisotropy parameters is used for this.
+Hence the inverse Hessian matrix is the covariance matrix of the
+transformed parameters, confidence intervals are first computed for the
+transformed parameters and the limits of these intervals are transformed
+back to the original scale of the parameters.  Optionally, <code>summary</code>
+reports the correlation matrix of the <em>transformed</em> parameters, also
+computed from the Hessian matrix.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function <code>fit.variogram.model</code> generates an object of class
+<code>fitted.variogram</code> which is a list with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>sse</code></td>
+<td>
+<p>the value of the object function (weighted residual sum of
+squares) evaluated at the solution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variogram.object</code></td>
+<td>
+<p>the estimated parameters of a possibly nested
+variograms model.  This is a list that contains for each variogram model
+structure the following components:
+</p>
+
+<ul>
+<li>
+<p><code>variogram.model</code>: the name of the fitted parametric
+variogram model.
+</p>
+</li>
+<li>
+<p><code>param</code>: a named numeric vector with the (estimated)
+variogram parameters.
+</p>
+</li>
+<li>
+<p><code>fit.param</code>: a named logical vector with the flags
+defining what variogram parameters were estimated.
+</p>
+</li>
+<li>
+<p><code>isotropic</code>: logical indicating whether an isotropic
+variogram was fitted.
+</p>
+</li>
+<li>
+<p><code>aniso</code>: a named numeric vector with the (estimated)
+anisotropy parameters.
+</p>
+</li>
+<li>
+<p><code>fit.aniso</code>: a named logical vector with the flags
+defining what anisotropy parameters were estimated.
+</p>
+</li>
+<li>
+<p><code>sincos</code>: a list with <code>sin</code> and <code>cos</code> of the
+angles <code class="reqn">\omega</code>, <code class="reqn">\phi</code> and <code class="reqn">\zeta</code> that define the
+orientation of the anisotropy ellipsoid.
+</p>
+</li>
+<li>
+<p><code>rotmat</code>: the matrix <code class="reqn">(\boldsymbol{C}_1,
+      \boldsymbol{C}_2, \boldsymbol{C}_3)</code> (see
+<code>georobPackage</code>).
+</p>
+</li>
+<li>
+<p><code>sclmat</code>: a vector with the elements 1, <code class="reqn">1/f_1</code>,
+<code class="reqn">1/f_2</code> (see <code>georobPackage</code>).  
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param.tf</code></td>
+<td>
+<p>a character vector listing the transformations of the
+variogram parameters used for model fitting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fwd.tf</code></td>
+<td>
+<p>a list of functions for variogram parameter transformations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bwd.tf</code></td>
+<td>
+<p>a list of functions for <em>inverse</em> variogram parameter
+transformations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>converged</code></td>
+<td>
+<p>a logical scalar indicating whether numerical
+maximization by <code>nlminb</code> or <code>optim</code>
+converged.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convergence.code</code></td>
+<td>
+<p>a diagnostic integer issued by
+<code>nlminb</code> or <code>optim</code> (component
+<code>convergence</code>) about convergence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>a named integer vector of length two with the number of
+function and gradient evaluations by <code>nlminb</code> or
+<code>optim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the matched call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p>a numeric vector with the residuals, that is the sample
+semi-variance minus the fitted values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitted</code></td>
+<td>
+<p>a numeric vector with the modelled semi-variances.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>a numeric vector with the weights used for fitting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian.tfpa</code></td>
+<td>
+<p>a symmetric matrix with the Hessian at the solution
+with respect to the transformed variogram and anisotropy parameters
+(missing if <code>hessian</code> is false).  This Hessian is used by
+<code>summary.fitted.variogram</code> to compute confidence intervals
+for the estimated parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian.ntfpa</code></td>
+<td>
+<p>a symmetric matrix with the Hessian at the solution
+with respect to the non-transformed variogram and anisotropy parameters
+(missing if <code>hessian</code> is false).
+</p>
+</td>
+</tr>
+</table>
+<p>The function <code>control.fit.variogram.model</code> returns a list with
+parameters to steer <br><code>fit.variogram.model</code>, see arguments of
+the function above for its components.
+</p>
+<p>The method <code>print.fitted.variogram</code> invisibly returns the fitted
+variogram model unchanged.
+</p>
+<p>The method <code>summary.fitted.variogram</code> returns an object of class
+<code>summary.fitted.variogram</code> which is a list containing a subset of
+the components of the fitted variogram object (<code>call</code>,
+<code>residuals</code>, <code>weights</code>, <code>converged</code>,
+<code>convergence.code</code>, <code>iter</code>, <code>sse</code>,
+<code>variogram.object</code>), the matrix <code>param.aniso</code> with the
+estimated values of the variogram parameters along with the bounds of the
+confidence intervals and optionally the correlation matrix
+<code>cor.tf.param</code> of the estimated transformed parameters.  There is a
+<code>print</code> method for objects of class <code>summary.fitted.variogram</code>
+which returns invisibly the object unchanged.
+</p>
+<p>The method <code>lines.fitted.variogram</code> is called for its side effects
+and returns the value <code>NULL</code> invisibly.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Andreas Papritz <a href="mailto:papritz@retired.ethz.ch">papritz@retired.ethz.ch</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Cressie, N. A. C. (1993) <em>Statistics for Spatial Data</em>, Wiley, New
+York, <a href="https://doi.org/10.1002/9781119115151">doi:10.1002/9781119115151</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>georobPackage</code> for a description of the model and a brief summary of the algorithms;
+<code>georob</code> for (robust) fitting of spatial linear models;
+</p>
+<p><code>georobObject</code> for a description of the class <code>georob</code>;
+</p>
+<p><code>profilelogLik</code> for computing profiles of Gaussian likelihoods;
+</p>
+<p><code>plot.georob</code> for display of RE(ML) variogram estimates;
+</p>
+<p><code>control.georob</code> for controlling the behaviour of <code>georob</code>;
+</p>
+<p><code>georobModelBuilding</code> for stepwise building models of class <code>georob</code>;
+</p>
+<p><code>cv.georob</code> for assessing the goodness of a fit by <code>georob</code>;
+</p>
+<p><code>georobMethods</code> for further methods for the class <code>georob</code>;
+</p>
+<p><code>predict.georob</code> for computing robust Kriging predictions;
+
+</p>
+<p><code>lgnpp</code> for unbiased back-transformation of Kriging prediction
+of log-transformed data;
+</p>
+<p><code>georobSimulation</code> for simulating realizations of a Gaussian process
+from model fitted by <code>georob</code>.
+
+
+
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(wolfcamp)
+
+## fitting an isotropic IRF(0) model
+r.sv.iso &lt;- sample.variogram(pressure~1, data = wolfcamp,
+    locations = ~x + y, lag.dist.def = seq(0, 200, by = 15))
+plot(r.sv.iso, type = "l")
+
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  r.irf0.iso &lt;- fit.variogram.model(r.sv.iso, variogram.model = "RMfbm",
+      param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.),
+      fit.param = default.fit.param(scale = FALSE, alpha = TRUE))
+  summary(r.irf0.iso, correlation = TRUE)
+  lines(r.irf0.iso, line.col = "red")
+}
+
+## fitting an anisotropic IRF(0) model
+r.sv.aniso &lt;- sample.variogram(pressure~1, data = wolfcamp,
+    locations = ~x + y, lag.dist.def = seq(0, 200, by = 15),
+    xy.angle.def = c(0., 22.5, 67.5, 112.5, 157.5, 180.))
+plot(r.sv.aniso, type = "l")
+
+if(interactive()){
+  ## example is run only in interactive session because cpu times exceeds 5 s
+  r.irf0.aniso &lt;- fit.variogram.model(r.sv.aniso, variogram.model = "RMfbm",
+      param = c(variance = 100, nugget = 1000, scale = 1., alpha = 1.5),
+      fit.param = default.fit.param(scale = FALSE, alpha = TRUE),
+      aniso = default.aniso(f1 = 0.4, omega = 135.),
+      fit.aniso = default.fit.aniso(f1 = TRUE, omega = TRUE),
+      control = control.fit.variogram.model(
+        maximizer = "optim",
+        optim = control.optim(
+          method = "BFGS", hessian = TRUE, control = list(maxit = 5000)
+        )
+      ))
+  summary(r.irf0.aniso, correlation = TRUE)
+
+  lines(r.irf0.aniso, xy.angle = seq(0, 135, by = 45))
+}
+</code></pre>
+
+
+</div>

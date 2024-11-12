@@ -1,0 +1,204 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>haplotypeOddsRatio</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Calculate haplotype disease risk.
+</h2>
+
+<h3>Description</h3>
+
+<p>Haplotype disease risk is calculated resolving haplotype ambiguity and
+adjusting for covariates and population stratification.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">haplotypeOddsRatio(formula, gtypevar, data, stratvar=NULL, nsim=100, tol=1e-8)
+## S3 method for class 'haploOR'
+print(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+
+<p>The formula for logistic regression without the haplotype variable.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gtypevar</code></td>
+<td>
+
+<p>The variable names in the data frame corresponding to the loci of
+interest.  Each variables counts the number of mutant genotypes a
+subject has at that locus.  Legal values are 0, 1, 2 &amp; NA.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>The name of the dataframe being analyzed.  It should have all the
+variables in the formula as well as those in genotype and stratvar.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stratvar</code></td>
+<td>
+
+<p>Name of the stratification variable.  This is used to account for
+population stratification.  The haplotype frequencies are estimated
+within each stratum.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+
+<p>Variance should be inflated to account for inferred ambiguous
+haplotypes.  The estimates are recalculated by simulating the
+disease haplotype copy number and variance added to average.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>Tolerance limit for the EM algorithm convergence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Object of class haploOR.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other print options.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This implements the method in the reference below.
+</p>
+
+
+<h3>Value</h3>
+
+<p>It is a list of class haploOR
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The function call that produced this output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef</code></td>
+<td>
+<p>Table with estimated coefficients, standard error,
+Z-statistic and p-value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var</code></td>
+<td>
+<p>Covariance matrix of the estimated log odds-ratiios.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deviance</code></td>
+<td>
+<p>Average of the simulated deviances.  Its theoretical
+properties are unknown.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aic</code></td>
+<td>
+<p>Average of the simulated aic.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>null.deviance</code></td>
+<td>
+<p>Deviance of null model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df.null</code></td>
+<td>
+<p>Degrees of freedom of null model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df.residual</code></td>
+<td>
+<p>Degrees of freedom of full model.</p>
+</td>
+</tr>
+</table>
+<p>The "print" method formats the results into a user-friendly table.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Venkatraman E. Seshan
+</p>
+
+
+<h3>References</h3>
+
+<p>Venkatraman ES, Mitra N, Begg CB. (2004) A method for evaluating the
+impact of individual haplotypes on disease incidence in molecular
+epidemiology studies. <em>Stat Appl Genet Mol Biol.</em> v3:Article27.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># simulated data with 2 loci haplotypes 1=00, 2=01, 3=10, 4=11
+# control haplotype probabilities p[i]  i=1,2,3,4
+# haplotype pairs (i&lt;=j) i=j: probs = p[i]^2 ; i&lt;j: p[i]*p[j]
+p &lt;- c(0.25, 0.2, 0.2, 0.35)
+p0 &lt;- rep(0, 10)
+l &lt;- 0
+for(i in 1:4) {for(j in i:4) {l &lt;- l+1; p0[l] &lt;- 2*p[i]*p[j]/(1+1*(i==j))}}
+controls &lt;- as.numeric(cut(runif(1000), cumsum(c(0,p0)), labels=1:10))
+# case probabilities disease haplotype is 11
+or &lt;- c(2, 5)
+p1 &lt;- p0*c(1,1,1,2,1,1,2,1,2,8); p1 &lt;- p1/sum(p1)
+cases &lt;- as.numeric(cut(runif(1000), cumsum(c(0,p1)), labels=1:10))
+# now pool them together and set up the data frame
+dat &lt;- data.frame(status=rep(0:1, c(1000, 1000)))
+# number of copies of mutant variant for locus 1
+dat$gtype1 &lt;- c(0,0,1,1,0,1,1,2,2,2)[c(controls, cases)]
+# number of copies of mutant variant for locus 2
+dat$gtype2 &lt;- c(0,1,0,1,2,1,2,0,1,2)[c(controls, cases)]
+# true number of copies of disease haplotype
+dat$hcn &lt;- c(0,0,0,1,0,0,1,0,1,2)[c(controls, cases)]
+# model with genotypes only
+haplotypeOddsRatio(status ~ 1, c("gtype1","gtype2"), dat)
+# model from the logistic fit using the number of copies of disease haplotype
+glm(status ~ factor(hcn), dat, family=binomial)
+</code></pre>
+
+
+</div>

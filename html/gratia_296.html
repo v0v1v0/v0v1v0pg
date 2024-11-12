@@ -1,0 +1,309 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>smooth_samples</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Posterior draws for individual smooths</h2>
+
+<h3>Description</h3>
+
+<p>Returns draws from the posterior distributions of smooth functions in a GAM.
+Useful, for example, for visualising the uncertainty in individual estimated
+functions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">smooth_samples(model, ...)
+
+## S3 method for class 'gam'
+smooth_samples(
+  model,
+  select = NULL,
+  term = deprecated(),
+  n = 1,
+  data = newdata,
+  method = c("gaussian", "mh", "inla", "user"),
+  seed = NULL,
+  freq = FALSE,
+  unconditional = FALSE,
+  n_cores = 1L,
+  n_vals = 200,
+  burnin = 1000,
+  thin = 1,
+  t_df = 40,
+  rw_scale = 0.25,
+  rng_per_smooth = FALSE,
+  draws = NULL,
+  partial_match = NULL,
+  mvn_method = c("mvnfast", "mgcv"),
+  ...,
+  newdata = NULL,
+  ncores = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>a fitted model of the supported types</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments passed to other methods. For <code>fitted_samples()</code>, these
+are passed on to <code>mgcv::predict.gam()</code>. For <code>posterior_samples()</code> these are
+passed on to <code>fitted_samples()</code>. For <code>predicted_samples()</code> these are
+passed on to the relevant <code>simulate()</code> method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>select</code></td>
+<td>
+<p>character; select which smooth's posterior to draw from.
+The default (<code>NULL</code>) means the posteriors of all smooths in <code>model</code>
+wil be sampled from. If supplied, a character vector of requested terms.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>term</code></td>
+<td>
+<p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated"><img src="../help/figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Use <code>select</code> instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>numeric; the number of posterior samples to return.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>data frame; new observations at which the posterior draws
+from the model should be evaluated. If not supplied, the data used to fit
+the model will be used for <code>data</code>, if available in <code>model</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>character; which method should be used to draw samples from
+the posterior distribution. <code>"gaussian"</code> uses a Gaussian (Laplace)
+approximation to the posterior. <code>"mh"</code> uses a Metropolis Hastings sampler
+that alternates t proposals with proposals based on a shrunken version of
+the posterior covariance matrix. <code>"inla"</code> uses a variant of Integrated
+Nested Laplace Approximation due to Wood (2019), (currently not
+implemented). <code>"user"</code> allows for user-supplied posterior draws
+(currently not implemented).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>numeric; a random seed for the simulations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>freq</code></td>
+<td>
+<p>logical; <code>TRUE</code> to use the frequentist covariance matrix of
+the parameter estimators, <code>FALSE</code> to use the Bayesian posterior
+covariance matrix of the parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unconditional</code></td>
+<td>
+<p>logical; if <code>TRUE</code> (and <code>freq == FALSE</code>) then the
+Bayesian smoothing parameter uncertainty corrected covariance matrix is
+used, if available.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_cores</code></td>
+<td>
+<p>number of cores for generating random variables from a
+multivariate normal distribution. Passed to <code>mvnfast::rmvn()</code>.
+Parallelization will take place only if OpenMP is supported (but appears
+to work on Windows with current <code>R</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_vals</code></td>
+<td>
+<p>numeric; how many locations to evaluate the smooth at if
+<code>data</code> not supplied</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>numeric; number of samples to discard as the burnin draws.
+Only used with <code>method = "mh"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>numeric; the number of samples to skip when taking <code>n</code> draws.
+Results in <code>thin * n</code> draws from the posterior being taken. Only used with
+<code>method = "mh"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t_df</code></td>
+<td>
+<p>numeric; degrees of freedom for t distribution proposals. Only
+used with <code>method = "mh"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rw_scale</code></td>
+<td>
+<p>numeric; Factor by which to scale posterior covariance
+matrix when generating random walk proposals. Negative or non finite to
+skip the random walk step. Only used with <code>method = "mh"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rng_per_smooth</code></td>
+<td>
+<p>logical; if TRUE, the behaviour of gratia version
+0.8.1 or earlier is used, whereby a separate call the the random number
+generator (RNG) is performed for each smooth. If FALSE, a single call to the
+RNG is performed for all model parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>draws</code></td>
+<td>
+<p>matrix; user supplied posterior draws to be used when
+<code>method = "user"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>partial_match</code></td>
+<td>
+<p>logical; should smooths be selected by partial matches
+with <code>select</code>? If <code>TRUE</code>, <code>select</code> can only be a single string to match
+against.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mvn_method</code></td>
+<td>
+<p>character; one of <code>"mvnfast"</code> or <code>"mgcv"</code>. The default is
+uses <code>mvnfast::rmvn()</code>, which can be considerably faster at generate large
+numbers of MVN random values than <code>mgcv::rmvn()</code>, but which might not work
+for some marginal fits, such as those where the covariance matrix is close
+to singular.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>Deprecated: use <code>data</code> instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Deprecated; use <code>n_cores</code> instead. The number of cores for
+generating random variables from a multivariate normal distribution.
+Passed to <code>mvnfast::rmvn()</code>. Parallelization will take place only if
+OpenMP is supported (but appears to work on Windows with current <code>R</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A tibble with additional classes <code>"smooth_samples"</code> and
+'"posterior_samples".
+</p>
+<p>For the <code>"gam"</code> method, the columns currently returned (not in this order)
+are:
+</p>
+
+<ul>
+<li> <p><code>.smooth</code>; character vector. Indicates the smooth function for that
+particular draw,
+</p>
+</li>
+<li> <p><code>.term</code>; character vector. Similar to <code>smooth</code>, but will contain the
+full label for the smooth, to differentiate factor-by smooths for
+example.
+</p>
+</li>
+<li> <p><code>.by</code>; character vector. If the smooth involves a <code>by</code> term, the
+by variable will be named here, <code>NA_character_</code> otherwise.
+</p>
+</li>
+<li> <p><code>.row</code>; integer. A vector of values <code>seq_len(n_vals)</code>, repeated if
+<code>n &gt; 1L</code>. Indexes the row in <code>data</code> for that particular draw.
+</p>
+</li>
+<li> <p><code>.draw</code>; integer. A vector of integer values indexing the particular
+posterior draw that each row belongs to.
+</p>
+</li>
+<li> <p><code>.value</code>; numeric. The value of smooth function for this posterior draw
+and covariate combination.
+</p>
+</li>
+<li> <p><code>xxx</code>; numeric. A series of one or more columns containing data required
+for the smooth, named as per the variables involved in the respective
+smooth.
+</p>
+</li>
+<li>
+<p> Additional columns will be present in the case of factor by smooths,
+which will contain the level for the factor named in <code>by_variable</code> for
+that particular posterior draw.
+</p>
+</li>
+</ul>
+<h3>Warning</h3>
+
+<p>The set of variables returned and their order in the tibble is subject to
+change in future versions. Don't rely on position.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Gavin L. Simpson
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">load_mgcv()
+
+dat &lt;- data_sim("eg1", n = 400, seed = 2)
+m1 &lt;- gam(y ~ s(x0) + s(x1) + s(x2) + s(x3), data = dat, method = "REML")
+
+sms &lt;- smooth_samples(m1, select = "s(x0)", n = 5, seed = 42)
+
+sms
+
+
+## A factor by example (with a spurious covariate x0)
+dat &lt;- data_sim("eg4", n = 1000, seed = 2)
+
+## fit model...
+m2 &lt;- gam(y ~ fac + s(x2, by = fac) + s(x0), data = dat)
+sms &lt;- smooth_samples(m2, n = 5, seed = 42)
+draw(sms)
+
+</code></pre>
+
+
+</div>

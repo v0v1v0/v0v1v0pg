@@ -1,0 +1,105 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tabl</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Make a table from gist or commit class or a list of either</h2>
+
+<h3>Description</h3>
+
+<p>Make a table from gist or commit class or a list of either
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tabl(x, ...)
+
+tabl_data(x)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Either a gist or commit class object or a list of either</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Ignored</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For commits we return a single data.frame. For gists, we always
+return a list so that we are returning data consistently,
+regardless of variable return data. So you can always index to the main
+data.frame with gist metadata and file info by doing <code>result$data</code>,
+and likewise for  forks <code>result$forks</code> and history
+<code>result$history</code>
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data.frame or list of data.frame's
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# from a gist object
+x &lt;- as.gist('f1403260eb92f5dfa7e1')
+res &lt;- tabl(x)
+res$data
+res$forks
+res$history
+
+# from a list
+ss &lt;- gists('minepublic')
+tabl(ss[1:3])
+lapply(tabl(ss[1:3]), "[[", "data")
+# index to data slots, but also make single data.frame
+tabl_data(tabl(ss[1:3]))
+## manipulate with dplyr
+library("dplyr")
+tabl_data(tabl(ss[1:30])) %&gt;% 
+  select(id, description, owner_login) %&gt;% 
+  filter(grepl("gist gist gist", description))
+
+# commits
+x &lt;- gists()[[2]] %&gt;% commits()
+tabl(x[[1]])
+
+## many
+x &lt;- sapply(gists(per_page = 100), commits)
+tabl(x) %&gt;%
+  select(id, login, change_status.total, url) %&gt;% 
+  filter(change_status.total &gt; 50)
+  
+# pass in a url
+gist("https://gist.github.com/expersso/4ac33b9c00751fddc7f8") %&gt;% tabl
+## many
+gg &lt;- gists()
+(urls &lt;- vapply(gg, "[[", "", "html_url"))
+lapply(urls[1:5], as.gist) %&gt;% tabl()
+
+# gist with forks and history
+gist('1642874') %&gt;% tabl
+
+# gist with history, no forks
+gist('c96d2e453c95d0166408') %&gt;% tabl 
+
+## End(Not run)
+</code></pre>
+
+
+</div>

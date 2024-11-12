@@ -1,0 +1,166 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cr_deploy_docker_trigger</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Deploy Docker build from a Git repo</h2>
+
+<h3>Description</h3>
+
+<p>This helps the common use case of building a Dockerfile based on the contents of a GitHub repo, and sets up a build trigger so it will build on every commit.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cr_deploy_docker_trigger(
+  repo,
+  image,
+  trigger_name = paste0("docker-", image),
+  image_tag = c("latest", "$SHORT_SHA", "$BRANCH_NAME"),
+  ...,
+  substitutions = NULL,
+  ignoredFiles = NULL,
+  includedFiles = NULL,
+  timeout = NULL,
+  projectId_target = cr_project_get()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>repo</code></td>
+<td>
+<p>The git repo holding the Dockerfile from cr_buildtrigger_repo</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>image</code></td>
+<td>
+<p>The name of the image you want to build</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trigger_name</code></td>
+<td>
+<p>The trigger name</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>image_tag</code></td>
+<td>
+<p>What to tag the build docker image</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Arguments passed on to <code>cr_buildstep_docker</code>
+</p>
+
+<dl>
+<dt><code>tag</code></dt>
+<dd>
+<p>The tag or tags to be attached to the pushed image - can use <code>Build</code> macros</p>
+</dd>
+<dt><code>location</code></dt>
+<dd>
+<p>Where the Dockerfile to build is in relation to <code>dir</code></p>
+</dd>
+<dt><code>projectId</code></dt>
+<dd>
+<p>The projectId</p>
+</dd>
+<dt><code>dockerfile</code></dt>
+<dd>
+<p>Specify the name of the Dockerfile found at <code>location</code></p>
+</dd>
+<dt><code>kaniko_cache</code></dt>
+<dd>
+<p>If TRUE will use kaniko cache for Docker builds.</p>
+</dd>
+<dt><code>build_args</code></dt>
+<dd>
+<p>additional arguments to pass to <code>docker build</code>,
+should be a character vector.</p>
+</dd>
+<dt><code>push_image</code></dt>
+<dd>
+<p>if <code>kaniko_cache = FALSE</code> and
+<code>push_image = FALSE</code>, then the docker image is simply built and not
+pushed</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>substitutions</code></td>
+<td>
+<p>A named list of Build macro variables</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ignoredFiles</code></td>
+<td>
+<p>ignored_files and included_files are file glob matches extended with support for "**".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>includedFiles</code></td>
+<td>
+<p>If any of the files altered in the commit pass the ignored_files</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timeout</code></td>
+<td>
+<p>Timeout for build</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>projectId_target</code></td>
+<td>
+<p>The project to publish the Docker image to.  The image will be built under the project configured via cr_project_get.  You will need to give the build project's service email access to the target GCP project via IAM for it to push successfully.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This creates a buildtrigger to do a kamiko cache enabled Docker build upon each commit, as defined by your repo settings via cr_buildtrigger_repo.  It will build all tags concurrently.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>cr_deploy_docker which lets you build Dockerfiles for more generic use cases
+</p>
+<p>Other Deployment functions: 
+<code>cr_deploy_docker()</code>,
+<code>cr_deploy_packagetests()</code>,
+<code>cr_deploy_pkgdown()</code>,
+<code>cr_deploy_run_website()</code>,
+<code>cr_deploy_run()</code>,
+<code>cr_deploy_r()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+repo &lt;- cr_buildtrigger_repo("MarkEdmondson1234/googleCloudRunner")
+# create trigger that will publish Docker image to gcr.io/your-project/test upon each GitHub commit
+cr_deploy_docker_trigger(repo, "test", dir = "cloud_build")
+
+# build in one project, publish the docker image to another project (gcr.io/another-project/test)
+cr_deploy_docker_trigger(repo, "test", projectId_target = "another-project", dir = "cloud_build")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

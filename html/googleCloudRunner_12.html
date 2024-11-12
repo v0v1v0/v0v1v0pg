@@ -1,0 +1,163 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cr_buildstep_docker</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a build step to build and push a docker image</h2>
+
+<h3>Description</h3>
+
+<p>Create a build step to build and push a docker image
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cr_buildstep_docker(
+  image,
+  tag = c("latest", "$BUILD_ID"),
+  location = ".",
+  projectId = cr_project_get(),
+  dockerfile = "Dockerfile",
+  kaniko_cache = FALSE,
+  build_args = NULL,
+  push_image = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>image</code></td>
+<td>
+<p>The image tag that will be pushed, starting with gcr.io or created by combining with <code>projectId</code> if not starting with gcr.io</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tag</code></td>
+<td>
+<p>The tag or tags to be attached to the pushed image - can use <code>Build</code> macros</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>location</code></td>
+<td>
+<p>Where the Dockerfile to build is in relation to <code>dir</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>projectId</code></td>
+<td>
+<p>The projectId</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dockerfile</code></td>
+<td>
+<p>Specify the name of the Dockerfile found at <code>location</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kaniko_cache</code></td>
+<td>
+<p>If TRUE will use kaniko cache for Docker builds.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>build_args</code></td>
+<td>
+<p>additional arguments to pass to <code>docker build</code>,
+should be a character vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>push_image</code></td>
+<td>
+<p>if <code>kaniko_cache = FALSE</code> and
+<code>push_image = FALSE</code>, then the docker image is simply built and not
+pushed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed in to cr_buildstep</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Setting <code>kaniko_cache = TRUE</code> will enable caching of the layers of the Dockerfile, which will speed up subsequent builds of that Dockerfile.  See <a href="https://cloud.google.com/build/docs/kaniko-cache">Using Kaniko cache</a>
+</p>
+<p>If building multiple tags they don't have to run sequentially - set <code>waitFor = "-"</code> to build concurrently
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other Cloud Buildsteps: 
+<code>cr_buildstep_bash()</code>,
+<code>cr_buildstep_decrypt()</code>,
+<code>cr_buildstep_df()</code>,
+<code>cr_buildstep_edit()</code>,
+<code>cr_buildstep_extract()</code>,
+<code>cr_buildstep_gcloud()</code>,
+<code>cr_buildstep_gitsetup()</code>,
+<code>cr_buildstep_mailgun()</code>,
+<code>cr_buildstep_nginx_setup()</code>,
+<code>cr_buildstep_packagetests()</code>,
+<code>cr_buildstep_pkgdown()</code>,
+<code>cr_buildstep_run()</code>,
+<code>cr_buildstep_r()</code>,
+<code>cr_buildstep_secret()</code>,
+<code>cr_buildstep_slack()</code>,
+<code>cr_buildstep_targets()</code>,
+<code>cr_buildstep()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">cr_project_set("my-project")
+cr_bucket_set("my-bucket")
+
+cr_buildstep_docker("gcr.io/my-project/my-image")
+cr_buildstep_docker("my-image")
+cr_buildstep_docker("my-image", tag = "$BRANCH_NAME")
+
+# setting up a build to trigger off a Git source:
+my_image &lt;- "gcr.io/my-project/my-image"
+my_repo &lt;- RepoSource("github_markedmondson1234_googlecloudrunner",
+  branchName = "master"
+)
+## Not run: 
+docker_yaml &lt;- cr_build_yaml(steps = cr_buildstep_docker(my_image))
+built_docker &lt;- cr_build(docker_yaml, source = my_repo)
+
+# make a build trigger so it builds on each push to master
+cr_buildtrigger("build-docker", trigger = my_repo, build = built_docker)
+
+
+# add a cache to your docker build to speed up repeat builds
+cr_buildstep_docker("my-image", kaniko_cache = TRUE)
+
+# building using manual buildsteps to clone from git
+bs &lt;- c(
+  cr_buildstep_gitsetup("github-ssh"),
+  cr_buildstep_git(c("clone", "git@github.com:MarkEdmondson1234/googleCloudRunner", ".")),
+  cr_buildstep_docker("gcr.io/gcer-public/packagetools",
+    dir = "inst/docker/packages/"
+  )
+)
+
+built &lt;- cr_build(cr_build_yaml(bs))
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,505 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GPNode</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>R6 Class for the nodes / leaves in the GPTree tree</h2>
+
+<h3>Description</h3>
+
+<p>The nodes contain the local GP if they are leaves (at the end of a branch). Nodes that are just nodes contain information on how the input space was split. They are responsible for computing and updating the splitting probabilities. Also, the tree interacts with the local GPs through the nodes.
+</p>
+<p>Currently, GPs from the <code>DiceKriging</code> package (WrappedDiceKrigingGP) and <code>mlegp</code> package (WrappedmlegpGP) are implemented. The user can create their own wrapper using WrappedGP.
+</p>
+
+
+<h3>Public fields</h3>
+
+<div class="r6-fields">
+
+<dl>
+<dt><code>key</code></dt>
+<dd>
+<p>A string like "0110100" to identify the node in the binary tree</p>
+</dd>
+<dt><code>x_dim</code></dt>
+<dd>
+<p>Dimensionality of input points. It is set once the first point is received through the GPTree method <code>update</code>. It needs to be specified if <code>min_ranges</code> should be different from default.</p>
+</dd>
+<dt><code>theta</code></dt>
+<dd>
+<p>Overlap ratio between two leafs in the split direction. The default value is 0.</p>
+</dd>
+<dt><code>split_direction_criterion</code></dt>
+<dd>
+<p>A string that indicates which spitting criterion to use. The options are:
+</p>
+
+<ul>
+<li> <p><code>"max_spread"</code>: Split along the direction which has the largest data spread.
+</p>
+</li>
+<li> <p><code>"min_lengthscale"</code>: split along the direction with the smallest length-scale hyperparameter from the local GP.
+</p>
+</li>
+<li> <p><code>"max_spread_per_lengthscale"</code>: Split along the direction with the largest data spread relative to the corresponding GP length-scale hyperparameter.
+</p>
+</li>
+<li> <p><code>"max_corr"</code>: Split along the direction where the input data is most strongly correlated with the target variable.
+</p>
+</li>
+<li> <p><code>"principal_component"</code>: Split along the first principal component.
+</p>
+</li>
+</ul>
+<p>The default value is <code>"max_spread_per_lengthscale"</code>.</p>
+</dd>
+<dt><code>split_position_criterion</code></dt>
+<dd>
+<p>A string indicating how the split position along the split direction should be set. Possible values are (<code>"mean"</code> and <code>"median"</code>). The default is <code>"mean"</code>.</p>
+</dd>
+<dt><code>shape_decay</code></dt>
+<dd>
+<p>A string specifying how the probability function for a point to be assigned to the left leaf should fall off in the overlap region. The available options are a linear shape (<code>"linear"</code>), an exponential shape (<code>"exponential"</code>) or a Gaussian shape (<code>"gaussian"</code>). Another option is to select no overlap region. This can be achieved by selecting <code>"deterministic"</code> or to set <code>theta</code> to 0. The default is <code>"linear"</code>.</p>
+</dd>
+<dt><code>prob_min_theta</code></dt>
+<dd>
+<p>Minimum probability after which the overlap shape gets truncated (either towards 0 or 1). The default value is 0.01.</p>
+</dd>
+<dt><code>Nbar</code></dt>
+<dd>
+<p>Maximum number of data points for each GP in a leaf before it is split. The default value is 1000.</p>
+</dd>
+<dt><code>min_ranges</code></dt>
+<dd>
+<p>Smallest allowed input data spread (per dimension) before node splitting stops. It is set to its default <code>min_ranges = rep(0.0, x_dim)</code> once the first point is received through the <code>update</code> method. <code>x_dim</code> needs to be specified by the user if it should be different from the default.</p>
+</dd>
+<dt><code>is_leaf</code></dt>
+<dd>
+<p>If TRUE, this node a leaf, i.e the last node on its branch</p>
+</dd>
+<dt><code>wrapped_gp</code></dt>
+<dd>
+<p>An instance of the WrappedGP type</p>
+</dd>
+<dt><code>can_split</code></dt>
+<dd>
+<p>If TRUE for a given dimension, the leaf can be split along that dimension</p>
+</dd>
+<dt><code>rotation_matrix</code></dt>
+<dd>
+<p>A rotation matrix, used for transforming the data</p>
+</dd>
+<dt><code>shift</code></dt>
+<dd>
+<p>A shift, used for transforming the data</p>
+</dd>
+<dt><code>use_pc_transform</code></dt>
+<dd>
+<p>TRUE if principal components transformation is used for node splitting</p>
+</dd>
+<dt><code>x_spread</code></dt>
+<dd>
+<p>Vector of data spread for each dimension</p>
+</dd>
+<dt><code>split_index</code></dt>
+<dd>
+<p>Index for the split dimension</p>
+</dd>
+<dt><code>position_split</code></dt>
+<dd>
+<p>Position of the split along dimension split_index</p>
+</dd>
+<dt><code>width_overlap</code></dt>
+<dd>
+<p>Width of overlap region along dimension split_index</p>
+</dd>
+<dt><code>point_ids</code></dt>
+<dd>
+<p>IDs of the points assigned to this node</p>
+</dd>
+<dt><code>residuals</code></dt>
+<dd>
+<p>Vector of residuals</p>
+</dd>
+<dt><code>pred_errs</code></dt>
+<dd>
+<p>Vector of prediction uncertainties</p>
+</dd>
+<dt><code>error_scaler</code></dt>
+<dd>
+<p>Scaling factor for the prediction error to ensure desired coverage</p>
+</dd>
+<dt><code>use_n_residuals</code></dt>
+<dd>
+<p>Number of past residuals to use in calibrating the <code>error_scaler</code></p>
+</dd>
+</dl>
+</div>
+
+
+<h3>Methods</h3>
+
+
+
+<h4>Public methods</h4>
+
+
+<ul>
+<li> <p><a href="#method-GPNode-new"><code>GPNode$new()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GPNode-transform"><code>GPNode$transform()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GPNode-update_prob_pars"><code>GPNode$update_prob_pars()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GPNode-get_prob_child_1"><code>GPNode$get_prob_child_1()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GPNode-register_residual"><code>GPNode$register_residual()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GPNode-update_empirical_error_pars"><code>GPNode$update_empirical_error_pars()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GPNode-delete_gp"><code>GPNode$delete_gp()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GPNode-clone"><code>GPNode$clone()</code></a>
+</p>
+</li>
+</ul>
+<hr>
+<a id="method-GPNode-new"></a>
+
+
+
+<h4>Method <code>new()</code>
+</h4>
+
+<p>Create a new node object
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GPNode$new(
+  key,
+  x_dim,
+  theta,
+  split_direction_criterion,
+  split_position_criterion,
+  shape_decay,
+  prob_min_theta,
+  Nbar,
+  wrapper,
+  gp_control,
+  retrain_buffer_length,
+  add_buffer_in_prediction,
+  min_ranges = NULL,
+  is_leaf = TRUE
+)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>key</code></dt>
+<dd>
+<p>A string like "0110100" to identify the node in the binary tree</p>
+</dd>
+<dt><code>x_dim</code></dt>
+<dd>
+<p>Dimensionality of input points. It is set once the first point is received through the GPTree method <code>update</code>. It needs to be specified if <code>min_ranges</code> should be different from default.</p>
+</dd>
+<dt><code>theta</code></dt>
+<dd>
+<p>Overlap ratio between two leafs in the split direction. The default value is 0.</p>
+</dd>
+<dt><code>split_direction_criterion</code></dt>
+<dd>
+<p>A string that indicates which spitting criterion to use. The options are:
+</p>
+
+<ul>
+<li> <p><code>"max_spread"</code>: Split along the direction which has the largest data spread.
+</p>
+</li>
+<li> <p><code>"min_lengthscale"</code>: split along the direction with the smallest length-scale hyperparameter from the local GP.
+</p>
+</li>
+<li> <p><code>"max_spread_per_lengthscale"</code>: Split along the direction with the largest data spread relative to the corresponding GP length-scale hyperparameter.
+</p>
+</li>
+<li> <p><code>"max_corr"</code>: Split along the direction where the input data is most strongly correlated with the target variable.
+</p>
+</li>
+<li> <p><code>"principal_component"</code>: Split along the first principal component.
+</p>
+</li>
+</ul>
+<p>The default value is <code>"max_spread_per_lengthscale"</code>.</p>
+</dd>
+<dt><code>split_position_criterion</code></dt>
+<dd>
+<p>A string indicating how the split position along the split direction should be set. Possible values are (<code>"mean"</code> and <code>"median"</code>). The default is <code>"mean"</code>.</p>
+</dd>
+<dt><code>shape_decay</code></dt>
+<dd>
+<p>A string specifying how the probability function for a point to be assigned to the left leaf should fall off in the overlap region. The available options are a linear shape (<code>"linear"</code>), an exponential shape (<code>"exponential"</code>) or a Gaussian shape (<code>"gaussian"</code>). Another option is to select no overlap region. This can be achieved by selecting <code>"deterministic"</code> or to set <code>theta</code> to 0. The default is <code>"linear"</code>.</p>
+</dd>
+<dt><code>prob_min_theta</code></dt>
+<dd>
+<p>Minimum probability after which the overlap shape gets truncated (either towards 0 or 1). The default value is 0.01.</p>
+</dd>
+<dt><code>Nbar</code></dt>
+<dd>
+<p>Maximum number of data points for each GP in a leaf before it is split. The default value is 1000.</p>
+</dd>
+<dt><code>wrapper</code></dt>
+<dd>
+<p>A string that indicates which GP implementation should be used. The current version includes wrappers for the packages <code>"DiceKriging"</code> and <code>"mlegp"</code>. The default setting is <code>"DiceKriging"</code>.</p>
+</dd>
+<dt><code>gp_control</code></dt>
+<dd>
+<p>A <code>list</code> of control parameter that is forwarded to the wrapper. Here, the covariance function is specified. <code>DiceKriging</code> allows for the following kernels, passed as string: <code>"gauss"</code>, <code>"matern5_2"</code>, <code>"matern3_2"</code>, <code>"exp"</code>, <code>"powexp"</code> where <code>"matern3_2"</code> is set as default.</p>
+</dd>
+<dt><code>retrain_buffer_length</code></dt>
+<dd>
+<p>Size of the retrain buffer. The buffer for a each node collects data points and holds them until the buffer length is reached. Then the GP in the node is updated with the data in the buffer. For a fixed <code>Nbar</code>, higher values for <code>retrain_buffer_length</code> lead to faster run time (less frequent retraining), but the trade-off is a temporary reduced prediction accuracy. We advise that the choice for <code>retrain_buffer_length</code> should depend on the chosen <code>Nbar</code>. By default <code>retrain_buffer_length</code> is set equal to <code>Nbar</code>.</p>
+</dd>
+<dt><code>add_buffer_in_prediction</code></dt>
+<dd>
+<p>If TRUE, points in the data buffers are added to the GP before prediction. They are added into a temporarily created GP which contains the not yet included points. The GP in the node is not yet updated. The default is <code>FALSE</code>.</p>
+</dd>
+<dt><code>min_ranges</code></dt>
+<dd>
+<p>Smallest allowed input data spread (per dimension) before node splitting stops. It is set to its default <code>min_ranges = rep(0.0, x_dim)</code> once the first point is received through the GPTree method <code>update</code>. <code>x_dim</code> needs to be specified by the user if it should be different from the default.</p>
+</dd>
+<dt><code>is_leaf</code></dt>
+<dd>
+<p>If TRUE, this node a leaf, i.e the last node on its branch.</p>
+</dd>
+<dt><code>n_points_train_limit</code></dt>
+<dd>
+<p>Number of points at which a GP is created in the leaf</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Returns</h5>
+
+<p>A new GPNode object. Contains the local GP in the field <code>wrapped_gp</code>, and information used for and related to splitting the node. If the node has been split, the local GP is removed.
+</p>
+
+
+<hr>
+<a id="method-GPNode-transform"></a>
+
+
+
+<h4>Method <code>transform()</code>
+</h4>
+
+<p>Method to transform input data through a shift and a rotation. IS EXPECTED TO NOT BE CALLED BY THE USER
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GPNode$transform(X)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>X</code></dt>
+<dd>
+<p>Matrix with x points</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Returns</h5>
+
+<p>The transformed X matrix
+</p>
+
+
+<hr>
+<a id="method-GPNode-update_prob_pars"></a>
+
+
+
+<h4>Method <code>update_prob_pars()</code>
+</h4>
+
+<p>Method to update the probability parameters (x_spread, can_split, split_index, position_split, width_overlap). IS EXPECTED TO NOT BE CALLED BY THE USER
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GPNode$update_prob_pars()</pre></div>
+
+
+<hr>
+<a id="method-GPNode-get_prob_child_1"></a>
+
+
+
+<h4>Method <code>get_prob_child_1()</code>
+</h4>
+
+<p>Method to compute the probability that a point x should go to child 1. IS EXPECTED TO NOT BE CALLED BY THE USER
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GPNode$get_prob_child_1(x)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>x</code></dt>
+<dd>
+<p>Single data point for which probability is computed; has to be a vector with length equal to x_dim</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Returns</h5>
+
+<p>The probability that a point x should go to child 1
+</p>
+
+
+<hr>
+<a id="method-GPNode-register_residual"></a>
+
+
+
+<h4>Method <code>register_residual()</code>
+</h4>
+
+<p>Method to register prediction performance
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GPNode$register_residual(x, y)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>x</code></dt>
+<dd>
+<p>Most recent single input data point from the data stream; has to be a vector with length equal to x_dim</p>
+</dd>
+<dt><code>y</code></dt>
+<dd>
+<p>Target variable which has to be a one-dimensional matrix or a vector; any further columns will be ignored</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GPNode-update_empirical_error_pars"></a>
+
+
+
+<h4>Method <code>update_empirical_error_pars()</code>
+</h4>
+
+<p>Method for updating the empirical error parameters
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GPNode$update_empirical_error_pars()</pre></div>
+
+
+<hr>
+<a id="method-GPNode-delete_gp"></a>
+
+
+
+<h4>Method <code>delete_gp()</code>
+</h4>
+
+<p>Method to delete the GP. IS EXPECTED TO NOT BE CALLED BY THE USER
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GPNode$delete_gp()</pre></div>
+
+
+<hr>
+<a id="method-GPNode-clone"></a>
+
+
+
+<h4>Method <code>clone()</code>
+</h4>
+
+<p>The objects of this class are cloneable with this method.
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GPNode$clone(deep = FALSE)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>deep</code></dt>
+<dd>
+<p>Whether to make a deep clone.</p>
+</dd>
+</dl>
+</div>
+
+
+
+
+<h3>See Also</h3>
+
+<p><code>GPTree()</code> for the main methods
+</p>
+
+
+</div>

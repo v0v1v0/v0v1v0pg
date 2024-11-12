@@ -1,0 +1,246 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>search_cut_genetic</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Genetic Algorithm for Max-Cut</h2>
+
+<h3>Description</h3>
+
+<p>Genetic algorithm for Max-Cut.  In addition to crossover and
+mutation, which are described below, the algorithm performs
+also local search on offsprings and mutants.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">search_cut_genetic(
+  G,
+  w = NA,
+  Npop = 5,
+  Ngen = 20,
+  pmut = 0.1,
+  beta = 1,
+  elite = 2,
+  Pini = NA,
+  verb = TRUE,
+  log = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+<p>Graph.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>Weight matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Npop</code></td>
+<td>
+<p>Population size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ngen</code></td>
+<td>
+<p>Number of generations (iterations of the algorithm).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pmut</code></td>
+<td>
+<p>Mutation probability.  It defaults to 0.1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>Control parameter of the crossing and selection
+probabilities.  It defaults to 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>elite</code></td>
+<td>
+<p>Number of better fitted individuals to pass on to the
+next generation.  It defaults to 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Pini</code></td>
+<td>
+<p>Initial population.  If it is NA, a random initial
+population of Npop individuals is generated.  Otherwise, it
+should be a matrix; each row should be an individual (a
+permutation of the 1:n sequence) and then Npop is set to the
+number of rows of Pini.  This option allows to chain several
+runs of the genetic algorithms, which could be needed in the
+hardest cases.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verb</code></td>
+<td>
+<p>Boolean to activate console echo.  It defaults to
+TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log</code></td>
+<td>
+<p>Boolean to activate the recording of the weights of all
+cuts found by the algorithm.  It defaults to FALSE.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This algorithm manipulates cuts by means of its associated binary
+sequences defined as follows.  Each cut K is defined by its
+associated vertex subset S of V(G): K contains all edges
+joining vertices inside S with vertices outside S.  If
+|V(G)|=n, we can construct a n-bit binary sequence b =
+(b1,b2,...,bn) with bi = 1 if vertex vi belongs to S, and 0
+otherwise.
+</p>
+<p>The genetic algorithm consists of starting with a cut population,
+where each cut is represented by its corresponding binary
+sequence defined above, and thus the population is simply a
+binary matrix.  This initial cut population can be provided by
+the user or can be random.  The initial population can be the
+output of a previous run of the genetic algorithm, thus
+allowing a chained execution.  Then the routine sequentially
+perform over the cuts of the population the
+<strong>crossover</strong>, <strong>mutation</strong>, <strong>local search</strong>
+and <strong>selection</strong> operations.
+</p>
+<p>The <strong>crossover</strong> operation takes two cuts as "parents" and
+forms two "offsprings" by cutting and interchanging the binary
+sequences of the parents; see crossover_sequences for more
+information.
+</p>
+<p>The <strong>mutation</strong> operation performs a "small" perturbation of
+each cut trying to escape from local optima.  It uses a random
+flip on each bit of the binary sequence associated with the
+cut, see mutate_binary_sequence for more information.
+</p>
+<p>The <strong>local search</strong> operation takes the cuts found by the
+crossover and mutation operations and improves them using some
+local search heuristic, in this case improve_cut_flip.  This
+allows this algorithm to approach local maxima faster.
+</p>
+<p>The <strong>selection</strong> operation is used when selecting pairs of
+parents for crossover and when selecting individuals to form
+the population for the next generation.  In both cases, it
+uses a probability exponential in the weight with rate
+parameter "beta", favouring the better fitted to be selected.
+Lower values of beta favours the inclusion of cuts with worse
+fitting function values.  When selecting the next population,
+the selection uses <em>elitism</em>, which is to save the best
+fitted individuals to the next generation; this is controlled
+with parameter "elite".
+</p>
+<p>The usefulness of the crossover and mutation operations stems from
+its abitily to escape from the local maxima.  Of course, more
+iterations (Ngen) and larger populations (Npop) might improve
+the result, but recall that no random algorithm can guarantee
+to find the optimum of a given Max-Cut instance.
+</p>
+<p>This algorithm calls many times the routines compute_cut_weight,
+crossover_sequences, mutate_binary_sequence and
+improve_cut_flip; therefore, it is not especially efficient
+when called on large problems or with high populations or many
+generations.  Please consider chaining the algorithm:  perform
+short runs, using the output of a run as the input of the
+next.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with several components: $set contains the subset
+of V(g) representing the cut, $size contains the number of
+edges of the cut, $weight contains the weight of the cut
+(which coincides with $size if w is NA) and $cut contains the
+edges of the cut, joining vertices inside $set with vertices
+outside $set; $generation contains the generation when the
+maximum was found and $population contains the final cut
+population.  When log=TRUE, the output includes several lists
+of weights of cuts found by the algorithm, separated by
+initial cuts, offsprings, mutants, local maxima and selected
+cuts.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Cesar Asensio
+</p>
+
+
+<h3>References</h3>
+
+<p>Hromkovic <em>Algorithms for hard problems</em> (2004),
+Hartmann, Weigt, <em>Phase transitions in combinatorial
+optimization problems</em> (2005).
+</p>
+
+
+<h3>See Also</h3>
+
+<p>crossover_sequences performs crossover operation,
+mutate_binary_sequence performs mutation operation,
+build_cut_random builds a random cut, build_cut_greedy
+builds a cut using a greedy algorithm, improve_cut_flip
+improves a cut by local search, compute_cut_weight computes
+cut size, weight and edges, plot_cut plots a cut.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1)
+n &lt;- 10
+g &lt;- sample_gnp(n, p=0.5)  # Random graph
+c5 &lt;- search_cut_genetic(g)
+plot_cut(c5, g)
+improve_cut_flip(g, c5)     # It does not improve
+for (i in 1:5) {            # Weights of final population
+   s5 &lt;- which(c5$population[i,] == 1)
+   cs5 &lt;- compute_cut_weight(s5, gorder(g), as_edgelist(g))
+   print(cs5$weight)
+}
+
+
+## Longer examples
+c5 &lt;- search_cut_genetic(g, Npop=10, Ngen=50, log = TRUE)
+boxplot(c5$Wini, c5$Woff, c5$Wmut, c5$Wvec, c5$Wsel,
+        names=c("Ini", "Off", "Mut", "Neigh", "Sel"))
+
+set.seed(1)
+n &lt;- 20
+g &lt;- sample_gnp(n, p=0.25)
+Wg &lt;- matrix(sample(1:3, n^2, replace=TRUE), nrow=n)
+Wg &lt;- Wg + t(Wg)
+A &lt;- as_adjacency_matrix(g)
+Wg &lt;- Wg * A
+c6 &lt;- search_cut_genetic(g, Wg, Ngen = 9)   # Size 38, weigth 147
+plot_cut(c6, g)
+
+
+</code></pre>
+
+
+</div>

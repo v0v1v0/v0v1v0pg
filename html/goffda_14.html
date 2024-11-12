@@ -1,0 +1,211 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fpc_utils</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Utilities for functional principal components</h2>
+
+<h3>Description</h3>
+
+<p>Computation of coefficients and reconstructions based on
+Functional Principal Components (FPC). The function <code>fpc_coefs</code> allows
+to project a functional data sample into a basis of FPC; the reconstruction
+of the sample from its projections and the FPC is done with
+<code>fpc_to_fdata</code>. The functions <code>beta_fpc_coefs</code> and
+<code>fpc_to_beta</code> do analogous operations but for the
+bivariate kernel <code class="reqn">\beta</code> and the tensor product
+of two FPC bases.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fpc_coefs(X_fdata, X_fpc, ind_X_fpc = 1:3, int_rule = "trapezoid")
+
+beta_fpc_coefs(beta, X_fpc, Y_fpc, ind_X_fpc = 1:3, ind_Y_fpc = 1:3,
+  int_rule = "trapezoid")
+
+fpc_to_fdata(coefs, X_fpc, ind_coefs = seq_len(ncol(coefs)))
+
+fpc_to_beta(beta_coefs, X_fpc, Y_fpc,
+  ind_coefs_X = seq_len(nrow(beta_coefs)),
+  ind_coefs_Y = seq_len(ncol(beta_coefs)))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X_fdata</code></td>
+<td>
+<p>sample of functional data as an
+<code>fdata</code> object of length <code>n</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X_fpc, Y_fpc</code></td>
+<td>
+<p><code>"fpc"</code> objects as resulted from calling
+<code>fpc</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind_X_fpc, ind_Y_fpc</code></td>
+<td>
+<p>vectors giving the FPC indexes for whom the
+coefficients are computed. Their lengths must be smaller than the number of
+FPC in <code>X_fpc</code> and <code>Y_fpc</code>, respectively. Default to <code>1:3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>int_rule</code></td>
+<td>
+<p>quadrature rule for approximating the definite
+unidimensional integral: trapezoidal rule (<code>int_rule = "trapezoid"</code>)
+and extended Simpson rule (<code>int_rule = "Simpson"</code>) are available.
+Defaults to <code>"trapezoid"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>a matrix containing the bivariate kernel <code class="reqn">\beta</code> evaluated
+on a grid. Must be of size <code>c(length(X_fpc$rotation$argvals),
+length(Y_fpc$rotation$argvals))</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coefs</code></td>
+<td>
+<p>a vector of coefficients to combine linearly the FPC. Its
+length must be smaller than the number of FPC in <code>X_fpc</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind_coefs, ind_coefs_X, ind_coefs_Y</code></td>
+<td>
+<p>indexes of FPC to associate to the
+provided coefficients. By default, from the first FPC to the sizes of
+<code>coefs</code> or <code>beta_coefs</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta_coefs</code></td>
+<td>
+<p>a matrix of coefficients to combine linearly the tensor
+products of FPC. Its size must be smaller than the number of FPC in
+<code>X_fpc</code> and <code>Y_fpc</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fpc_coefs</code></td>
+<td>
+<p>a vector of the same length as <code>coefs</code> containing
+the coefficients of <code>X_fdata</code> in the FPC of <code>X_fpc</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta_fpc_coefs</code></td>
+<td>
+<p>a matrix of the same size as <code>beta_coefs</code>
+containing the coefficients of <code class="reqn">\beta</code> in the tensor product of
+the FPC in <code>X_fpc</code> and <code>Y_fpc</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fpc_to_fdata</code></td>
+<td>
+<p>an <code>fdata</code> object of the same
+type as <code>X_fpc$rotation</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fpc_to_beta</code></td>
+<td>
+<p>a matrix with the reconstructed kernel and size<br><code>c(length(X_fpc$rotation$argvals), length(Y_fpc$rotation$argvals))</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Eduardo García-Portugués.
+</p>
+
+
+<h3>References</h3>
+
+<p>Jolliffe, I. T. (2002). Principal Component Analysis. Springer-Verlag,
+New York.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Compute FPC coefficients and reconstruct data
+
+# Sample data
+X_fdata &lt;- r_ou(n = 200, t = seq(2, 4, l = 201))
+
+# Compute FPC
+X_fpc &lt;- fpc(X_fdata = X_fdata, n_fpc = 50)
+
+# FPC coefficients are the same if the data is centered
+fpc_coefs(X_fdata = fdata_cen(X_fdata), X_fpc = X_fpc)[1:4, ]
+X_fpc$scores[1:4, 1:3]
+
+# Reconstruct the first two curves for an increasing number of FPC
+plot(X_fdata[1:2, ], col = 1)
+n_fpc &lt;- c(2, 5, 10, 25, 50)
+for (j in 1:5) {
+  lines(fpc_to_fdata(X_fpc = X_fpc,
+                     coefs = X_fpc$scores[, 1:n_fpc[j]])[1:2, ], col = j + 1)
+}
+
+## Project and reconstruct beta
+
+# Surface
+beta_fun &lt;- function(s, t) sin(6 * pi * s) + cos(6 * pi * t)
+s &lt;- seq(0, 1, l = 101)
+t &lt;- seq(0, 1, l = 201)
+beta_surf &lt;- outer(s, t, FUN = beta_fun)
+
+# Functional data as zero-mean Gaussian process with exponential variogram
+X_fdata &lt;- fda.usc::rproc2fdata(n = 100, t = s, sigma = "vexponential",
+                                list = list(scale = 2.5))
+Y_fdata &lt;- flm_term(X_fdata = X_fdata, beta = beta_surf, t = t) +
+  r_ou(n = 100, t = t, sigma = sqrt(0.075) * 2)
+
+# FPC
+X_fpc &lt;- fpc(X_fdata = X_fdata, n_fpc = 50)
+Y_fpc &lt;- fpc(X_fdata = Y_fdata, n_fpc = 50)
+
+# Coefficients
+beta_coefs &lt;- beta_fpc_coefs(beta = beta_surf, X_fpc = X_fpc, Y_fpc = Y_fpc,
+                             ind_X_fpc = 1:50, ind_Y_fpc = 1:50)
+
+# Reconstruction
+beta_surf1 &lt;- fpc_to_beta(beta_coefs = beta_coefs[1:2, 1:5],
+                          X_fpc = X_fpc, Y_fpc = Y_fpc)
+beta_surf2 &lt;- fpc_to_beta(beta_coefs = beta_coefs[1:15, 1:10],
+                          X_fpc = X_fpc, Y_fpc = Y_fpc)
+beta_surf3 &lt;- fpc_to_beta(beta_coefs = beta_coefs[1:50, 1:50],
+                          X_fpc = X_fpc, Y_fpc = Y_fpc)
+
+# Show reconstructions
+old_par &lt;- par(mfrow = c(2, 2))
+col &lt;- viridisLite::viridis(20)
+image(s, t, beta_surf, col = col, zlim = c(-2.5, 2.5), main = "Original")
+image(s, t, beta_surf1, col = col, zlim = c(-2.5, 2.5), main = "2 x 5")
+image(s, t, beta_surf2, col = col, zlim = c(-2.5, 2.5), main = "15 x 10")
+image(s, t, beta_surf3, col = col, zlim = c(-2.5, 2.5), main = "50 x 50")
+par(old_par)
+</code></pre>
+
+
+</div>

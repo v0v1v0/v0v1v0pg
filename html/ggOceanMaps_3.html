@@ -1,0 +1,428 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>basemap</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a ggplot2 basemap for plotting variables</h2>
+
+<h3>Description</h3>
+
+<p>Creates a ggplot2 basemap for further plotting of data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">basemap(
+  x = NULL,
+  limits = NULL,
+  data = NULL,
+  shapefiles = NULL,
+  crs = NULL,
+  bathymetry = FALSE,
+  glaciers = FALSE,
+  rotate = FALSE,
+  legends = TRUE,
+  legend.position = "right",
+  lon.interval = NULL,
+  lat.interval = NULL,
+  bathy.style = NULL,
+  downsample = 0,
+  bathy.border.col = NA,
+  bathy.size = 0.1,
+  bathy.alpha = 1,
+  land.col = "grey60",
+  land.border.col = "black",
+  land.size = 0.1,
+  gla.col = "grey95",
+  gla.border.col = "black",
+  gla.size = 0.1,
+  grid.col = "grey70",
+  grid.size = 0.1,
+  base_size = 11,
+  projection.grid = FALSE,
+  expand.factor = 1,
+  verbose = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>The limit type (<code>limits</code>, <code>data</code>, or <code>shapefiles</code>) is automatically recognized from the class of this argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>limits</code></td>
+<td>
+<p>Map limits. One of the following:
+</p>
+
+<ul>
+<li> <p><strong>numeric vector</strong> of length 4: The first element defines the start longitude, the second element the end longitude (counter-clockwise), the third element the minimum latitude, and the fourth element the maximum latitude of the bounding box. Also accepts <code>sf::st_bbox</code> type named vectors with limits in any order. The coordinates can be given as decimal degrees or coordinate units for shapefiles used by a projected map. Produces a rectangular map. Latitude limits not given in min-max order are automatically ordered to respect this requirement.
+</p>
+</li>
+<li> <p><strong>single integer</strong> between 30 and 88 or -88 and -30 produces a polar map for the Arctic or Antarctic, respectively.
+</p>
+</li>
+</ul>
+<p>Can be omitted if <code>data</code> or <code>shapefiles</code> are defined.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data frame, sp, or sf shape containing longitude and latitude coordinates. If a data frame, the coordinates have to be given in decimal degrees. The limits are extracted from these coordinates and produce a rectangular map. Suited for situations where a certain dataset is plotted on a map. The function attempts to guess the correct columns and it is advised to use intuitive column names for longitude (such as "lon", "long", or "longitude") and latitude ("lat", "latitude") columns. Can be omitted if <code>limits</code> or <code>shapefiles</code> are defined.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shapefiles</code></td>
+<td>
+<p>Either a list containing shapefile information or a character argument referring to a name of pre-made shapefiles in <code>shapefile_list</code>. This name is partially matched. Can be omitted if <code>limits</code> or <code>data</code> is defined as decimal degrees.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>crs</code></td>
+<td>
+<p>Coordinate reference system (CRS) for the map. If <code>NULL</code> (default), the CRS is selected automatically based on <code>limits</code>, <code>data</code>, or <code>shapefiles</code>. Passed to <code>st_crs</code>. Typically integers giving the EPGS code are the easiest. Cannot be used simultaneously with <code>rotate</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bathymetry</code></td>
+<td>
+<p>Logical indicating whether bathymetry should be added to the map. Functions together with <code>bathy.style</code>. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>glaciers</code></td>
+<td>
+<p>Logical indicating whether glaciers and ice sheets should be added to the map.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rotate</code></td>
+<td>
+<p>Logical indicating whether the projected maps should be rotated to point towards the pole relative to the mid-longitude limit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>legends</code></td>
+<td>
+<p>Logical indicating whether the legend for bathymetry should be shown.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>legend.position</code></td>
+<td>
+<p>The position for ggplot2 legend. See the argument with the same name in theme.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lon.interval, lat.interval</code></td>
+<td>
+<p>Numeric value specifying the interval of longitude and latitude grids. <code>NULL</code> finds reasonable defaults depending on <code>limits</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bathy.style</code></td>
+<td>
+<p>Character (plots bathymetry; list of alternatives in Details) or <code>NULL</code> ("raster_binned_blues" if <code>bathymetry = TRUE</code>) defining the bathymetry style. Partially matched, can be abbreviated, and used to control bathymetry plotting together with <code>bathymetry</code>. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>downsample</code></td>
+<td>
+<p>Integer defining the downsampling rate for raster bathymetries. A value of 0 (default) does not downsample, 1 skips every second row, 2 every second and third. See <code>geom_stars</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bathy.alpha</code></td>
+<td>
+<p>Transparency parameter for the bathymetry fill color. See scale_alpha.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>land.col, gla.col, grid.col</code></td>
+<td>
+<p>Character code specifying the color of land, glaciers, and grid lines, respectively. Use <code>NA</code> to remove the grid lines.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>land.border.col, gla.border.col, bathy.border.col</code></td>
+<td>
+<p>Character code specifying the color of the border line for land, glacier, and bathymetry shapes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>land.size, gla.size, bathy.size, grid.size</code></td>
+<td>
+<p>Numeric value specifying the width of the border line land, glacier and bathymetry shapes as well as the grid lines, respectively. Use the <code>LS</code> function for a specific width in pt. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>base_size</code></td>
+<td>
+<p>Base size parameter for ggplot. See ggtheme.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>projection.grid</code></td>
+<td>
+<p>Logical indicating whether the coordinate grid should show projected coordinates instead of decimal degree values. Useful to define limits for large maps in polar regions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expand.factor</code></td>
+<td>
+<p>Expansion factor for map limits. Can be used to zoom in (decrease the value under 1) and out (increase the value over 1) automatically (<code>data</code>) limited maps. Defaults to 1, which means that outermost data points are located at the boundaries of the plotting region.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical indicating whether information about the projection and guessed column names should be returned as messages. Set to <code>FALSE</code> to make the function silent.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function uses ggplot2, sf, stars and spatial files to plot maps of the world's oceans. 
+</p>
+<p><strong>Limits</strong>
+</p>
+<p>If the limits are in decimal degrees, the longitude limits (<code>[1:2]</code>) specify the start and end segments of corresponding angular lines that should reside inside the map area. The longitude limits are defined <strong>counter-clockwise</strong>. The latitude limits <code>[3:4]</code> define the parallels that should reside inside the limited region given the longitude segments. Note that the actual limited region becomes wider than the polygon defined by the coordinates (shown in Examples). Using <code>data</code> to limit the map, making the points barely fit into the map. The <code>expand.factor</code> argument can be used to adjust the space between map borders and points. If the limits are given as projected coordinates or as decimal degrees for maps with -60 &lt; latitude &lt; 60, limit elements represent lines encompassing the map area in cartesian space. 
+</p>
+<p><strong>Projections</strong>
+</p>
+<p>If the <code>shapefiles</code> are not specified, the function uses either the <code>limits</code> or <code>data</code> arguments to decide which projection to use. Up-to-date conditions are defined in <code>define_shapefiles</code> and <code>shapefile_list</code> functions. At the time of writing, the function uses three different projections (given as <a href="https://epsg.io/">EPSG codes</a>)
+</p>
+
+<ul>
+<li> <p><strong>3995</strong> WGS 84 / Arctic Polar Stereographic. Called "ArcticStereographic". For max latitude (<code>limits[4]</code>) &gt;= 60 (if min latitude (<code>limits[3]</code>) &gt;= 30), and single integer latitudes &gt;= 30 and &lt;= 89.
+</p>
+</li>
+<li> <p><strong>3031</strong> WGS 84 / Antarctic Polar Stereographic. Called "AntarcticStereographic". For max latitude (<code>limits[4]</code>) &lt;= -60 (if min latitude (<code>limits[3]</code>) &lt;= -30), and single integer latitudes &lt;= -30 and &gt;= -89.
+</p>
+</li>
+<li> <p><strong>4326</strong> WGS 84 / World Geodetic System 1984, used in GPS. Called "DecimalDegree". For min latitude (<code>limits[3]</code>) &lt; 30 or &gt; -30, max latitude (<code>limits[4]</code>) &lt; 60 or &gt; -60, and single integer latitudes &lt; 30 and &gt; -30.
+</p>
+</li>
+</ul>
+<p>The <code>rotate</code> argument changes the pre-defined projection such that mid-longitude point in the map points northward. 
+</p>
+<p>The <code>crs</code> argument can be used to define the projection, which can be useful when plotting, for instance, model data that are difficult to transform into another projection. 
+</p>
+<p><strong>Bathymetry</strong>
+</p>
+<p>Bathymetry can be plotted by simply specifying <code>bathymetry = TRUE</code> or <code>bathy.style</code> (you won't need to specify both any longer). The former uses a low-resolution raster file shipped with ggOceanMaps. The package contains an option to plot higher resolution bathymetries than the default binned blue alternative (<code>bathy.style = "raster_binned_blues"</code>). These bathymetries can be accessed by specifying the <code>bathy.style</code> argument and require a download from <a href="https://github.com/MikkoVihtakari/ggOceanMapsLargeData">ggOceanMapsLargeData</a> or other online repositories. The <code>bathy.style</code> character argument consists of three parts separated by a <code>_</code>. The first part gives the type: raster, poly(gon), or contour. The two latter ones use vector data. The second part gives the resolution: binned, continuous or user. The continuous and user options cannot be used for vector data. The user option accepts any raster file that can be opened using read_stars. The path to the file has to be stored in <code>ggOceanMaps.userpath</code> option (e.g. <code>options(ggOceanMaps.userpath = "PATH_TO_THE_FILE")</code>) (you can set this in .Rprofile to avoid having to type it every time). The last part defines the color: blues or grays. These options can be abbreviated by specifying the first letter of each part. Gray contour lines are an exception to the rule above and can be plotted using <code>bathy.style = "contour_gray"</code>. Future versions may contain a combination of raster and gray contours, but these have not been implemented yet. Currently implemented <code>bathy.style</code> alternatives are:
+</p>
+
+<ul>
+<li> <p><code>NULL</code> (<strong>default</strong>). Bathymetry style is searched from <code>getOption("ggOceanMaps.bathy.style")</code>. If not found, <code>"raster_binned_blues"</code> is used. 
+</p>
+</li>
+<li> <p><code>"raster_binned_blues"</code> or <code>"rbb"</code> plots binned raster bathymetry filled with different shades of blue. Does not require a download.
+</p>
+</li>
+<li> <p><code>"raster_binned_grays"</code> or <code>"rbg"</code> the same than above but uses different shades of gray.
+</p>
+</li>
+<li> <p><code>"raster_continuous_blues"</code> or <code>"rcb"</code> plots continuous raster bathymetry filled with different shades of blue. More detailed and visually more appealing than the binned bathymetry. Recommended. Requires a download. 
+</p>
+</li>
+<li> <p><code>"raster_continuous_grays"</code> or <code>"rcg"</code> the same than above but uses different shades of gray.
+</p>
+</li>
+<li> <p><code>"raster_user_blues"</code> or <code>"rub"</code> plots continuous raster bathymetry filled with different shades of blue from <code>getOption("ggOceanMaps.user.path")</code>. Any file supported by read_stars should work. The file has to be placed into the location specified by the path. Experimental feature. Has been tested using <a href="https://www.ncei.noaa.gov/products/etopo-global-relief-model">ETOPO 60 arc-second</a> and <a href="https://www.gebco.net/data_and_products/gridded_bathymetry_data/">GEBCO 15 arc-second</a> grids. Please report any bugs you find. 
+</p>
+</li>
+<li> <p><code>"raster_user_grays"</code> or <code>"rug"</code> the same than above but uses different shades of gray.
+</p>
+</li>
+<li> <p><code>"poly_binned_blues"</code>, <code>"poly_blues"</code>, <code>"pbb"</code> or <code>"pb"</code> plots polygon bathymetry filled with different shades of blue. Default in the versions older than 2.0 of ggOceanMaps. Requires a download. 
+</p>
+</li>
+<li> <p><code>"poly_binned_grays"</code>, <code>"poly_grays"</code>, <code>"pbg"</code> or <code>"pg"</code> same than above but uses different shades of gray.
+</p>
+</li>
+<li> <p><code>"contour_binned_blues"</code>, <code>"contour_blues"</code>, <code>"cbb"</code> or <code>"cb"</code> contour lines with different shades of blue. Requires a download.
+</p>
+</li>
+<li> <p><code>"contour_gray"</code>, <code>"contour_gray"</code> or <code>"cg"</code> plots gray contour lines. Requires a download. 
+</p>
+</li>
+</ul>
+<p>The default can be changed by setting the <code>ggOceanMaps.bathy.style</code> option. <code>options(ggOceanMaps.bathy.style = "poly_blues")</code> would make the style similar to older pre-2.0 versions of ggOceanMaps. 
+</p>
+<p><strong>Pre-made shapefiles</strong>
+</p>
+<p>If the limits are not defined as decimal degrees (any longitude outside the range [-180, 180] or latitude [-90, 90]), the function will ask to specify <code>shapefiles</code>. The <code>shapefiles</code> can be defined by partially matching the names of the pre-made shapefiles in <code>shapefile_list</code> (e.g. "Ar" would be enough for "ArcticStereographic") or by specifying custom shapefiles.
+</p>
+<p><strong>Custom shapefiles</strong>
+</p>
+<p>Custom shapefiles have to be a named list containing at least the following elements:
+</p>
+
+<ul>
+<li> <p><strong>land</strong> Object name of the spatial polygon containing land. Required.
+</p>
+</li>
+<li> <p><strong>glacier</strong> Object name of the spatial polygon containing glaciers. Not required if glaciers are not needed.
+</p>
+</li>
+<li> <p><strong>bathy</strong> Object name of the spatial polygon or raster containing bathymetry data. Not required if bathymetry is not needed.
+</p>
+</li>
+</ul>
+<p>See Examples.
+</p>
+<p><strong>Line width and font size</strong>
+</p>
+<p>The line size aesthetics in ggplot2 generates approximately 2.13 wider lines measured in pt than the given values. If you want a specific line width in pt, use the internal function <code>LS</code> to convert the desired line width to the ggplot2 equivalent. A similar function is also available for font sizes (<code>FS</code>).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a ggplot map, which can be assigned to an object and modified as any ggplot object.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Mikko Vihtakari
+</p>
+
+
+<h3>References</h3>
+
+<p>Note that if you use this function to generate maps for a publication, it is advised to cite the underlying data. The spatial data used by this function have been acquired from the following sources:
+</p>
+
+<ul>
+<li> <p><strong>Land polygons.</strong> <a href="https://www.naturalearthdata.com/downloads/10m-physical-vectors/">Natural Earth Data</a> 1:10m Physical Vectors with the Land and Minor Island datasets combined. Distributed under the <a href="https://creativecommons.org/publicdomain/">CC Public Domain license</a> (<a href="https://www.naturalearthdata.com/about/terms-of-use/">terms of use</a>).
+</p>
+</li>
+<li> <p><strong>Glacier polygons.</strong> <a href="https://www.naturalearthdata.com/downloads/10m-physical-vectors/">Natural Earth Data</a> 1:10m Physical Vectors with the Glaciated Areas and Antarctic Ice Shelves datasets combined. Distributed under the <a href="https://creativecommons.org/publicdomain/">CC Public Domain license</a> (<a href="https://www.naturalearthdata.com/about/terms-of-use/">terms of use</a>)
+</p>
+</li>
+<li> <p><strong>Bathymetry.</strong> <a href="https://www.ncei.noaa.gov/products/etopo-global-relief-model">NOAA National Centers for Environmental Information. 2022: ETOPO 2022 15 Arc-Second Global Relief Model. NOAA National Centers for Environmental Information.</a> <a href="https://doi.org/10.25921/fd45-gt74">doi:10.25921/fd45-gt74</a>. Distributed under the <a href="https://www.usa.gov/government-works/">U.S. Government Work license</a>.
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>ggplot</code>
+</p>
+<p>Other basemap functions: 
+<code>qmap()</code>,
+<code>shapefile_list()</code>,
+<code>transform_coord()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># The easiest way to produce a map is to use the limits
+# argument and decimal degrees:
+
+basemap(limits = 60) # synonym to basemap(60)
+
+# Bathymetry can be added using the respective argument:
+basemap(limits = -60, bathymetry = TRUE)
+
+## Not run: 
+# Glaciers require a download in the new version:
+basemap(limits = -60, glaciers = TRUE, shapefiles = "Arctic")
+
+## End(Not run)
+
+# The easiest way to add data on the maps is to use the ggspatial functions:
+dt &lt;- data.frame(lon = c(-150, 150), lat = c(60, 90))
+if(requireNamespace("ggspatial", quietly = TRUE)) {
+basemap(data = dt, bathymetry = TRUE) +
+  ggspatial::geom_spatial_point(data = dt, aes(x = lon, y = lat), 
+    color = "red")
+}
+## Not run: 
+# Note that writing out data = dt is required because there are multiple
+# underlying ggplot layers plotted already:
+basemap(data = dt) +
+ggspatial::geom_spatial_point(dt, aes(x = lon, y = lat), color = "red")
+#&gt; Error: `mapping` must be created by `aes()`
+
+## End(Not run)
+
+# If you want to use native ggplot commands, you need to transform your data
+# to the projection used by the map:
+dt &lt;- transform_coord(dt, bind = TRUE)
+
+basemap(data = dt) + 
+  geom_point(data = dt, aes(x = lon.proj, y = lat.proj), color = "red")
+
+# The limits argument of length 4 plots a map anywhere in the world:
+basemap(limits = c(100, 160, -20, 30), bathymetry = TRUE)
+
+# The limits are further expanded when using the data argument:
+
+dt &lt;- data.frame(lon = c(-160, 160, 160, -160), lat = c(80, 80, 60, 60))
+
+if(requireNamespace("ggspatial", quietly = TRUE)) {
+basemap(data = dt) +
+  ggspatial::geom_spatial_polygon(data = dt, aes(x = lon, y = lat),
+    fill = NA, color = "red")
+
+# Rotate:
+basemap(data = dt, rotate = TRUE) +
+  ggspatial::geom_spatial_polygon(data = dt, aes(x = lon, y = lat),
+    fill = NA, color = "red")
+}
+
+# Alternative:
+basemap(data = dt, rotate = TRUE) +
+  geom_polygon(data = transform_coord(dt, rotate = TRUE), 
+    aes(x = lon, y = lat), fill = NA, color = "red")
+
+## To find UTM coordinates to limit a polar map:
+basemap(limits = 60, projection.grid = TRUE)
+
+## Not run: 
+# (Arctic shapes require a download in 2.0)
+basemap(limits = c(2.5e4, -2.5e6, 2e6, -2.5e5), shapefiles = "Arctic")
+
+# Using custom shapefiles (requires download):
+data(bs_shapes, package = "ggOceanMapsData")
+basemap(shapefiles = list(land = bs_land))#' 
+
+# Premade shapefiles from ggOceanMapsLargeData (requires download):
+basemap("BarentsSea", bathymetry = TRUE)
+
+## End(Not run)
+
+# grid.col = NA removes grid lines, rotate = TRUE rotates northwards: 
+basemap(limits = c(-180, -140, 50, 70), grid.col = NA, rotate = TRUE)
+
+# Rename axis labels
+
+basemap(limits = c(-140, -105, 20, 40), bathymetry = TRUE) + xlab("Lat")
+
+# Remove axis labels
+
+basemap(limits = c(0, 60, 68, 80)) + labs(x = NULL, y = NULL)
+
+basemap(limits = c(0, 60, 68, 80), rotate = TRUE) +
+theme(axis.title = element_blank(),
+      axis.text = element_blank(),
+      axis.ticks.x = element_blank(),
+      axis.ticks.y = element_blank()
+      )
+
+</code></pre>
+
+
+</div>

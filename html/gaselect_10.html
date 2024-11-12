@@ -1,0 +1,98 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>evaluatorUserFunction</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>User Defined Evaluator</h2>
+
+<h3>Description</h3>
+
+<p>Create an evaluator that uses a user defined function to evaluate the fitness
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">evaluatorUserFunction(FUN, sepFUN = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>FUN</code></td>
+<td>
+<p>Function used to evaluate the fitness</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sepFUN</code></td>
+<td>
+<p>Function to calculate the SEP of the variable subsets</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to FUN and sepFUN</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The user specified function must take a the response vector as first and the covariates matrix as second argument.
+The function must return a number representing the fitness of the variable subset (the higher the value the fitter the subset)
+Additionally the user can specify a function that takes a <code>GenAlg</code> object and returns
+the standard error of prediction of the found variable subsets.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns an S4 object of type <code>GenAlgUserEvaluator</code>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other GenAlg Evaluators: 
+<code>evaluatorFit()</code>,
+<code>evaluatorLM()</code>,
+<code>evaluatorPLS()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">ctrl &lt;- genAlgControl(populationSize = 100, numGenerations = 10, minVariables = 5,
+    maxVariables = 12, verbosity = 1)
+
+# Use the BIC of a linear model to evaluate the fitness of a variable subset
+evalFUN &lt;- function(y, X) {
+		return(BIC(lm(y ~ X)));
+}
+
+# Dummy function that returns the residuals standard deviation and not the SEP
+sepFUN &lt;- function(genAlg) {
+    return(apply(genAlg@subsets, 2, function(subset) {
+		m &lt;- lm(genAlg@response ~ genAlg@covariates[, subset]);
+		return(sd(m$residuals));
+	}));
+}
+
+evaluator &lt;- evaluatorUserFunction(FUN = evalFUN, sepFUN = sepFUN)
+
+# Generate demo-data
+set.seed(12345)
+X &lt;- matrix(rnorm(10000, sd = 1:5), ncol = 50, byrow = TRUE)
+y &lt;- drop(-1.2 + rowSums(X[, seq(1, 43, length = 8)]) + rnorm(nrow(X), 1.5));
+
+result &lt;- genAlg(y, X, control = ctrl, evaluator = evaluator, seed = 123)
+
+subsets(result, 1:5)
+</code></pre>
+
+
+</div>

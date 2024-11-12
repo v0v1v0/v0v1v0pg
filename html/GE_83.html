@@ -1,0 +1,188 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gemMarketClearingPath_2_2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Some Examples of Spot Market Clearing Paths</h2>
+
+<h3>Description</h3>
+
+<p>Some examples of zero-dividend spot market clearing paths (alias instantaneous equilibrium paths) containing a firm and a laborer (consumer).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gemMarketClearingPath_2_2(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function sdm2.</p>
+</td>
+</tr></table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## the benchmark equilibrium
+dst.firm &lt;- node_new(
+  "prod",
+  type = "CD", alpha = 5, beta = c(0.5, 0.5),
+  "prod", "lab"
+)
+
+dst.consumer &lt;- node_new(
+  "util",
+  type = "Leontief", a = 1,
+  "prod"
+)
+
+dstl &lt;- list(dst.firm, dst.consumer)
+
+f &lt;- function(policy = NULL) {
+  sdm2(
+    A = dstl,
+    B = matrix(c(
+      1, 0,
+      0, 0
+    ), 2, 2, TRUE),
+    S0Exg = matrix(c(
+      NA, NA,
+      NA, 1
+    ), 2, 2, TRUE),
+    names.commodity = c("prod", "lab"),
+    names.agent = c("firm", "consumer"),
+    numeraire = "lab",
+    z0 = c(1, 1),
+    ts = TRUE,
+    policy = policy,
+    numberOfPeriods = 40,
+    maxIteration = 1
+  )
+}
+
+ge &lt;- f(policy = policyMarketClearingPrice)
+matplot(ge$ts.S[1, 1, ], type = "o", pch = 20)
+matplot(ge$ts.z, type = "o", pch = 20)
+
+## labor supply change
+ge.LSC &lt;- f(policy = list(
+  function(time, state) {
+    if (time &gt;= 21) state$S[2, 2] &lt;- state$S[2, 2] * 2
+    state
+  },
+  policyMarketClearingPrice
+))
+
+matplot(ge.LSC$ts.z, type = "o", pch = 20)
+
+## technology progress
+ge.TP &lt;- f(policy = list(
+  makePolicyTechnologyChange(
+    adjumentment.ratio = 2,
+    agent = "firm",
+    time.win = c(21, 21)
+  ),
+  policyMarketClearingPrice
+))
+
+matplot(ge.TP$ts.z, type = "o", pch = 20)
+
+## the same as above
+ge.TP2 &lt;- f(policy = list(
+  function(time, A) {
+    if (time &gt;= 21) {
+      A[[1]]$alpha &lt;- 10
+    } else {
+      A[[1]]$alpha &lt;- 5
+    }
+  },
+  policyMarketClearingPrice
+))
+
+matplot(ge.TP2$ts.z, type = "o", pch = 20)
+
+#### A timeline model, the equilibrium of which is the same as the benchmark equilibrium.
+# In this model, in terms of form, firms are treated as consumer-type agents rather than
+# producer-type agents. Firms hold products. The utility level of each firm determines
+# the quantity of the product that the firm owns in the subsequent economic period.
+np &lt;- 5 # the number of economic periods
+y1 &lt;- 1 # the initial product supply
+eis &lt;- 1 # elasticity of intertemporal substitution
+Gamma.beta &lt;- 1 # the subjective discount factor
+
+n &lt;- 2 * np # the number of commodity kinds
+m &lt;- np + 1 # the number of agent kinds
+
+names.commodity &lt;- c(paste0("prod", 1:np), paste0("lab", 1:np))
+names.agent &lt;- c(paste0("firm", 1:np), "consumer")
+
+# the exogenous supply matrix.
+S0Exg &lt;- matrix(0, n, m, dimnames = list(names.commodity, names.agent))
+S0Exg[paste0("lab", 1:np), "consumer"] &lt;- 1
+for (k in 1:np) {
+  S0Exg[paste0("prod", k), paste0("firm", k)] &lt;- y1
+}
+
+dstl.firm &lt;- list()
+for (k in 1:np) {
+  dstl.firm[[k]] &lt;- node_new(
+    "prod",
+    type = "CD",
+    alpha = 5, beta = c(0.5, 0.5),
+    paste0("prod", k), paste0("lab", k)
+  )
+}
+
+dst.consumer.CD &lt;- node_new(
+  "util",
+  type = "CD",
+  alpha = 1, beta = prop.table(rep(1, np)),
+  paste0("prod", 1:np)
+)
+
+dst.consumer &lt;- node_new(
+  "util",
+  type = "CES", es = eis,
+  alpha = 1, beta = prop.table(Gamma.beta^(1:np)),
+  paste0("prod", 1:np)
+)
+
+ge.timeline &lt;- sdm2(
+  A = c(dstl.firm, dst.consumer),
+  B = matrix(0, n, m),
+  S0Exg = S0Exg,
+  names.commodity = names.commodity,
+  names.agent = names.agent,
+  numeraire = "prod1",
+  ts = TRUE,
+  policy = function(time, state) {
+    names(state$last.z) &lt;- state$names.agent
+    dimnames(state$S) &lt;- list(names.commodity, names.agent)
+
+    for (k in 2:np) {
+      state$S[paste0("prod", k), paste0("firm", k)] &lt;- state$last.z[paste0("firm", k - 1)]
+    }
+
+    return(state)
+  }
+)
+
+head(ge.timeline$p, np) / tail(ge.timeline$p, np)
+ge$ts.p[1:5, 1] # the same as above
+
+ge.timeline$z[1:np]
+ge$ts.z[1:np, 1] # the same as above
+
+ge.timeline$D
+ge.timeline$S
+
+</code></pre>
+
+
+</div>

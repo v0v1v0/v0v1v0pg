@@ -1,0 +1,209 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plot.gg_variable</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Plot a <code>gg_variable</code> object,</h2>
+
+<h3>Description</h3>
+
+<p>Plot a <code>gg_variable</code> object,
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'gg_variable'
+plot(
+  x,
+  xvar,
+  time,
+  time_labels,
+  panel = FALSE,
+  oob = TRUE,
+  points = TRUE,
+  smooth = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p><code>gg_variable</code> object created from a
+<code>rfsrc</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xvar</code></td>
+<td>
+<p>variable (or list of variables) of interest.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>For survival, one or more times of interest</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_labels</code></td>
+<td>
+<p>string labels for times</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>panel</code></td>
+<td>
+<p>Should plots be faceted along multiple xvar?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>oob</code></td>
+<td>
+<p>oob estimates (boolean)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>points</code></td>
+<td>
+<p>plot the raw data points (boolean)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smooth</code></td>
+<td>
+<p>include a smooth curve (boolean)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments passed to the <code>ggplot2</code> functions.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A single <code>ggplot</code> object, or list of <code>ggplot</code> objects
+</p>
+
+
+<h3>References</h3>
+
+<p>Breiman L. (2001). Random forests, Machine Learning, 45:5-32.
+</p>
+<p>Ishwaran H. and Kogalur U.B. (2007). Random survival forests for R, Rnews,
+7(2):25-31.
+</p>
+<p>Ishwaran H. and Kogalur U.B. (2013). Random Forests for Survival, Regression
+and Classification (RF-SRC), R package version 1.4.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## ------------------------------------------------------------
+## classification
+## ------------------------------------------------------------
+## -------- iris data
+## iris
+#rfsrc_iris &lt;- rfsrc(Species ~., data = iris)
+data(rfsrc_iris, package="ggRandomForests")
+
+gg_dta &lt;- gg_variable(rfsrc_iris)
+plot(gg_dta, xvar="Sepal.Width")
+plot(gg_dta, xvar="Sepal.Length")
+
+## !! TODO !! this needs to be corrected
+plot(gg_dta, xvar=rfsrc_iris$xvar.names,
+     panel=TRUE, se=FALSE)
+
+## ------------------------------------------------------------
+## regression
+## ------------------------------------------------------------
+## -------- air quality data
+#rfsrc_airq &lt;- rfsrc(Ozone ~ ., data = airquality)
+data(rfsrc_airq, package="ggRandomForests")
+gg_dta &lt;- gg_variable(rfsrc_airq)
+
+# an ordinal variable
+gg_dta[,"Month"] &lt;- factor(gg_dta[,"Month"])
+
+plot(gg_dta, xvar="Wind")
+plot(gg_dta, xvar="Temp")
+plot(gg_dta, xvar="Solar.R")
+
+plot(gg_dta, xvar=c("Solar.R", "Wind", "Temp", "Day"), panel=TRUE)
+
+plot(gg_dta, xvar="Month", notch=TRUE)
+
+## -------- motor trend cars data
+#rfsrc_mtcars &lt;- rfsrc(mpg ~ ., data = mtcars)
+data(rfsrc_mtcars, package="ggRandomForests")
+gg_dta &lt;- gg_variable(rfsrc_mtcars)
+
+# mtcars$cyl is an ordinal variable
+gg_dta$cyl &lt;- factor(gg_dta$cyl)
+gg_dta$am &lt;- factor(gg_dta$am)
+gg_dta$vs &lt;- factor(gg_dta$vs)
+gg_dta$gear &lt;- factor(gg_dta$gear)
+gg_dta$carb &lt;- factor(gg_dta$carb)
+
+plot(gg_dta, xvar="cyl")
+
+# Others are continuous
+plot(gg_dta, xvar="disp")
+plot(gg_dta, xvar="hp")
+plot(gg_dta, xvar="wt")
+
+# panel
+plot(gg_dta,xvar=c("disp","hp", "drat", "wt", "qsec"),  panel=TRUE)
+plot(gg_dta, xvar=c("cyl", "vs", "am", "gear", "carb") ,panel=TRUE)
+
+## -------- Boston data
+
+## ------------------------------------------------------------
+## survival examples
+## ------------------------------------------------------------
+## -------- veteran data
+## survival
+data(veteran, package = "randomForestSRC")
+rfsrc_veteran &lt;- rfsrc(Surv(time,status)~., veteran, nsplit = 10,
+                       ntree = 100)
+
+# get the 1 year survival time.
+gg_dta &lt;- gg_variable(rfsrc_veteran, time=90)
+
+# Generate variable dependance plots for age and diagtime
+plot(gg_dta, xvar = "age")
+plot(gg_dta, xvar = "diagtime")
+
+# Generate coplots
+plot(gg_dta, xvar = c("age", "diagtime"), panel=TRUE)
+
+# If we want to compare survival at different time points, say 30, 90 day
+# and 1 year
+gg_dta &lt;- gg_variable(rfsrc_veteran, time=c(30, 90, 365))
+
+# Generate variable dependance plots for age and diagtime
+plot(gg_dta, xvar = "age")
+plot(gg_dta, xvar = "diagtime")
+
+# Generate coplots
+plot(gg_dta, xvar =  c("age", "diagtime"), panel=TRUE)
+
+## -------- pbc data
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

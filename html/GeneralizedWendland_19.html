@@ -1,0 +1,144 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>neg2loglikFactory</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Function Factory for <code>neg2loglikelihood</code> with Unified Input Arguments</h2>
+
+<h3>Description</h3>
+
+<p>A function factory which generates a function of the form <code>function(parameters)</code> which returns the neg2loglikelihood.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">neg2loglikFactory(y, X, distmat, covariance = NULL, cov.args = list(),
+  chol.args = list(), Rstruct = NULL, covarianceFunction = NULL,
+  choleskyFunction = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Numeric vector. Dependent variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Optional data.frame containing covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distmat</code></td>
+<td>
+<p>Distance matrix, either a numeric matrix or a spam object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariance</code></td>
+<td>
+<p>A function which takes as input an object containing distances (h), a vector of parameters (theta), and a list of optional settings (cov.args).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov.args</code></td>
+<td>
+<p>A list of optional settings for a covariance function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chol.args</code></td>
+<td>
+<p>A list of optional settings for a cholesky function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Rstruct</code></td>
+<td>
+<p>A 'spam.chol.NgPeyton' object which represents the sparsity structure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covarianceFunction</code></td>
+<td>
+<p>A function returned by <code>covarianceFactory()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>choleskyFunction</code></td>
+<td>
+<p>A function returned by <code>choleskyFactory()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function factory returns a function of the form <code>function(parameters)</code> which computes the neg2loglikelihood for given input parameters. The purpose of this is to reduce the number of arguments that need to be specified by the user in a call to <code>optim</code>, or <code>optimParallel</code>. Furthermore, the function detects whether the input distmat is a spam object, and autonomously selects the appropriate method for computing the neg2loglikelihood.
+</p>
+<p>The function is intended to be called from within <code>mleFactory</code>, but is also exported by NAMESPACE for users wishing to make use of the function. There are two distinct strategies available for using the function.
+</p>
+<p><b>Option 1</b>: the user may specify covariance, cov.args, chol.args, and Rstruct in the call. This syntax is more in line with the corresponding functions found in the <span class="pkg">spam</span> package, yet still allows passing arguments for customizing the behaviour of the cholesky decomposition.
+</p>
+<p><b>Option 2</b>: the user may instead specify covarianceFunction and choleskyFunction, obtained from calls to <code>covarianceFactory</code> and <code>choleskyFactory</code>, respectively.
+</p>
+<p>In both cases, the arguments y, X, and distmat are required input. Note that the two options are equivalent, apart from the second option allowing for more concise code.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns function of the form <code>function(parameters)</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Thomas Caspar Fischer</p>
+
+
+<h3>References</h3>
+
+<p>Hadley Wickham (2015) <em>Advanced R</em>, CRC Press.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>covarianceFactory</code> and
+<code>choleskyFactory</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(63)
+n &lt;- 50
+range &lt;- 0.7
+theta  &lt;- c(range, 1, 1, 0, 0)
+
+locs &lt;- data.frame(x = runif(n), y = runif(n))
+dmat  &lt;- as.matrix(dist(locs))
+Sigma &lt;- cov.wendland(h = dmat, theta = theta)
+y &lt;- c(spam::rmvnorm(1, Sigma = Sigma))
+X &lt;- data.frame()
+
+neg2loglikFun &lt;- neg2loglikFactory(y = y, X = X, distmat = dmat,
+  covariance = cov.wendland, cov.args = list(), chol.args = list())
+result1 &lt;- neg2loglikFun(theta)
+
+covarianceFun &lt;- covarianceFactory(cov.wendland, cov.args = list())
+choleskyFun &lt;- choleskyFactory(chol.args = list())
+neg2loglikFun &lt;- neg2loglikFactory(y = y, X = X, distmat = dmat,
+  covarianceFunction = covarianceFun, choleskyFunction = choleskyFun)
+result2 &lt;- neg2loglikFun(theta)
+</code></pre>
+
+
+</div>

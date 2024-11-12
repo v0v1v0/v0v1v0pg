@@ -1,0 +1,223 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tab_stub_indent</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Control indentation of row labels in the stub</h2>
+
+<h3>Description</h3>
+
+<p>Indentation of row labels is an effective way for establishing structure in a
+table stub. <code>tab_stub_indent()</code> allows for fine control over row label
+indentation in the stub. We can use an explicit definition of an indentation
+level (with a number between <code>0</code> and <code>5</code>), or, employ an indentation
+directive using keywords (<code>"increase"</code>/<code>"decrease"</code>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tab_stub_indent(data, rows, indent = "increase")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p><em>The gt table data object</em>
+</p>
+<p><code style="white-space: pre;">⁠obj:&lt;gt_tbl&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>This is the <strong>gt</strong> table object that is commonly created through use of the
+<code>gt()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rows</code></td>
+<td>
+<p><em>Rows to target</em>
+</p>
+<p><code style="white-space: pre;">⁠&lt;row-targeting expression&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>The rows to consider for the indentation change. We can supply a vector of
+row ID values within <code>c()</code>, a vector of row indices, or use select helpers
+here (e.g. <code>starts_with()</code>, <code>ends_with()</code>, <code>contains()</code>, <code>matches()</code>,
+<code>num_range()</code>, and <code>everything()</code>). We can also use expressions to filter
+down to the rows we need (e.g., <code style="white-space: pre;">⁠[colname_1] &gt; 100 &amp; [colname_2] &lt; 50⁠</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>indent</code></td>
+<td>
+<p><em>Indentation directive</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character|numeric|integer&gt;⁠</code> // <em>default:</em> <code>"increase"</code>
+</p>
+<p>An indentation directive either as a keyword describing the indentation
+change or as an explicit integer value for directly setting the indentation
+level. The keyword <code>"increase"</code> (the default) will increase the indentation
+level by one; <code>"decrease"</code> will do the same in the reverse direction. The
+starting indentation level of <code>0</code> means no indentation and this values
+serves as a lower bound. The upper bound for indentation is at level <code>5</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>gt_tbl</code>.
+</p>
+
+
+<h3>Compatibility of arguments with the <code>from_column()</code> helper function</h3>
+
+<p><code>from_column()</code> can be used with the <code>indent</code> argument of <code>tab_stub_indent()</code>
+to obtain varying parameter values from a specified column within the table.
+This means that each row label could be indented a little bit differently.
+</p>
+<p>Please note that for this argument (<code>indent</code>), a <code>from_column()</code> call needs
+to reference a column that has data of the <code>numeric</code> or <code>integer</code> type.
+Additional columns for parameter values can be generated with <code>cols_add()</code>
+(if not already present). Columns that contain parameter data can also be
+hidden from final display with <code>cols_hide()</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<p>Using a subset of the <code>photolysis</code> dataset within a <strong>gt</strong> table, we can
+provide some indentation to all of the row labels in the stub via
+<code>tab_stub_indent()</code>. Here we provide an <code>indent</code> value of <code>3</code> for a very
+prominent indentation that clearly shows that the row labels are subordinate
+to the two row group labels in this table (<code>"inorganic reactions"</code> and
+<code>"carbonyls"</code>).
+</p>
+<div class="sourceCode r"><pre>photolysis |&gt;
+  dplyr::select(cmpd_name, products, type, l, m, n) |&gt;
+  dplyr::slice_head(n = 10) |&gt;
+  gt(groupname_col = "type", rowname_col = "cmpd_name") |&gt;
+  fmt_chem(columns = products) |&gt;
+  fmt_scientific(columns = l) |&gt;
+  tab_stub_indent(
+    rows = everything(),
+    indent = 3
+  )
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_tab_stub_indent_1.png" alt="This image of a table was generated from the first code example in the `tab_stub_indent()` help file." style="width:100%;"><p>Let's use a summarized version of the <code>pizzaplace</code> dataset to create a
+another <strong>gt</strong> table with row groups and row labels. With <code>summary_rows()</code>,
+we'll generate summary rows at the top of each row group. Using
+<code>tab_stub_indent()</code> we can add indentation to the row labels in the stub.
+</p>
+<div class="sourceCode r"><pre>pizzaplace |&gt;
+  dplyr::group_by(type, size) |&gt;
+  dplyr::summarize(
+    sold = dplyr::n(),
+    income = sum(price),
+    .groups = "drop"
+  ) |&gt;
+  gt(rowname_col = "size", groupname_col = "type") |&gt;
+  tab_header(title = "Pizzas Sold in 2015") |&gt;
+  fmt_integer(columns = sold) |&gt;
+  fmt_currency(columns = income) |&gt;
+  summary_rows(
+    fns = list(label = "All Sizes", fn = "sum"),
+    side = "top",
+    fmt = list(
+      ~ fmt_integer(., columns = sold),
+      ~ fmt_currency(., columns = income)
+    )
+  ) |&gt;
+  tab_options(
+    summary_row.background.color = "gray95",
+    row_group.background.color = "#FFEFDB",
+    row_group.as_column = TRUE
+  ) |&gt;
+  tab_stub_indent(
+    rows = everything(),
+    indent = 2
+  )
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_tab_stub_indent_2.png" alt="This image of a table was generated from the second code example in the `tab_stub_indent()` help file." style="width:100%;"><p>Indentation of entries in the stub can be controlled by values within a
+column. Here's an example of that using the <code>constants</code> dataset, where
+variations of a row label are mutated to eliminate the common leading text
+(replacing it with <code>"..."</code>). At the same time, the indentation for those rows
+is set to <code>4</code> in the <code>indent</code> column (value is <code>0</code> otherwise). The
+<code>tab_stub_indent()</code> statement uses <code>from_column()</code>, which passes values from
+the <code>indent</code> column to the namesake argument. We hide the <code>indent</code> column
+from view by use of <code>cols_hide()</code>.
+</p>
+<div class="sourceCode r"><pre>constants |&gt;
+  dplyr::select(name, value, uncert, units) |&gt;
+  dplyr::filter(
+    grepl("^atomic mass constant", name) |
+      grepl("^Rydberg constant", name) |
+      grepl("^Bohr magneton", name)
+  ) |&gt;
+  dplyr::mutate(
+    indent = ifelse(grepl("constant |magneton ", name), 4, 0),
+    name = gsub(".*constant |.*magneton ", "...", name)
+  ) |&gt;
+  gt(rowname_col = "name") |&gt;
+  tab_stubhead(label = "Physical Constant") |&gt;
+  tab_stub_indent(
+    rows = everything(),
+    indent = from_column(column = "indent")
+  ) |&gt;
+  fmt_scientific(columns = c(value, uncert)) |&gt;
+  fmt_units(columns = units) |&gt;
+  cols_hide(columns = indent) |&gt;
+  cols_label(
+    value = "Value",
+    uncert = "Uncertainty",
+    units = "Units"
+  ) |&gt;
+  cols_width(
+    stub() ~ px(250),
+    c(value, uncert) ~ px(150),
+    units ~ px(80)
+  ) |&gt;
+  tab_style(
+    style = cell_text(indent = px(10)),
+    locations = list(
+      cells_column_labels(columns = units),
+      cells_body(columns = units)
+    )
+  )
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_tab_stub_indent_3.png" alt="This image of a table was generated from the third code example in the `tab_stub_indent()` help file." style="width:100%;"><h3>Function ID</h3>
+
+<p>2-6
+</p>
+
+
+<h3>Function Introduced</h3>
+
+<p><code>v0.7.0</code> (Aug 25, 2022)
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other part creation/modification functions: 
+<code>tab_caption()</code>,
+<code>tab_footnote()</code>,
+<code>tab_header()</code>,
+<code>tab_info()</code>,
+<code>tab_options()</code>,
+<code>tab_row_group()</code>,
+<code>tab_source_note()</code>,
+<code>tab_spanner()</code>,
+<code>tab_spanner_delim()</code>,
+<code>tab_stubhead()</code>,
+<code>tab_style()</code>,
+<code>tab_style_body()</code>
+</p>
+
+
+</div>

@@ -1,0 +1,123 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predefinedAnalyses</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Predefined enrichment analyses
+</h2>
+
+<h3>Description</h3>
+
+<p>Predefined analysis configurations that can be used in <code>geneSetAnalysis</code>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">analysis.gsea()
+analysis.overrepresentation()
+analysis.customOverrepresentation()
+analysis.averageCorrelation()
+analysis.averageTStatistic()
+analysis.globalTest()
+analysis.globalAncova()
+</code></pre>
+
+
+<h3>Details</h3>
+
+<p>The above functions return configurations for state-of-the-art analysis pipelines that can be used in <code>geneSetAnalysis</code>. All configurations are preconfigured collections of standard methods for the different pipeline steps. The following lists the methods chosen for the different steps and their parameters. For more detailed descriptions of these methods, please refer to the linked manual pages.
+</p>
+
+<ul>
+<li> <p><code>analysis.gsea</code> defines the Gene Set Enrichment Analysis (GSEA) method by Subramanain et al. 
+Here, the gene-level statistic the absolute correlation calculated by <code>gls.cor</code> with the associated parameters <code>labs, method</code> and a preprocessing by <code>transformation.abs</code>. As a gene set statistic, the enrichment score (function <code>gss.enrichmentScore</code> with parameter <code>p</code>) is calculated. The significance is assessed in a permutation test using <code>significance.permutation</code> with <code>testAlternative = "greater"</code> and free parameter <code>numSamples, labs</code>.
+</p>
+</li>
+<li> <p><code>analysis.overrepresentation</code> calculates an overrepresentation analysis using the gene-level statistic <code>gls.tStatistic</code> with parameters <code>pValue</code>(should be <code>TRUE</code>), <code>alternative</code> and <code>labs</code>. The resulting values are then transformed via <code>transformation.adjustAndBinarize</code> (parameters are the <code>adjMethod</code> and <code>threshold</code>). Finally <code>gss.fisherExactTest</code> is used as gene set statistic.
+</p>
+</li>
+<li> <p><code>analysis.customOverrepresentation</code> calculates an overrepresentation analysis using a user-defined core set <code>coreSet</code>. That is, instead of calculating this core set internally based on differential expression as the standard overrepresentation analysis, this function allows for defining custom core sets. It internally uses the global analysis <code>global.overrepresentation</code>.
+</p>
+</li>
+<li> <p><code>analysis.averageCorrelation</code> calculates the gene-level statistic as the absolute correlation using <code>gls.cor</code> (with parameters <code>labs, method</code>) and <code>transformation.abs</code>. The gene set statistic is the mean correlation calculated by <code>gss.mean</code>. The significance is assessed by comparing the gene set statistic to randomly sampled gene sets using <code>significance.sampling</code> (with the parameter <code>numSamples</code> and the preset parameter <code>testAlternative = "greater"</code>).
+</p>
+</li>
+<li> <p><code>analysis.averageTStatistic</code> uses the absolute t statistic as the gene-level statistic by applying <code>gls.tStatistic</code> (with parameters <code>labs, pValue, alternative</code>) and <code>transformation.abs</code>. The gene set statistic is the mean t statistic in the gene set as returned by <code>gss.mean</code>. The significance is assessed by comparing the gene set statistic to randomly sampled gene sets using <code>significance.sampling</code> (with the parameter <code>numSamples</code> and the preset parameter <code>testAlternative = "greater"</code>).
+</p>
+</li>
+<li> <p><code>analysis.globalTest</code> performs a global gene set enrichment analysis by Goeman et al. by applying the <code>global.test</code> function which in turn wraps the <code>gt</code> function in the <span class="pkg">globaltest</span> package.
+</p>
+</li>
+<li> <p><code>analysis.globalAncova</code> applies the global ANCOVA method by Hummel et al. using the global method <code>global.ancova</code> which wraps the <code>GlobalAncova</code> function in the <span class="pkg">GlobalAncova</span> package.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>All functions return an object of class <code>gsAnalysis</code> that specifies the corresponding analysis parameters for <code>geneSetAnalysis</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Subramanian, A., Tamayo, P., Mootha, V. K., Mukherjee, S., Ebert, B. L., Gillette, M. A., Paulovich, A., Pomeroy, S. L., Golub, T. R., Lander, E. S., Mesirov, J. P. (2005) Gene set enrichment analysis: a knowledge-based approach for interpreting genome-wide expression profiles. <em>Proceedings of the National Academy of Science of the United States of America</em>, <b>102</b>, 15545–15550.
+</p>
+<p>Hummel, M., Meister, R., Mansmann, U. (2008) GlobalANCOVA: exploration and assessment of gene group effects. <em>Bioinformatics</em>, <b>24</b>(1), 78–85.
+</p>
+<p>Goeman, J. J., van de Geer, S. A., de Kort, F., van Houwelingen, H. C. (2004) A global test for groups of genes: testing association with a clinical outcome. <em>Bioinformatics</em>, <b>20</b>(1), 93–99.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>geneSetAnalysis</code>, <code>gsAnalysis</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+	data(exampleData)
+  # apply a gene set analysis based on the average absolute correlation
+  resAvCor &lt;- geneSetAnalysis(
+  	# parameters for geneSetAnalysis
+  	dat = countdata,
+  	geneSets = pathways[1],
+  	analysis = analysis.averageCorrelation(),
+  	adjustmentMethod = "fdr",
+  	# additional parameters for analysis.averageCorrelation
+    labs = labels,
+  	method = "pearson",
+  	numSamples = 10)
+  
+  # apply an overrepresentation analysis
+  resOverrep &lt;- geneSetAnalysis(
+  	# parameters for geneSetAnalysis
+  	dat = countdata,
+  	geneSets = pathways,
+  	analysis = analysis.overrepresentation(),
+  	adjustmentMethod = "fdr",
+  	# additional parameters for analysis.overrepresentation
+  	pValue = TRUE,
+  	threshold = 0.1,
+  	labs = labels
+  )
+  
+  # apply a global analysis using GlobalAncova
+  resGA &lt;- geneSetAnalysis(
+  	# parameters for geneSetAnalysis
+  	dat = countdata,
+  	geneSets = pathways[1],
+  	analysis = analysis.globalAncova(),
+  	adjustmentMethod = "fdr",
+  	# additional parameters for analysis.globalAncova
+  	labs = labels,
+  	method = "approx")
+
+</code></pre>
+
+
+</div>

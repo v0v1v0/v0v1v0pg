@@ -1,0 +1,706 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GPTree</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Tree structure storing all nodes containing local GPs</h2>
+
+<h3>Description</h3>
+
+<p>The base class which contains and where all parameters are set. Here, all information on how and when the splitting is carried out is stored.
+<code>wrapper</code> and <code>gp_control</code> specify the Gaussian process (GP) implementation and its parameters. Moreover, minimum errors and calibration of the predictions are specified here, too.
+</p>
+<p><strong>Essential methods</strong>
+</p>
+<p>The following three methods are essential for the package. The remaining ones are mostly not expected to be called by the user.
+</p>
+
+<ul>
+<li> <p><a href="#method-GPTree-new"><code>GPTree$new()</code></a>: Creates a new tree with specified parameters
+</p>
+</li>
+<li> <p><a href="#method-GPTree-update"><code>GPTree$update()</code></a>: Adds the information from the input point to the tree and updates local GPs
+</p>
+</li>
+<li> <p><a href="#method-GPTree-joint_prediction"><code>GPTree$joint_prediction()</code></a>: Computes the joint prediction for a given input point
+</p>
+</li>
+</ul>
+<h3>Brief package functionality overview</h3>
+
+<p>The tree collects the information from all GPNodes which in turn contain the local GP. Currently, GPs from the <code>DiceKriging</code> package (WrappedDiceKrigingGP) and <code>mlegp</code> package (WrappedmlegpGP) are implemented. The user can create their own wrapper using WrappedGP.
+</p>
+
+
+<h3>Public fields</h3>
+
+<div class="r6-fields">
+
+<dl>
+<dt><code>Nbar</code></dt>
+<dd>
+<p>Maximum number of data points for each GP in a leaf before it is split. The default value is 1000.</p>
+</dd>
+<dt><code>retrain_buffer_length</code></dt>
+<dd>
+<p>Size of the retrain buffer. The buffer for a each node collects data points and holds them until the buffer length is reached. Then the GP in the node is updated with the data in the buffer. For a fixed <code>Nbar</code>, higher values for <code>retrain_buffer_length</code> lead to faster run time (less frequent retraining), but the trade-off is a temporary reduced prediction accuracy. We advise that the choice for <code>retrain_buffer_length</code> should depend on the chosen <code>Nbar</code>. By default <code>retrain_buffer_length</code> is set equal to <code>Nbar</code>.</p>
+</dd>
+<dt><code>gradual_split</code></dt>
+<dd>
+<p>If TRUE, gradual splitting is used for splitting. The default value is TRUE.</p>
+</dd>
+<dt><code>theta</code></dt>
+<dd>
+<p>Overlap ratio between two leafs in the split direction. The default value is 0.</p>
+</dd>
+<dt><code>wrapper</code></dt>
+<dd>
+<p>A string that indicates which GP implementation should be used. The current version includes wrappers for the packages <code>"DiceKriging"</code> and <code>"mlegp"</code>. The default setting is <code>"DiceKriging"</code>.</p>
+</dd>
+<dt><code>gp_control</code></dt>
+<dd>
+<p>A <code>list</code> of control parameter that is forwarded to the wrapper. Here, the covariance function is specified. <code>DiceKriging</code> allows for the following kernels, passed as string: <code>"gauss"</code>, <code>"matern5_2"</code>, <code>"matern3_2"</code>, <code>"exp"</code>, <code>"powexp"</code> where <code>"matern3_2"</code> is set as default.</p>
+</dd>
+<dt><code>split_direction_criterion</code></dt>
+<dd>
+<p>A string that indicates which spitting criterion to use. The options are:
+</p>
+
+<ul>
+<li> <p><code>"max_spread"</code>: Split along the direction which has the largest data spread.
+</p>
+</li>
+<li> <p><code>"min_lengthscale"</code>: split along the direction with the smallest length-scale hyperparameter from the local GP.
+</p>
+</li>
+<li> <p><code>"max_spread_per_lengthscale"</code>: Split along the direction with the largest data spread relative to the corresponding GP length-scale hyperparameter.
+</p>
+</li>
+<li> <p><code>"max_corr"</code>: Split along the direction where the input data is most strongly correlated with the target variable.
+</p>
+</li>
+<li> <p><code>"principal_component"</code>: Split along the first principal component.
+</p>
+</li>
+</ul>
+<p>The default value is <code>"max_spread_per_lengthscale"</code>.</p>
+</dd>
+<dt><code>split_position_criterion</code></dt>
+<dd>
+<p>A string indicating how the split position along the split direction should be set. Possible values are (<code>"median"</code> and <code>"mean"</code>). The default is <code>"median"</code>.</p>
+</dd>
+<dt><code>shape_decay</code></dt>
+<dd>
+<p>A string specifying how the probability function for a point to be assigned to the left leaf should fall off in the overlap region. The available options are a linear shape (<code>"linear"</code>), an exponential shape (<code>"exponential"</code>) or a Gaussian shape (<code>"gaussian"</code>). Another option is to select no overlap region. This can be achieved by selecting <code>"deterministic"</code> or to set <code>theta</code> to 0. The default is <code>"linear"</code>.</p>
+</dd>
+<dt><code>use_empirical_error</code></dt>
+<dd>
+<p>If TRUE, the uncertainty is calibrated using recent data points. The default value is TRUE.
+</p>
+<p>The most recent 25 observations are used to ensure that the prediction uncertainty yields approximately 68 % coverage. This coverage is only achieved if <code>theta = 0</code> (also together with <code>gradual_split = TRUE</code>) is used. Nevertheless, the coverage will be closer to 68 % than it would be without calibration. The prediction uncertainties at the beginning are conservative and become less conservative with increasing number of input points.</p>
+</dd>
+<dt><code>use_reference_gp</code></dt>
+<dd>
+<p>If TRUE, the covariance parameters determined for the GP in node 0 will be used for all subsequent GPs. The default is <code>FALSE</code>.</p>
+</dd>
+<dt><code>min_abs_y_err</code></dt>
+<dd>
+<p>Minimum absolute error assumed for y data. The default value is 0.</p>
+</dd>
+<dt><code>min_rel_y_err</code></dt>
+<dd>
+<p>Minimum relative error assumed for y data. The default value is <code>100 * .Machine$double.eps</code>.</p>
+</dd>
+<dt><code>min_abs_node_pred_err</code></dt>
+<dd>
+<p>Minimum absolute error on the prediction from a single node. The default value is 0.</p>
+</dd>
+<dt><code>min_rel_node_pred_err</code></dt>
+<dd>
+<p>Minimum relative error on the prediction from a single node. The default value is <code>100 * .Machine$double.eps</code>.</p>
+</dd>
+<dt><code>prob_min_theta</code></dt>
+<dd>
+<p>Minimum probability after which the overlap shape gets truncated (either towards 0 or 1). The default value is 0.01.</p>
+</dd>
+<dt><code>add_buffer_in_prediction</code></dt>
+<dd>
+<p>If TRUE, points in the data buffers are added to the GP before prediction. They are added into a temporarily created GP which contains the not yet included points. The GP in the node is not yet updated. The default is <code>FALSE</code>.</p>
+</dd>
+<dt><code>x_dim</code></dt>
+<dd>
+<p>Dimensionality of input points. It is set once the first point is received through the <a href="#method-GPTree-update"><code>update()</code></a> or <a href="#method-GPTree-joint_prediction"><code>joint_prediction()</code></a> method. It needs to be specified if <code>min_ranges</code> should be different from default.</p>
+</dd>
+<dt><code>min_ranges</code></dt>
+<dd>
+<p>Smallest allowed input data spread (per dimension) before node splitting stops. It is set to its default <code>min_ranges = rep(0.0, x_dim)</code> once the first point is received through the <a href="#method-GPTree-update"><code>update()</code></a> method. <code>x_dim</code> needs to be specified by the user if it should be different from the default.</p>
+</dd>
+<dt><code>max_cond_num</code></dt>
+<dd>
+<p>Add additional noise if the covariance matrix condition number exceeds this value. The default is <code>NULL</code>.</p>
+</dd>
+<dt><code>max_points</code></dt>
+<dd>
+<p>The maximum number of points the tree is allowed to store. The default value is <code>Inf</code>.
+</p>
+<p>End of the user-defined input fields.</p>
+</dd>
+<dt><code>nodes</code></dt>
+<dd>
+<p>A hash to hold the GP tree, using string keys to identify nodes and their position in the tree  ("0", "00", "01", "000", "001", "010", "011", etc.)</p>
+</dd>
+<dt><code>leaf_keys</code></dt>
+<dd>
+<p>Stores the keys ("0", "00", "01", "000", "001", "010", "011", etc.) for the leaves</p>
+</dd>
+<dt><code>n_points</code></dt>
+<dd>
+<p>Number of points in the tree</p>
+</dd>
+<dt><code>n_fed</code></dt>
+<dd>
+<p>Number of points fed to the tree</p>
+</dd>
+</dl>
+</div>
+
+
+<h3>Methods</h3>
+
+
+
+<h4>Public methods</h4>
+
+
+<ul>
+<li> <p><a href="#method-GPTree-new"><code>GPTree$new()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GPTree-add_node"><code>GPTree$add_node()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GPTree-get_marginal_point_prob"><code>GPTree$get_marginal_point_prob()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GPTree-update"><code>GPTree$update()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GPTree-get_data_split_table"><code>GPTree$get_data_split_table()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GPTree-joint_prediction"><code>GPTree$joint_prediction()</code></a>
+</p>
+</li>
+<li> <p><a href="#method-GPTree-clone"><code>GPTree$clone()</code></a>
+</p>
+</li>
+</ul>
+<hr>
+<a id="method-GPTree-new"></a>
+
+
+
+<h4>Method <code>new()</code>
+</h4>
+
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GPTree$new(
+  Nbar = 1000,
+  retrain_buffer_length = Nbar,
+  gradual_split = TRUE,
+  theta = 0,
+  wrapper = "DiceKriging",
+  gp_control = list(covtype = "matern3_2"),
+  split_direction_criterion = "max_spread_per_lengthscale",
+  split_position_criterion = "median",
+  shape_decay = "linear",
+  use_empirical_error = TRUE,
+  use_reference_gp = FALSE,
+  min_abs_y_err = 0,
+  min_rel_y_err = 100 * .Machine$double.eps,
+  min_abs_node_pred_err = 0,
+  min_rel_node_pred_err = 100 * .Machine$double.eps,
+  prob_min_theta = 0.01,
+  add_buffer_in_prediction = FALSE,
+  x_dim = 0,
+  min_ranges = NULL,
+  max_cond_num = NULL,
+  max_points = Inf
+)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>Nbar</code></dt>
+<dd>
+<p>Maximum number of data points for each GP in a leaf before it is split. The default value is 1000.</p>
+</dd>
+<dt><code>retrain_buffer_length</code></dt>
+<dd>
+<p>Size of the retrain buffer. The buffer for a each node collects data points and holds them until the buffer length is reached. Then the GP in the node is updated with the data in the buffer. For a fixed <code>Nbar</code>, higher values for <code>retrain_buffer_length</code> lead to faster run time (less frequent retraining), but the trade-off is a temporary reduced prediction accuracy. We advise that the choice for <code>retrain_buffer_length</code> should depend on the chosen <code>Nbar</code>. By default <code>retrain_buffer_length</code> is set equal to <code>Nbar</code>.</p>
+</dd>
+<dt><code>gradual_split</code></dt>
+<dd>
+<p>If TRUE, gradual splitting is used for splitting. The default value is TRUE.</p>
+</dd>
+<dt><code>theta</code></dt>
+<dd>
+<p>Overlap ratio between two leafs in the split direction. The default value is 0.</p>
+</dd>
+<dt><code>wrapper</code></dt>
+<dd>
+<p>A string that indicates which GP implementation should be used. The current version includes wrappers for the packages <code>"DiceKriging"</code> and <code>"mlegp"</code>. The default setting is <code>"DiceKriging"</code>.</p>
+</dd>
+<dt><code>gp_control</code></dt>
+<dd>
+<p>A <code>list</code> of control parameter that is forwarded to the wrapper. Here, the covariance function is specified. <code>DiceKriging</code> allows for the following kernels, passed as string: <code>"gauss"</code>, <code>"matern5_2"</code>, <code>"matern3_2"</code>, <code>"exp"</code>, <code>"powexp"</code> where <code>"matern3_2"</code> is set as default.</p>
+</dd>
+<dt><code>split_direction_criterion</code></dt>
+<dd>
+<p>A string that indicates which spitting criterion to use. The options are:
+</p>
+
+<ul>
+<li> <p><code>"max_spread"</code>: Split along the direction which has the largest data spread.
+</p>
+</li>
+<li> <p><code>"min_lengthscale"</code>: split along the direction with the smallest length-scale hyperparameter from the local GP.
+</p>
+</li>
+<li> <p><code>"max_spread_per_lengthscale"</code>: Split along the direction with the largest data spread relative to the corresponding GP length-scale hyperparameter.
+</p>
+</li>
+<li> <p><code>"max_corr"</code>: Split along the direction where the input data is most strongly correlated with the target variable.
+</p>
+</li>
+<li> <p><code>"principal_component"</code>: Split along the first principal component.
+</p>
+</li>
+</ul>
+<p>The default value is <code>"max_spread_per_lengthscale"</code>.</p>
+</dd>
+<dt><code>split_position_criterion</code></dt>
+<dd>
+<p>A string indicating how the split position along the split direction should be set. Possible values are (<code>"median"</code> and <code>"mean"</code>). The default is <code>"median"</code>.</p>
+</dd>
+<dt><code>shape_decay</code></dt>
+<dd>
+<p>A string specifying how the probability function for a point to be assigned to the left leaf should fall off in the overlap region. The available options are a linear shape (<code>"linear"</code>), an exponential shape (<code>"exponential"</code>) or a Gaussian shape (<code>"gaussian"</code>). Another option is to select no overlap region. This can be achieved by selecting <code>"deterministic"</code> or to set <code>theta</code> to 0. The default is <code>"linear"</code>.</p>
+</dd>
+<dt><code>use_empirical_error</code></dt>
+<dd>
+<p>If TRUE, the uncertainty is calibrated using recent data points. The default value is TRUE.
+</p>
+<p>The most recent 25 observations are used to ensure that the prediction uncertainty yields approximately 68 % coverage. This coverage is only achieved if <code>theta = 0</code> (also together with <code>gradual_split = TRUE</code>) is used. Nevertheless, the coverage will be closer to 68 % than it would be without calibration. The prediction uncertainties at the beginning are conservative and become less conservative with increasing number of input points.</p>
+</dd>
+<dt><code>use_reference_gp</code></dt>
+<dd>
+<p>If TRUE, the covariance parameters determined for the GP in node 0 will be used for all subsequent GPs. The default is <code>FALSE</code>.</p>
+</dd>
+<dt><code>min_abs_y_err</code></dt>
+<dd>
+<p>Minimum absolute error assumed for y data. The default value is 0.</p>
+</dd>
+<dt><code>min_rel_y_err</code></dt>
+<dd>
+<p>Minimum relative error assumed for y data. The default value is <code>100 * .Machine$double.eps</code>.</p>
+</dd>
+<dt><code>min_abs_node_pred_err</code></dt>
+<dd>
+<p>Minimum absolute error on the prediction from a single node. The default value is 0.</p>
+</dd>
+<dt><code>min_rel_node_pred_err</code></dt>
+<dd>
+<p>Minimum relative error on the prediction from a single node. The default value is <code>100 * .Machine$double.eps</code>.</p>
+</dd>
+<dt><code>prob_min_theta</code></dt>
+<dd>
+<p>Minimum probability after which the overlap shape gets truncated (either towards 0 or 1). The default value is 0.01.</p>
+</dd>
+<dt><code>add_buffer_in_prediction</code></dt>
+<dd>
+<p>If TRUE, points in the data buffers are added to the GP before prediction. They are added into a temporarily created GP which contains the not yet included points. The GP in the node is not yet updated. The default is <code>FALSE</code>.</p>
+</dd>
+<dt><code>x_dim</code></dt>
+<dd>
+<p>Dimensionality of input points. It is set once the first point is received through the <code>update</code> method. It needs to be specified if <code>min_ranges</code> should be different from default.</p>
+</dd>
+<dt><code>min_ranges</code></dt>
+<dd>
+<p>Smallest allowed input data spread (per dimension) before node splitting stops. It is set to its default <code>min_ranges = rep(0.0, x_dim)</code> once the first point is received through the <code>update</code> method. <code>x_dim</code> needs to be specified by the user if it should be different from the default.</p>
+</dd>
+<dt><code>max_cond_num</code></dt>
+<dd>
+<p>Add additional noise if the covariance matrix condition number exceeds this value. The default is <code>NULL</code>.</p>
+</dd>
+<dt><code>max_points</code></dt>
+<dd>
+<p>The maximum number of points the tree is allowed to store. The default value is <code>Inf</code>.</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Returns</h5>
+
+<p>A new GPTree object. Tree-specific parameters are listed in this object. The field <code>nodes</code> contains a hash with all GPNodes and information related to nodes. The nodes in turn contain the local GPs. Nodes that have been split no longer contain a GP.
+</p>
+
+
+
+<h5>Examples</h5>
+
+<div class="r example copy">
+<pre>set.seed(42)
+## Use the 1d toy data set from Higdon (2002)
+X &lt;- as.matrix(sample(seq(0, 10, length.out = 31)))
+y &lt;- sin(2 * pi * X / 10) + 0.2 * sin(2 * pi * X / 2.5)
+y_variance &lt;- rep(0.1**2, 31)
+
+## Initialize a tree with Nbar = 15, retrain_buffer_length = 15, use_empirical_error = FALSE,
+## and default parameters otherwise
+gptree &lt;- GPTree$new(Nbar = 15, retrain_buffer_length = 15, use_empirical_error = FALSE)
+
+## For the purpose of this example, we simulate the data stream through a simple for loop.
+## In actual applications, the input stream comes from e.g. a differential evolutionary scanner.
+## We follow the procedure in the associated paper, thus letting the tree make a prediction
+## first before we update the tree with the point.
+for (i in 1:nrow(X)) {
+y_pred_with_err = gptree$joint_prediction(X[i,], return_std = TRUE)
+## Update the tree with the true (X,y) pair
+gptree$update(X[i,], y[i], y_variance[i])
+}
+
+## In the following, we go over different initializations of the tree
+## 1. The same tree as before, but using the package mlegp:
+## Note: since the default for gp_control is gp_control = list(covtype = "matern3_2"),
+## we set gp_control to an empty list when using mlegp.
+gptree &lt;- GPTree$new(Nbar = 15, retrain_buffer_length = 15, use_empirical_error = FALSE,
+wrapper = "mlegp", gp_control = list())
+
+## 2. Minimum working example:
+gptree &lt;- GPTree$new()
+
+## 3. Fully specified example corresponding to the default settings
+## Here, we choose to specify x_dim and min_ranges so that they correspond to the default values.
+## If we do not specifiy them here, they will be automatically specified once
+## the update or predict method is called.
+gptree &lt;- GPTree$new(Nbar = 1000, retrain_buffer_length = 1000,
+gradual_split = TRUE, theta = 0, wrapper = "DiceKriging",
+gp_control = list(covtype = "matern3_2"),
+split_direction_criterion = "max_spread_per_lengthscale", split_position_criterion = "mean",
+shape_decay = "linear", use_empirical_error = TRUE, 
+use_reference_gp = FALSE, min_abs_y_err = 0, min_rel_y_err = 100 * .Machine$double.eps,
+min_abs_node_pred_err = 0, min_rel_node_pred_err = 100 * .Machine$double.eps,
+prob_min_theta = 0.01, add_buffer_in_prediction = FALSE, x_dim = ncol(X),
+min_ranges = rep(0.0, ncol(X)), max_cond_num = NULL, max_points = Inf)
+</pre>
+</div>
+
+
+<hr>
+<a id="method-GPTree-add_node"></a>
+
+
+
+<h4>Method <code>add_node()</code>
+</h4>
+
+<p>Add a new GPNode to the tree. IS EXPECTED TO NOT BE CALLED BY THE USER
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GPTree$add_node(key)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>key</code></dt>
+<dd>
+<p>Key of the new leaf</p>
+</dd>
+</dl>
+</div>
+
+
+<hr>
+<a id="method-GPTree-get_marginal_point_prob"></a>
+
+
+
+<h4>Method <code>get_marginal_point_prob()</code>
+</h4>
+
+<p>Marginal probability for point x to belong to node with given key. IS EXPECTED TO NOT BE CALLED BY THE USER
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GPTree$get_marginal_point_prob(x, key)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>x</code></dt>
+<dd>
+<p>Single input data point from the data stream; has to be a vector with length equal to x_dim</p>
+</dd>
+<dt><code>key</code></dt>
+<dd>
+<p>Key of the node</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Returns</h5>
+
+<p>Returns the marginal probability for point x to belong to node with given key
+</p>
+
+
+<hr>
+<a id="method-GPTree-update"></a>
+
+
+
+<h4>Method <code>update()</code>
+</h4>
+
+<p>Assigns the given input point x with target variable y and associated variance y_var to a node and updates the tree accordingly
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GPTree$update(x, y, y_var = 0, retrain_node = TRUE)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>x</code></dt>
+<dd>
+<p>Most recent single input data point from the data stream; has to be a vector with length equal to x_dim</p>
+</dd>
+<dt><code>y</code></dt>
+<dd>
+<p>Value of target variable at input point x; has to be a one-dimensional matrix or a vector; any further columns will be ignored</p>
+</dd>
+<dt><code>y_var</code></dt>
+<dd>
+<p>Variance of the target variable; has to be a one-dimensional matrix or vector</p>
+</dd>
+<dt><code>retrain_node</code></dt>
+<dd>
+<p>If TRUE, the GP node will be retrained after the point is added.</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Details</h5>
+
+<p>The methods takes care of both updating an existing node and splitting the parent node into two child nodes. It ensures that the each child node has at least <code>n_points_train_limit</code> in each GP. Further handling of duplicate points is also done here.
+</p>
+
+
+<hr>
+<a id="method-GPTree-get_data_split_table"></a>
+
+
+
+<h4>Method <code>get_data_split_table()</code>
+</h4>
+
+<p>Generates a table used to distribute data points from a node to two child nodes
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GPTree$get_data_split_table(current_node)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>current_node</code></dt>
+<dd>
+<p>The GPNode whose data should be distributed</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Returns</h5>
+
+<p>A matrix object
+</p>
+
+
+<hr>
+<a id="method-GPTree-joint_prediction"></a>
+
+
+
+<h4>Method <code>joint_prediction()</code>
+</h4>
+
+<p>Compute the joint prediction from all relevant leaves for an input point x
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GPTree$joint_prediction(x, return_std = TRUE)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>x</code></dt>
+<dd>
+<p>Single data point for which the predicted joint mean (and standard deviation) is computed; has to be a vector with length equal to x_dim</p>
+</dd>
+<dt><code>return_std</code></dt>
+<dd>
+<p>If TRUE, the standard error of the prediction is returned</p>
+</dd>
+</dl>
+</div>
+
+
+
+<h5>Details</h5>
+
+<p>We follow Eqs. (5) and (6) in <a href="https://arxiv.org/abs/2006.09446">this paper</a>
+</p>
+
+
+
+<h5>Returns</h5>
+
+<p>The prediction (and its standard error) for input point x from this tree
+</p>
+
+
+<hr>
+<a id="method-GPTree-clone"></a>
+
+
+
+<h4>Method <code>clone()</code>
+</h4>
+
+<p>The objects of this class are cloneable with this method.
+</p>
+
+
+<h5>Usage</h5>
+
+<div class="r"><pre>GPTree$clone(deep = FALSE)</pre></div>
+
+
+
+<h5>Arguments</h5>
+
+<div class="arguments">
+
+<dl>
+<dt><code>deep</code></dt>
+<dd>
+<p>Whether to make a deep clone.</p>
+</dd>
+</dl>
+</div>
+
+
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## ------------------------------------------------
+## Method `GPTree$new`
+## ------------------------------------------------
+
+set.seed(42)
+## Use the 1d toy data set from Higdon (2002)
+X &lt;- as.matrix(sample(seq(0, 10, length.out = 31)))
+y &lt;- sin(2 * pi * X / 10) + 0.2 * sin(2 * pi * X / 2.5)
+y_variance &lt;- rep(0.1**2, 31)
+
+## Initialize a tree with Nbar = 15, retrain_buffer_length = 15, use_empirical_error = FALSE,
+## and default parameters otherwise
+gptree &lt;- GPTree$new(Nbar = 15, retrain_buffer_length = 15, use_empirical_error = FALSE)
+
+## For the purpose of this example, we simulate the data stream through a simple for loop.
+## In actual applications, the input stream comes from e.g. a differential evolutionary scanner.
+## We follow the procedure in the associated paper, thus letting the tree make a prediction
+## first before we update the tree with the point.
+for (i in 1:nrow(X)) {
+y_pred_with_err = gptree$joint_prediction(X[i,], return_std = TRUE)
+## Update the tree with the true (X,y) pair
+gptree$update(X[i,], y[i], y_variance[i])
+}
+
+## In the following, we go over different initializations of the tree
+## 1. The same tree as before, but using the package mlegp:
+## Note: since the default for gp_control is gp_control = list(covtype = "matern3_2"),
+## we set gp_control to an empty list when using mlegp.
+gptree &lt;- GPTree$new(Nbar = 15, retrain_buffer_length = 15, use_empirical_error = FALSE,
+wrapper = "mlegp", gp_control = list())
+
+## 2. Minimum working example:
+gptree &lt;- GPTree$new()
+
+## 3. Fully specified example corresponding to the default settings
+## Here, we choose to specify x_dim and min_ranges so that they correspond to the default values.
+## If we do not specifiy them here, they will be automatically specified once
+## the update or predict method is called.
+gptree &lt;- GPTree$new(Nbar = 1000, retrain_buffer_length = 1000,
+gradual_split = TRUE, theta = 0, wrapper = "DiceKriging",
+gp_control = list(covtype = "matern3_2"),
+split_direction_criterion = "max_spread_per_lengthscale", split_position_criterion = "mean",
+shape_decay = "linear", use_empirical_error = TRUE, 
+use_reference_gp = FALSE, min_abs_y_err = 0, min_rel_y_err = 100 * .Machine$double.eps,
+min_abs_node_pred_err = 0, min_rel_node_pred_err = 100 * .Machine$double.eps,
+prob_min_theta = 0.01, add_buffer_in_prediction = FALSE, x_dim = ncol(X),
+min_ranges = rep(0.0, ncol(X)), max_cond_num = NULL, max_points = Inf)
+</code></pre>
+
+
+</div>

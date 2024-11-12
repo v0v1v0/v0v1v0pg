@@ -1,0 +1,309 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>graph_calculate_power</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate power values for a graphical multiple comparison procedure</h2>
+
+<h3>Description</h3>
+
+<p>Under the alternative hypotheses, the distribution of test statistics is
+assumed to be a multivariate normal distribution. Given this distribution,
+this function calculates power values for a graphical multiple comparison
+procedure. By default, it calculate the local power, which is the probability
+to reject an individual hypothesis, the probability to reject at least one
+hypothesis, the probability to reject all hypotheses, the expected number of
+rejections, and the probability of user-defined success criteria. See
+<code>vignette("shortcut-testing")</code> and <code>vignette("closed-testing")</code> for more
+illustration of power calculation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">graph_calculate_power(
+  graph,
+  alpha = 0.025,
+  power_marginal = rep(alpha, length(graph$hypotheses)),
+  test_groups = list(seq_along(graph$hypotheses)),
+  test_types = c("bonferroni"),
+  test_corr = rep(list(NA), length(test_types)),
+  sim_n = 1e+05,
+  sim_corr = diag(length(graph$hypotheses)),
+  sim_success = NULL,
+  verbose = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>graph</code></td>
+<td>
+<p>An initial graph as returned by <code>graph_create()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>A numeric value of the one-sided overall significance level,
+which should be between 0 &amp; 1. The default is 0.025 for one-sided
+hypothesis testing. Note that only one-sided tests are supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>power_marginal</code></td>
+<td>
+<p>A numeric vector of marginal power values to use when
+simulating p-values. See Details for more on the simulation process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test_groups</code></td>
+<td>
+<p>A list of numeric vectors specifying hypotheses to test
+together. Grouping is needed to correctly perform Simes and parametric
+tests.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test_types</code></td>
+<td>
+<p>A character vector of test types to apply to each test
+group. This is needed to correctly perform Simes and parametric
+tests. The length should match the number of elements in <code>test_groups</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test_corr</code></td>
+<td>
+<p>(Optional) A list of numeric correlation matrices. Each
+entry in the list should correspond to each test group. For a test group
+using Bonferroni or Simes tests, its corresponding entry in <code>test_corr</code>
+should be <code>NA</code>. For a test group using parametric tests, its
+corresponding entry in <code>test_corr</code> should be a numeric correlation matrix
+specifying the correlation between test statistics for hypotheses in this
+test group. The length should match the number of elements in
+<code>test_groups</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim_n</code></td>
+<td>
+<p>An integer scalar specifying the number of simulations. The
+default is 1e5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim_corr</code></td>
+<td>
+<p>A numeric matrix of correlations between test statistics for
+all hypotheses. The dimensions should match the number of hypotheses in
+<code>graph</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim_success</code></td>
+<td>
+<p>A list of user-defined functions to specify the success
+criteria. Functions must take one simulation's logical vector of results as
+an input, and return a length-one logical vector. For instance, if
+"success" means rejecting hypotheses 1 and 2, use <code>sim_success = list("1 and 2" = function(x) x[1] &amp;&amp; x[2])</code>. If the list is not named, the function
+body will be used as the name. Lambda functions also work starting with R
+4.1, e.g. <code style="white-space: pre;">⁠sim_success = list(\(x) x[3] || x[4])⁠</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>A logical scalar specifying whether the details of power
+simulations should be included in results. The default is <code>verbose = FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>power_report</code> object with a list of 3 elements:
+</p>
+
+<ul>
+<li> <p><code>inputs</code> - Input parameters, which is a list of:
+</p>
+
+<ul>
+<li> <p><code>graph</code> - Initial graph,
+</p>
+</li>
+<li> <p><code>alpha</code> - Overall significance level,
+</p>
+</li>
+<li> <p><code>test_groups</code> - Groups of hypotheses for different types of tests,
+</p>
+</li>
+<li> <p><code>test_types</code> - Different types of tests,
+</p>
+</li>
+<li> <p><code>test_corr</code> - Correlation matrices for parametric tests,
+</p>
+</li>
+<li> <p><code>sim_n</code> - Number of simulations,
+</p>
+</li>
+<li> <p><code>power_marginal</code> - Marginal power of all hypotheses
+</p>
+</li>
+<li> <p><code>sim_corr</code> - Correlation matrices for simulations,
+</p>
+</li>
+<li> <p><code>sim_success</code> - User-defined success criteria.
+</p>
+</li>
+</ul>
+</li>
+<li> <p><code>power</code> - A list of power values
+</p>
+
+<ul>
+<li> <p><code>power_local</code> - Local power of all hypotheses, which is the proportion
+of simulations in which each hypothesis is rejected,
+</p>
+</li>
+<li> <p><code>rejection_expected</code> - Expected (average) number of rejected hypotheses,
+</p>
+</li>
+<li> <p><code>power_at_least_1</code> - Power to reject at least one hypothesis,
+</p>
+</li>
+<li> <p><code>power_all</code> - Power to reject all hypotheses,
+</p>
+</li>
+<li> <p><code>power_success</code> - Power of user-defined success, which is the
+proportion of simulations in which the user-defined success criterion
+</p>
+</li>
+<li> <p><code>sim_success</code> is met.
+</p>
+</li>
+</ul>
+</li>
+<li> <p><code>details</code> - An optional list of datasets showing simulated p-values and
+results for each simulation.
+</p>
+</li>
+</ul>
+<h3>Simulation details</h3>
+
+<p>The power calculation is based on simulations. The distribution to simulate
+from is determined as a multivariate normal distribution by <code>power_marginal</code>
+and <code>sim_corr</code>. In particular, <code>power_marginal</code> is a vector of marginal
+power values for all hypotheses. The marginal power is the power to reject
+the null hypothesis at the significance level <code>alpha</code>
+<em>without multiplicity adjustment</em>. This value could be readily available from
+standard software and other R packages. Then we can determine the mean of the
+multivariate normal distribution as
+</p>
+<p style="text-align: center;"><code class="reqn">\Phi^{-1}\left(1-\alpha\right)-\Phi^{-1}\left(1-d_i\right)</code>
+</p>
+<p>,
+which is often called the non-centrality parameter or the drift parameter.
+Here <code class="reqn">d_i</code> is the marginal power <code>power_marginal</code> of hypothesis <code class="reqn">i</code>.
+Given the correlation matrix <code>sim_corr</code>, we can simulate from this
+multivariate normal distribution using the <code>mvtnorm</code> R package (Genz and
+Bretz, 2009).
+</p>
+<p>Each set simulated values can be used to calculate the corresponding
+one-sided p-values. Then this set of p-values are plugged into the graphical
+multiple comparison procedure to determine which hypotheses are rejected.
+This process is repeated <code>n_sim</code> times to produce the power values as the
+proportion of simulations in which a particular success criterion is met.
+</p>
+
+
+<h3>References</h3>
+
+<p>Bretz, F., Posch, M., Glimm, E., Klinglmueller, F., Maurer, W., and
+Rohmeyer, K. (2011a). Graphical approaches for multiple comparison
+procedures using weighted Bonferroni, Simes, or parametric tests.
+<em>Biometrical Journal</em>, 53(6), 894-913.
+</p>
+<p>Bretz, F., Maurer, W., and Hommel, G. (2011b). Test and power
+considerations for multiple endpoint analyses using sequentially rejective
+graphical procedures. <em>Statistics in Medicine</em>, 30(13), 1489-1501.
+</p>
+<p>Genz, A., and Bretz, F. (2009). <em>Computation of Multivariate Normal
+and t Probabilities</em>, series Lecture Notes in Statistics. Springer-Verlag,
+Heidelberg.
+</p>
+<p>Lu, K. (2016). Graphical approaches using a Bonferroni mixture of weighted
+Simes tests. <em>Statistics in Medicine</em>, 35(22), 4041-4055.
+</p>
+<p>Xi, D., Glimm, E., Maurer, W., and Bretz, F. (2017). A unified framework
+for weighted parametric multiple test procedures.
+<em>Biometrical Journal</em>, 59(5), 918-931.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># A graphical multiple comparison procedure with two primary hypotheses (H1
+# and H2) and two secondary hypotheses (H3 and H4)
+# See Figure 4 in Bretz et al. (2011a).
+alpha &lt;- 0.025
+hypotheses &lt;- c(0.5, 0.5, 0, 0)
+delta &lt;- 0.5
+transitions &lt;- rbind(
+  c(0, delta, 1 - delta, 0),
+  c(delta, 0, 0, 1 - delta),
+  c(0, 1, 0, 0),
+  c(1, 0, 0, 0)
+)
+g &lt;- graph_create(hypotheses, transitions)
+
+marginal_power &lt;- c(0.8, 0.8, 0.7, 0.9)
+corr1 &lt;- matrix(0.5, nrow = 2, ncol = 2)
+diag(corr1) &lt;- 1
+corr &lt;- rbind(
+  cbind(corr1, 0.5 * corr1),
+  cbind(0.5 * corr1, corr1)
+)
+success_fns &lt;- list(
+  # Probability to reject both H1 and H2
+  `H1andH2` = function(x) x[1] &amp; x[2],
+  # Probability to reject both (H1 and H3) or (H2 and H4)
+  `(H1andH3)or(H2andH4)` = function(x) (x[1] &amp; x[3]) | (x[2] &amp; x[4])
+)
+set.seed(1234)
+# Bonferroni tests
+# Reduce the number of simulations to save time for package compilation
+power_output &lt;- graph_calculate_power(
+  g,
+  alpha,
+  sim_corr = corr,
+  sim_n = 1e2,
+  power_marginal = marginal_power,
+  sim_success = success_fns
+)
+
+# Parametric tests for H1 and H2; Simes tests for H3 and H4
+# User-defined success: to reject H1 or H2; to reject H1 and H2
+# Reduce the number of simulations to save time for package compilation
+graph_calculate_power(
+  g,
+  alpha,
+  test_groups = list(1:2, 3:4),
+  test_types = c("parametric", "simes"),
+  test_corr = list(corr1, NA),
+  sim_n = 1e2,
+  sim_success = list(
+    function(.) .[1] || .[2],
+    function(.) .[1] &amp;&amp; .[2]
+  )
+)
+
+</code></pre>
+
+
+</div>

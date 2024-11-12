@@ -1,0 +1,103 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>residSVD</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Multiplicative Approximation of Model Residuals </h2>
+
+<h3>Description</h3>
+
+<p>This function uses the first <code>d</code> components of the singular value
+decomposition in order to approximate a vector of model residuals by a
+sum of <code>d</code> multiplicative terms, with the multiplicative
+structure determined by two specified factors.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">residSVD(model, fac1, fac2, d = 1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p> a model object with <code>na.action</code>, <code>residuals</code>, and <code>weights</code> methods, e.g. objects inheriting from class <code>"lm"</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fac1</code></td>
+<td>
+<p> a factor </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fac2</code></td>
+<td>
+<p> a factor </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p> integer, the number of multiplicative terms to use in the approximation </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function operates on the matrix of mean residuals, with rows
+indexed by <code>fac1</code> and columns indexed by <code>fac2</code>.  For
+<code>glm</code> and <code>glm</code> models, the matrix entries are weighted
+working residuals.  The primary use of <code>residSVD</code> is to
+generate good starting values for the parameters in <code>Mult</code> terms
+in models to be fitted using <code>gnm</code>.   
+</p>
+
+
+<h3>Value</h3>
+
+<p>If <code>d = 1</code>, a numeric vector; otherwise a numeric
+matrix with <code>d</code> columns.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> David Firth and Heather Turner </p>
+
+
+<h3>See Also</h3>
+
+ <p><code>gnm</code>, <code>Mult</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1)
+
+##  Goodman RC1  association model fits well (deviance 3.57, df 8)
+mentalHealth$MHS &lt;- C(mentalHealth$MHS, treatment)
+mentalHealth$SES &lt;- C(mentalHealth$SES, treatment)
+## independence model
+indep &lt;- gnm(count ~ SES + MHS, family = poisson, data = mentalHealth)
+mult1 &lt;- residSVD(indep, SES, MHS)
+## Now use mult1 as starting values for the RC1 association parameters
+RC1model &lt;- update(indep, . ~ . + Mult(SES, MHS),
+                   start = c(coef(indep), mult1), trace = TRUE)
+##  Similarly for the RC2 model:
+mult2 &lt;- residSVD(indep, SES, MHS, d = 2)
+RC2model &lt;- update(indep, . ~ . + instances(Mult(SES, MHS), 2),
+                   start = c(coef(indep), mult2), trace = TRUE)
+##
+## See also example(House2001), where good starting values matter much more!
+##
+</code></pre>
+
+
+</div>

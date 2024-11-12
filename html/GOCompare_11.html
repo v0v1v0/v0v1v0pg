@@ -1,0 +1,303 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>graph_two_GOspecies</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Undirected network representation  for the results of functional
+enrichment analysis to compare two species and a series of categories</h2>
+
+<h3>Description</h3>
+
+<p>graph_two_GOspecies is a function to create undirected graphs
+<script id="MathJax-script" async src="../../mathjaxr/doc/mathjax/es5/tex-chtml-full.js"></script></p>
+<p>The graph_two_GOspecies is an analog of the graphGOspecies function, and it has the same options (" Categories " and " GO ").
+Nevertheless, the way in which the edge and node weights are calculated is slightly different. Since two species are compared,
+three possible graphs are available \({G}_1,\, {G}_2\), and \({G}_3 \). \({G}_1\), and \({G}_2 \) represent each of the species analyzed
+and \({G}_3\) is a subgraph of \({G}_1,\, {G}_2\), which contains the GO terms or Categories co-ocurring between both species.
+</p>
+<p>Categories option:
+(Weight): The nodes \((V)\) represent groups of gene lists (categories), and the edges \((E)\) represent GO terms co-occurring between pairs of categories
+and the weight of the nodes provides a measure of how a GO term is conserved between two species and a series of categories but it is biased
+to categories.
+</p>
+\[\widehat{K}_w(u)=\sum_{v \epsilon V_1}^{}w(u,v) + \sum_{v \epsilon V_2}^{}w(u,v)\]<p> (5)
+</p>
+<p>(shared weight): The nodes \((V)\) represent groups of gene lists (categories), and the edges \((E)\) represent GO terms co-occurring between pairs of categories that are only
+shared between species. This node weight  \({K}_s\) is computed from a shared weight of edges \({s}\), where \({N}1\) and \({N}2\) are the set of GO terms associated
+with the edge \(e = (u,v) \) for species 1 and 2, respectively. Therefore the node shared weight \({K}_s(u)\)  is the sum of \({s}\).
+</p>
+\[s(e) = \frac{\mid {N1} \ n \ {N2} \mid}{\mid {N1} \bigcup {N2} \mid}\]<p> (6)
+</p>
+\[{K}_s(u)=\sum_{v \epsilon (V_1  \bigcup V_2) }^{}{s(u,v)}\]<p> (7)
+</p>
+<p>(combined weight): This node weight  \({K}_c(u)\) is a combination of the weight and the shared weight. The idea of this combined weight is
+to find categories with more frequent GO terms co-ocurring in order to observe functional similarities between two species with a balance of GO terms co-occurring among
+gene lists (categories) and the two species. This node weight varies from -1 (categories with GO terms found only in one species and few categories) to 1
+(categories with GO terms shared widely between species and among other categories). the combined node weight \({K}_c\) is defined as the sum of the min-max normalized weights
+\(\widehat{K}_w\) and \({K}_s\) minus 1.
+</p>
+\[minmax(y)=\frac{y-min(y)}{max(y)-min(y)}\]<p> (8)
+\[{K}_c(u)= minmax(\widehat{K}_w(u)) + minmax({K}_s(u)) - 1 \] (9)
+</p>
+<p>GO option:
+Given there are three possible graphs are available \({G}_1,\, {G}_2\), and \({G}_3\).  \({G}_1\), and \({G}_2\) represent each of the species analyzed
+and \({G}_3\) is a subgraph of \({G}_1,\, {G}_2\), which contains the GO terms or Categories co-ocurring between both species. For this case, Nodes are GO terms and edges are
+categories where a GO terms is co-ocurring. This weight is similar to the GO weight calculated for graphGOspecies function. it is calculated as the equation 5.
+</p>
+\[\widehat{K}_w(u)=\sum_{v \epsilon V_1}^{}w(u,v) + \sum_{v \epsilon V_2}^{}w(u,v)\]<p> (5)
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">graph_two_GOspecies(
+  x,
+  species1,
+  species2,
+  GOterm_field,
+  saveGraph = FALSE,
+  option = "Categories",
+  numCores = 2,
+  outdir = NULL,
+  filename = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>is a list obtained as output of the comparegOspecies function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>species1</code></td>
+<td>
+<p>This is a string with the species name for species 1 (e.g; "H. sapiens")</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>species2</code></td>
+<td>
+<p>This is a string with the species name for species 2 (e.g; "A. thaliana")</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GOterm_field</code></td>
+<td>
+<p>This is a string with the column name of the GO terms (e.g; "Functional_Category")</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>saveGraph</code></td>
+<td>
+<p>logical, if <code>TRUE</code> the function will allow save the graph in graphml format</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>option</code></td>
+<td>
+<p>(values: "Categories or "GO"). This option allows create either a graph
+where nodes are GO terms and edges are features and GO as well as species belonging are edges attributes or
+a graph where nodes are GO terms and edges are species belonging  (default value="Categories")</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numCores</code></td>
+<td>
+<p>numeric, Number of cores to use for the process (default value numCores=2). For the example below, only one core will be used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outdir</code></td>
+<td>
+<p>This parameter will allow save the graph file in a folder described here (e.g: "D:").This parameter only
+works when saveGraph=TRUE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filename</code></td>
+<td>
+<p>The name of the graph filename to be saved in the outdir detailed by the user.This parameter only
+works when saveGraph=TRUE</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>This function will return a list with two slots: edges and nodes.
+(Categories):
+Edges list columns:
+</p>
+
+<table>
+<tr>
+<td style="text-align: right;">
+  Column </td>
+<td style="text-align: right;"> Description </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  SOURCE and TARGET </td>
+<td style="text-align: right;"> The source and target categories (Nodes in the edge) </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  GO_N </td>
+<td style="text-align: right;"> The number of GO terms between the categories </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  WEIGHT </td>
+<td style="text-align: right;"> Edge weight </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  GO </td>
+<td style="text-align: right;"> GO terms available for both nodes </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  SP1 </td>
+<td style="text-align: right;"> Number of GO terms for the species 1 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  SP2 </td>
+<td style="text-align: right;"> Number of GO terms for the species 2 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  SHARED </td>
+<td style="text-align: right;"> Number of GO terms shared or co-ocurring between the categories </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  SHARED_WEIGHT </td>
+<td style="text-align: right;"> Shared weight for the edge </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  </td>
+</tr>
+</table>
+<p>Node list columns:
+</p>
+
+<table>
+<tr>
+<td style="text-align: right;">
+  Column </td>
+<td style="text-align: right;"> Description </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  CAT</td>
+<td style="text-align: right;"> Category name </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  CAT_WEIGHT  </td>
+<td style="text-align: right;"> Node weight </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  SHARED_WEIGHT  </td>
+<td style="text-align: right;"> Shared weight for the node </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  COMBINED_WEIGHT </td>
+<td style="text-align: right;"> Combined weight for the node </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  </td>
+</tr>
+</table>
+<p>(GO):
+</p>
+<p>Edges list columns:
+</p>
+
+<table>
+<tr>
+<td style="text-align: right;">
+  Column </td>
+<td style="text-align: right;"> Description </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  SOURCE and TARGET </td>
+<td style="text-align: right;"> The source and target GO terms (Nodes in the edge) </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  FEATURE </td>
+<td style="text-align: right;"> The number of Categories where both GO Terms were found </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  SP </td>
+<td style="text-align: right;"> Species where the GO terms was found (Species 1, Species 2 or Shared) </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  WEIGHT </td>
+<td style="text-align: right;"> Edge weight </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  </td>
+</tr>
+</table>
+<p>Node list columns:
+</p>
+
+<table>
+<tr>
+<td style="text-align: right;">
+  Column </td>
+<td style="text-align: right;"> Description </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  GO </td>
+<td style="text-align: right;"> GO term node name </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  GO_WEIGHT </td>
+<td style="text-align: right;"> Node weight </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+  </td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+GOterm_field &lt;- "Functional_Category"
+data(comparison_ex_compress_CH)
+#Defining the species names
+species1 &lt;- "H. sapiens"
+species2 &lt;- "A. thaliana"
+x_graph &lt;- graph_two_GOspecies(x=comparison_ex_compress_CH,
+          species1=species1,
+          species2=species2,
+          GOterm_field=GOterm_field,
+          numCores=1,
+          saveGraph = FALSE,
+          option= "Categories",
+          outdir = NULL,
+          filename= NULL)
+
+</code></pre>
+
+
+</div>

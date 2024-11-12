@@ -1,0 +1,117 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>proxy_BCA</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Baseline Conditional Average</h2>
+
+<h3>Description</h3>
+
+<p>Proxy estimation of the Baseline Conditional Average (BCA), defined by <code class="reqn">E[Y | D=0, Z]</code>. Estimation is done on the auxiliary sample, but BCA predictions are made for all observations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">proxy_BCA(Z, D, Y, A_set, learner, min_variation = 1e-05)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Z</code></td>
+<td>
+<p>A numeric design matrix that holds the covariates in its columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>D</code></td>
+<td>
+<p>A binary vector of treatment assignment. Value one denotes assignment to the treatment group and value zero assignment to the control group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>A numeric vector containing the response variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A_set</code></td>
+<td>
+<p>A numerical vector of the indices of the observations in the auxiliary sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>learner</code></td>
+<td>
+<p>A string specifying the machine learner for the estimation. Either <code>'lasso'</code>, <code>'random_forest'</code>, <code>'tree'</code>, or a custom learner specified with <code>mlr3</code> syntax. In the latter case, do <em>not</em> specify in the <code>mlr3</code> syntax specification if the learner is a regression learner or classification learner. Example: <code>'mlr3::lrn("ranger", num.trees = 100)'</code> for a random forest learner with 100 trees. Note that this is a string and the absence of the <code>classif.</code> or <code>regr.</code> keywords. See <a href="https://mlr3learners.mlr-org.com">https://mlr3learners.mlr-org.com</a> for a list of <code>mlr3</code> learners.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_variation</code></td>
+<td>
+<p>Specifies a threshold for the minimum variation of the predictions. If the variation of a BCA prediction falls below this threshold, random noise with distribution <code class="reqn">N(0, var(Y)/20)</code> is added to it. Default is <code>1e-05</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The specifications <code>"lasso"</code>, <code>"random_forest"</code>, and <code>"tree"</code> in <code>learner</code> correspond to the following <code>mlr3</code> specifications (we omit the keywords <code>classif.</code> and <code>regr.</code>). <code>"lasso"</code> is a cross-validated Lasso estimator, which corresponds to <code>'mlr3::lrn("cv_glmnet", s = "lambda.min", alpha = 1)'</code>. <code>"random_forest"</code> is a random forest with 500 trees, which corresponds to <code>'mlr3::lrn("ranger", num.trees = 500)'</code>. <code>"tree"</code> is a tree learner, which corresponds to <code>'mlr3::lrn("rpart")'</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>"proxy_BCA"</code>, consisting of the following components:
+</p>
+
+<dl>
+<dt><code>estimates</code></dt>
+<dd>
+<p>A numeric vector of BCA estimates of each observation.</p>
+</dd>
+<dt><code>mlr3_objects</code></dt>
+<dd>
+<p><code>"mlr3"</code> objects used for estimation.</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>Chernozhukov V., Demirer M., Duflo E., Fernández-Val I. (2020). “Generic Machine Learning Inference on Heterogenous Treatment Effects in Randomized Experiments.” <em>arXiv preprint arXiv:1712.04802</em>. URL: <a href="https://arxiv.org/abs/1712.04802">https://arxiv.org/abs/1712.04802</a>.
+</p>
+<p>Lang M., Binder M., Richter J., Schratz P., Pfisterer F., Coors S., Au Q., Casalicchio G., Kotthoff L., Bischl B. (2019). “mlr3: A Modern Object-Oriented Machine Learning Framework in R.” <em>Journal of Open Source Software</em>, <b>4</b>(44), 1903. doi: <a href="https://doi.org/10.21105/joss.01903">10.21105/joss.01903</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>proxy_CATE()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(require("ranger")){
+## generate data
+set.seed(1)
+n  &lt;- 150                                  # number of observations
+p  &lt;- 5                                    # number of covariates
+D  &lt;- rbinom(n, 1, 0.5)                    # random treatment assignment
+Z  &lt;- matrix(runif(n*p), n, p)             # design matrix
+Y0 &lt;- as.numeric(Z %*% rexp(p) + rnorm(n)) # potential outcome without treatment
+Y1 &lt;- 2 + Y0                               # potential outcome under treatment
+Y  &lt;- ifelse(D == 1, Y1, Y0)               # observed outcome
+A_set &lt;- sample(1:n, size = n/2)           # auxiliary set
+
+## BCA predictions via random forest
+proxy_BCA(Z, D, Y, A_set, learner = "mlr3::lrn('ranger', num.trees = 10)")
+}
+
+</code></pre>
+
+
+</div>

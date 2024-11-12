@@ -1,0 +1,156 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Anova.glmmTMB</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Downstream methods</h2>
+
+<h3>Description</h3>
+
+<p>Methods have been written that allow <code>glmmTMB</code> objects to be used with
+several downstream packages that enable different forms of inference.
+For some methods (<code>Anova</code> and <code>emmeans</code>, but <em>not</em> <code>effects</code> at present),
+set the <code>component</code> argument
+to "cond" (conditional, the default), "zi" (zero-inflation) or "disp" (dispersion) in order to produce results
+for the corresponding part of a <code>glmmTMB</code> model. 
+Support for <span class="pkg">emmeans</span> also allows additional options 
+<code>component = "response"</code> (response means taking both the <code>cond</code> and
+<code>zi</code> components into account), and <code>component = "cmean"</code> (mean of the 
+[possibly truncated] conditional distribution). 
+</p>
+<p>In particular,
+</p>
+
+<ul>
+<li> <p><code>car::Anova</code> constructs type-II and type-III Anova tables
+for the fixed effect parameters of any component
+</p>
+</li>
+<li>
+<p> the <code>emmeans</code> package computes estimated marginal means (previously known as least-squares means)
+for the fixed effects of any component, or predictions with <code>type = "response"</code> or
+<code>type = "component"</code>. Note: In hurdle models, 
+<code>component = "cmean"</code> produces means
+of the truncated conditional distribution, while 
+<code>component = "cond", type = "response"</code> produces means of the <em>untruncated</em>
+conditional distribution.
+</p>
+</li>
+<li>
+<p> the <code>effects</code> package computes graphical tabular effect displays
+(only for the fixed effects of the conditional component)
+</p>
+</li>
+</ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R">Anova.glmmTMB(
+  mod,
+  type = c("II", "III", 2, 3),
+  test.statistic = c("Chisq", "F"),
+  component = "cond",
+  vcov. = vcov(mod)[[component]],
+  singular.ok,
+  include.rankdef.cols = FALSE,
+  ...
+)
+
+Effect.glmmTMB(focal.predictors, mod, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mod</code></td>
+<td>
+<p>a glmmTMB model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>type of test, <code>"II"</code>, <code>"III"</code>, <code>2</code>, or <code>3</code>.  Roman numerals are equivalent to the corresponding Arabic numerals. See <code>Anova</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test.statistic</code></td>
+<td>
+<p>unused: only valid choice is "Chisq" (i.e., Wald chi-squared test)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>component</code></td>
+<td>
+<p>which component of the model to test/analyze ("cond", "zi", or "disp")
+or, in <span class="pkg">emmeans</span> only, "response" or "cmean" as described in Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov.</code></td>
+<td>
+<p>variance-covariance matrix (usually extracted automatically)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>singular.ok</code></td>
+<td>
+<p>OK to do ANOVA with singular models (unused) ?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include.rankdef.cols</code></td>
+<td>
+<p>include all columns of a rank-deficient model matrix?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional parameters that may be supported by the method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>focal.predictors</code></td>
+<td>
+<p>a character vector of one or more predictors in the
+model in any order.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>While the examples below are disabled for earlier versions of
+R, they may still work; it may be necessary to refer to private
+versions of methods, e.g. <code>glmmTMB:::Anova.glmmTMB(model, ...)</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">warp.lm &lt;- glmmTMB(breaks ~ wool * tension, data = warpbreaks)
+salamander1 &lt;- up2date(readRDS(system.file("example_files","salamander1.rds",package="glmmTMB")))
+if (require(emmeans)) withAutoprint({
+    emmeans(warp.lm, poly ~ tension | wool)
+    emmeans(salamander1, ~ mined, type="response")  # conditional means
+    emmeans(salamander1, ~ mined, component="cmean")     # same as above, but re-gridded
+    emmeans(salamander1, ~ mined, component="zi", type="response")  # zero probabilities
+    emmeans(salamander1, ~ mined, component="response")  # response means including both components
+})
+if (getRversion() &gt;= "3.6.0") {
+   if (require(car)) withAutoprint({
+       Anova(warp.lm,type="III")
+       Anova(salamander1)
+       Anova(salamander1, component="zi")
+   })
+   if (require(effects)) withAutoprint({
+       plot(allEffects(warp.lm))
+       plot(allEffects(salamander1))
+   })
+}
+</code></pre>
+
+
+</div>

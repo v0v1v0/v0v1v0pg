@@ -1,0 +1,188 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GADAG-package</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+A Genetic Algorithm for Learning Directed Acyclic Graphs
+</h2>
+
+<h3>Description</h3>
+
+<p>Sparse large Directed Acyclic Graphs learning with a combination of a convex program and a tailored genetic algorithm (see Champion et al. (2017) &lt;https://hal.archives-ouvertes.fr/hal-01172745v2/document&gt;). 
+</p>
+
+
+<h3>Details</h3>
+
+<p>GADAG aims at recovering the structure of an unknow DAG G, whose edges represent the interactions that exist between p nodes, using n noisy observations
+of these nodes (design matrix X).
+GADAG is more precisely based on a l1-penalized (to make the estimated graph sparse enough) maximum log-likelihood estimation procedure, with the constraint that the estimated graph is a DAG.
+This DAG learning problem is particularly critical in the high-dimensional setting, the exploration of
+the whole of set of DAGs being a NP-hard problem.
+GADAG proposes an original formulation for the estimated DAG, splitting the
+initial problem into two sub-problems: node ordering and graph topology search.
+The node ordering, modelled as a permutation of [1,p] or the associated pxp matrix P, represents the importance of the p nodes of the graph,
+from the node with the smallest number of children to the node with the largest number of children.
+The topological structure of the graph, which is given as a lower triangular matrix T,
+then sets the graph edges weights (including 0, equivalent to no edges).
+GADAG works as follows:  it efficiently looks for the best permution in an outer loop with a genetic algorithm,
+while a nested loop is used to find the optimal T associated to each given P. The latter internal optimization
+problem is solved by a steepest gradient descent approach.
+</p>
+<p>The DESCRIPTION file:
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+Package: </td>
+<td style="text-align: left;"> GADAG</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+Type: </td>
+<td style="text-align: left;"> Package</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+Title: </td>
+<td style="text-align: left;"> A Genetic Algorithm for Learning Directed Acyclic Graphs</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+Version: </td>
+<td style="text-align: left;"> 0.99.0</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+Date: </td>
+<td style="text-align: left;"> 2017-04-07</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+Author: </td>
+<td style="text-align: left;"> Magali Champion, Victor Picheny and Matthieu Vignes</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+Maintainer: </td>
+<td style="text-align: left;"> Magali Champion &lt;magali.champion@parisdescartes.fr&gt;</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+Description: </td>
+<td style="text-align: left;"> Sparse large Directed Acyclic Graphs learning with a combination of a convex program and a tailored genetic algorithm (see Champion et al. (2017) &lt;https://hal.archives-ouvertes.fr/hal-01172745v2/document&gt;). </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+License: </td>
+<td style="text-align: left;"> GPL-2</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+Depends: </td>
+<td style="text-align: left;"> 
+igraph,
+MASS</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+Imports: </td>
+<td style="text-align: left;"> 
+Rcpp (&gt;= 0.12.5)</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+LinkingTo: </td>
+<td style="text-align: left;"> Rcpp, RcppArmadillo</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+NeedsCompilation: </td>
+<td style="text-align: left;"> yes</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+Packaged: </td>
+<td style="text-align: left;"> 2017-03-17 14:56:12 UTC; magali</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+RoxygenNote: </td>
+<td style="text-align: left;"> 6.0.1</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Magali Champion, Victor Picheny and Matthieu Vignes
+</p>
+<p>Maintainer: Magali Champion &lt;magali.champion@parisdescartes.fr&gt;
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GADAG_Run</code>, <code>GADAG_Analyze</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">  #############################################################
+  # Loading toy data
+  #############################################################
+  data(toy_data)
+  # toy_data is a list of two matrices corresponding to a "star"
+  # DAG (node 1 activates all other nodes):
+  # - toy_data$X is a 100x10 design matrix
+  # - toy_data$G is the 10x10 adjacency matrix (ground trough)
+
+  #############################################################
+  # Running GADAG
+  #############################################################
+  # Simple run, with only the penalty term specified
+  GADAG_results &lt;- GADAG_Run(X=toy_data$X, lambda=0.1)
+  print(GADAG_results$G.best) # optimal adjacency matrix graph
+
+  # Expensive run with many evaluations if we refine the
+  # termination conditions
+  ## Not run: 
+  n.gen &lt;- 1e10 # we allow a very large number of iterations
+  tol.Shannon &lt;- 1e-10 # the entropy of Shannon of the population
+                       # has to be very small
+  pop.size &lt;- 5*ncol(toy_data$G) # this is usually a good
+                                 # population size
+  max.eval &lt;- n.gen * pop.size # maximal number of nested
+                               # evaluation
+  GADAG_results &lt;- GADAG_Run(X=toy_data$X, lambda=0.1,
+       GADAG.control=list(n.gen=n.gen, tol.Shannon=tol.Shannon,
+                          pop.size = pop.size, max.eval=max.eval))
+  print(GADAG_results$G.best) # optimal adjacency matrix graph         
+## End(Not run)
+
+  # Expensive run if we also increase the population size
+  ## Not run: 
+  pop.size &lt;- 10*ncol(toy_data$G)
+  GADAG_results &lt;- GADAG_Run(X=toy_data$X, lambda=0.1,
+      GADAG.control=list(pop.size=pop.size))
+  
+## End(Not run)
+
+  # You can have more information about the evolution of the
+  # algorithm by turning return.level on
+  ## Not run: 
+  return.level &lt;- 1
+  GADAG_results &lt;- GADAG_Run(X=toy_data$X, lambda=0.1, return.level = return.level)
+  print(GADAG_results$f.best.evol) # this shows the evolution of the fitness
+                                   # across the iterations
+  
+## End(Not run)
+</code></pre>
+
+
+</div>

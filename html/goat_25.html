@@ -1,0 +1,168 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plot_lollipop</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Lollipop chart or barplot visualization of geneset enrichment testing results</h2>
+
+<h3>Description</h3>
+
+<p>Lollipop chart or barplot visualization of geneset enrichment testing results
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">plot_lollipop(
+  x,
+  output_dir,
+  only_reduced = FALSE,
+  plot_type = "lollipop",
+  show_pvalue = FALSE,
+  score_xaxis = "minlogp",
+  score_color = ifelse(is.data.frame(x) &amp;&amp; "score_type" %in% colnames(x) &amp;&amp;
+    is.character(x$score_type) &amp;&amp; any(x$score_type %in% c("effectsize_up",
+    "effectsize_down")), "updown", "minlogp"),
+  score_color_limits = "source",
+  score_color_updown = c("#E57373", "#5E7ABC"),
+  max_ngenes = NA,
+  topn = NA,
+  padj_cutoff = NA
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>results from function <code>test_genesets</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_dir</code></td>
+<td>
+<p>set to NA to directly show the figures instead of writing them to file.
+Otherwise, this is the full path to the directory where the downloaded files should be stored. Directory is created if it does not exist.
+e.g. <code>output_dir="~/data"</code> on unix systems, <code>output_dir="C:/data"</code> on Windows, or set to <code>output_dir=getwd()</code> to write output to the current working directory</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>only_reduced</code></td>
+<td>
+<p>only show the reduced/summarized set of significant genesets. This requires that you first applied the <code>reduce_genesets</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot_type</code></td>
+<td>
+<p>Options: "barplot", "lollipop" (default)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show_pvalue</code></td>
+<td>
+<p>boolean parameter that indicates whether adjusted p-values should be shown next to each data point</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>score_xaxis</code></td>
+<td>
+<p>type of score to show on the x-axis. Options: "minlogp" to show -log10(adjusted pvalue), which is default. Use "oddsratio" to show the enrichment of significant genes.
+For further details on this score and its computation, see the <code>score_geneset_oddsratio</code> function documentation.
+Basically, the genesets in this plot are sorted by their proportion of foreground/significant genes
+(and this ratio is standardized against the overall ratio of significant genes as to make this statistic comparable across analyses/datasets).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>score_color</code></td>
+<td>
+<p>analogous to <code>score_xaxis</code>, here you can specify the data used for color-coding the plot. Options: "minlogp", "oddsratio", "updown".
+The former 2 options are the same as for <code>score_xaxis</code>, the latter enables color-coding by up-/down-regulation as encoded in the "score_type" column.
+Note that this only works when geneset testing based on "effectsize" was performed and thus the "score_type" column has values "effectsize_up" or "effectsize_down" (encoding directionality).
+Rows with other values are assumed NA and colored as grey.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>score_color_limits</code></td>
+<td>
+<p>defines the limits for the color scales. options; <code>score_color_limits = "source"</code> use the range of values per 'source' to compute colors scales (default). Set to "overall" in order to have a unified color scale across 'source'  (e.g. same color bar across GO_CC/GO_MF/GO_BP). Alternatively, provide a numeric vector of 2 values to manually define lower/upper-limits.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>score_color_updown</code></td>
+<td>
+<p>array of 2 strings that describe the colors for up- and down-regulation (used when <code>score_color</code> is set to "updown"). Default color-coding; up = red, down = blue. Use hex color codes, e.g. "#ff0000" for red.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_ngenes</code></td>
+<td>
+<p>only plot terms with less than N genes (quick way to get rid of large/unspecific terms)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>topn</code></td>
+<td>
+<p>topn terms to show after sorting genesets by p-value. For example, this makes it easy to plot the top10 GO terms. Set to NA to ignore this filter (default)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>padj_cutoff</code></td>
+<td>
+<p>adjusted pvalue cutoff for terms shown in the plot. If set to NA (default), all significant genesets are used (i.e. 'signif' column in the input geneset table)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>if <code>output_dir</code> is <code>NA</code>, a list of ggplot2 objects. Otherwise, write plots to file and do not return any value
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# note; this example downloads data when first run, and typically takes ~60seconds
+
+# store the downloaded files in the following directory. Here, the temporary file
+# directory is used. Alternatively, consider storing this data in a more permanent location.
+# e.g. output_dir="~/data/go" on unix systems or output_dir="C:/data/go" on Windows
+output_dir = tempdir()
+
+## first run the default example from test_genesets() to obtain geneset results
+datasets = download_goat_manuscript_data(output_dir)
+genelist = datasets$`Wingo 2020:mass-spec:PMID32424284`
+genesets_asis = download_genesets_goatrepo(output_dir)
+genesets_filtered = filter_genesets(genesets_asis, genelist)
+result = test_genesets(genesets_filtered, genelist, method = "goat",
+  score_type = "effectsize", padj_method = "bonferroni", padj_cutoff = 0.05)
+
+# generate lollipop charts for each GO domain (CC/BP/MF), with geneset -log10
+# adjusted p-value on the x-axis and color-coding by geneset up/down-regulation
+plot_lollipop(
+  result, output_dir, plot_type = "lollipop", topn = 50,
+  score_xaxis = "minlogp", score_color = "updown"
+)
+
+# alternatively, as a barplot
+plot_lollipop(
+  result, output_dir, plot_type = "barplot", topn = 50,
+  score_xaxis = "minlogp", score_color = "updown"
+)
+
+# alternatively, color-code genesets by enrichment of significant genes using
+# parameter `score_color="oddsratio"` . See further `score_geneset_oddsratio`
+# function documentation for definition/computation of this score.
+plot_lollipop(
+  result, output_dir, plot_type = "lollipop", topn = 50,
+  score_xaxis = "minlogp", score_color = "oddsratio"
+)
+
+</code></pre>
+
+
+</div>

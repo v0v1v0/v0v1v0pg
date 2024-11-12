@@ -1,0 +1,98 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>transform_crs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Transform CRS</h2>
+
+<h3>Description</h3>
+
+<p>Transform the CRS of all the layers included in the dimension to the one
+indicated.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">transform_crs(gd, crs = NULL)
+
+## S3 method for class 'geodimension'
+transform_crs(gd, crs = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>gd</code></td>
+<td>
+<p>A <code>geodimension</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>crs</code></td>
+<td>
+<p>A coordinate reference system: integer with the EPSG code, or
+character with proj4string.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>geodimension</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>geolevel</code>, <code>relate_levels</code>, <code>get_level_layer</code>
+</p>
+<p>Other geodimension definition functions: 
+<code>add_level()</code>,
+<code>geodimension()</code>,
+<code>set_level_data()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+layer_us_place &lt;- gd_us |&gt;
+  get_level_layer("place")
+
+layer_us_county &lt;-
+  dplyr::inner_join(
+    get_level_data_geo(gd_us, "county"),
+    get_level_layer(gd_us, "county"),
+    by = c("geoid", "statefp", "name", "type")
+  ) |&gt;
+  sf::st_as_sf()
+
+place &lt;-
+  geolevel(name = "place",
+           layer = layer_us_place,
+           attributes = c("statefp", "county_geoid", "name", "type"),
+           key = "geoid")
+
+county &lt;-
+  geolevel(
+    name = "county",
+    layer = layer_us_county,
+    attributes = c("statefp", "name", "type"),
+    key = "geoid"
+  ) |&gt;
+  add_geometry(coordinates_to_geometry(layer_us_county,
+                                       lon_lat = c("intptlon", "intptlat")))
+
+gd_us &lt;-
+  geodimension(name = "gd_us",
+               level = place) |&gt;
+  add_level(level = county) |&gt;
+  transform_crs(crs = 3857)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,161 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ps_paf</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate pathway specific population attributable fractions</h2>
+
+<h3>Description</h3>
+
+<p>Estimate pathway specific population attributable fractions
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ps_paf(
+  response_model,
+  mediator_models,
+  riskfactor,
+  refval,
+  data,
+  prev = NULL,
+  ci = FALSE,
+  boot_rep = 50,
+  ci_level = 0.95,
+  ci_type = c("norm"),
+  weight_vec = NULL,
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>response_model</code></td>
+<td>
+<p>A R model object for a binary outcome that involves a risk factor, confounders and mediators of the risk factor outcome relationship.  Note that a weighted model should be used for case control data.  Non-linear effects should be specified via ns(x, df=y), where ns is the natural spline function from the splines library.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mediator_models</code></td>
+<td>
+<p>A list of fitted  models describing the risk factor/mediator relationship (the predictors in the model will be the risk factor and any confounders)  Note a weighted model should be fit when data arise from a case control study.  Models can be specified for linear responses (lm), binary responses (glm) and ordinal factors (through polr).  Non-linear effects should be specified via ns(x, df=y), where ns is the natural spline function from the splines library.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>riskfactor</code></td>
+<td>
+<p>character.  Represents the name of the risk factor</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>refval</code></td>
+<td>
+<p>For factor valued risk factors, the reference level of the risk factor.  If the risk factor is numeric, the reference level is assumed to be 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>dataframe. A dataframe (with no missing values) containing the data used to fit the mediator and response models.  You can run data_clean to the input dataset if the data has missing values as a pre-processing step</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prev</code></td>
+<td>
+<p>numeric.  A value between 0 and 1 specifying the prevalence of disease: only relevant to set if data arises from a case control study.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci</code></td>
+<td>
+<p>logical.  If TRUE a confidence interval is calculated using Bootstrap</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boot_rep</code></td>
+<td>
+<p>Integer.  Number of bootstrap replications (Only necessary to specify if ci=TRUE).  Note that at least 50 replicates are recommended to achieve stable estimates of standard error.  In the examples below, values of boot_rep less than 50 are sometimes used to limit run time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci_level</code></td>
+<td>
+<p>Numeric.  Default 0.95. A number between 0 and 1 specifying the confidence level (only necessary to specify when ci=TRUE)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci_type</code></td>
+<td>
+<p>Character.  Default norm.  A vector specifying the types of confidence interval desired.  "norm", "basic", "perc" and "bca" are the available methods</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight_vec</code></td>
+<td>
+<p>An optional vector of inverse sampling weights for survey data (note that variance will not be calculated correctly if sampling isn't independent).  Note that this will be ignored if prev is specified and calculation_method="D", in which case the weights will be constructed so the empirical re-weighted prevalence of disease is equal to prev</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>A logical indicator for whether extended output is produced when ci=TRUE, default TRUE</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A numeric vector (if ci=FALSE), or object (or class pspaf) (if CI=TRUE) with estimated PS-PAF for each mediator referred to in mediator_models, together with estimated direct PS-PAF and possibly confidence intervals.
+</p>
+
+
+<h3>References</h3>
+
+<p>Pathway specific Population attributable fractions.  O’Connell, M.M. and Ferguson, J.P., 2022. IEA. International Journal of Epidemiology, 1, p.13.  Accessible at: https://academic.oup.com/ije/advance-article/doi/10.1093/ije/dyac079/6583255?login=true
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(splines)
+library(survival)
+library(parallel)
+options(boot.parallel="snow")
+# User could set the next option to number of cores on machine:
+options(boot.ncpus=2)
+# Direct and pathway specific attributable fractions estimated
+# on simulated case control stroke data:
+# Note that the models here are weighted regressions (based on a column in the
+# dataframe named 'weights') to rebalance the case control structure to make it
+# representative over the population, according to the prev argument.
+# Unweighted regression is fine to use if the data arises from cohort or
+# cross sectional studies, in which case prev should be set to NULL
+response_model &lt;- glm(case ~ region * ns(age, df = 5) + sex * ns(age, df = 5) +
+ education + exercise + ns(diet, df = 3) + smoking + alcohol + stress +
+  ns(lipids, df = 3) + ns(waist_hip_ratio, df = 3) + high_blood_pressure,
+  data=stroke_reduced,family='binomial', weights=weights)
+mediator_models &lt;- list(glm(high_blood_pressure ~ region * ns(age, df = 5) +
+ sex * ns(age, df = 5) + education   +exercise + ns(diet, df = 3) + smoking +
+ alcohol + stress,data=stroke_reduced,family='binomial',weights=weights),
+ lm(lipids ~ region * ns(age, df = 5) + sex * ns(age, df = 5) +education +
+  exercise + ns(diet, df = 3) + smoking + alcohol + stress, weights=weights,
+   data=stroke_reduced),lm(waist_hip_ratio ~ region * ns(age, df = 5) +
+   sex * ns(age, df = 5) + education + exercise + ns(diet, df = 3) +
+    smoking + alcohol + stress, weights=weights, data=stroke_reduced))
+# point estimate
+ps_paf(response_model=response_model, mediator_models=mediator_models ,
+riskfactor="exercise",refval=0,data=stroke_reduced,prev=0.0035, ci=FALSE)
+# confidence intervals
+
+ps_paf(response_model=response_model, mediator_models=mediator_models ,
+riskfactor="exercise",refval=0,data=stroke_reduced,prev=0.0035, ci=TRUE,
+boot_rep=100,ci_type="norm")
+
+</code></pre>
+
+
+</div>

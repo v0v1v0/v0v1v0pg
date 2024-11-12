@@ -1,0 +1,254 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pivot_measure</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Pivot Measure</h2>
+
+<h3>Description</h3>
+
+<p>Calculate the pivot measure of the optimal transport between two-dimensional grids.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pivot_measure(x, ...)
+
+## S3 method for class 'otgrid'
+pivot_measure(
+  x,
+  y,
+  p.1 = 2,
+  p.2 = p.1,
+  max.it = 100,
+  tol = 1e-04,
+  threads = 1,
+  start.pivot = c("independent", "northwestcorner"),
+  dual.method = c("discrete", "epsilon-discrete", "epsilon-histogram"),
+  dual.params = list(),
+  return.it = FALSE,
+  ...
+)
+
+## S3 method for class 'data.frame'
+pivot_measure(x, a, b, p.1 = 2, p.2 = p.1, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>an object of class <code>"otgrid"</code> the mass is to be transported from or
+a data frame with columns <code>from</code>, <code>to</code> and <code>mass</code> specifying the optimal transport plan.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments (currently unused).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>an object of class <code>"otgrid"</code> the mass is to be transported to.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.1</code></td>
+<td>
+<p>the first power <code class="reqn">\geq 1</code> of the cost.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.2</code></td>
+<td>
+<p>the second power <code class="reqn">\geq 1</code> of the cost.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.it</code></td>
+<td>
+<p>the maximum number of iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>the desired accuracy.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threads</code></td>
+<td>
+<p>number of threads to use.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.pivot</code></td>
+<td>
+<p>the start pivot to use: matrix representing an actual coupling or <code>"independent"</code> or <code>"northwestcorner"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dual.method</code></td>
+<td>
+<p>the name of the dual calculators to use: <code>"discrete"</code>, <code>"epsilon-discrete"</code> or <code>"epsilon-histogram"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dual.params</code></td>
+<td>
+<p>list of parameters for the dual calculators.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return.it</code></td>
+<td>
+<p>logical value specifying whether or not the costs and dual gaps in each iteration are to be returned .</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+<p>an object of class <code>"otgrid"</code> the mass is to be transported from.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b</code></td>
+<td>
+<p>an object of class <code>"otgrid"</code> the mass is to be transported to.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Denote with <code class="reqn">X_1 \times X_2</code> and <code class="reqn">Y_1 \times Y_2</code> the two-dimensional grids that <code>x</code> and <code>y</code> lie on, respectively.
+The pivot measure is a measure on <code class="reqn">Y_1 \times X_2</code> that specifies the whole transport between <code>x</code> and <code>y</code> given that the cost
+is of the separable form <code class="reqn">c(x, y) = | x_1 - y_1 |^{p_1} + | x_2 - y_2 |^{p_2}</code>.
+</p>
+<p>The pivot measure is approximated using the Frank-Wolfe algorithm. The algorithm starts with an initial guess (<code>start.pivot</code>), e.g., the
+independent coupling (<code>"independent"</code>) or the north-west-corner rule (<code>"northwestcorner"</code>). Then, in each iteration step, the dual solutions of
+multiple one-dimensional transport problems are calculated and combined to give the gradient. To ensure differentiability, the dual solutions
+must be unique. There are three different calculators for the dual solutions, of which the last two ensure uniqueness:
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+name                  </td>
+<td style="text-align: left;"> description </td>
+<td style="text-align: left;"> <code>dual.params</code> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>"discrete"</code>          </td>
+<td style="text-align: left;"> the distributions are basically unchanged, due to rounding errors the support points
+are moved by a small positive amount.  </td>
+<td style="text-align: left;"> <code>right.margin = 1e-15</code> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>"epsilon-discrete"</code>  </td>
+<td style="text-align: left;"> additionally, the support is made connected by uniformly adding <code class="reqn">\varepsilon</code>
+mass. </td>
+<td style="text-align: left;"> + <code>eps = 1e-8</code> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>"epsilon-histogram"</code> </td>
+<td style="text-align: left;"> additionally, each point mass is distributed uniformly in a bin around said point </td>
+<td style="text-align: left;"> + <code>width = 1e-8</code>
+</td>
+</tr>
+</table>
+<p>A pivot measure can also be computed from an optimal transport plan.
+</p>
+<p>Finally, the pivot measure can be used to calculate the full transport plan and cost.
+</p>
+
+
+<h3>Value</h3>
+
+<p>an object of class <code>"otgridtransport"</code> that contains the following elements:
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+<code>from</code>  </td>
+<td style="text-align: left;"> an object of class <code>"otgrid"</code> the mass is transported from. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>to</code>    </td>
+<td style="text-align: left;"> an object of class <code>"otgrid"</code> the mass is transported to. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>p.1</code>   </td>
+<td style="text-align: left;"> the first power <code class="reqn">\geq 1</code> of the cost function. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>p.2</code>   </td>
+<td style="text-align: left;"> the second power <code class="reqn">\geq 1</code> of the cost function. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>pivot</code> </td>
+<td style="text-align: left;"> a matrix representing the pivot measure.
+</td>
+</tr>
+</table>
+<p>If the Frank-Wolfe algorithm is used to approximate the pivot measure, the element <code>conv</code> indicates whether or not
+we can ensured that the error is less or equal to the given precision <code>tol</code>.
+</p>
+<p>If <code>return.it = TRUE</code>, then it also contains the vectors <code>costs</code> and <code>dualgaps</code> of costs and dual gaps in each iteration.
+</p>
+<p>Also note that the functions <code>print</code> and <code>plot</code> are available for objects of class <code>"otgridtransport"</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>transport plan <code>transport_df</code>, transport cost <code>transport_cost</code>, two-dimensional grid <code>otgrid</code>,
+plot <code>plot.otgridtransport</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">x &lt;- otgrid(rbind(c(0, 0, 0, 0, 0, 0, 0, 0, 0),
+                 c(0, 0, 1, 0, 0, 0, 0, 0, 0),
+                 c(0, 1, 2, 1, 0, 0, 0, 0, 0),
+                 c(0, 0, 1, 0, 0, 0, 0, 0, 0), 
+                  0, 0, 0, 0, 0))
+y &lt;- otgrid(rbind(0, 0, 0, 0,
+                 c(0, 0, 0, 0, 0, 0, 0, 0, 0),
+                 c(0, 0, 0, 0, 0, 0, 1, 0, 0),
+                 c(0, 0, 0, 0, 0, 1, 2, 1, 0),
+                 c(0, 0, 0, 0, 0, 0, 1, 0, 0), 0))
+
+pm &lt;- pivot_measure(x, y, p.1 = 1, p.2 = 2, dual.method = "epsilon-discrete")
+
+print(pm)
+plot(pm)
+
+# use pivot measure to calculate cost and plan
+pm &lt;- transport_cost(pm)
+pm &lt;- transport_df(pm)
+print(pm)
+
+# calculate pivot from plan
+pm2 &lt;- pivot_measure(pm$df, x, y)
+plot(pm2)
+</code></pre>
+
+
+</div>

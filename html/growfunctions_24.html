@@ -1,0 +1,139 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict_functions.gpdpgrow</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Use the model-estimated GP covariance parameters from gpdpgrow() to predict the GP function at
+future time points.  Inputs the <code>gpdpgrow</code> object of estimated parameters.</h2>
+
+<h3>Description</h3>
+
+<p>A companion function to <code>gpdpgrow</code>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'gpdpgrow'
+predict_functions(
+  object,
+  J = 500,
+  test_times,
+  time_points = NULL,
+  sn_order = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>Object of class <code>gpdpgrow</code> returned from model run of <code>gpdpgrow()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>J</code></td>
+<td>
+<p>Scalar denoting number of draws to take from posterior predictive for each unit.
+Defaults to <code>J = 500</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test_times</code></td>
+<td>
+<p>A numeric vector holding test times at which to predict GP function values
+Will use the estimated covariance parameters from the training data to predict
+functions at the test_times for the <code>N</code> observation units.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_points</code></td>
+<td>
+<p>Inputs a vector of common time points at which the collections of functions were
+observed (with the possibility of intermittent missingness).  The length of <code>time_points</code>
+should be equal to the number of columns in the data matrix, <code>y</code>.  Defaults to 
+<code>time_points = 1:ncol(y)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sn_order</code></td>
+<td>
+<p>An integer vector of length, <code>L_s</code>, equal to the number of seasonal terms.
+Conveys the order of the seasonality for each term on the scale of T; for example,
+if T is dimensioned in months, and one wishes to model quarterly seasonality, then
+the applicable seasonality term would be of order <code>3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments passed to or from other methods.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>out  A list object containing containing two matrices; the first is a K x (N*T)
+matrix of predicted function values for each of K sampled iterations.  N is 
+slow index and denotes the number of experimental units.  The second matrix is
+an N x T average over the K sampled draws, composed in Rao-Blackwellized fashion.
+</p>
+
+
+<h3>Note</h3>
+
+<p>Intended as a companion function for <code>gpdpgrow</code> for prediction
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Terrance Savitsky <a href="mailto:tds151@gmail.com">tds151@gmail.com</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gpdpgrow</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+library(growfunctions)
+data(cps)
+y_short   &lt;- cps$y[,(cps$yr_label %in% c(2010:2013))]
+t_train   &lt;- ncol(y_short)
+N         &lt;- nrow(y_short)
+t_test    &lt;- 4
+ 
+## Model Runs
+res_gp              = gpdpgrow(y = y_short
+                              n.iter = 50, 
+                              n.burn = 25, 
+                              n.thin = 1, 
+                              n.tune = 0) 
+
+## Prediction Model Runs
+T_test             &lt;- 4
+T_yshort           &lt;- ncol(y_short)
+pred_gp            &lt;- predict_functions( object = res_gp, 
+                       test_times = (T_yshort+1):(T_yshort+T_test) )
+
+## plot estimated and predicted functions
+plot_gp         &lt;- predict_plot(object = pred_gp, 
+                               units_label = cps$st, 
+                               single_unit = FALSE, 
+                               credible = TRUE)  
+
+## End(Not run)
+</code></pre>
+
+
+</div>

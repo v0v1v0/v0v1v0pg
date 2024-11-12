@@ -1,0 +1,85 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>estfun.ols</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fix for the Extract Empirical Estimating Functions</h2>
+
+<h3>Description</h3>
+
+<p>As missing data is handled a little different for the <code>ols</code>
+than for the <code>lm</code> we need to change the 
+<code>estfun</code> to work with the <code>ols()</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'ols'
+estfun(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A fitted <code>ols</code> model object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments passed to methods.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>I have never worked with weights and this should probably be checked
+as this just uses the original <code>estfun.lm</code> as a template.
+</p>
+
+
+<h3>Value</h3>
+
+<p>matrix A matrix containing the empirical estimating functions.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Generate some data
+n &lt;- 500
+x1 &lt;- runif(n) * 2
+x2 &lt;- runif(n)
+y &lt;- x1^3 + x2 + rnorm(n)
+
+library(rms)
+library(sandwich)
+dd &lt;- datadist(x1, x2, y)
+org.op &lt;- options(datadist = "dd")
+
+# Main function
+f &lt;- ols(y ~ rcs(x1, 3) + x2)
+
+# Check the bread
+bread(f)
+# Check the HC-matrix
+vcovHC(f, type = "HC4m")
+# Adjust the model so that it uses the HC4m variance
+f_rob &lt;- robcov_alt(f, type = "HC4m")
+# Get the new HC4m-matrix
+# - this function just returns the f_rob$var matrix
+vcov(f_rob)
+# Now check the confidence interval for the function
+confint(f_rob)
+
+options(org.op)
+</code></pre>
+
+
+</div>

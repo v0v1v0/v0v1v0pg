@@ -1,0 +1,158 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>LDA.boost</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Implementation of the linear discriminant function for multi-label classification.</h2>
+
+<h3>Description</h3>
+
+<p>This function applies the linear discriminant function to do classification for multi-label responses. The precision matrix, or the inverse of the covariance matrix, in the linear discriminant function can be estimated by <code>w</code> in the function <code>boost.graph</code>. In addition,  error-prone covariates in  the linear discriminant function are addressed by the regression calibration.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">LDA.boost(data, resp, theta, sigma_e = 0.6,q = 0.8,lambda = 1, pi = 0.5)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>An n (observations) times p (variables) matrix of random variables, whose distributions can be continuous, discrete, or mixed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resp</code></td>
+<td>
+
+<p>An n-dimensional vector of categorical random variables, which is the response in the data.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+
+<p>The estimator of the precision matrix.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_e</code></td>
+<td>
+
+<p>The common value in the diagonal covariance matrix of the error for the classical measurement error model when <code>data</code> are continuous. The default value is 0.6.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q</code></td>
+<td>
+
+<p>The common value used to characterize misclassification for binary random variables. The default value is 0.8.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+
+<p>The parameter of the Poisson distribution, which is used to characterize error-prone count random variables. The default value is 1.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pi</code></td>
+<td>
+
+<p>The probability in the Binomial distribution, which is used to characterize error-prone count random variables. The default value is 0.5.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The linear discriminant function used is as follow: <br></p>
+<p style="text-align: center;"><code class="reqn">
+  \code{score}_{i,j} = \log (\pi _i) - 0.5\ \mu_{i}^\top\  \code{theta}\ \mu _{i} + \code{data}_{j}^\top\ \code{theta}\ \mu_{i},
+  </code>
+</p>
+<p><br>
+for the class <code class="reqn">i = 1, \cdots, I</code> with <code class="reqn">I</code> being the number of classes in the dataset and subject <code class="reqn">j = 1, \cdots, n</code>, where <code class="reqn">\pi _i</code> is the proportion of subjects in the class <code class="reqn">i</code>, <code class="reqn">\code{data}_{j}</code> is the vector of covariates for the subject <code class="reqn">j</code>, <code class="reqn">\code{theta}</code> is the precision matrix of the covariates, and <code class="reqn">\mu_{i}</code> is the empirical mean vector of the random variables in the class <code class="reqn">i</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>score</code></td>
+<td>
+
+<p>The value of the linear discriminant function (see details) with the estimator of the precision matrix accommodated.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>class</code></td>
+<td>
+
+<p>The result of predicted class for subjects.
+</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Hui-Shan Tsao and Li-Pang Chen<br>
+Maintainer: Hui-Shan Tsao <a href="mailto:n410412@gmail.com">n410412@gmail.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Hui-Shan Tsao (2024). <em>Estimation of Ultrahigh-Dimensional Graphical Models and Its Application to Dsicriminant Analysis.</em> Master Thesis supervised by Li-Pang Chen, National Chengchi University.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(MedulloblastomaData)
+
+X &lt;- t(MedulloblastomaData[2:655,]) #covariates
+Y &lt;- MedulloblastomaData[1,] #response
+
+X &lt;- matrix(as.numeric(X),nrow=23)
+
+p &lt;- ncol(X)
+n &lt;- nrow(X)
+
+#standarization
+X_new=data.frame()
+for (i in 1:p){
+ X_new[1:n,i]=(X[,i]-rep(mean(X[,i]),n))/sd(X[,i])
+}
+X_new=matrix(unlist(X_new),nrow = n)
+
+
+#estimate graphical model
+result &lt;- boost.graph(data = X_new, thre = 0.2, ite1 = 3, ite2 = 0, ite3 = 0, rep = 1)
+theta.hat &lt;- result$w
+
+theta.hat[which(theta.hat&lt;0.8)]=0 #keep the highly dependent pairs
+
+#predict
+pre &lt;- LDA.boost(data = X_new, resp = Y, theta = theta.hat)
+estimated_Y &lt;- pre$class
+</code></pre>
+
+
+</div>

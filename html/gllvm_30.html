@@ -1,0 +1,138 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.gllvm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict Method for gllvm Fits</h2>
+
+<h3>Description</h3>
+
+<p>Obtains predictions from a fitted generalized linear latent variable model object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'gllvm'
+predict(
+  object,
+  newX = NULL,
+  newTR = NULL,
+  newLV = NULL,
+  type = "link",
+  level = 1,
+  offset = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>an object of class 'gllvm'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newX</code></td>
+<td>
+<p>A new data frame of environmental variables. If omitted, the original matrix of environmental variables is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newTR</code></td>
+<td>
+<p>A new data frame of traits for each response taxon. If omitted, the original matrix of traits is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newLV</code></td>
+<td>
+<p>A new matrix of latent variables.  If omitted, the original matrix of latent variables is used. Note that number of rows/sites must be the same for <code>newX</code> (if X covariates are included in the model).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>the type of prediction required. The default (<code>"link"</code>) is on the scale of the linear predictors; the alternative <code>"response"</code> is on the scale of the response variable. that is, the predictions for the binomial model are predicted probabilities. In case of ordinal data, <code>type = "response"</code> gives predicted probabilities for each level of ordinal variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>specification for how to predict. Level one (<code>level = 1</code>) attempts to use the predicted site scores from variational approximations or laplace approximation or given site scores in <code>newLV</code>. Level 0 sets the latent variable to zero. Defaults to 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>specification whether of not offset values are included to the predictions in case they are in the model, defaults to <code>TRUE</code> when offset values that are used to fit the model are included to the predictions. Alternatives are matrix/vector (number of rows must match with the <code>newX</code>) of new offset values or <code>FALSE</code>, when offsets are ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>not used.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If <code>newX</code>, <code>newTR</code> and <code>newLV</code> are omitted the predictions are based on the data used for fitting the model. Notice that <code>newTR</code> need to match with the number of species in the original data.
+Instead, new sites can be specified in <code>newX</code>. If predictors <code>newX</code> (and <code>newTR</code>) are given, and <code>newLV</code> is not, latent variables are not used in the predictions.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A matrix containing requested predictor types.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Jenni Niku &lt;jenni.m.e.niku@jyu.fi&gt;,  David Warton
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Load a dataset from the mvabund package
+data(antTraits)
+y &lt;- as.matrix(antTraits$abund)
+X &lt;- scale(antTraits$env[, 1:3])
+# Fit gllvm model
+fit &lt;- gllvm(y = y, X, family = poisson())
+# fitted values
+predfit &lt;- predict(fit, type = "response")
+
+# linear predictors
+predlin &lt;- predict(fit)
+# Predict new sites:
+# Generate matrix of environmental variables for 10 new sites
+xnew &lt;- cbind(rnorm(10), rnorm(10), rnorm(10))
+colnames(xnew) &lt;- colnames(X)
+predfit &lt;- predict(fit, newX = xnew, type = "response", level = 0)
+
+TR &lt;- (antTraits$tr[, 1:3])
+fitt &lt;- gllvm(y = y, X, TR, family = poisson())
+# linear predictors
+predlin &lt;- predict(fitt)
+# Predict new sites:
+# Generate matrix of environmental variables for 10 new sites
+xnew &lt;- cbind(rnorm(10), rnorm(10), rnorm(10))
+colnames(xnew) &lt;- colnames(X)
+# Generate matrix of traits for species
+trnew &lt;- data.frame(Femur.length = rnorm(41), No.spines = rnorm(41),
+ Pilosity = factor(sample(0:3, 41, replace = TRUE)))
+predfit &lt;- predict(fitt, newX = xnew, newTR = trnew, type = "response", level = 0)
+
+</code></pre>
+
+
+</div>

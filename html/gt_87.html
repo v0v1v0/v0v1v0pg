@@ -1,0 +1,494 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fmt_scientific</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Format values to scientific notation</h2>
+
+<h3>Description</h3>
+
+<p>With numeric values in a <strong>gt</strong> table, we can perform formatting so that the
+targeted values are rendered in scientific notation, where extremely large or
+very small numbers can be expressed in a more practical fashion. Here,
+numbers are written in the form of a mantissa (<code>m</code>) and an exponent (<code>n</code>)
+with the construction <em>m</em> x 10^<em>n</em> or <em>m</em>E<em>n</em>. The mantissa component is a
+number between <code>1</code> and <code>10</code>. For instance, <code style="white-space: pre;">⁠2.5 x 10^9⁠</code> can be used to
+represent the value 2,500,000,000 in scientific notation. In a similar way,
+0.00000012 can be expressed as <code style="white-space: pre;">⁠1.2 x 10^-7⁠</code>. Due to its ability to describe
+numbers more succinctly and its ease of calculation, scientific notation is
+widely employed in scientific and technical domains.
+</p>
+<p>We have fine control over the formatting task, with the following options:
+</p>
+
+<ul>
+<li>
+<p> decimals: choice of the number of decimal places, option to drop
+trailing zeros, and a choice of the decimal symbol
+</p>
+</li>
+<li>
+<p> scaling: we can choose to scale targeted values by a multiplier value
+</p>
+</li>
+<li>
+<p> pattern: option to use a text pattern for decoration of the formatted
+values
+</p>
+</li>
+<li>
+<p> locale-based formatting: providing a locale ID will result in
+formatting specific to the chosen locale
+</p>
+</li>
+</ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R">fmt_scientific(
+  data,
+  columns = everything(),
+  rows = everything(),
+  decimals = 2,
+  n_sigfig = NULL,
+  drop_trailing_zeros = FALSE,
+  drop_trailing_dec_mark = TRUE,
+  scale_by = 1,
+  exp_style = "x10n",
+  pattern = "{x}",
+  sep_mark = ",",
+  dec_mark = ".",
+  force_sign_m = FALSE,
+  force_sign_n = FALSE,
+  locale = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p><em>The gt table data object</em>
+</p>
+<p><code style="white-space: pre;">⁠obj:&lt;gt_tbl&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>This is the <strong>gt</strong> table object that is commonly created through use of the
+<code>gt()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>columns</code></td>
+<td>
+<p><em>Columns to target</em>
+</p>
+<p><code>&lt;column-targeting expression&gt;</code> // <em>default:</em> <code>everything()</code>
+</p>
+<p>Can either be a series of column names provided in <code>c()</code>, a vector of
+column indices, or a select helper function (e.g. <code>starts_with()</code>,
+<code>ends_with()</code>, <code>contains()</code>, <code>matches()</code>, <code>num_range()</code> and <code>everything()</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rows</code></td>
+<td>
+<p><em>Rows to target</em>
+</p>
+<p><code>&lt;row-targeting expression&gt;</code> // <em>default:</em> <code>everything()</code>
+</p>
+<p>In conjunction with <code>columns</code>, we can specify which of their rows should
+undergo formatting. The default <code>everything()</code> results in all rows in
+<code>columns</code> being formatted. Alternatively, we can supply a vector of row
+captions within <code>c()</code>, a vector of row indices, or a select helper
+function (e.g. <code>starts_with()</code>, <code>ends_with()</code>, <code>contains()</code>, <code>matches()</code>,
+<code>num_range()</code>, and <code>everything()</code>). We can also use expressions to filter
+down to the rows we need (e.g., <code style="white-space: pre;">⁠[colname_1] &gt; 100 &amp; [colname_2] &lt; 50⁠</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>decimals</code></td>
+<td>
+<p><em>Number of decimal places</em>
+</p>
+<p><code>scalar&lt;numeric|integer&gt;(val&gt;=0)</code> // <em>default:</em> <code>2</code>
+</p>
+<p>This corresponds to the exact number of decimal places to use. A value
+such as <code>2.34</code> can, for example, be formatted with <code>0</code> decimal places and
+it would result in <code>"2"</code>. With <code>4</code> decimal places, the formatted value
+becomes <code>"2.3400"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_sigfig</code></td>
+<td>
+<p><em>Number of significant figures</em>
+</p>
+<p><code>scalar&lt;numeric|integer&gt;(val&gt;=1)</code> // <em>default:</em> <code>NULL</code> (<code>optional</code>)
+</p>
+<p>A option to format numbers to <em>n</em> significant figures. By default, this is
+<code>NULL</code> and thus number values will be formatted according to the number of
+decimal places set via <code>decimals</code>. If opting to format according to the
+rules of significant figures, <code>n_sigfig</code> must be a number greater than or
+equal to <code>1</code>. Any values passed to the <code>decimals</code> and <code>drop_trailing_zeros</code>
+arguments will be ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drop_trailing_zeros</code></td>
+<td>
+<p><em>Drop any trailing zeros</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;logical&gt;⁠</code> // <em>default:</em> <code>FALSE</code>
+</p>
+<p>A logical value that allows for removal of trailing zeros (those redundant
+zeros after the decimal mark).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drop_trailing_dec_mark</code></td>
+<td>
+<p><em>Drop the trailing decimal mark</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;logical&gt;⁠</code> // <em>default:</em> <code>TRUE</code>
+</p>
+<p>A logical value that determines whether decimal marks should always appear
+even if there are no decimal digits to display after formatting (e.g., <code>23</code>
+becomes <code>23.</code> if <code>FALSE</code>). By default trailing decimal marks are not shown.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale_by</code></td>
+<td>
+<p><em>Scale values by a fixed multiplier</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;numeric|integer&gt;⁠</code> // <em>default:</em> <code>1</code>
+</p>
+<p>All numeric values will be multiplied by the <code>scale_by</code> value before
+undergoing formatting. Since the <code>default</code> value is <code>1</code>, no values will be
+changed unless a different multiplier value is supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exp_style</code></td>
+<td>
+<p><em>Style declaration for exponent formatting</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <em>default:</em> <code>"x10n"</code>
+</p>
+<p>Style of formatting to use for the scientific notation formatting. By
+default this is <code>"x10n"</code> but other options include using a single letter
+(e.g., <code>"e"</code>, <code>"E"</code>, etc.), a letter followed by a <code>"1"</code> to signal a
+minimum digit width of one, or <code>"low-ten"</code> for using a stylized <code>"10"</code>
+marker.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pattern</code></td>
+<td>
+<p><em>Specification of the formatting pattern</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <em>default:</em> <code>"{x}"</code>
+</p>
+<p>A formatting pattern that allows for decoration of the formatted value. The
+formatted value is represented by the <code>{x}</code> (which can be used multiple
+times, if needed) and all other characters will be interpreted as string
+literals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sep_mark</code></td>
+<td>
+<p><em>Separator mark for digit grouping</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <em>default:</em> <code>","</code>
+</p>
+<p>The string to use as a separator between groups of digits. For example,
+using <code>sep_mark = ","</code> with a value of <code>1000</code> would result in a formatted
+value of <code>"1,000"</code>. This argument is ignored if a <code>locale</code> is supplied
+(i.e., is not <code>NULL</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dec_mark</code></td>
+<td>
+<p><em>Decimal mark</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <em>default:</em> <code>"."</code>
+</p>
+<p>The string to be used as the decimal mark. For example, using
+<code>dec_mark = ","</code> with the value <code>0.152</code> would result in a formatted value
+of <code>"0,152"</code>). This argument is ignored if a <code>locale</code> is supplied (i.e., is
+not <code>NULL</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>force_sign_m, force_sign_n</code></td>
+<td>
+<p><em>Forcing the display of a positive sign</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;logical&gt;⁠</code> // <em>default:</em> <code>FALSE</code>
+</p>
+<p>Should the plus sign be shown for positive values of the mantissa (first
+component, <code>force_sign_m</code>) or the exponent (<code>force_sign_n</code>)? This would
+effectively show a sign for all values except zero on either of those
+numeric components of the notation. If so, use <code>TRUE</code> for either one of
+these options. The default for both is <code>FALSE</code>, where only negative numbers
+will display a sign.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>locale</code></td>
+<td>
+<p><em>Locale identifier</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <em>default:</em> <code>NULL</code> (<code>optional</code>)
+</p>
+<p>An optional locale identifier that can be used for formatting values
+according the locale's rules. Examples include <code>"en"</code> for English (United
+States) and <code>"fr"</code> for French (France). We can call <code>info_locales()</code> for a
+useful reference for all of the locales that are supported. A locale ID can
+be also set in the initial <code>gt()</code> function call (where it would be used
+automatically by any function with a <code>locale</code> argument) but a <code>locale</code>
+value provided here will override that global locale.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>gt_tbl</code>.
+</p>
+
+
+<h3>Compatibility of formatting function with data values</h3>
+
+<p><code>fmt_scientific()</code> is compatible with body cells that are of the <code>"numeric"</code>
+or <code>"integer"</code> types. Any other types of body cells are ignored during
+formatting. This is to say that cells of incompatible data types may be
+targeted, but there will be no attempt to format them.
+</p>
+
+
+<h3>Compatibility of arguments with the <code>from_column()</code> helper function</h3>
+
+<p><code>from_column()</code> can be used with certain arguments of <code>fmt_scientific()</code> to
+obtain varying parameter values from a specified column within the table.
+This means that each row could be formatted a little bit differently. These
+arguments provide support for <code>from_column()</code>:
+</p>
+
+<ul>
+<li> <p><code>decimals</code>
+</p>
+</li>
+<li> <p><code>drop_trailing_zeros</code>
+</p>
+</li>
+<li> <p><code>drop_trailing_dec_mark</code>
+</p>
+</li>
+<li> <p><code>scale_by</code>
+</p>
+</li>
+<li> <p><code>exp_style</code>
+</p>
+</li>
+<li> <p><code>pattern</code>
+</p>
+</li>
+<li> <p><code>sep_mark</code>
+</p>
+</li>
+<li> <p><code>dec_mark</code>
+</p>
+</li>
+<li> <p><code>force_sign_m</code>
+</p>
+</li>
+<li> <p><code>force_sign_n</code>
+</p>
+</li>
+<li> <p><code>locale</code>
+</p>
+</li>
+</ul>
+<p>Please note that for all of the aforementioned arguments, a <code>from_column()</code>
+call needs to reference a column that has data of the correct type (this is
+different for each argument). Additional columns for parameter values can be
+generated with <code>cols_add()</code> (if not already present). Columns that contain
+parameter data can also be hidden from final display with <code>cols_hide()</code>.
+Finally, there is no limitation to how many arguments the <code>from_column()</code>
+helper is applied so long as the arguments belong to this closed set.
+</p>
+
+
+<h3>Adapting output to a specific <code>locale</code>
+</h3>
+
+<p>This formatting function can adapt outputs according to a provided <code>locale</code>
+value. Examples include <code>"en"</code> for English (United States) and <code>"fr"</code> for
+French (France). The use of a valid locale ID here means separator and
+decimal marks will be correct for the given locale. Should any values be
+provided in <code>sep_mark</code> or <code>dec_mark</code>, they will be overridden by the locale's
+preferred values.
+</p>
+<p>Note that a <code>locale</code> value provided here will override any global locale
+setting performed in <code>gt()</code>'s own <code>locale</code> argument (it is settable there as
+a value received by all other functions that have a <code>locale</code> argument). As a
+useful reference on which locales are supported, we can call <code>info_locales()</code>
+to view an info table.
+</p>
+
+
+<h3>Examples</h3>
+
+<p>Let's define a data frame that contains two columns of values (one <code>small</code>
+and one <code>large</code>). After creating a simple <strong>gt</strong> table from <code>small_large_tbl</code>
+we'll call <code>fmt_scientific()</code> on both columns.
+</p>
+<div class="sourceCode r"><pre>small_large_tbl &lt;-
+  dplyr::tibble(
+    small = 10^(-12:-1),
+    large = 10^(1:12)
+  )
+
+small_large_tbl |&gt;
+  gt() |&gt;
+  fmt_scientific()
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_fmt_scientific_1.png" alt="This image of a table was generated from the first code example in the `fmt_scientific()` help file." style="width:100%;"><p>The default method of styling the notation uses the '<em>m</em> x 10^<em>n</em>'
+construction but this can be changed to a '<em>m</em>E<em>n</em>' style via the <code>exp_style</code>
+argument. We can supply any single letter here and optionally affix a <code>"1"</code>
+to indicate there should not be any zero-padding of the <em>n</em> value. Two calls
+of <code>fmt_scientific()</code> are used here to show different options for styling
+in scientific notation.
+</p>
+<div class="sourceCode r"><pre>small_large_tbl |&gt;
+  gt() |&gt;
+  fmt_scientific(
+    columns = small,
+    exp_style = "E"
+  ) |&gt;
+  fmt_scientific(
+    columns = large,
+    exp_style = "e1",
+    force_sign_n = TRUE
+  )
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_fmt_scientific_2.png" alt="This image of a table was generated from the second code example in the `fmt_scientific()` help file." style="width:100%;"><p>Taking a portion of the <code>reactions</code> dataset, we can create a <strong>gt</strong> table
+that contains reaction rate constants that should be expressed in scientific
+notation. All of the numeric values in the filtered table require that
+type of formatting so <code>fmt_scientific()</code> can be called without requiring any
+specification of column names in the <code>columns</code> argument. By default, the
+number of decimal places is fixed to <code>2</code>, which is fine for this table.
+</p>
+<div class="sourceCode r"><pre>reactions |&gt;
+  dplyr::filter(cmpd_type == "mercaptan") |&gt;
+  dplyr::select(cmpd_name, cmpd_formula, OH_k298, Cl_k298, NO3_k298) |&gt;
+  gt(rowname_col = "cmpd_name") |&gt;
+  tab_header(title = "Gas-phase reactions of selected mercaptan compounds") |&gt;
+  tab_spanner(
+    label = md("Reaction Rate Constant (298 K),&lt;br&gt;{{cm^3 molecules^-1 s^-1}}"),
+    columns = ends_with("k298")
+  ) |&gt;
+  fmt_chem(columns = cmpd_formula) |&gt;
+  fmt_scientific() |&gt;
+  sub_missing() |&gt;
+  cols_label(
+    cmpd_formula = "",
+    OH_k298 = "OH",
+    NO3_k298 = "{{%NO3%}}",
+    Cl_k298 = "Cl"
+  ) |&gt;
+  opt_stylize() |&gt;
+  opt_horizontal_padding(scale = 3) |&gt;
+  opt_table_font(font = google_font("IBM Plex Sans")) |&gt;
+  tab_options(stub.font.weight = "500")
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_fmt_scientific_3.png" alt="This image of a table was generated from the third code example in the `fmt_scientific()` help file." style="width:100%;"><p>The <code>constants</code> table contains a plethora of data on the fundamental
+physical constants and values range from very small to very large, warranting
+the use of figures in scientific notation. Because the values differ in the
+degree of measurement precision, the dataset has columns (<code>sf_value</code> and
+<code>sf_uncert</code>) that include the number of significant figures for each
+measurement value and for the associated uncertainty. We can use the
+<code>n_sigfig</code> argument of <code>fmt_scientific()</code> in conjunction with the
+<code>from_column()</code> helper to format each value and its uncertainty to the proper
+number of significant digits.
+</p>
+<div class="sourceCode r"><pre>constants |&gt;
+  dplyr::filter(grepl("Planck", name)) |&gt;
+  gt() |&gt;
+  fmt_scientific(
+    columns = value,
+    n_sigfig = from_column(column = "sf_value")
+  ) |&gt;
+  fmt_scientific(
+    columns = uncert,
+    n_sigfig = from_column(column = "sf_uncert")
+  ) |&gt;
+  cols_hide(columns = starts_with("sf")) |&gt;
+  fmt_units(columns = units) |&gt;
+  sub_missing(missing_text = "")
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_fmt_scientific_4.png" alt="This image of a table was generated from the fourth code example in the `fmt_scientific()` help file." style="width:100%;"><h3>Function ID</h3>
+
+<p>3-3
+</p>
+
+
+<h3>Function Introduced</h3>
+
+<p><code>v0.2.0.5</code> (March 31, 2020)
+</p>
+
+
+<h3>See Also</h3>
+
+<p>The vector-formatting version of this function:
+<code>vec_fmt_scientific()</code>.
+</p>
+<p>Other data formatting functions: 
+<code>data_color()</code>,
+<code>fmt()</code>,
+<code>fmt_auto()</code>,
+<code>fmt_bins()</code>,
+<code>fmt_bytes()</code>,
+<code>fmt_chem()</code>,
+<code>fmt_country()</code>,
+<code>fmt_currency()</code>,
+<code>fmt_date()</code>,
+<code>fmt_datetime()</code>,
+<code>fmt_duration()</code>,
+<code>fmt_email()</code>,
+<code>fmt_engineering()</code>,
+<code>fmt_flag()</code>,
+<code>fmt_fraction()</code>,
+<code>fmt_icon()</code>,
+<code>fmt_image()</code>,
+<code>fmt_index()</code>,
+<code>fmt_integer()</code>,
+<code>fmt_markdown()</code>,
+<code>fmt_number()</code>,
+<code>fmt_partsper()</code>,
+<code>fmt_passthrough()</code>,
+<code>fmt_percent()</code>,
+<code>fmt_roman()</code>,
+<code>fmt_spelled_num()</code>,
+<code>fmt_tf()</code>,
+<code>fmt_time()</code>,
+<code>fmt_units()</code>,
+<code>fmt_url()</code>,
+<code>sub_large_vals()</code>,
+<code>sub_missing()</code>,
+<code>sub_small_vals()</code>,
+<code>sub_values()</code>,
+<code>sub_zero()</code>
+</p>
+
+
+</div>

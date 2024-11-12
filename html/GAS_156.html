@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>UniGASSim</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Simulate Univariate GAS processes
+</h2>
+
+<h3>Description</h3>
+
+<p>Simulate Univariate GAS processes.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">UniGASSim(fit = NULL, T.sim = 1000,
+          kappa = NULL, A = NULL, B = NULL, Dist = NULL, ScalingType = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+
+<p>An estimated object of the class uGASFit. By default <code>fit = NULL</code>.
+</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>T.sim</code></td>
+<td>
+
+<p><code>numeric</code> Length of the simulated time series.</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>kappa</code></td>
+<td>
+
+<p><code>numeric</code> Vector of unconditional level for the reparametrised vector of parameters. Only used if <code>fit = NULL</code></p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>A</code></td>
+<td>
+
+<p><code>matrix</code> Of coefficients of dimension K x K that premultiply the conditional
+score in the GAS updating recursion, see Details. Only used if <code>fit = NULL</code></p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+
+<p><code>matrix</code> Of autoregressive coefficients of dimension K x K, see Details. Only used if <code>fit = NULL</code></p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>Dist</code></td>
+<td>
+
+<p><code>character</code> Label of the conditional distribution, see DistInfo. Only used if <code>fit = NULL</code></p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>ScalingType</code></td>
+<td>
+
+<p><code>character</code> Indicating the scaling mechanism for the conditional score.
+Possible choices are <code>"Identity"</code>, <code>"Inv"</code>, <code>"InvSqrt"</code>.
+Note that, for some distribution only <code>ScalingType = "Identity"</code> is supported, see the function DistInfo.
+When <code>ScalingType = "InvSqrt"</code> the inverse of the Cholesky decomposition of the
+information matrix is used. Default value <code>ScalingType = "Identity"</code>. Only used if <code>fit = NULL</code></p>
+</td>
+</tr></table>
+<h3>Details</h3>
+
+<p>The function permits to simulate from an estimated uGASFit object. If <code>fit</code> is not provided, the user
+can specify a GAS model via the additional arguments <code>kappa</code>, <code>A</code>, <code>B</code>, <code>Dist</code> and <code>ScalingType</code>.
+</p>
+<p>All the information regarding the supported univariate conditional distributions can be investigated
+using the DistInfo function. The model is specified as </p>
+<p style="text-align: center;"><code class="reqn">y_{t}\sim p(y|\theta_{t})</code>
+</p>
+<p>,
+where <code class="reqn">\theta_{t}</code> is the vector of parameters for the density <code class="reqn">p(y|.)</code>. Note that, <code class="reqn">\theta_{t}</code> includes
+also those parameters that are not time-varying.
+The GAS recursion for <code class="reqn">\theta_{t}</code> is </p>
+<p style="text-align: center;"><code class="reqn">\theta_{t} = \Lambda(\tilde{\theta}_{t})</code>
+</p>
+<p>,</p>
+<p style="text-align: center;"><code class="reqn">\tilde{\theta}_{t}=\kappa + A*s_{t-1} + B*\tilde{\theta}_{t-1}</code>
+</p>
+<p>,
+where <code class="reqn">\Lambda(.)</code> is the mapping function (see UniMapParameters) and <code class="reqn">\tilde{\theta}_{t}</code> is the vector of
+reparametrised parameters. The process is initialized at <code class="reqn">\theta_{1}=(I - B)^{-1}\kappa</code>, where <code class="reqn">\kappa</code> is
+the <code>vKappa</code> vector. The vector <code class="reqn">s_{t}</code> is the scaled score of <code class="reqn">p(y|.)</code> with respect to <code class="reqn">\tilde{\theta}_{t}</code>.
+See Ardia et. al. (2016a) for further details.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of the class uGASSim.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Leopoldo Catania</p>
+
+
+<h3>References</h3>
+
+<p>Ardia D, Boudt K and Catania L (2016a).
+"Generalized Autoregressive Score Models in R: The GAS Package."
+<a href="https://www.ssrn.com/abstract=2825380">https://www.ssrn.com/abstract=2825380</a>.<br></p>
+<p>Creal D, Koopman SJ, Lucas A (2013).
+"Generalized Autoregressive Score Models with Applications."
+Journal of Applied Econometrics, 28(5), 777-795.
+<a href="https://doi.org/10.1002/jae.1279">doi:10.1002/jae.1279</a>.<br></p>
+<p>Harvey AC (2013).
+Dynamic Models for Volatility and Heavy Tails: With Applications to Financial and Economic Time Series.
+Cambridge University Press.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Simulate from a GAS process with Student-t conditional
+# distribution, time-varying location, scale and fixed shape parameter.
+
+library(GAS)
+
+set.seed(786)
+
+T.sim  = 1000 # number of observations to simulate
+Dist   = "std" # conditional Studen-t distribution
+
+
+# vector of unconditional reparametrised parameters such that, the unconditional level of
+# \eqn{\theta}_{t} is (0, 1.5 ,7), i.e. location = 0, scale = 1.5,
+# degrees of freedom = 7.
+
+kappa = c(0.0, log(1.5), log(7-2.01))
+
+# in this way we specify that the shape parameter is constant while the score
+# coefficients for the location and the scale
+# parameters are 0.001 and 0.01, respectively.
+
+A = matrix(c(0.001 , 0.0  , 0.0 ,
+             0.0   , 0.01 , 0.0 ,
+             0.0   , 0.0  , 0.0 ), 3, byrow = TRUE)
+
+B = matrix(c(0.7 , 0.0 , 0.0 ,
+              0.0 , 0.98, 0.0 ,
+              0.0 , 0.0 , 0.0),3,byrow = TRUE) # Matrix of autoregressive parameters.
+
+Sim = UniGASSim(fit = NULL, T.sim, kappa, A, B, Dist, ScalingType = "Identity")
+
+Sim
+</code></pre>
+
+
+</div>

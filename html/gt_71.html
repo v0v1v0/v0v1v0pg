@@ -1,0 +1,368 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fmt_duration</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Format numeric or duration values as styled time duration strings</h2>
+
+<h3>Description</h3>
+
+<p>Format input values to time duration values whether those input values are
+numbers or of the <code>difftime</code> class. We can specify which time units any
+numeric input values have (as weeks, days, hours, minutes, or seconds) and
+the output can be customized with a duration style (corresponding to narrow,
+wide, colon-separated, and ISO forms) and a choice of output units ranging
+from weeks to seconds.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fmt_duration(
+  data,
+  columns = everything(),
+  rows = everything(),
+  input_units = NULL,
+  output_units = NULL,
+  duration_style = c("narrow", "wide", "colon-sep", "iso"),
+  trim_zero_units = TRUE,
+  max_output_units = NULL,
+  pattern = "{x}",
+  use_seps = TRUE,
+  sep_mark = ",",
+  force_sign = FALSE,
+  system = c("intl", "ind"),
+  locale = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p><em>The gt table data object</em>
+</p>
+<p><code style="white-space: pre;">⁠obj:&lt;gt_tbl&gt;⁠</code> // <strong>required</strong>
+</p>
+<p>This is the <strong>gt</strong> table object that is commonly created through use of the
+<code>gt()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>columns</code></td>
+<td>
+<p><em>Columns to target</em>
+</p>
+<p><code>&lt;column-targeting expression&gt;</code> // <em>default:</em> <code>everything()</code>
+</p>
+<p>Can either be a series of column names provided in <code>c()</code>, a vector of
+column indices, or a select helper function (e.g. <code>starts_with()</code>,
+<code>ends_with()</code>, <code>contains()</code>, <code>matches()</code>, <code>num_range()</code> and <code>everything()</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rows</code></td>
+<td>
+<p><em>Rows to target</em>
+</p>
+<p><code>&lt;row-targeting expression&gt;</code> // <em>default:</em> <code>everything()</code>
+</p>
+<p>In conjunction with <code>columns</code>, we can specify which of their rows should
+undergo formatting. The default <code>everything()</code> results in all rows in
+<code>columns</code> being formatted. Alternatively, we can supply a vector of row
+captions within <code>c()</code>, a vector of row indices, or a select helper
+function (e.g. <code>starts_with()</code>, <code>ends_with()</code>, <code>contains()</code>, <code>matches()</code>,
+<code>num_range()</code>, and <code>everything()</code>). We can also use expressions to filter
+down to the rows we need (e.g., <code style="white-space: pre;">⁠[colname_1] &gt; 100 &amp; [colname_2] &lt; 50⁠</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>input_units</code></td>
+<td>
+<p><em>Declaration of duration units for numerical values</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <em>default:</em> <code>NULL</code> (<code>optional</code>)
+</p>
+<p>If one or more selected columns contains numeric values (not <code>difftime</code>
+values, which contain the duration units), a keyword must be provided for
+<code>input_units</code> for <strong>gt</strong> to determine how those values are to be
+interpreted in terms of duration. The accepted units are: <code>"seconds"</code>,
+<code>"minutes"</code>, <code>"hours"</code>, <code>"days"</code>, and <code>"weeks"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_units</code></td>
+<td>
+<p><em>Choice of output units</em>
+</p>
+<p><code style="white-space: pre;">⁠mult-kw:[weeks|days|hours|minutes|seconds]⁠</code> // <em>default:</em> <code>NULL</code> (<code>optional</code>)
+</p>
+<p>Controls the output time units. The default, <code>NULL</code>, means that <strong>gt</strong> will
+automatically choose time units based on the input duration value. To
+control which time units are to be considered for output (before trimming
+with <code>trim_zero_units</code>) we can specify a vector of one or more of the
+following keywords: <code>"weeks"</code>, <code>"days"</code>, <code>"hours"</code>, <code>"minutes"</code>, or
+<code>"seconds"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>duration_style</code></td>
+<td>
+<p><em>Style for representing duration values</em>
+</p>
+<p><code style="white-space: pre;">⁠singl-kw:[narrow|wide|colon-sep|iso]⁠</code> // <em>default:</em> <code>"narrow"</code>
+</p>
+<p>A choice of four formatting styles for the output duration values. With
+<code>"narrow"</code> (the default style), duration values will be formatted with
+single letter time-part units (e.g., 1.35 days will be styled as
+<code>"1d 8h 24m"</code>). With <code>"wide"</code>, this example value will be expanded to
+<code>"1 day 8 hours 24 minutes"</code> after formatting. The <code>"colon-sep"</code> style will
+put days, hours, minutes, and seconds in the <code>"([D]/)[HH]:[MM]:[SS]"</code>
+format. The <code>"iso"</code> style will produce a value that conforms to the ISO
+8601 rules for duration values (e.g., 1.35 days will become <code>"P1DT8H24M"</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trim_zero_units</code></td>
+<td>
+<p><em>Trimming of zero values</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;logical&gt;|mult-kw:[leading|trailing|internal]⁠</code> // <em>default:</em> <code>TRUE</code>
+</p>
+<p>Provides methods to remove output time units that have zero values. By
+default this is <code>TRUE</code> and duration values that might otherwise be
+formatted as <code>"0w 1d 0h 4m 19s"</code> with <code>trim_zero_units = FALSE</code> are instead
+displayed as <code>"1d 4m 19s"</code>. Aside from using <code>TRUE</code>/<code>FALSE</code> we could
+provide a vector of keywords for more precise control. These keywords are:
+(1) <code>"leading"</code>, to omit all leading zero-value time units (e.g., <code>"0w 1d"</code>
+-&gt; <code>"1d"</code>), (2) <code>"trailing"</code>, to omit all trailing zero-value time units
+(e.g., <code>"3d 5h 0s"</code> -&gt; <code>"3d 5h"</code>), and <code>"internal"</code>, which removes all
+internal zero-value time units (e.g., <code>"5d 0h 33m"</code> -&gt; <code>"5d 33m"</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_output_units</code></td>
+<td>
+<p><em>Maximum number of time units to display</em>
+</p>
+<p><code>scalar&lt;numeric|integer&gt;(val&gt;=1)</code> // <em>default:</em> <code>NULL</code> (<code>optional</code>)
+</p>
+<p>If <code>output_units</code> is <code>NULL</code>, where the output time units are unspecified
+and left to <strong>gt</strong> to handle, a numeric value provided for
+<code>max_output_units</code> will be taken as the maximum number of time units to
+display in all output time duration values. By default, this is <code>NULL</code> and
+all possible time units will be displayed. This option has no effect when
+<code>duration_style = "colon-sep"</code> (only <code>output_units</code> can be used to
+customize that type of duration output).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pattern</code></td>
+<td>
+<p><em>Specification of the formatting pattern</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <em>default:</em> <code>"{x}"</code>
+</p>
+<p>A formatting pattern that allows for decoration of the formatted value. The
+formatted value is represented by the <code>{x}</code> (which can be used multiple
+times, if needed) and all other characters will be interpreted as string
+literals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_seps</code></td>
+<td>
+<p><em>Use digit group separators</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;logical&gt;⁠</code> // <em>default:</em> <code>TRUE</code>
+</p>
+<p>An option to use digit group separators. The type of digit group separator
+is set by <code>sep_mark</code> and overridden if a locale ID is provided to <code>locale</code>.
+This setting is <code>TRUE</code> by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sep_mark</code></td>
+<td>
+<p><em>Separator mark for digit grouping</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <em>default:</em> <code>","</code>
+</p>
+<p>The string to use as a separator between groups of digits. For example,
+using <code>sep_mark = ","</code> with a value of <code>1000</code> would result in a formatted
+value of <code>"1,000"</code>. This argument is ignored if a <code>locale</code> is supplied
+(i.e., is not <code>NULL</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>force_sign</code></td>
+<td>
+<p><em>Forcing the display of a positive sign</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;logical&gt;⁠</code> // <em>default:</em> <code>FALSE</code>
+</p>
+<p>Should the positive sign be shown for positive values (effectively showing
+a sign for all values except zero)? If so, use <code>TRUE</code> for this option. By
+default only negative values will display a minus sign.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>system</code></td>
+<td>
+<p><em>Numbering system for grouping separators</em>
+</p>
+<p><code style="white-space: pre;">⁠singl-kw:[intl|ind]⁠</code> // <em>default:</em> <code>"intl"</code>
+</p>
+<p>The international numbering system (keyword: <code>"intl"</code>) is widely used and
+its grouping separators (i.e., <code>sep_mark</code>) are always separated by three
+digits. The alternative system, the Indian numbering system (keyword:
+<code>"ind"</code>), uses grouping separators that correspond to thousand, lakh,
+crore, and higher quantities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>locale</code></td>
+<td>
+<p><em>Locale identifier</em>
+</p>
+<p><code style="white-space: pre;">⁠scalar&lt;character&gt;⁠</code> // <em>default:</em> <code>NULL</code> (<code>optional</code>)
+</p>
+<p>An optional locale identifier that can be used for formatting values
+according the locale's rules. Examples include <code>"en"</code> for English (United
+States) and <code>"fr"</code> for French (France). We can call <code>info_locales()</code> for a
+useful reference for all of the locales that are supported. A locale ID can
+be also set in the initial <code>gt()</code> function call (where it would be used
+automatically by any function with a <code>locale</code> argument) but a <code>locale</code>
+value provided here will override that global locale.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>gt_tbl</code>.
+</p>
+
+
+<h3>Output units for the colon-separated duration style</h3>
+
+<p>The colon-separated duration style (enabled when
+<code>duration_style = "colon-sep"</code>) is essentially a clock-based output format
+which uses the display logic of chronograph watch functionality. It will, by
+default, display duration values in the <code style="white-space: pre;">⁠(D/)HH:MM:SS⁠</code> format. Any duration
+values greater than or equal to 24 hours will have the number of days
+prepended with an adjoining slash mark. While this output format is
+versatile, it can be changed somewhat with the <code>output_units</code> option. The
+following combinations of output units are permitted:
+</p>
+
+<ul>
+<li> <p><code>c("minutes", "seconds")</code> -&gt; <code>MM:SS</code>
+</p>
+</li>
+<li> <p><code>c("hours", "minutes")</code> -&gt; <code>HH:MM</code>
+</p>
+</li>
+<li> <p><code>c("hours", "minutes", "seconds")</code> -&gt; <code>HH:MM:SS</code>
+</p>
+</li>
+<li> <p><code>c("days", "hours", "minutes")</code> -&gt; <code style="white-space: pre;">⁠(D/)HH:MM⁠</code>
+</p>
+</li>
+</ul>
+<p>Any other specialized combinations will result in the default set being used,
+which is <code>c("days", "hours", "minutes", "seconds")</code>
+</p>
+
+
+<h3>Compatibility of formatting function with data values</h3>
+
+<p><code>fmt_duration()</code> is compatible with body cells that are of the <code>"numeric"</code>,
+<code>"integer"</code>, or <code>"difftime"</code> types. Any other types of body cells are ignored
+during formatting. This is to say that cells of incompatible data types may
+be targeted, but there will be no attempt to format them.
+</p>
+
+
+<h3>Examples</h3>
+
+<p>Use part of the <code>sp500</code> table to create a <strong>gt</strong> table. Create a
+<code>difftime</code>-based column and format the duration values to be displayed as the
+number of days since March 30, 2020.
+</p>
+<div class="sourceCode r"><pre>sp500 |&gt;
+  dplyr::slice_head(n = 10) |&gt;
+  dplyr::mutate(
+    time_point = lubridate::ymd("2020-03-30"),
+    time_passed = difftime(time_point, date)
+  ) |&gt;
+  dplyr::select(time_passed, open, close) |&gt;
+  gt(rowname_col = "month") |&gt;
+  fmt_duration(
+    columns = time_passed,
+    output_units = "days",
+    duration_style = "wide"
+  ) |&gt;
+  fmt_currency(columns = c(open, close))
+</pre></div>
+
+<img src="https://raw.githubusercontent.com/rstudio/gt/master/images/man_fmt_duration_1.png" alt="This image of a table was generated from the first code example in the `fmt_duration()` help file." style="width:100%;"><h3>Function ID</h3>
+
+<p>3-16
+</p>
+
+
+<h3>Function Introduced</h3>
+
+<p><code>v0.7.0</code> (Aug 25, 2022)
+</p>
+
+
+<h3>See Also</h3>
+
+<p>The vector-formatting version of this function:
+<code>vec_fmt_duration()</code>.
+</p>
+<p>Other data formatting functions: 
+<code>data_color()</code>,
+<code>fmt()</code>,
+<code>fmt_auto()</code>,
+<code>fmt_bins()</code>,
+<code>fmt_bytes()</code>,
+<code>fmt_chem()</code>,
+<code>fmt_country()</code>,
+<code>fmt_currency()</code>,
+<code>fmt_date()</code>,
+<code>fmt_datetime()</code>,
+<code>fmt_email()</code>,
+<code>fmt_engineering()</code>,
+<code>fmt_flag()</code>,
+<code>fmt_fraction()</code>,
+<code>fmt_icon()</code>,
+<code>fmt_image()</code>,
+<code>fmt_index()</code>,
+<code>fmt_integer()</code>,
+<code>fmt_markdown()</code>,
+<code>fmt_number()</code>,
+<code>fmt_partsper()</code>,
+<code>fmt_passthrough()</code>,
+<code>fmt_percent()</code>,
+<code>fmt_roman()</code>,
+<code>fmt_scientific()</code>,
+<code>fmt_spelled_num()</code>,
+<code>fmt_tf()</code>,
+<code>fmt_time()</code>,
+<code>fmt_units()</code>,
+<code>fmt_url()</code>,
+<code>sub_large_vals()</code>,
+<code>sub_missing()</code>,
+<code>sub_small_vals()</code>,
+<code>sub_values()</code>,
+<code>sub_zero()</code>
+</p>
+
+
+</div>

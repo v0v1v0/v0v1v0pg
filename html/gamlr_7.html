@@ -1,0 +1,346 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gamlr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gamma-Lasso regression</h2>
+
+<h3>Description</h3>
+
+<p> Adaptive L1 penalized regression estimation. </p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gamlr(x, y, 
+   family=c("gaussian","binomial","poisson"),
+   gamma=0,nlambda=100, lambda.start=Inf,  
+   lambda.min.ratio=0.01, free=NULL, standardize=TRUE, 
+   obsweight=NULL,varweight=NULL,
+   prexx=(p&lt;500),
+   tol=1e-7,maxit=1e5,verb=FALSE, ...)
+
+## S3 method for class 'gamlr'
+plot(x, against=c("pen","dev"), 
+    col=NULL, select=TRUE, df=TRUE, ...)
+## S3 method for class 'gamlr'
+coef(object, select=NULL, k=2, corrected=TRUE, ...)
+## S3 method for class 'gamlr'
+predict(object, newdata,
+            type = c("link", "response"), ...)
+## S3 method for class 'gamlr'
+logLik(object, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> A dense <code>matrix</code> 
+or sparse <code>Matrix</code> of covariates,
+with <code>ncol(x)</code> variables and 
+<code>nrow(x)==length(y)</code> observations.
+This should not include the intercept.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A vector of response values. 
+There is almost no argument checking, 
+so be careful to match <code>y</code> with the appropriate <code>family</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p> Response model type; 
+either "gaussian", "poisson", or "binomial".  
+Note that for "binomial", <code>y</code> is in <code class="reqn">[0,1]</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p> Penalty concavity tuning parameter; see details. 
+Zero (default) yields the lasso,
+and higher values correspond to a more concave penalty.  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nlambda</code></td>
+<td>
+<p> Number of regularization path segments. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.start</code></td>
+<td>
+<p> Initial penalty value.  Default of <code>Inf</code>
+implies the infimum lambda that returns all zero
+coefficients.  This is the largest absolute coefficient gradient at the null model. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.min.ratio</code></td>
+<td>
+<p> The smallest penalty weight 
+(expected L1 cost) as a ratio of the path start value.  
+Our default is always 0.01; note that this differs from <code>glmnet</code>
+whose default depends upon the dimension of <code>x</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>free</code></td>
+<td>
+<p> Free variables: indices of the columns of <code>x</code> which will be unpenalized.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standardize</code></td>
+<td>
+<p> Whether to standardize 
+the coefficients to have standard deviation of one.  
+This is equivalent to multiplying the L1 penalty 
+by each coefficient standard deviation. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obsweight</code></td>
+<td>
+<p>For <code>family="gaussian"</code> only, weights on each observation in the weighted least squares objective.  For
+other resonse families, <code>obsweights</code> are overwritten by IRLS weights.  Defaults to <code>rep(1,n)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varweight</code></td>
+<td>
+<p>Multipliers on the penalty associated with each covariate coefficient.  Must be non-negative. These are further multiplied by <code class="reqn">sd(x_j)</code> if <code>standardize=TRUE</code>.  Defaults to <code>rep(1,p)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prexx</code></td>
+<td>
+<p> Only possible for <code>family="gaussian"</code>: whether to use pre-calculated weighted variable covariances in gradient calculations.  This leads to massive speed-ups for big-n datasets, but can be slow for <code class="reqn">p&gt;n</code> datasets. See note.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p> Optimization convergence tolerance relative to the null model deviance for each 
+inner coordinate-descent loop.  This is measured against the 
+maximum coordinate change times deviance curvature after full parameter-set update. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p> Max iterations for a single segment
+coordinate descent routine. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verb</code></td>
+<td>
+<p> Whether to print some output for each path segment. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p> A gamlr object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>against</code></td>
+<td>
+<p> Whether to plot paths 
+against log penalty or deviance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>select</code></td>
+<td>
+<p> In <code>coef</code> (and <code>predict</code>, which calls <code>coef</code>), the index of path segments
+for which you want coefficients or prediction (e.g., do <code>select=which.min(BIC(object))</code> for BIC selection).  If null, the segments are selected via our <code>AICc</code> function with <code>k</code> as specified (see also <code>corrected</code>).  If <code>select=0</code> all segments are returned.
+</p>
+<p>In <code>plot</code>,
+<code>select</code> is just a flag for whether to add lines marking AICc and BIC selected models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p> If <code>select=NULL</code> in <code>coef</code> or <code>predict</code>, the <code>AICc</code> complexity penalty.  <code>k</code> defaults to the usual 2. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corrected</code></td>
+<td>
+<p> A flag that swaps corrected (for high dimensional bias) <code>AICc</code> in for the standard <code>AIC</code>.  You almost always want <code>corrected=TRUE</code>, unless you want to apply the BIC in which case use <code>k=log(n), corrected=FALSE</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p> New <code>x</code> data for prediction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p> Either "link" for the linear equation, 
+or "response" for predictions transformed 
+to the same domain as <code>y</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col</code></td>
+<td>
+<p> A single plot color, 
+or vector of length <code>ncol(x)</code> colors for each coefficient
+regularization path. <code>NULL</code> uses the <code>matplot</code> default <code>1:6</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p> Whether to add to the plot degrees of freedom along the top axis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> Extra arguments to each method.  Most importantly, from 
+<code>predict.gamlr</code> these are arguments to <code>coef.gamlr</code>. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p> Finds posterior modes along a regularization path
+of <em>adapted L1 penalties</em> via coordinate descent.
+</p>
+<p>Each path segment <code class="reqn">t</code> minimizes the objective -<code class="reqn">(\phi/n)</code>logLHD<code class="reqn">(\beta_1
+  ... \beta_p) + \sum \omega_j\lambda|\beta_j|</code>, where <code class="reqn">\phi</code> is the
+exponential family dispersion parameter (<code class="reqn">\sigma^2</code> for
+<code>family="gaussian"</code>, one otherwise).  Weights <code class="reqn">\omega_j</code> are  
+set as <code class="reqn">1/(1+\gamma|b_j^{t-1}|)</code> where <code class="reqn">b_j^{t-1}</code> is our estimate of <code class="reqn">\beta_j</code> for the previous path segment (or zero if <code class="reqn">t=0</code>).  This adaptation is what makes the penalization ‘concave’; see Taddy (2013) for details.
+</p>
+<p><code>plot.gamlr</code> can be used to graph the results: it 
+shows the regularization paths for penalized <code class="reqn">\beta</code>, with degrees of freedom along the top axis and minimum AICc selection marked.  
+</p>
+<p><code>logLik.gamlr</code> returns log likelihood along the regularization path.  It is based on the <code>deviance</code>, and is correct only up to static constants; 
+e.g., for a Poisson it is off by <code class="reqn">\sum_i y_i(\log y_i-1)</code> (the saturated log likelihood) and for a Gaussian it is off by likelihood constants <code class="reqn">(n/2)(1+\log2\pi)</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>The path of fitted <em>prior expected</em> L1 penalties.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nobs</code></td>
+<td>
+<p> The number of observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Intercepts.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>Regression coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>Approximate degrees of freedom.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deviance</code></td>
+<td>
+<p>Fitted deviance: 
+<code class="reqn">(-2/\phi)</code>( logLHD.fitted - logLHD.saturated ). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>Number of optimization iterations by segment, broken into coordinate descent cycles and IRLS re-weightings for <code>family!="gaussian"</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>The exponential family model.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>Under <code>prexx=TRUE</code> (requires <code>family="gaussian"</code>), weighted covariances <code class="reqn">(VX)'X</code> and <code class="reqn">(VX)'y</code>, weighted column sums of <code class="reqn">VX</code>, and column means <code class="reqn">\bar{x}</code> will be pre-calculated. Here <code class="reqn">V</code> is the diagonal matrix of least squares weights (<code>obsweights</code>, so <code class="reqn">V</code> defaults to <code class="reqn">I</code>).  It is not necessary (they will be built by <code>gamlr</code> otherwise), but you have the option to pre-calculate these sufficient statistics yourself as arguments <code>vxx</code> (<code>matrix</code> or <code>dspMatrix</code>), <code>vxy</code>, <code>vxsum</code>, and <code>xbar</code> (all <code>vectors</code>) respectively.  Search <code>PREXX</code> in <code>gamlr.R</code> to see the steps involved, and notice that there is very little argument checking – do at your own risk.  Note that <code>xbar</code> is an <em>unweighted</em> calculation, even if <code class="reqn">V \neq I</code>.   For really Big Data you can then run with <code>x=NULL</code> (e.g., if these statistics were calculated on distributed machines and full design is unavailable). <em>Beware:</em> in this <code>x=NULL</code> case our deviance (and df, if <code>gamma&gt;0</code>) calculations are incorrect and selection rules will always return the smallest-lambda model.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Matt Taddy <a href="mailto:mataddy@gmail.com">mataddy@gmail.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Taddy (2017 JCGS), One-Step Estimator Paths for Concave Regularization, http://arxiv.org/abs/1308.5623</p>
+
+
+<h3>See Also</h3>
+
+<p>cv.gamlr, AICc, hockey</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+### a low-D test (highly multi-collinear)
+
+n &lt;- 1000
+p &lt;- 3
+xvar &lt;- matrix(0.9, nrow=p,ncol=p)
+diag(xvar) &lt;- 1
+x &lt;- matrix(rnorm(p*n), nrow=n)%*%chol(xvar)
+y &lt;- 4 + 3*x[,1] + -1*x[,2] + rnorm(n)
+
+## run models to extra small lambda 1e-3xlambda.start
+fitlasso &lt;- gamlr(x, y, gamma=0, lambda.min.ratio=1e-3) # lasso
+fitgl &lt;- gamlr(x, y, gamma=2, lambda.min.ratio=1e-3) # small gamma
+fitglbv &lt;- gamlr(x, y, gamma=10, lambda.min.ratio=1e-3) # big gamma
+
+par(mfrow=c(1,3))
+ylim = range(c(fitglbv$beta@x))
+plot(fitlasso, ylim=ylim, col="navy")
+plot(fitgl, ylim=ylim, col="maroon")
+plot(fitglbv, ylim=ylim, col="darkorange")
+
+ </code></pre>
+
+
+</div>

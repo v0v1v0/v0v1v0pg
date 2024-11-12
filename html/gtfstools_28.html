@@ -1,0 +1,95 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>frequencies_to_stop_times</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Convert frequencies to stop times</h2>
+
+<h3>Description</h3>
+
+<p>Creates <code>stop_times</code> entries based on the frequencies specified in the
+<code>frequencies</code> table.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">frequencies_to_stop_times(gtfs, trip_id = NULL, force = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>gtfs</code></td>
+<td>
+<p>A GTFS object, as created by <code>read_gtfs()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trip_id</code></td>
+<td>
+<p>A character vector including the <code>trip_id</code>s to have their
+frequencies converted to <code>stop_times</code> entries. If <code>NULL</code> (the default), the
+function converts all trips listed in the <code>frequencies</code> table.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>force</code></td>
+<td>
+<p>Whether to convert trips specified in the <code>frequencies</code> table
+even if they are not described in <code>stop_times</code> (defaults to <code>FALSE</code>). When
+set to <code>TRUE</code>, these mismatched trip are removed from the <code>frequencies</code> table
+and their correspondent entries in <code>trips</code> are substituted by what would be
+their converted counterpart.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A GTFS object with updated <code>frequencies</code>, <code>stop_times</code> and <code>trips</code>
+tables.
+</p>
+
+
+<h3>Details</h3>
+
+<p>A single trip described in a <code>frequencies</code> table may yield multiple trips
+after converting the GTFS. Let's say, for example, that the <code>frequencies</code>
+table describes a trip called <code>"example_trip"</code>, that starts at 08:00 and
+stops at 09:00, with a 30 minutes headway.
+</p>
+<p>In practice, that means that one trip will depart at 08:00, another at 08:30
+and yet another at 09:00. <code>frequencies_to_stop_times()</code> appends a <code>"_&lt;n&gt;"</code>
+suffix to the newly created trips to differentiate each one of them (e.g. in
+this case, the new trips, described in the <code>trips</code> and <code>stop_times</code> tables,
+would be called <code>"example_trip_1"</code>, <code>"example_trip_2"</code> and
+<code>"example_trip_3"</code>).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data_path &lt;- system.file("extdata/spo_gtfs.zip", package = "gtfstools")
+gtfs &lt;- read_gtfs(data_path)
+trip &lt;- "CPTM L07-0"
+
+# converts all trips listed in the frequencies table
+converted_gtfs &lt;- frequencies_to_stop_times(gtfs)
+
+# converts only the specified trip_id
+converted_gtfs &lt;- frequencies_to_stop_times(gtfs, trip)
+
+# how the specified trip_id was described in the frequencies table
+head(gtfs$frequencies[trip_id == trip])
+
+# the first row of each equivalent stop_times entry in the converted gtfs
+equivalent_stop_times &lt;- converted_gtfs$stop_times[grepl(trip, trip_id)]
+equivalent_stop_times[equivalent_stop_times[, .I[1], by = trip_id]$V1]
+
+</code></pre>
+
+
+</div>

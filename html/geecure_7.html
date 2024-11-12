@@ -1,0 +1,191 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>geecure</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Marginal proportional hazards mixture cure model with generalzied estimating equations</h2>
+
+<h3>Description</h3>
+
+<p>Fit the marginal proportional hazards mixture cure (PHMC) model with the generalized estimating equations (GEE). GEE approach is generalized to the marginal PHMC model through the expectation-solution (ES) algorithm to account for the correlation among the cure statuses and the dependence among the failure times of uncured patients to improve the estimation efficiency.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">geecure(formula, cureform, data, id, model = c("para", "semi"),  
+        corstr = c("independence", "exchangeable"), Var = TRUE, stdz = FALSE, 
+        boots = FALSE, nboot = 100, esmax = 100, eps = 1e-06)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>a formula expression, of the form <code>response ~ predictors</code>. The <code>response</code> is a <code>Surv</code> object with right censoring. It is used to specify the covariate effects on the failure time of uncured subjects. See the documentation for survreg, Surv for details. The expression to the right of the "~" specifies the effect of covariates on the failure time of uncured patients.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cureform</code></td>
+<td>
+<p>a formula expression, of the form <code>cureform ~ predictors</code>. It is used to specify the effects of covariates on the cure rate. A covariate may be used in both <code>formula</code> and <code>cureform</code>. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a data frame in which to interpret the variables named in the <code>formula</code> and the <code>cureform</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>a vector which identifies the clusters. The length of <code>id</code> should be the same as the number of observations.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>specifies your model, it can be <code>para</code> which represents the parametric PHMC model with two-parameter Weibull baseline survival function,  or <code>semi</code> which represents the semiparametric PHMC model.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corstr</code></td>
+<td>
+<p>a character string specifying the correlation structure. The following are permitted: <code>independence</code> and <code>exchangeable</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Var</code></td>
+<td>
+<p>If it is TRUE, the program returns Std.Error by the sandwich method. By default, <code>Var = TRUE</code>. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stdz</code></td>
+<td>
+<p>If it is TRUE, all the covariates in the <code>formula</code> and <code>cureform</code> are standardized. By default, <code>stdz = FALSE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boots</code></td>
+<td>
+<p>If it is TRUE, the program returns Std.Error by the bootstrap method. By default, <code>boots = FALSE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nboot</code></td>
+<td>
+<p>the number of bootstrap samples. The default is <code>nboot = 100</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>esmax</code></td>
+<td>
+<p>specifies the maximum iteration number. If the convergence criterion is not met, the ES iteration will be stopped after <code>esmax</code> iterations and the estimates will be based on the last ES iteration. The default <code>esmax = 100</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>tolerance for convergence. The default is <code>eps = 1e-6</code>. Iteration stops once the relative change in deviance is less than <code>eps</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The marginal PHMC model is considered in this function. For cure rate, a logistic regression model is employed and the probability of being cured is given by <code class="reqn">(1+\exp(\gamma Z))^{(-1)}</code>. For uncured subject, the failure time is modeled by either the parametric proportional hazards model with Weibull baseline distributions or the semiparametric proportional hazards model. A covariate can be used either in <code>formula</code> or in <code>cureform</code> or in both. The model parameters are estimated by the expectation-solution (ES) algorithm and the standard error estimates are obtained from sandwich variance formula based on Niu and Peng (2014) and Niu et al. (2018).</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>geecure</code> is returned. It can be examined by <code>print.geecure()</code>.</p>
+
+
+<h3>References</h3>
+
+<p>Niu, Y. and Peng, Y. (2014) Marginal regression analysis of clustered failure time data with a cure fraction. <em>Journal of Multivariate Analysis</em>, <b>123</b>: 129-142.
+</p>
+<p>Niu, Y., Song, L., Liu, Y, and Peng, Y. (2018) Modeling clustered long-term survivors using marginal mixture cure model. <em>Biometrical Journal</em>, doi: 10.1002/bjmj.201700114.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Be patient, the following examples may take several minites on a faster computer.
+# Example 1. Fit the marginal parametric PHMC model for the smoking cessation data.
+data(smoking)
+smoking$Time &lt;- ifelse(smoking$Relapse == 0, smoking$Timept1, 
+                       (smoking$Timept1 + smoking$Timept2)/2)
+
+# plot the KM survival curve of smoking cessation data
+plot(survfit(Surv(Time, Relapse) ~ SexF + (SI.UC), data = smoking), 
+      ylab = "Survival function", xlab = "Years", ylim = c(0.5, 1), 
+      xlim = c(0, 6), lty = 1:4, col = 1:4)
+legend(0.5, 0.63, c("SI/Male", "SI/Female", "UC/Female", "UC/Male"), cex = 1, 
+        col = c(2, 4, 3, 1), lty = c(2, 4, 3, 1))
+
+geesmokingind &lt;- geecure(Surv(Time, Relapse) ~ SexF + Duration + SI.UC + F10Cigs + 
+      SexF * SI.UC, cureform = ~ SexF + Duration + SI.UC + F10Cigs + SexF * SI.UC, 
+      data = smoking,  model = "para", id = smoking$Zip, corstr = "independence")
+
+geesmokingexch &lt;- geecure(Surv(Time, Relapse) ~ SexF + Duration + SI.UC + F10Cigs + 
+      SexF * SI.UC, cureform = ~ SexF + Duration + SI.UC + F10Cigs + SexF * SI.UC, 
+      data = smoking,  model = "para", id = smoking$Zip, corstr = "exchangeable")
+
+# Example 2. Fit the marginal semiparametric PHMC model for the bmt data.
+data(bmt)
+bmt$g &lt;- factor(bmt$g, label = c("ALL", "AML low risk", "AML high risk"))
+bmt$Z8 &lt;- factor(bmt$Z8, label = c("Otherwise", "FAB"))
+
+# plot the KM survival curve of bmt data 
+plot(survfit(Surv(T2, d3) ~ 1, data = bmt), xlab = "Days", ylab = "Survival Probability", 
+     cex.lab = 1.7, cex.axis = 2, cex.main = 1.7, mark.time = TRUE)
+
+geebmtind &lt;- geecure(Surv(T2, d3) ~ factor(g) + Z8, cureform = ~ factor(g) + Z8, 
+             data = bmt, model = "semi", id = bmt$Z9, corstr= "independence")           
+
+geebmtexch &lt;- geecure(Surv(T2, d3) ~ factor(g) + Z8, cureform = ~ factor(g) + Z8, 
+              data = bmt, model = "semi", id = bmt$Z9, corstr= "exchangeable", 
+              stdz = TRUE, boots = TRUE)
+
+# Example 3. Fit the marginal semiparametric PHMC model for the tonsil data.
+data(tonsil)
+tonsil&lt;-tonsil[-c(141,136,159),]
+tonsil$Sex &lt;- ifelse(tonsil$Sex == 1, 0, 1)
+tonsil$Cond &lt;- ifelse(tonsil$Cond == 1, 0, 1)
+tonsil$T &lt;- ifelse(tonsil$T &lt; 4, 0, 1)
+
+# plot the KM survival curve of tonsil data 
+plot(survfit(Surv(Time, Status) ~ 1, data = tonsil), xlab = "Days", ylab = "Survival 
+     Probability", cex.lab = 1.7, cex.axis = 2, cex.main = 1.7, mark.time = TRUE)
+
+geetonsilind &lt;- geecure2(Surv(Time, Status) ~ Sex + factor(Grade) + Age + Cond + T, 
+                cureform = ~ Sex + factor(Grade) + Age + Cond + T, data = tonsil, 
+                id = tonsil$Inst, corstr = "independence")
+
+geetonsilexch &lt;- geecure2(Surv(Time, Status) ~ Sex + factor(Grade) +Age + Cond + T, 
+                 cureform = ~ Sex + factor(Grade) + Age + Cond + T, data = tonsil, 
+                id = tonsil$Inst, corstr = "exchangeable",  stdz = TRUE, Var = FALSE)
+
+</code></pre>
+
+
+</div>

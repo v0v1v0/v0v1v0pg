@@ -1,0 +1,196 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fginindex</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gini index for finite populations and different estimation methods.</h2>
+
+<h3>Description</h3>
+
+<p>Estimates the Gini index in finite populations, using different methods.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fginindex(
+ y,
+ w,
+ method = 2L,
+ Pi = NULL,
+ na.rm = TRUE,
+ useRcpp = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A vector with the non-negative real numbers to be used for estimating the Gini index.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>A numeric vector with the survey weights to be used for estimating the Gini index. This argument can be missing if argument <code>Pi</code> is provided. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>An integer between 1 and 5 selecting one of the 5 methods detailed below for estimating the Gini index in finite populations. The default method is <code>method = 2L</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Pi</code></td>
+<td>
+<p>A numeric vector with the (sample) first inclusion probabilites to be used for estimating the Gini index. This argument can be <code>NULL</code> if argument <code>w</code> is provided. The default value is <code>Pi = NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.rm</code></td>
+<td>
+<p>A 'TRUE/FALSE' logical value indicating whether <code>NA</code>'s should be removed before the computation proceeds. The default value is <code>na.rm = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useRcpp</code></td>
+<td>
+<p>A 'TRUE/FALSE' logical value indicating whether <code>Rcpp</code> (<code>useRcpp = TRUE</code>), or <code>R</code> (<code>useRcpp = FALSE</code>), is used for computation. The default value is <code>UseRcpp = TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For a sample <code class="reqn">S</code>, with size <code class="reqn">n</code> and inclusion probabilities <code class="reqn">\pi_i=P(i\in S)</code> (argument <code>Pi</code>), derived from a finite population <code class="reqn">U</code>, with size <code class="reqn">N</code>, different formulations of the Gini index have been proposed in the literature. This function estimates the Gini index using various formulations, and both <code>R</code> and <code style="white-space: pre;">⁠C++⁠</code> codes are implemented. This can be useful for research purposes, and speed comparisons can be made. The different methods for estimating the Gini index are (see also Muñoz et al., 2023):
+</p>
+<p><code>method = 1</code> (Langel and Tillé, 2013)
+</p>
+<p style="text-align: center;"><code class="reqn"> \widehat{G}_{w1}= \displaystyle \frac{1}{2\widehat{N}^{2}\overline{y}_{w}}\sum_{i \in S}\sum_{j \in S}w_{i}w_{j}|y_{i}-y_{j}|,</code>
+</p>
+
+<p>where <code class="reqn">\widehat{N}=\sum_{i \in S}w_i</code>, <code class="reqn">\overline{y}_{w}=\widehat{N}^{-1}\sum_{i \in S}w_{i}y_{i}</code>, and <code class="reqn">w_i</code> are the survey weights. For example, the survey weights can be <code class="reqn">w_i=\pi_{i}^{-1}</code>. <code>w</code> or <code>Pi</code> must be provided, but not both. It is required that <code class="reqn">w_i = \pi_i^{-1}</code>, for <code class="reqn">i \in S</code>, when both <code>w</code> and <code>Pi</code> are provided.
+</p>
+<p><code>method = 2</code> (Alfons and Templ, 2012; Langel and Tillé, 2013)
+</p>
+<p style="text-align: center;"><code class="reqn"> \widehat{G}_{w2} =\displaystyle \frac{2\sum_{i \in S}w_{(i)}^{*}\widehat{N}_{(i)}y_{(i)} - \sum_{i \in S}w_{i}^{2}y_{i}  }{\widehat{N}^{2}\overline{y}_{w}}-1,</code>
+</p>
+
+<p>where <code class="reqn">y_{(i)}</code> are the values <code class="reqn">y_i</code> sorted in increasing order, <code class="reqn">w_{(i)}^{*}</code> are the values <code class="reqn">w_i</code> sorted according to the increasing order of the values <code class="reqn">y_i</code>, and <code class="reqn">\widehat{N}_{(i)}=\sum_{j=1}^{i}w_{(j)}^{*}</code>. Langel and Tillé (2013) show that <code class="reqn">\widehat{G}_{w1} = \widehat{G}_{w2}</code>.
+</p>
+<p><code>method = 3</code> (Berger, 2008)
+</p>
+<p style="text-align: center;"><code class="reqn"> \widehat{G}_{w3} = \displaystyle \frac{2}{\widehat{N}\overline{y}_{w}}\sum_{i \in S}w_{i}y_{i}\widehat{F}_{w}^{\ast}(y_{i})-1, </code>
+</p>
+
+<p>where
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{F}_{w}^{\ast}(t) = \displaystyle \frac{1}{\widehat{N}}\sum_{i \in S}w_{i}[\delta(y_i &lt; t) + 0.5\delta(y_i = t)] </code>
+</p>
+
+<p>is the smooth (mid-point) distribution function, and <code class="reqn">\delta(\cdot)</code> is the indicator variable that takes the value 1 when its argument is true, and the value 0 otherwise. It can be seen that <code class="reqn">\widehat{G}_{w2} = \widehat{G}_{w3}</code>.
+</p>
+<p><code>method = 4</code> (Berger and Gedik-Balay, 2020)
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{G}_{w4} = 1 - \displaystyle \frac{\overline{z}_{w}}{\overline{y}_{w}},</code>
+</p>
+
+<p>where <code class="reqn">\overline{z}_{w}=\widehat{N}^{-1}\sum_{i \in S}w_{i}z_{i}</code> and
+</p>
+<p style="text-align: center;"><code class="reqn">z_{i} = \displaystyle \frac{1}{\widehat{N} - w_{i}}\sum_{ \substack{j \in S\\ j\neq i}}\min(y_{i},y_{j}).</code>
+</p>
+
+<p><code>method = 5</code> (Lerman and Yitzhaki, 1989)
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{G}_{w5} = \displaystyle \frac{2}{\widehat{N}\overline{y}_{w}} \sum_{i \in S} w_{i}[y_{i} - \overline{y}_{w}]\left[ \widehat{F}_{w}^{LY}(y_{i}) - \overline{F}_{w}^{LY} \right], </code>
+</p>
+
+<p>where
+</p>
+<p style="text-align: center;"><code class="reqn">\widehat{F}_{w}^{LY}(y_{i}) = \displaystyle \frac{1}{\widehat{N}}\left(\widehat{N}_{(i-1)} + \frac{w_{(i)}^{\ast}}{2} \right) </code>
+</p>
+
+<p>and <code class="reqn">\overline{F}_{w}^{LY}=\widehat{N}^{-1}\sum_{i \in S}w_{i}\widehat{F}_{w}^{LY}(y_{i})</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A single numeric value between 0 and 1. The estimation of the Gini index.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Juan F Munoz <a href="mailto:jfmunoz@ugr.es">jfmunoz@ugr.es</a>
+</p>
+<p>Jose M Pavia <a href="mailto:pavia@uv.es">pavia@uv.es</a>
+</p>
+<p>Encarnacion Alvarez <a href="mailto:encarniav@ugr.es">encarniav@ugr.es</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Alfons, A., and Templ, M. (2012). Estimation of social exclusion indicators from complex surveys: The R package laeken. KU Leuven, Faculty of Business and Economics Working Paper.
+</p>
+<p>Berger, Y. G. (2008). A note on the asymptotic equivalence of jackknife and linearization variance estimation for the Gini Coefficient. Journal of Official Statistics, 24(4), 541-555.
+</p>
+<p>Berger, Y. G., and Gedik-Balay, İ.  (2020). Confidence intervals of Gini coefficient under unequal probability sampling. Journal of official statistics, 36(2), 237-249.
+</p>
+<p>Langel, M., and Tillé, Y. (2013). Variance estimation of the Gini index: revisiting a result several times published. Journal of the Royal Statistical Society: Series A (Statistics in Society), 176(2), 521-540.
+</p>
+<p>Lerman, R. I., and Yitzhaki, S. (1989). Improving the accuracy of estimates of Gini coefficients. Journal of econometrics, 42(1), 43-47.
+</p>
+<p>Muñoz, J. F., Moya-Fernández, P. J., and Álvarez-Verdejo, E. (2023). Exploring and Correcting the Bias in the Estimation of the Gini Measure of Inequality. Sociological Methods &amp; Research. https://doi.org/10.1177/00491241231176847
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>fgini</code>, <code>fcompareCI</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Income and weights (region "Burgenland") from the 2006 Austrian EU-SILC (Package 'laeken').
+data(eusilc, package="laeken")
+y &lt;- eusilc$eqIncome[eusilc$db040 == "Burgenland"]
+w &lt;- eusilc$rb050[eusilc$db040 == "Burgenland"]
+
+#Comparing the computation time for the various estimation methods and using R
+microbenchmark::microbenchmark(
+fginindex(y, w, method = 1L,  useRcpp = FALSE),
+fginindex(y, w, method = 2L,  useRcpp = FALSE),
+fginindex(y, w, method = 3L,  useRcpp = FALSE),
+fginindex(y, w, method = 4L,  useRcpp = FALSE),
+fginindex(y, w, method = 5L,  useRcpp = FALSE)
+)
+
+# Comparing the computation time for the various estimation methods and using Rcpp
+microbenchmark::microbenchmark(
+fginindex(y, w, method = 1L),
+fginindex(y, w, method = 2L),
+fginindex(y, w, method = 3L),
+fginindex(y, w, method = 4L),
+fginindex(y, w, method = 5L)
+)
+
+
+
+# Estimation of the Gini index using 'method = 4'.
+y &lt;- c(30428.83, 14976.54, 18094.09, 29476.79, 20381.93, 6876.17,
+       10360.96, 8239.82, 29476.79, 32230.71)
+w &lt;- c(357.86, 480.99, 480.99, 476.01, 498.58, 498.58, 476, 498.58, 476.01, 476.01)
+fginindex(y, w, method = 4L)
+
+</code></pre>
+
+
+</div>

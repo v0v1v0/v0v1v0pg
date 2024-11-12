@@ -1,0 +1,281 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ATEgel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>ATE with Generalized Empirical Likelihood estimation</h2>
+
+<h3>Description</h3>
+
+<p>Function to estimate the average treatment effect with the sample being
+balanced by GEL.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ATEgel(g, balm, w=NULL, y=NULL, treat=NULL, tet0=NULL,momType=c("bal","balSample","ATT"),
+                   popMom = NULL, family=c("linear","logit", "probit"),
+                   type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD", "RCUE"),
+                   tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, maxiterlam = 100,
+                   optfct = c("optim", "nlminb"), 
+                   optlam = c("nlminb", "optim", "iter", "Wu"), data=NULL,
+                   Lambdacontrol = list(),
+                   model = TRUE, X = FALSE, Y = FALSE, ...)
+checkConv(obj, tolConv=1e-4, verbose=TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>g</code></td>
+<td>
+<p>A formula as <code>y~z</code>, where codey is the response and
+<code>z</code> the treatment indicator. If there is more than one
+treatment, more indicators can be added or <code>z</code> can be set as a
+factor. It can also be of the form
+<code>g(theta, y, z)</code> for non-linear models. It is however, not
+implemented yet.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obj</code></td>
+<td>
+<p>Object of class <code>"ategel"</code> produced y <code>ATEgel</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>balm</code></td>
+<td>
+<p>A formula for the moments to be balanced between the treated
+and control groups (see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The response variable when <code>g</code> is a function. Not
+implemented yet</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>treat</code></td>
+<td>
+<p>The treatment indicator when <code>g</code> is a function. Not
+implemented yet</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>A formula to add covariates to the main regression. When
+<code>NULL</code>, the default value, the main regression only include
+treatment indicators.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tet0</code></td>
+<td>
+<p>A <code class="reqn">3 \times 1</code> vector of starting values. If not
+provided, they are obtained using an OLS regression</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>momType</code></td>
+<td>
+<p>How the moments of the covariates should be balanced. By
+default, it is simply balanced without restriction. Alternatively,
+moments can be set equal to the sample moments of the whole sample, or
+to the sample  moments of the treated group. The later will produce
+the average treatment effect of the treated (ATT)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>popMom</code></td>
+<td>
+<p>A vector of population moments to use for balancing. It
+can be used of those moments are available from a census, for
+example. When available, it greatly improves efficiency.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>By default, the outcome is linearly related to the
+treatment indicators. If the outcome is binary, it is possible to use
+the estimating equations of either the logit or probit model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>"EL" for empirical likelihood, "ET" for exponential tilting,
+"CUE" for continuous updated estimator, "ETEL" for exponentially
+tilted empirical likelihood of Schennach(2007), "HD" for Hellinger
+Distance of Kitamura-Otsu-Evdokimov (2013), and "ETHD" for the
+exponentially tilted Hellinger distance of Antoine-Dovonon
+(2015). "RCUE" is a restricted version of "CUE" in which the
+probabilities are bounded below by zero. In that case, an analytical
+Kuhn-Tucker method is used to find the solution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_lam</code></td>
+<td>
+<p>Tolerance for <code class="reqn">\lambda</code> between two iterations. The
+algorithm stops when <code class="reqn">\|\lambda_i -\lambda_{i-1}\|</code> reaches
+<code>tol_lamb</code> (see <code>getLamb</code>) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiterlam</code></td>
+<td>
+<p>The algorithm to compute <code class="reqn">\lambda</code> stops if there
+is no convergence after "maxiterlam" iterations (see
+<code>getLamb</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_obj</code></td>
+<td>
+<p>Tolerance for the gradiant of the objective function to
+compute <code class="reqn">\lambda</code> (see <code>getLamb</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optfct</code></td>
+<td>
+<p>Algorithm used for the parameter estimates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_mom</code></td>
+<td>
+<p>It is the tolerance for the moment condition
+<code class="reqn">\sum_{t=1}^n p_t g(\theta(x_t)=0</code>, where
+<code class="reqn">p_t=\frac{1}{n}D\rho(&lt;g_t,\lambda&gt;)</code> is the implied probability. It
+adds a penalty if the solution diverges from its goal.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optlam</code></td>
+<td>
+<p>Algorithm used to solve for the lagrange multiplier in
+<code>getLamb</code>. The algorithm Wu is only for
+<code>type="EL"</code>. The value of <code>optlam</code> is ignored for "CUE"
+because in that case, the analytical solution exists.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data.frame or a matrix with column names (Optional). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Lambdacontrol</code></td>
+<td>
+<p>Controls for the optimization of the vector of
+Lagrange multipliers used by either <code>optim</code>,
+<code>nlminb</code> or <code>constrOptim</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model, X, Y</code></td>
+<td>
+<p>logicals.  If <code>TRUE</code> the corresponding
+components of the fit (the model frame, the model matrix, the response)
+are returned if g is a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>If TRUE, a summary of the convergence is printed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tolConv</code></td>
+<td>
+<p>The tolerance for comparing moments between groups</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>More options to give to <code>optim</code> or
+<code>nlminb</code>. In <code>checkConv</code>, they are options passed to
+<code>getImpProb</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>We want to estimate the model <code class="reqn">Y_t = \theta_1 + \theta_2 treat +
+  \epsilon_t</code>, where <code class="reqn">\theta_2</code> is the treatment effect.  GEL is
+used to balance the sample based on the argument <code>x</code> above.
+</p>
+<p>For example, if we want the sample mean of <code>x1</code> and <code>x2</code> to be
+balanced between the treated and control, we set <code>x</code> to
+<code>~x1+x2</code>. If we want the sample mean of <code>x1</code>, <code>x2</code>,
+<code>x1*x2</code>, <code>x1^2</code> and <code>x2^2</code>, we set <code>x</code> to
+<code>~x1*x2 + I(x1^2) + I(x2^2)</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>'gel' returns an object of 'class' '"ategel"'  
+</p>
+<p>The functions 'summary' is used to obtain and print a summary of the results. 
+</p>
+<p>The object of class "ategel" is a list containing the same elements
+contained in objects of class <code>gel</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Lee, Seojeong (2016), Asymptotic refinements of misspecified-robust
+bootstrap for GEL estimators, <em>Journal of Econometrics</em>,
+<b>192</b>, 86–104.
+</p>
+<p>Schennach, Susanne, M. (2007), Point Estimation with Exponentially Tilted Empirical Likelihood.
+<em>Econometrica</em>, <b>35</b>, 634-672.
+</p>
+<p>Wu, C. (2005), Algorithms and R codes for the pseudo empirical
+likelihood method in survey sampling.
+<em>Survey Methodology</em>, <b>31</b>(2), page 239.
+</p>
+<p>Chausse, P. (2010), Computing Generalized Method of Moments and Generalized Empirical Likelihood with R.
+<em>Journal of Statistical Software</em>, <b>34</b>(11), 1–35.
+URL <a href="https://doi.org/10.18637/jss.v034.i11">doi:10.18637/jss.v034.i11</a>.
+</p>
+<p>Chausse, P. and Giurcanu, M. and Luta, G. (2021) Estimating the Average Causal Effect
+using Generalized Empirical Likelihood Methods, Work in progress. 
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(nsw)
+# Scale income
+nsw$re78 &lt;- nsw$re78/1000
+nsw$re75 &lt;- nsw$re75/1000
+res &lt;- ATEgel(re78~treat, ~age+ed+black+hisp+married+nodeg+re75,
+data=nsw,type="ET")
+summary(res)
+chk &lt;- checkConv(res)
+
+res2 &lt;- ATEgel(re78~treat, ~age+ed+black+hisp+married+nodeg+re75,
+data=nsw,type="ET", momType="balSample")
+summary(res2)
+chk2 &lt;- checkConv(res2)
+
+</code></pre>
+
+
+</div>

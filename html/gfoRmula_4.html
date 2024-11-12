@@ -1,0 +1,436 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bootstrap_helper</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bootstrap Observed Data and Simulate Under All Interventions</h2>
+
+<h3>Description</h3>
+
+<p>This internal function bootstraps the observed data (i.e., resamples the observed data set with replacement to
+construct bootstrap confidence intervals and standard errors). Then, the function simulates data
+using the resampled dataset to estimate the survival outcome, binary end-of-follow-up outcome, or
+continuous end-of-follow-up outcome.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bootstrap_helper(
+  r,
+  time_points,
+  obs_data,
+  bootseeds,
+  outcome_type,
+  intvars,
+  interventions,
+  int_times,
+  ref_int,
+  covparams,
+  covnames,
+  covtypes,
+  covfits_custom,
+  covpredict_custom,
+  basecovs,
+  histvars,
+  histvals,
+  histories,
+  ymodel,
+  ymodel_fit_custom,
+  ymodel_predict_custom,
+  yrestrictions,
+  compevent_restrictions,
+  restrictions,
+  comprisk,
+  compevent_model,
+  time_name,
+  outcome_name,
+  compevent_name,
+  ranges,
+  parallel,
+  ncores,
+  max_visits,
+  hazardratio,
+  intcomp,
+  boot_diag,
+  nsimul,
+  baselags,
+  below_zero_indicator,
+  min_time,
+  show_progress,
+  pb,
+  int_visit_type,
+  sim_trunc,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>Integer specifying the index of the current iteration of the bootstrap.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_points</code></td>
+<td>
+<p>Number of time points to simulate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obs_data</code></td>
+<td>
+<p>Data table containing the observed data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootseeds</code></td>
+<td>
+<p>Vector of integers specifying the seeds. One seed is used to initialize each bootstrap iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome_type</code></td>
+<td>
+<p>Character string specifying the "type" of the outcome. The possible "types" are: <code>"survival"</code>, <code>"continuous_eof"</code>, and <code>"binary_eof"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intvars</code></td>
+<td>
+<p>List, whose elements are vectors of character strings. The kth vector in <code>intvars</code> specifies the name(s) of the variable(s) to be intervened
+on in each round of the simulation under the kth intervention in <code>interventions</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interventions</code></td>
+<td>
+<p>List, whose elements are lists of vectors. Each list in <code>interventions</code> specifies a unique intervention on the relevant variable(s) in <code>intvars</code>. Each vector contains a function
+implementing a particular intervention on a single variable, optionally
+followed by one or more "intervention values" (i.e.,
+integers used to specify the treatment regime).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>int_times</code></td>
+<td>
+<p>List, whose elements are lists of vectors. The kth list in <code>int_times</code> corresponds to the kth intervention in <code>interventions</code>. Each vector specifies the time points in which the relevant intervention is applied on the corresponding variable in <code>intvars</code>.
+When an intervention is not applied, the simulated natural course value is used. By default, this argument is set so that all interventions are applied in all time points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ref_int</code></td>
+<td>
+<p>Integer denoting the intervention to be used as the
+reference for calculating the risk ratio and risk difference. 0 denotes the
+natural course, while subsequent integers denote user-specified
+interventions in the order that they are
+named in <code>interventions</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covparams</code></td>
+<td>
+<p>List of vectors, where each vector contains information for
+one parameter used in the modeling of the time-varying covariates (e.g.,
+model statement, family, link function, etc.). Each vector
+must be the same length as <code>covnames</code> and in the same order.
+If a parameter is not required for a certain covariate, it
+should be set to <code>NA</code> at that index.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covnames</code></td>
+<td>
+<p>Vector of character strings specifying the names of the time-varying covariates in <code>obs_data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covtypes</code></td>
+<td>
+<p>Vector of character strings specifying the "type" of each time-varying covariate included in <code>covnames</code>. The possible "types" are: <code>"binary"</code>, <code>"normal"</code>, <code>"categorical"</code>, <code>"bounded normal"</code>, <code>"zero-inflated normal"</code>, <code>"truncated normal"</code>, <code>"absorbing"</code>, <code>"categorical time"</code>, and <code>"custom"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covfits_custom</code></td>
+<td>
+<p>Vector containing custom fit functions for time-varying covariates that
+do not fall within the pre-defined covariate types. It should be in
+the same order <code>covnames</code>. If a custom fit function is not
+required for a particular covariate (e.g., if the first
+covariate is of type <code>"binary"</code> but the second is of type <code>"custom"</code>), then that
+index should be set to <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covpredict_custom</code></td>
+<td>
+<p>Vector containing custom prediction functions for time-varying
+covariates that do not fall within the pre-defined covariate types.
+It should be in the same order as <code>covnames</code>. If a custom
+prediction function is not required for a particular
+covariate, then that index should be set to <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>basecovs</code></td>
+<td>
+<p>Vector of character strings specifying the names of baseline covariates in <code>obs_data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>histvars</code></td>
+<td>
+<p>List of vectors. The kth vector specifies the names of the variables for which the kth history function
+in <code>histories</code> is to be applied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>histvals</code></td>
+<td>
+<p>List of length two. The first element is a numeric vector specifying the lags used in the model statements (e.g., if <code>lag1_varname</code> and <code>lag2_varname</code> were included in the model statements, this vector would be <code>c(1,2)</code>). The second element is a numeric vector specifying the lag averages used in the model statements.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>histories</code></td>
+<td>
+<p>Vector of history functions to apply to the variables specified in <code>histvars</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ymodel</code></td>
+<td>
+<p>Model statement for the outcome variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ymodel_fit_custom</code></td>
+<td>
+<p>Function specifying a custom outcome model. See the vignette "Using Custom Outcome Models in gfoRmula" for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ymodel_predict_custom</code></td>
+<td>
+<p>Function obtaining predictions from the custom outcome model specified in <code>ymodel_fit_custom</code>. See the vignette "Using Custom Outcome Models in gfoRmula" for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yrestrictions</code></td>
+<td>
+<p>List of vectors. Each vector containins as its first entry
+a condition and its second entry an integer. When the
+condition is <code>TRUE</code>, the outcome variable is simulated
+according to the fitted model; when the condition is <code>FALSE</code>,
+the outcome variable takes on the value in the second entry.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compevent_restrictions</code></td>
+<td>
+<p>List of vectors. Each vector containins as its first entry
+a condition and its second entry an integer. When the
+condition is <code>TRUE</code>, the competing event variable is simulated
+according to the fitted model; when the condition is <code>FALSE</code>,
+the competing event variable takes on the value in the
+second entry.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>restrictions</code></td>
+<td>
+<p>List of vectors. Each vector contains as its first entry a covariate for which
+<em>a priori</em> knowledge of its distribution is available; its second entry a condition
+under which no knowledge of its distribution is available and that must be <code>TRUE</code>
+for the distribution of that covariate given that condition to be estimated via a parametric
+model or other fitting procedure; its third entry a function for estimating the distribution
+of that covariate given the condition in the second entry is false such that <em>a priori</em> knowledge
+of the covariate distribution is available; and its fourth entry a value used by the function in the
+third entry. The default is <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>comprisk</code></td>
+<td>
+<p>Logical scalar indicating the presence of a competing event.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compevent_model</code></td>
+<td>
+<p>Model statement for the competing event variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_name</code></td>
+<td>
+<p>Character string specifying the name of the time variable in <code>obs_data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome_name</code></td>
+<td>
+<p>Character string specifying the name of the outcome variable in <code>obs_data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compevent_name</code></td>
+<td>
+<p>Character string specifying the name of the competing event variable in <code>obs_data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ranges</code></td>
+<td>
+<p>List of vectors. Each vector contains the minimum and
+maximum values of one of the covariates in <code>covnames</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>Logical scalar indicating whether to parallelize simulations of
+different interventions to multiple cores.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Integer specifying the number of cores to use in parallel
+simulation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_visits</code></td>
+<td>
+<p>A vector of one or more values denoting the maximum number of times
+a binary covariate representing a visit process may be missed before
+the individual is censored from the data (in the observed data) or
+a visit is forced (in the simulated data). Multiple values exist in the
+vector when the modeling of more than covariate is attached to a visit
+process. A value of <code>NA</code> should be provided when there is no visit process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hazardratio</code></td>
+<td>
+<p>Logical scalar indicating whether the hazard ratio should be computed between two interventions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intcomp</code></td>
+<td>
+<p>List of two numbers indicating a pair of interventions to be compared by a hazard ratio.
+The default is <code>NA</code>, resulting in no hazard ratio calculation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boot_diag</code></td>
+<td>
+<p>Logical scalar indicating whether to return the coefficients, standard errors, and variance-covariance matrices of the parameters of the fitted models in the bootstrap samples. The default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsimul</code></td>
+<td>
+<p>Number of subjects for whom to simulate data. By default, this argument is set
+equal to the number of subjects in <code>obs_data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>baselags</code></td>
+<td>
+<p>Logical scalar for specifying the convention used for lagi and lag_cumavgi terms in the model statements when pre-baseline times are not
+included in <code>obs_data</code> and when the current time index, <code class="reqn">t</code>, is such that <code class="reqn">t &lt; i</code>. If this argument is set to <code>FALSE</code>, the value
+of all lagi and lag_cumavgi terms in this context are set to 0 (for non-categorical covariates) or the reference
+level (for categorical covariates). If this argument is set to <code>TRUE</code>, the value of lagi and lag_cumavgi terms
+are set to their values at time 0. The default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>below_zero_indicator</code></td>
+<td>
+<p>Logical scalar indicating whether the observed data set contains rows for time <code class="reqn">t &lt; 0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_time</code></td>
+<td>
+<p>Numeric scalar specifying lowest value of time <code class="reqn">t</code> in the observed data set.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show_progress</code></td>
+<td>
+<p>Logical scalar indicating whether to print a progress bar for the number of bootstrap samples completed in the R console. This argument is only applicable when <code>parallel</code> is set to <code>FALSE</code> and bootstrap samples are used (i.e., <code>nsamples</code> is set to a value greater than 0). The default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pb</code></td>
+<td>
+<p>Progress bar R6 object. See <code>progress_bar</code> for further details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>int_visit_type</code></td>
+<td>
+<p>Vector of logicals. The kth element is a logical specifying whether to carry forward the intervened value (rather than the natural value) of the treatment variables(s) when performing a carry forward restriction type for the kth intervention in <code>interventions</code>.
+When the kth element is set to <code>FALSE</code>, the natural value of the treatment variable(s) in the kth intervention in <code>interventions</code> will be carried forward.
+By default, this argument is set so that the intervened value of the treatment variable(s) is carried forward for all interventions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim_trunc</code></td>
+<td>
+<p>Logical scalar indicating whether to truncate simulated covariates to their range in the observed data set. This argument is only applicable for covariates of type <code>"normal"</code>, <code>"bounded normal"</code>, <code>"truncated normal"</code>, and <code>"zero-inflated normal"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Result</code></td>
+<td>
+<p>Matrix containing risks over time under the natural course and under each user-specific intervention.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ResultRatio</code></td>
+<td>
+<p>Matrix containing risk ratios over time under the natural course and under each user-specific intervention.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ResultDiff</code></td>
+<td>
+<p>Matrix containing risk differences over time under the natural course and under each user-specific intervention.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootcoeffs</code></td>
+<td>
+<p>List of the coefficients of the fitted models. If the argument <code>boot_diag</code> is set to <code>FALSE</code>, a value of <code>NA</code> is given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootstderrs</code></td>
+<td>
+<p>List of the standard errors of the coefficients of the fitted models. If the argument <code>boot_diag</code> is set to <code>FALSE</code>, a value of <code>NA</code> is given.</p>
+</td>
+</tr>
+</table>
+</div>

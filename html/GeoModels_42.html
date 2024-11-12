@@ -1,0 +1,370 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GeoSimCopula</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulation of Gaussian and non Gaussian Random Fields using copula.</h2>
+
+<h3>Description</h3>
+
+<p>Simulation of Gaussian and some non Gaussian spatial, spatio-temporal and spatial bivariate 
+random fields using Gaussian or Clayton copula.
+The function return a realization of a Random Field for a given covariance model and covariance parameters.
+Simulation is based on Cholesky decomposition.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GeoSimCopula(coordx, coordy=NULL, coordt=NULL, 
+coordx_dyn=NULL, corrmodel, distance="Eucl",
+      GPU=NULL, grid=FALSE, local=c(1,1),
+      method="cholesky", model='Gaussian', n=1, param,
+      anisopars=NULL,radius=6371, sparse=FALSE,
+      copula="Gaussian",seed=NULL, X=NULL,spobj=NULL,nrep=1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>coordx</code></td>
+<td>
+<p>A numeric (<code class="reqn">d \times 2</code>)-matrix (where
+<code>d</code> is the number of spatial sites) giving 2-dimensions of spatial coordinates or a numeric <code class="reqn">d</code>-dimensional vector giving
+1-dimension of spatial coordinates.
+Coordinates on a sphere for a  fixed radius <code>radius</code> 
+are passed in lon/lat format expressed in decimal degrees.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordy</code></td>
+<td>
+<p>A numeric vector giving 1-dimension of
+spatial coordinates; <code>coordy</code> is interpreted only if <code>coordx</code> is a numeric
+vector or <code>grid=TRUE</code> otherwise it will be ignored. Optional argument, the default is <code>NULL</code> then <code>coordx</code> is expected to
+be numeric a (<code class="reqn">d \times 2</code>)-matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordt</code></td>
+<td>
+<p>A numeric vector giving 1-dimension of
+temporal coordinates.  Optional argument, the default is <code>NULL</code>
+then a spatial RF is expected.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordx_dyn</code></td>
+<td>
+<p>A list of <code class="reqn">m</code> numeric (<code class="reqn">d_t \times 2</code>)-matrices
+containing dynamical (in time) spatial coordinates. Optional argument, the default is <code>NULL</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corrmodel</code></td>
+<td>
+<p>String; the name of a correlation model, for the
+description see the Section <b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distance</code></td>
+<td>
+<p>String; the name of the spatial distance. The default
+is <code>Eucl</code>, the euclidean distance. See the Section
+<b>Details</b>  of <code>GeoFit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GPU</code></td>
+<td>
+<p>Numeric; if <code>NULL</code> (the default) 
+no GPU computation is performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+<p>Logical; if <code>FALSE</code> (the default) the data
+are interpreted as spatial or spatial-temporal realisations on a set
+of non-equispaced spatial sites (irregular grid).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>local</code></td>
+<td>
+<p>Numeric; number of local work-items of the GPU</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>String; the type of matrix decomposition used in the simulation. Default is cholesky. The other possible choices is <code>svd</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>String; the type of RF and therefore the densities associated to the likelihood
+objects. <code>Gaussian</code> is the default, see the Section
+<b>Details</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Numeric; the number of trials for binomial RFs. The number of successes in the negative Binomial RFs. Default is <code class="reqn">1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>A list of parameter values required in the
+simulation procedure of RFs, see <b>Examples</b>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>anisopars</code></td>
+<td>
+<p> A list of two elements "angle" and "ratio" i.e. the anisotropy angle and the anisotropy ratio, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>radius</code></td>
+<td>
+<p>Numeric; a value indicating  the radius of the sphere when using the great 
+circle distance. Default value is the radius of the earth in Km (i.e. 6371)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sparse</code></td>
+<td>
+<p>Logical; if <code>TRUE</code> then  cholesky decomposition is performed
+using sparse matrices algorithms (spam packake). It should be used
+with compactly supported covariance models.<code>FALSE</code> is the default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>copula</code></td>
+<td>
+<p>String; the type of copula. It can be "Clayton" or "Gaussian"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Numeric; an integer used in set.seed function to reproduce the simulation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Numeric; Matrix of space-time covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spobj</code></td>
+<td>
+<p>An object of class sp or spacetime</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nrep</code></td>
+<td>
+<p>Numeric; Numbers of indipendent replicates.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns an object of class <code>GeoSimCopula</code>.
+An object of class <code>GeoSimCopula</code> is a list containing
+at most the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>bivariate</code></td>
+<td>
+<p>Logical:<code>TRUE</code> if the Gaussian RF is bivariate, otherwise  <code>FALSE</code>;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordx</code></td>
+<td>
+<p>A <code class="reqn">d</code>-dimensional vector of spatial coordinates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordy</code></td>
+<td>
+<p>A <code class="reqn">d</code>-dimensional vector of spatial coordinates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordt</code></td>
+<td>
+<p>A <code class="reqn">t</code>-dimensional vector of temporal coordinates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coordx_dyn</code></td>
+<td>
+<p>A  list of dynamical (in time) spatial coordinates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corrmodel</code></td>
+<td>
+<p>The correlation model; see <code>GeoCovmatrix</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The vector or matrix or array of data, see
+<code>GeoFit</code>;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distance</code></td>
+<td>
+<p>The type of spatial distance;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>The method of simulation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>The type of RF, see <code>GeoFit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The number of trial for Binomial RFs;the number of successes in a negative Binomial RFs;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numcoord</code></td>
+<td>
+<p>The number of spatial coordinates;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numtime</code></td>
+<td>
+<p>The number the temporal realisations of the RF;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>A list of the parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>radius</code></td>
+<td>
+<p>The radius of the sphere if coordinates are passed in lon/lat format;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>randseed</code></td>
+<td>
+<p>The seed used for the random simulation;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spacetime</code></td>
+<td>
+<p><code>TRUE</code> if spatio-temporal and <code>FALSE</code> if
+spatial RF;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>copula</code></td>
+<td>
+<p>The type of copula</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Moreno Bevilacqua, <a href="mailto:moreno.bevilacqua89@gmail.com">moreno.bevilacqua89@gmail.com</a>,<a href="https://sites.google.com/view/moreno-bevilacqua/home">https://sites.google.com/view/moreno-bevilacqua/home</a>,
+Víctor Morales Oñate, <a href="mailto:victor.morales@uv.cl">victor.morales@uv.cl</a>, <a href="https://sites.google.com/site/moralesonatevictor/">https://sites.google.com/site/moralesonatevictor/</a>,
+Christian", Caamaño-Carrillo, <a href="mailto:chcaaman@ubiobio.cl">chcaaman@ubiobio.cl</a>,<a href="https://www.researchgate.net/profile/Christian-Caamano">https://www.researchgate.net/profile/Christian-Caamano</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Bevilacqua M., Alvarado E.,  Caamano C. (2024) A flexible Clayton-like spatial copula with application to bounded support data.  <em>Journal of Multivariate Analysis</em>   <b>201</b>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(GeoModels)
+
+################################################################
+###
+### Example q. Simulation of a reparametrized Beta RF
+### for beta regression
+### with Gaussian and Clayton Copula 
+### with  underlying Wendland correlation.
+###
+###############################################################
+set.seed(261)
+NN=1400
+x &lt;- runif(NN);y &lt;- runif(NN)
+coords=cbind(x,y)
+
+shape1=3
+shape2=3
+smooth=0
+
+
+corrmodel="GenWend"
+min=0;max=1
+
+
+X=cbind(rep(1,NN),runif(NN))
+
+NuisParam("Beta2",num_betas=2,copula="Gaussian")
+CorrParam("GenWend")
+
+
+#### Gaussian copula
+param=list(smooth=smooth,power2=4, min=min,max=max,
+             mean=0.1,mean1=0.1,scale=0.3,nugget=0,shape=5)
+
+data &lt;- GeoSimCopula(coordx=coords, corrmodel=corrmodel, model="Beta2",param=param,
+  copula="Gaussian",sparse=TRUE,X=X)$data
+
+quilt.plot(coords,data)
+
+
+#### Clayton copula
+NuisParam("Beta2",num_betas=2,copula="Clayton")
+CorrParam("GenWend")
+param=list(smooth=smooth,power2=4, min=min,max=max,
+             mean=0.2,mean1=0.1,scale=0.3,nugget=0,shape=6,nu=4)
+data1 &lt;- GeoSimCopula(coordx=coords, corrmodel=corrmodel, model="Beta2",param=param,
+  copula="Clayton",sparse=TRUE,X=X)$data
+
+hist(data1,freq=FALSE)
+quilt.plot(coords,data1)
+
+</code></pre>
+
+
+</div>

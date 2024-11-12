@@ -1,0 +1,354 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>doserate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Dose Rate Estimation</h2>
+
+<h3>Description</h3>
+
+
+<ul>
+<li> <p><code>dose_fit()</code> builds a calibration curve for gamma dose rate estimation.
+</p>
+</li>
+<li> <p><code>dose_predict()</code> predicts in situ gamma dose rate.
+</p>
+</li>
+</ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R">dose_fit(object, background, doses, ...)
+
+dose_predict(object, spectrum, ...)
+
+## S4 method for signature 'GammaSpectra,GammaSpectrumOrNumeric,matrix'
+dose_fit(
+  object,
+  background,
+  doses,
+  range_Ni,
+  range_NiEi,
+  details = list(authors = "", date = Sys.time())
+)
+
+## S4 method for signature 'GammaSpectra,GammaSpectrumOrNumeric,data.frame'
+dose_fit(
+  object,
+  background,
+  doses,
+  range_Ni,
+  range_NiEi,
+  details = list(authors = "", date = Sys.time())
+)
+
+## S4 method for signature 'CalibrationCurve,missing'
+dose_predict(
+  object,
+  sigma = 1,
+  epsilon = 0.015,
+  water_content = NULL,
+  use_MC = FALSE
+)
+
+## S4 method for signature 'CalibrationCurve,GammaSpectrum'
+dose_predict(
+  object,
+  spectrum,
+  sigma = 1,
+  epsilon = 0.015,
+  water_content = NULL,
+  use_MC = FALSE
+)
+
+## S4 method for signature 'CalibrationCurve,GammaSpectra'
+dose_predict(
+  object,
+  spectrum,
+  sigma = 1,
+  epsilon = 0.015,
+  water_content = NULL,
+  use_MC = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A GammaSpectra or CalibrationCurve object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>background</code></td>
+<td>
+<p>A GammaSpectrum object or a length-two <code>numeric</code>
+vector giving the background noise integration value and error,
+respectively. If no background subtraction is wanted, you can set <code>background = c(0,0,)</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>doses</code></td>
+<td>
+<p>A <code>matrix</code> or <code>data.frame</code> object with gamma dose values and uncertainties.
+The row names must match the names of the spectrum.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Currently not used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spectrum</code></td>
+<td>
+<p>An optional GammaSpectrum or GammaSpectra
+object in which to look for variables with which to predict. If omitted,
+the fitted values are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>range_Ni, range_NiEi</code></td>
+<td>
+<p>A length-two <code>numeric</code> vector giving the energy
+range to integrate within (in keV).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>details</code></td>
+<td>
+<p>A <code>list</code> of length-one vector specifying additional
+informations about the instrument for which the curve is built.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>A <code>numeric</code> value giving the confidence level of which the error from the
+slope is considered in the final uncertainty calculation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epsilon</code></td>
+<td>
+<p>A <code>numeric</code> value giving an extra relative error term,
+introduced by the calibration of the energy scale of the spectrum,
+e.g., <code>0.015</code> for an additional 1.5% error</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>water_content</code></td>
+<td>
+<p><code>numeric</code> or <code>matrix</code> gravimetric field water content to correct
+the gamma-dose rate to using the correction factor by Aitken (1985) to obtain the dry gamma-dose
+rate. Example: <code>c(0.05,0.0001)</code> for water content of 5% +/- 0.01 %. The default is <code>NULL</code> (nothing is corrected).
+The correction only works on the final dose rate. For more information see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_MC</code></td>
+<td>
+<p>A <code>logical</code> parameter, enabling/disabling Monte Carlo simulations for estimating
+the dose rate uncertainty</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>To estimate the gamma dose rate, one of the calibration curves distributed
+with this package can be used. These built-in curves are in use in several
+luminescence dating laboratories and can be used to replicate published
+results. As these curves are instrument specific, the user may have to build
+its own curve.
+</p>
+<p>The construction of a calibration curve requires a set of reference spectra
+for which the gamma dose rate is known and a background noise measurement.
+First, each reference spectrum is integrated over a given interval, then
+normalized to active time and corrected for background noise. The dose rate
+is finally modelled by the integrated signal value used as a linear
+predictor (York <em>et al.</em>, 2004).
+</p>
+
+
+<h3>Value</h3>
+
+
+<ul>
+<li> <p><code>dose_fit()</code> returns a CalibrationCurve object.
+</p>
+</li>
+<li> <p><code>dose_predict()</code> returns a <code>data.frame</code> with the following columns:
+</p>
+
+<dl>
+<dt><code>name</code></dt>
+<dd>
+<p>(<code>character</code>) the name of the spectra.</p>
+</dd>
+<dt><code>signal_Ni</code></dt>
+<dd>
+<p>(<code>numeric</code>) the integrated signal value (according to
+the value of <code>threshold</code>; see <code>signal_integrate()</code>) for <code>energy = FALSE</code></p>
+</dd>
+<dt><code>signal_err_Ni</code></dt>
+<dd>
+<p>(<code>numeric</code>) the integrated signal error value
+(according to the value of <code>threshold</code>; see <code>signal_integrate()</code>) for <code>energy = FALSE</code>.</p>
+</dd>
+<dt><code>dose_Ni</code></dt>
+<dd>
+<p>(<code>numeric</code>) the predicted gamma dose rate for <code>energy = FALSE</code>.</p>
+</dd>
+<dt><code>dose_err_Ni</code></dt>
+<dd>
+<p>(<code>numeric</code>) the predicted gamma dose rate error for <code>energy = FALSE</code>.</p>
+</dd>
+<dt><code>signal_Ni</code></dt>
+<dd>
+<p>(<code>numeric</code>) the integrated signal value (according to
+the value of <code>threshold</code>; see <code>signal_integrate()</code>).</p>
+</dd>
+<dt><code>signal_err_NiEi</code></dt>
+<dd>
+<p>(<code>numeric</code>) the integrated signal error value
+(according to the value of <code>threshold</code>; see <code>signal_integrate()</code>) for <code>energy = TRUE</code>.</p>
+</dd>
+<dt><code>dose_NiEi</code></dt>
+<dd>
+<p>(<code>numeric</code>) the predicted gamma dose rate for <code>energy = TRUE</code>.</p>
+</dd>
+<dt><code>dose_err_NiEi</code></dt>
+<dd>
+<p>(<code>numeric</code>) the predicted gamma dose rate error for <code>energy = TRUE</code>.</p>
+</dd>
+<dt><code>dose_final</code></dt>
+<dd>
+<p>(<code>numeric</code>) the predicted final gamma dose rate as the mean of <code>dose_Ni</code> and <code>dose_NiEi</code></p>
+</dd>
+<dt><code>dose_err_final</code></dt>
+<dd>
+<p>(<code>numeric</code>) the predicted final gamma dose rate error as
+<code class="reqn">SE(\dot{D}_{\gamma}) = \sqrt{(\frac{SE(\dot{D}_{\gamma\mathrm{Ni}})}{\dot{D}_{\gamma\mathrm{Ni}}})^2 +
+   (\frac{SE(\dot{D}_{\gamma\mathrm{NiEi}})}{\dot{D}_{\gamma\mathrm{NiEi}}})^2}</code></p>
+</dd>
+</dl>
+</li>
+</ul>
+<h3>Uncertainty calculation of the gamma-dose rate</h3>
+
+<p>The analytical uncertainties of the final gamma-dose rate (<code class="reqn">SE(\dot{D}_{\gamma})</code>) are calculated as
+follows:
+</p>
+<p style="text-align: center;"><code class="reqn">
+ \sigma_{\dot{D_\gamma}} = \sqrt((\frac{m_{\delta}s}{m})^2 + (\frac{s_{\delta}}{s})^2 + \epsilon^2)
+ </code>
+</p>
+
+<p>with <code class="reqn">m</code> and <code class="reqn">m_{\delta}</code> being the slope of the fit an its uncertainty,
+<code class="reqn">\sigma</code> the error scaler for the slope uncertainty, <code class="reqn">s</code> and <code class="reqn">s_{\delta}</code>
+the integrated signal and its uncertainty, and <code class="reqn">\epsilon</code> an additional relative uncertainty
+term that can be set by the user using the argument <code>epsilon</code>.
+</p>
+<p>If the parameter <code>use_MC</code> is set to <code>TRUE</code>, the a Monte Carlo sampling approach
+is chosen to approximate the uncertainties on the dose rate:
+</p>
+<p style="text-align: center;"><code class="reqn">
+   \sigma_{\dot{D_\gamma}} :=
+   \sqrt((\frac{SD(\mathcal{N}(\mu_{slope}, \sigma_{slope}) \times \mathcal{N}(\mu_{signal}, \sigma_{signal}) +
+   \mathcal{N}(\mu_{intercept}, \sigma_{intercept})) * \rho}{\dot{D_\gamma}})^2 +
+   \epsilon^2) * \dot{D_\gamma}
+ </code>
+</p>
+
+<p><code class="reqn">\ rho</code> is the parameter <code>sigma</code> provided with the function call, <code class="reqn">SD</code> equals the
+the call to <code>sd()</code>, i.e. the calculation of the standard deviation. To achieve a good
+Gaussian normal approximation with sample 1+e06 times (the values is fixed).
+</p>
+
+
+<h3>Water content correction</h3>
+
+<p>If gamma-dose rates are measured in the field, they are measured at  "as-is"
+conditions. In dating studies, however, using the dry dose rate is often
+more desirable to model the long-term effect of different assumptions for
+the water content. If the parameter <code>water_content</code>, either as numeric
+vector or as matrix with the number of rows equal to the number of
+processed spectra,  if different values are desired, the <strong>final</strong>
+gamma-dose rate is corrected for the water content provided. Final
+uncertainties are obtained using the square root of the summed squared
+relative uncertainties of the dose rate and the water content.
+</p>
+<p>A word of caution: When estimating the water content in the laboratory,
+the water analytical uncertainty is usually minimal, and it does not make
+sense to correct with a relative water content of, e.g., c(0.02,0.02)
+(2% +/- 2%) because this massively inflates the final dose rate error.
+</p>
+
+
+<h3>Note</h3>
+
+<p>See <code>vignette(doserate)</code> for a reproducible example.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>N. Frerebeau
+</p>
+
+
+<h3>References</h3>
+
+<p>Aitken, M.J. (1985). <em>Thermoluminescence dating</em>. London: Academic Press.
+</p>
+<p>Mercier, N. &amp; Falguères, C. (2007). Field Gamma Dose-Rate Measurement with
+a NaI(Tl) Detector: Re-Evaluation of the "Threshold" Technique.
+<em>Ancient TL</em>, 25(1), p. 1-4.
+</p>
+<p>York, D., Evensen, N. M., Martínez, M. L. &amp; De Basabe Delgado, J. (2004).
+Unified Equations for the Slope, Intercept, and Standard Errors of the Best
+Straight Line. <em>American Journal of Physics</em>, 72(3), p. 367-75.
+<a href="https://doi.org/10.1119/1.1632486">doi:10.1119/1.1632486</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>signal_integrate()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Import CNF files
+## Spectra
+spc_dir &lt;- system.file("extdata/BDX_LaBr_1/calibration", package = "gamma")
+spc &lt;- read(spc_dir)
+
+## Background
+bkg_dir &lt;- system.file("extdata/BDX_LaBr_1/background", package = "gamma")
+bkg &lt;- read(bkg_dir)
+
+## Get dose rate values
+data("clermont")
+(doses &lt;- clermont[, c("gamma_dose", "gamma_error")])
+
+## Build the calibration curve
+calib_curve &lt;- dose_fit(spc, bkg, doses,
+                        range_Ni = c(300, 2800),
+                        range_NiEi = c(165, 2800))
+
+## Plot the curve
+plot(calib_curve, threshold = "Ni")
+
+## Estimate gamma dose rates
+dose_predict(calib_curve, spc)
+</code></pre>
+
+
+</div>

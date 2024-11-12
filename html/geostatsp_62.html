@@ -1,0 +1,123 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simLgcp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulate a log-Gaussian Cox process</h2>
+
+<h3>Description</h3>
+
+<p>Give covariates and model parameters, simulates a log-Gaussian Cox process
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">	simLgcp(param, covariates=NULL, betas=NULL, 
+	offset=NULL,
+	  rasterTemplate=covariates[[1]], n=1, ...)
+	simPoissonPP(intensity)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>A vector of named model parameters with, at a minimum names
+<code>range</code> and  <code>shape</code> (see Details), and optionally <code>variance</code> (defaults to 1).  
+For Geometric Anisotropy add 
+<code>anisoRatio</code> and either <code>anisoAngleDegrees</code> or  
+<code>anisoAngleRadians</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariates</code></td>
+<td>
+<p>Either a raster stack or list of rasters and <code>SpatVector</code>s (with the latter having only a single data column).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>betas</code></td>
+<td>
+<p>Coefficients for the covariates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>Vector of character strings corresponding to elements of <code>covariates</code> which are offsets</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rasterTemplate</code></td>
+<td>
+<p>Raster on which the latent surface is simulated,
+defaults to the first covariate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>number of realisations to simulate</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> additional arguments, see 
+<code>RFsimulate</code>in the <code>RandomFields</code>package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intensity</code></td>
+<td>
+<p>Raster of the intensity of a Poisson point process.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list with a <code>events</code> element containing the event locations and a <code>SpatRaster</code> element 
+containing a raster stack of the covariates, spatial random effect, and intensity.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">mymodel = c(mean=-0.5, variance=1, 
+				range=2, shape=2)
+
+myraster = rast(nrows=15,ncols=20,xmin=0,xmax=10,ymin=0,ymax=7.5)
+
+# some covariates, deliberately with a different resolution than myraster
+covA = covB = myoffset = rast(ext(myraster), 10, 10)
+values(covA) = as.vector(matrix(1:10, 10, 10))
+values(covB) = as.vector(matrix(1:10, 10, 10, byrow=TRUE))
+values(myoffset) = round(seq(-1, 1, len=ncell(myoffset)))
+
+myCovariate = list(a=covA, b=covB, offsetFooBar = myoffset)
+
+myLgcp=simLgcp(param=mymodel, 
+	covariates=myCovariate, 
+	betas=c(a=-0.1, b=0.25), 
+	offset='offsetFooBar',
+	rasterTemplate=myraster)
+
+plot(myLgcp$raster[["intensity"]], main="lgcp")
+points(myLgcp$events)
+
+myIntensity = exp(-1+0.2*myCovariate[["a"]])
+myPoissonPP = simPoissonPP(myIntensity)[[1]]
+plot(myIntensity, main="Poisson pp")
+points(myPoissonPP)
+
+
+</code></pre>
+
+
+</div>

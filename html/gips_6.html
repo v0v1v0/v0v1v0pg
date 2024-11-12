@@ -1,0 +1,151 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>compare_posteriories_of_perms</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compare the posteriori probabilities of 2 permutations</h2>
+
+<h3>Description</h3>
+
+<p>Check which permutation is more likely and how much more likely.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">compare_posteriories_of_perms(
+  perm1,
+  perm2 = "()",
+  S = NULL,
+  number_of_observations = NULL,
+  delta = 3,
+  D_matrix = NULL,
+  was_mean_estimated = TRUE,
+  print_output = TRUE,
+  digits = 3
+)
+
+compare_log_posteriories_of_perms(
+  perm1,
+  perm2 = "()",
+  S = NULL,
+  number_of_observations = NULL,
+  delta = 3,
+  D_matrix = NULL,
+  was_mean_estimated = TRUE,
+  print_output = TRUE,
+  digits = 3
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>perm1, perm2</code></td>
+<td>
+<p>Permutations to compare.
+How many times <code>perm1</code> is more likely than <code>perm2</code>?
+Those can be provided as the <code>gips</code> objects,
+the <code>gips_perm</code> objects, or anything that can be used as
+the <code>x</code> parameter in the <code>gips_perm()</code> function.
+They do not have to be of the same class.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S, number_of_observations, delta, D_matrix, was_mean_estimated</code></td>
+<td>
+<p>The same parameters as in the <code>gips()</code> function.
+If at least one of <code>perm1</code> or <code>perm2</code> is a <code>gips</code> object,
+they are overwritten with those from the <code>gips</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print_output</code></td>
+<td>
+<p>A boolean.
+When <code>TRUE</code> (default), the computed value will be printed with
+additional text and returned invisibly. When <code>FALSE</code>,
+the computed value will be returned visibly.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Integer. Only used when <code>print_output = TRUE</code>.
+The number of digits after the comma to print.
+It can be negative, can be <code>+Inf</code>. It is passed to <code>base::round()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The function <code>compare_posteriories_of_perms()</code> returns
+the value of how many times the <code>perm1</code> is more likely than <code>perm2</code>.
+</p>
+<p>The function <code>compare_log_posteriories_of_perms()</code> returns
+the logarithm of how many times the <code>perm1</code> is more likely than <code>perm2</code>.
+</p>
+
+
+<h3>Functions</h3>
+
+
+<ul><li> <p><code>compare_log_posteriories_of_perms()</code>: More stable,
+logarithmic version of <code>compare_posteriories_of_perms()</code>.
+The natural logarithm is used.
+</p>
+</li></ul>
+<h3>See Also</h3>
+
+
+<ul>
+<li> <p><code>print.gips()</code> - The function that prints the posterior of
+the optimized <code>gips</code> object compared to the starting permutation.
+</p>
+</li>
+<li> <p><code>summary.gips()</code> - The function that calculates the posterior of
+the optimized <code>gips</code> object compared to the starting permutation.
+</p>
+</li>
+<li> <p><code>find_MAP()</code> - The function that finds the permutation that
+maximizes <code>log_posteriori_of_gips()</code>.
+</p>
+</li>
+<li> <p><code>log_posteriori_of_gips()</code> - The function this
+<code>compare_posteriories_of_perms()</code> calls underneath.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">require("MASS") # for mvrnorm()
+
+perm_size &lt;- 6
+mu &lt;- runif(6, -10, 10) # Assume we don't know the mean
+sigma_matrix &lt;- matrix(
+  data = c(
+    1.05, 0.8, 0.6, 0.4, 0.6, 0.8,
+    0.8, 1.05, 0.8, 0.6, 0.4, 0.6,
+    0.6, 0.8, 1.05, 0.8, 0.6, 0.4,
+    0.4, 0.6, 0.8, 1.05, 0.8, 0.6,
+    0.6, 0.4, 0.6, 0.8, 1.05, 0.8,
+    0.8, 0.6, 0.4, 0.6, 0.8, 1.05
+  ),
+  nrow = perm_size, byrow = TRUE
+) # sigma_matrix is a matrix invariant under permutation (1,2,3,4,5,6)
+number_of_observations &lt;- 13
+Z &lt;- MASS::mvrnorm(number_of_observations, mu = mu, Sigma = sigma_matrix)
+S &lt;- cov(Z) # Assume we have to estimate the mean
+
+g &lt;- gips(S, number_of_observations)
+g_map &lt;- find_MAP(g, max_iter = 10, show_progress_bar = FALSE, optimizer = "Metropolis_Hastings")
+
+compare_posteriories_of_perms(g_map, g, print_output = TRUE)
+exp(compare_log_posteriories_of_perms(g_map, g, print_output = FALSE))
+</code></pre>
+
+
+</div>

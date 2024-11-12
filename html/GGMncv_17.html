@@ -1,0 +1,278 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>nct</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Network Comparison Test</h2>
+
+<h3>Description</h3>
+
+<p>A re-implementation and extension of the permutation based
+network comparison test introduced in Van Borkulo et al. (2017).
+Such extensions include scaling to networks with many nodes and the option to
+use custom test-statistics.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">nct(
+  Y_g1,
+  Y_g2,
+  iter = 1000,
+  desparsify = TRUE,
+  method = "pearson",
+  FUN = NULL,
+  cores = 1,
+  progress = TRUE,
+  update_progress = 4,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y_g1</code></td>
+<td>
+<p>A matrix (or data.frame) of dimensions <em>n</em> by <em>p</em>,
+corresponding to the first dataset (<em>p</em> must be the same
+for <code>Y_g1</code> and <code>Y_g2</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y_g2</code></td>
+<td>
+<p>A matrix of dimensions <em>n</em> by <em>p</em>, corresponding to the
+second dataset (<em>p</em> must be the same for <code>Y_g1</code> and <code>Y_g2</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>Numeric. Number of (Monte Carlo) permutations (defaults to <code>1000</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>desparsify</code></td>
+<td>
+<p>Logical. Should the de-sparsified glasso estimator be
+computed (defaults to <code>TRUE</code>)? This is much faster,
+as the tuning parameter is fixed to
+\(\lambda = \sqrt{log(p)/n}\).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>character string. Which correlation coefficient (or covariance)
+is to be computed. One of "pearson" (default), "kendall",
+or "spearman".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FUN</code></td>
+<td>
+<p>A function or list of functions (defaults to <code>NULL</code>),
+specifying custom test-statistics. See <strong>Examples</strong>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>Numeric. Number of cores to use when executing the permutations in
+parallel (defaults to <code>1</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress</code></td>
+<td>
+<p>Logical. Should a progress bar be included
+(defaults to <code>TRUE</code>)?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>update_progress</code></td>
+<td>
+<p>How many times should the progress bar be updated
+(defaults to <code>4</code>)? Note that setting this to a
+large value should result in the worse performance,
+due to additional overhead communicating among the
+parallel processes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to <code>ggmncv</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><strong>User-Defined Functions</strong>
+</p>
+<p>These functions must have two arguments, corresponding
+to the partial correlation network for each group. An
+example is provided below.
+</p>
+<p>For user-defined functions (<code>FUN</code>), absolute values are used
+to compute the p-value, assuming more than one value is returned
+(e.g., centrality). This is done to mimic the <code>R</code> package
+<strong>NCT</strong>.
+</p>
+<p>A fail-safe method to ensure the p-value is computed correctly is
+to access the permutations and observed values from the <code>nct</code>
+object.
+</p>
+<p>Finally, comparing edges is not implemented. The most straightforward
+way to do this is with <code>compare_edges</code>, which
+uses the de-sparsified estimator.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class <code>nct</code>, including the following
+</p>
+
+<ul>
+<li> <p><code>glstr_pvalue</code>: Global strength p-value.
+</p>
+</li>
+<li> <p><code>sse_pvalue</code>: Sum of square error p-value.
+</p>
+</li>
+<li> <p><code>jsd_pvalue</code>: Jensen-Shannon divergence p-value.
+</p>
+</li>
+<li> <p><code>max_pvalue</code>: Maximum difference p-value.
+</p>
+</li>
+<li> <p><code>glstr_obs</code>: Global strength observed.
+</p>
+</li>
+<li> <p><code>sse_obs</code>: Sum of square error observed.
+</p>
+</li>
+<li> <p><code>jsd_obs</code>: Jensen-Shannon divergence observed.
+</p>
+</li>
+<li> <p><code>max_obs</code>: Maximum difference observed.
+</p>
+</li>
+<li> <p><code>glstr_perm</code>: Global strength permutations.
+</p>
+</li>
+<li> <p><code>sse_perm</code>: Sum of square error permutations.
+</p>
+</li>
+<li> <p><code>jsd_perm</code>: Jensen-Shannon divergence permutations.
+</p>
+</li>
+<li> <p><code>max_perm</code>: Maximum difference permutations.
+</p>
+</li>
+</ul>
+<p>For user-defined functions, i.e., those provided to <code>FUN</code>,
+the function name is pasted to <code>_pvalue</code>, <code>_obs</code>, and
+<code>_perm</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>In Van Borkulo et al. (2017), it was suggested that
+these are tests of <em>invariance</em>. To avoid confusion, that
+terminology is not used in <strong>GGMncv</strong>. This is because
+these tests assume invariance or the null is <em>true</em>, and thus
+can only be used to detect differences. Hence, it would be incorrect
+to suggest networks are the same, or evidence for invariance,
+by merely failing to reject the null hypothesis
+(Williams et al. 2021).
+</p>
+<p>For the defaults, Jensen-Shannon divergence is a symmetrized version
+of Kullback-Leibler divergence (the average of both directions).
+</p>
+<p><strong>Computational Speed</strong>
+</p>
+<p>This implementation has two key features that should make it
+scale to larger networks: (1) parallel computation and (2) the
+<code>R</code> package <strong>glassoFast</strong> is used under the hood
+(as opposed to <strong>glasso</strong>). CPU (time) comparisons are
+provided in Sustik and Calderhead (2012).
+</p>
+<p><strong>Non-regularized</strong>
+</p>
+<p>Non-regularized can be implemented by setting <code>lambda = 0</code>. Note
+this is provided to <code>ggmncv</code> via <code>...</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Sustik MA, Calderhead B (2012).
+“GLASSOFAST: An efficient GLASSO implementation.”
+<em>UTCS Technical Report TR-12-29 2012</em>.<br><br> Van Borkulo CD, Boschloo L, Kossakowski J, Tio P, Schoevers RA, Borsboom D, Waldorp LJ (2017).
+“Comparing network structures on three aspects: A permutation test.”
+<em>Manuscript submitted for publication</em>, <b>10</b>.<br><br> Williams DR, Briganti G, Linkowski P, Mulder J (2021).
+“On Accepting the Null Hypothesis of Conditional Independence in Partial Correlation Networks: A Bayesian Analysis.”
+<em>PsyArXiv</em>.
+doi: <a href="https://doi.org/10.31234/osf.io/7uhx8">10.31234/osf.io/7uhx8</a>, <a href="https://psyarxiv.com/7uhx8">https://psyarxiv.com/7uhx8</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# generate network
+main &lt;- gen_net(p = 10)
+
+# assume groups are equal
+y1 &lt;- MASS::mvrnorm(n = 500,
+                    mu = rep(0, 10),
+                    Sigma = main$cors)
+
+y2 &lt;- MASS::mvrnorm(n = 500,
+                    mu = rep(0, 10),
+                    Sigma = main$cors)
+
+compare_ggms &lt;- nct(y1, y2, iter = 500,
+                    progress = FALSE)
+
+compare_ggms
+
+# custom function
+# note: x &amp; y are partial correlation networks
+
+# correlation
+Correlation &lt;- function(x, y){
+cor(x[upper.tri(x)], y[upper.tri(y)])
+}
+
+compare_ggms &lt;- nct(y1, y2,iter = 100,
+                    FUN = Correlation,
+                    progress = FALSE)
+
+compare_ggms
+
+# correlation and strength
+
+Strength &lt;- function(x, y){
+NetworkToolbox::strength(x) - NetworkToolbox::strength(y)
+}
+
+compare_ggms &lt;- nct(y1, y2, iter = 100,
+                    FUN = list(Correlation = Correlation,
+                               Strength = Strength),
+                    progress = FALSE)
+
+compare_ggms
+
+</code></pre>
+
+
+</div>

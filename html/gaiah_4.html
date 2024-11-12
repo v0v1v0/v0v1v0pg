@@ -1,0 +1,95 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>comboize</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>combine genetics, isotopes, and habitat raster with exponents as given</h2>
+
+<h3>Description</h3>
+
+<p>This just multiplies the rasters together, each raised to the appropriate
+exponent, normalizes and returns the result
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">comboize(Mgen, Miso, Mhab, beta_gen, beta_iso, beta_hab)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Mgen</code></td>
+<td>
+<p>the genetic posteriors rasterStack.  Must be a rasterStack</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Miso</code></td>
+<td>
+<p>the isotope posteriors rasterStack.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mhab</code></td>
+<td>
+<p>a single layer raster with the habitat suitabiilty measure as a normalized
+probability surface.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta_gen</code></td>
+<td>
+<p>the exponent to raise the habitat raster to</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta_iso</code></td>
+<td>
+<p>the exponent to raise the isotope raster to</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta_hab</code></td>
+<td>
+<p>the exponent to raise the genetic raster to</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># first, run through the example for isotope_posterior_probs() to get
+# the rasters for two migrant birds. This gives us the list "birds2"
+example(isotope_posterior_probs)
+
+# extract the posterior probs rasters from  that output into a raster stack
+miso &lt;- lapply(birds2$regular, function(x) x$posterior_probs) %&gt;%
+  raster::stack()
+
+# see the names of the birds we are dealing with:
+names(miso)
+
+# get the genetic posteriors for those two birds
+mig_gen2 &lt;- migrant_wiwa_genetic_posteriors %&gt;%
+  dplyr::filter(ID %in% c(names(miso)))
+
+# make genetic posterior rasters for those two birds, make sure they are
+# sorted in the same order as miso, and make a raster stack of it
+mgen &lt;- genetic_posteriors2rasters(G = mig_gen2, R = genetic_regions)[names(miso)] %&gt;%
+  raster::stack()
+
+# make a normalized prior from habitat quality that is zeros everywhere
+# outside of the "known" range.
+tmp &lt;- wiwa_habitat_unclipped * wiwa_breed
+mhab &lt;- tmp / raster::cellStats(tmp, sum)
+
+# combine genetics, isotopes and habitat with exponents of 1 on each
+mcombo &lt;- comboize(mgen, miso, mhab, 1, 1, 1)
+</code></pre>
+
+
+</div>

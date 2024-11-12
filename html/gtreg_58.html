@@ -1,0 +1,191 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tbl_ae</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Tabulate Adverse Events</h2>
+
+<h3>Description</h3>
+
+<p>The function tabulates adverse events. One AE per ID will be counted in the
+resulting table. If a <code style="white-space: pre;">⁠by=⁠</code> variable is passed and a
+patient experienced more than one of the same AE, the AE associated with the
+highest <code style="white-space: pre;">⁠by=⁠</code> level will be included. For example, if a patient has two of
+the same AE and <code>by = grade</code>, the AE with the highest grade will be
+included.
+Similarly, if tabulations within system organ class are requested, the
+AE within SOC associated with the highest grade will be tabulated.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tbl_ae(
+  data,
+  id,
+  ae,
+  soc = NULL,
+  by = NULL,
+  strata = NULL,
+  id_df = NULL,
+  statistic = "{n} ({p})",
+  by_values = NULL,
+  digits = NULL,
+  sort = NULL,
+  zero_symbol = "\U2014",
+  missing_location = c("first", "last", "hide")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>Variable name of the patient ID</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ae</code></td>
+<td>
+<p>Variable name of the adverse event column</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>soc</code></td>
+<td>
+<p>Variable name of the system organ class column</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by</code></td>
+<td>
+<p>Variable to split results by, e.g. report AEs by grade</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strata</code></td>
+<td>
+<p>Variable to stratify results by, e.g. report AEs summaries
+by treatment group</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id_df</code></td>
+<td>
+<p>Optional data frame of complete id values and strata to achieve correct
+base n for the situation in which not all subjects experience adverse events. See
+<code>df_patient_characteristics</code> for an example <code>id_df</code> that pairs with
+<code>df_adverse_events</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>statistic</code></td>
+<td>
+<p>String indicating the statistics that will be reported.
+The default is <code>"{n} ({p})"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by_values</code></td>
+<td>
+<p>Optional vector of complete by values, listed in desired order,
+to achieve correct table structure for the situation in which an adverse
+event of a certain grade is not observed for a given soc</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Specifies the number of decimal places to round the summary statistics.
+By default integers are shown to zero decimal places, and percentages are
+formatted with <code>style_percent()</code>. If you would like to modify either
+of these, pass a vector of integers indicating the number of decimal
+places to round the statistics. For example, if the statistic being
+calculated is <code>"{n} ({p}%)"</code> and you want the percent rounded to
+2 decimal places use <code>digits = c(0, 2)</code>.
+User may also pass a styling function: <code>digits = style_sigfig</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sort</code></td>
+<td>
+<p>Controls order of AEs and SOCs in output table.
+The default is <code>NULL</code>, where AEs and SOCs are sorted alphanumerically
+(and factors sorted according to their factor level).
+Use <code>sort = "ae"</code> to sort AEs in decreasing frequency order, <code>sort = "soc"</code>
+to sort SOCs in decreasing order, and <code>sort = c("ae", "soc")</code> to sort both.
+AEs are sorted within SOC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zero_symbol</code></td>
+<td>
+<p>String used to represent cells with zero counts. Default
+is the em-dash (<code>"\U2014"</code>). Using <code>zero_symbol = NULL</code> will print the
+zero count statistics, e.g. <code>"0 (0)"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>missing_location</code></td>
+<td>
+<p>location where the column summarizing values with
+missing levels <code style="white-space: pre;">⁠by=⁠</code> will be located in the final table. Must be
+one of <code style="white-space: pre;">⁠c("first", "last", "hide)⁠</code>. Default is <code>"first"</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a 'tbl_ae' object
+</p>
+
+
+<h3>Example Output</h3>
+
+<p>Example 1
+</p>
+<p><img src="../help/figures/tbl_ae_ex1.png" width="95%" alt="tbl_ae_ex1.png"></p>
+<p>Example 2
+</p>
+<p><img src="../help/figures/tbl_ae_ex2.png" width="65%" alt="tbl_ae_ex2.png"></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Example 1 -----------------------------------------------------------------
+tbl_ae_ex1 &lt;-
+  df_adverse_events %&gt;%
+  tbl_ae(
+    id = patient_id,
+    ae = adverse_event,
+    soc = system_organ_class,
+    by = grade,
+    strata = trt
+  ) %&gt;%
+  modify_header(all_ae_cols() ~ "**Grade {by}**")
+
+# Example 2 -----------------------------------------------------------------
+tbl_ae_ex2 &lt;-
+  df_adverse_events %&gt;%
+  tbl_ae(
+    id = patient_id,
+    ae = adverse_event,
+    by = grade
+  ) %&gt;%
+  modify_header(all_ae_cols() ~ "**Grade {by}**")
+
+</code></pre>
+
+
+</div>

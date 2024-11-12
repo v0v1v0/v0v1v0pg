@@ -1,0 +1,109 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gsw_SAAR</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Absolute Salinity Anomaly Ratio</h2>
+
+<h3>Description</h3>
+
+<p>Absolute Salinity Anomaly Ratio
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gsw_SAAR(p, longitude, latitude)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>sea pressure [dbar], i.e. absolute pressure [dbar] minus 10.1325 dbar</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>longitude</code></td>
+<td>
+<p>longitude in decimal degrees, positive to the east of Greenwich. (This
+is called <code>long</code> in the TEOS-10 Matlab code.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>latitude</code></td>
+<td>
+<p>latitude in decimal degrees, positive to the north of the equator. (This
+is called <code>lat</code> in the TEOS-10 Matlab code.)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a list containing <code>SAAR</code>, which is
+the (unitless) Absolute Salinity Anomaly Ratio, and <code>in_ocean</code>
+is set to 1 if <code>SAAR</code> is nonzero, or to 0 otherwise.
+</p>
+
+
+<h3>Implementation Note</h3>
+
+<p>This R function uses a wrapper to a C function contained within the GSW-C
+system as updated 2022-10-11 at <a href="https://github.com/TEOS-10/GSW-C">https://github.com/TEOS-10/GSW-C</a> with
+git commit '657216dd4f5ea079b5f0e021a4163e2d26893371'.
+</p>
+<p>The C function uses data from the <code>library/gsw_data_v3_0.mat</code>
+file provided in the GSW-Matlab source code, version 3.06-11.
+Unfortunately, this version of the mat file is no longer displayed on the
+TEOS-10.org website.  Therefore, in the interests of making GSW-R be
+self-contained, a copy was downloaded from
+<a href="http://www.teos-10.org/software/gsw_matlab_v3_06_11.zip">http://www.teos-10.org/software/gsw_matlab_v3_06_11.zip</a> on 2022-05-25,
+the .mat file was stored in the developer/create_data directory of
+<a href="https://github.com/TEOS-10/GSW-R">https://github.com/TEOS-10/GSW-R</a>, and then the dataset used in GSW-R
+was created based on that .mat file.
+</p>
+<p>Please consult <a href="http://www.teos-10.org">http://www.teos-10.org</a> to learn more about the various
+TEOS-10 software systems.
+</p>
+
+
+<h3>Bugs</h3>
+
+<p>The definition of <code>in_ocean</code> is incorrect, because the C function named
+<code>gsw_saar</code>, which is called by the present R function, does not calculate
+<code>in_ocean</code>, as the base Matlab function named <code>gsw_SAAR</code> does. However,
+examination of the Matlab code shows that <code>in_ocean</code> is set to 0 along
+with <code>SAAR</code>, whenever the original estimate of the latter is nonfinite.
+Thus, points that would be signalled as being on the land by the Matlab code
+are indicated in the same way with the present R function. However, other points
+may also be indicated as being on land, if <code>SAAR</code> is simply zero in the
+first calculation. Whether this poses a problem in practice is an open question,
+since it seems likely that this function would only be called with oceanic
+locations, anyway. If problems arise for users, a patch can be written to
+improve things.
+</p>
+
+
+<h3>References</h3>
+
+<p><a href="http://www.teos-10.org/pubs/gsw/html/gsw_SAAR.html">http://www.teos-10.org/pubs/gsw/html/gsw_SAAR.html</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">p &lt;- c(10, 50, 125, 250, 600, 1000)
+longitude &lt;- c(188, 188, 188, 188, 188, 188)
+latitude &lt;- c(4, 4, 4, 4, 4, 4)
+SAAR &lt;- gsw_SAAR(p, longitude, latitude)
+stopifnot(all.equal(1e3*SAAR$SAAR, c(0.004794295602143, 0.007668755837570, 0.018919828449091,
+                                     0.077293264028981, 0.161974583039298, 0.270652408428964)))
+stopifnot(all.equal(SAAR$in_ocean, rep(1, 6)))
+</code></pre>
+
+
+</div>

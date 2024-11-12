@@ -1,0 +1,85 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gr_fill_gaps</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fill missing daily data</h2>
+
+<h3>Description</h3>
+
+<p>Use the function to fill the missing daily data by linear interpolation. These can be both missing dates and missing runoff or temperature values. A preliminary summary of missing data can be viewed by <code>gr_get_gaps()</code>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gr_fill_gaps(hdata, autocorr = 0.7, nobserv = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>hdata</code></td>
+<td>
+<p><code>data.frame</code> with at least two columns, where the first column is <code>Date</code>, and the remaining columns have numeric type.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>autocorr</code></td>
+<td>
+<p>Autocorrelation value that defines possible length of the period that can be filled. Defaults to 0.7.  If <code>nobserv</code> parameter is set, then this parameter is ignored. If both parameters are <code>NULL</code>, then all gaps are filled disregard of their lengths (not recommended).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nobserv</code></td>
+<td>
+<p>Maximum number of contiguous observations that can be interpolated. Defaults to <code>NULL</code>. If this parameter is set, then <code>autocorr</code> parameter is ignored. If both parameters are <code>NULL</code>, then all gaps are filled disregard of their lengths (not recommended).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>data.frame</code> which is a filled version of <code>hdata</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(grwat)
+library(dplyr)
+
+# example Spas-Zagorye data is included with grwat package
+path = system.file("extdata", "spas-zagorye.txt", 
+                   package = "grwat")
+
+hdata_raw = read.delim(path, header = FALSE, 
+                       sep = ' ', na.strings = c('-999', '-999.0', '-'),
+                       col.names = c('d', 'm', 'y', 'q'))
+
+hdata = hdata_raw %&gt;% 
+  transmute(Date = lubridate::make_date(y, m, d), 
+            Q = q)
+
+head(hdata)
+
+# identify gaps
+gr_get_gaps(hdata) 
+
+# fill gaps
+fhdata = gr_fill_gaps(hdata, autocorr = 0.8)
+
+# check the results
+gr_get_gaps(fhdata)
+
+# fill gaps
+fhdata = gr_fill_gaps(hdata, nobserv = 7)
+
+# check the results
+gr_get_gaps(fhdata)
+</code></pre>
+
+
+</div>

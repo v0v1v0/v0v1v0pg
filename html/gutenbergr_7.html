@@ -1,0 +1,129 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gutenberg_metadata</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gutenberg metadata about each work</h2>
+
+<h3>Description</h3>
+
+<p>Selected fields of metadata about each of the Project Gutenberg works. These
+were collected using the gitenberg Python package, particularly the
+<code>pg_rdf_to_json</code> function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gutenberg_metadata
+</code></pre>
+
+
+<h3>Format</h3>
+
+<p>A tbl_df (see tibble or dplyr) with one row for each work in Project
+Gutenberg and the following columns:
+</p>
+
+<dl>
+<dt>gutenberg_id</dt>
+<dd>
+<p>Numeric ID, used to retrieve works from
+Project Gutenberg</p>
+</dd>
+<dt>title</dt>
+<dd>
+<p>Title</p>
+</dd>
+<dt>author</dt>
+<dd>
+<p>Author, if a single one given. Given as last name
+first (e.g. "Doyle, Arthur Conan")</p>
+</dd>
+<dt>author_id</dt>
+<dd>
+<p>Project Gutenberg author ID</p>
+</dd>
+<dt>language</dt>
+<dd>
+<p>Language ISO 639 code, separated by / if multiple. Two
+letter code if one exists, otherwise three letter. See
+<a href="https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes">https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes</a></p>
+</dd>
+<dt>gutenberg_bookshelf</dt>
+<dd>
+<p>Which collection or collections this
+is found in, separated by / if multiple</p>
+</dd>
+<dt>rights</dt>
+<dd>
+<p>Generally one of three options: "Public domain in the USA."
+(the most common by far), "Copyrighted. Read the copyright notice inside
+this book for details.", or "None"</p>
+</dd>
+<dt>has_text</dt>
+<dd>
+<p>Whether there is a file containing digits followed by
+<code>.txt</code> in Project Gutenberg for this record (as opposed to, for
+example, audiobooks). If not, cannot be retrieved with
+<code>gutenberg_download</code></p>
+</dd>
+</dl>
+<h3>Details</h3>
+
+<p>To find the date on which this metadata was last updated, run
+<code>attr(gutenberg_metadata, "date_updated")</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>gutenberg_works, gutenberg_authors,
+gutenberg_subjects
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+library(dplyr)
+library(stringr)
+
+gutenberg_metadata
+
+gutenberg_metadata %&gt;%
+  count(author, sort = TRUE)
+
+# look for Shakespeare, excluding collections (containing "Works") and
+# translations
+shakespeare_metadata &lt;- gutenberg_metadata %&gt;%
+  filter(
+    author == "Shakespeare, William",
+    language == "en",
+    !str_detect(title, "Works"),
+    has_text,
+    !str_detect(rights, "Copyright")
+  ) %&gt;%
+  distinct(title)
+
+
+shakespeare_works &lt;- gutenberg_download(shakespeare_metadata$gutenberg_id)
+
+
+# note that the gutenberg_works() function filters for English
+# non-copyrighted works and does de-duplication by default:
+
+shakespeare_metadata2 &lt;- gutenberg_works(
+  author == "Shakespeare, William",
+  !str_detect(title, "Works")
+)
+
+# date last updated
+attr(gutenberg_metadata, "date_updated")
+
+</code></pre>
+
+
+</div>

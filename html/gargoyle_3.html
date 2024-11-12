@@ -1,0 +1,105 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>init</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Initiate, triger, event</h2>
+
+<h3>Description</h3>
+
+<p>Initiate, triger, event
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">init(..., session = getDefaultReactiveDomain())
+
+trigger(..., session = getDefaultReactiveDomain())
+
+watch(name, session = getDefaultReactiveDomain())
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>session</code></td>
+<td>
+<p>The shiny session object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name, ...</code></td>
+<td>
+<p>The name(s) of the events</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The 'session' object invisibly.
+These functions are mainly used for side-effects.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if (interactive()){
+  library(shiny)
+  library(gargoyle)
+  options("gargoyle.talkative" = TRUE)
+  ui &lt;- function(request){
+    tagList(
+      h4('Go'),
+      actionButton("y", "y"),
+      h4('Output of z$v'),
+      tableOutput("evt")
+    )
+  }
+
+  server &lt;- function(input, output, session){
+
+    # Initiating the flags
+    init( "plop", "pouet", "poum")
+
+    # Creating a new env to store values, instead of
+    # a reactive structure
+    z &lt;- new.env()
+
+    observeEvent( input$y , {
+      z$v &lt;- mtcars
+      # Triggering the flag
+      trigger("airquality")
+    })
+
+    on("airquality", {
+      # Triggering the flag
+      z$v &lt;- airquality
+      trigger("iris")
+    })
+
+    on("iris", {
+      # Triggering the flag
+      z$v &lt;- iris
+      trigger("renderiris")
+    })
+
+    output$evt &lt;- renderTable({
+      # This part will only render when the renderiris
+      # flag is triggered
+      watch("renderiris")
+      head(z$v)
+    })
+
+  }
+
+  shinyApp(ui, server)
+
+}
+</code></pre>
+
+
+</div>

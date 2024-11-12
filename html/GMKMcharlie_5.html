@@ -1,0 +1,203 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>KM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+K-means over dense representation of data
+</h2>
+
+<h3>Description</h3>
+
+<p>Multithreaded weighted Minkowski and spherical K-means via Lloyd's algorithm over dense representation of data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">KM(
+  X,
+  centroid,
+  Xw = rep(1, ncol(X)),
+  minkP = 2,
+  maxIter = 100L,
+  maxCore = 7L,
+  verbose = TRUE
+  )
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>A <code>d x N</code> numeric matrix where <code>N</code> is the number of data points — each column is an observation, and <code>d</code> is the dimensionality. Column-observation representation promotes cache locality.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centroid</code></td>
+<td>
+
+<p>A <code>d x K</code> numeric matrix where <code>K</code> is the number of clusters. Each column represents a cluster center.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Xw</code></td>
+<td>
+
+<p>A numeric vector of size <code>N</code>. <code>Xw[i]</code> is the weight on observation <code>X[, i]</code>. Users should normalize <code>Xw</code> such that the elements sum up to <code>N</code>. Default uniform weights for all observations.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minkP</code></td>
+<td>
+
+<p>A numeric value or a character string. If numeric, <code>minkP</code> is the power <code>p</code> in the definition of Minkowski distance. If character string, <code>"max"</code> implies Chebyshev distance, <code>"cosine"</code> implies cosine dissimilarity. Default 2.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxIter</code></td>
+<td>
+
+<p>An integer. The maximal number of iterations. Default 100.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxCore</code></td>
+<td>
+
+<p>An integer. The maximal number of threads to invoke. No more than the total number of logical processors on machine. Default 7.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>A boolean value. <code>TRUE</code> prints progress.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Implementation highlights include:
+</p>
+<p>(i) In Minkowski distance calculation, integer power no greater than 30 uses multiplications. Fractional powers or powers above 30 call <code>std::pow()</code>.
+</p>
+<p>(ii) Multithreaded observation-centroid distance calculations. Distances are memorized to avoid unnecessary recomputations if centroids did not change in the last iteration.
+</p>
+<p>(iii) A lookup table is built for storing observation - centroid ID pairs during the assignment step. Observation IDs are then grouped by centroid IDs which allows parallel computing cluster means.
+</p>
+<p>(iv) Function allows non-uniform weights on observations.
+</p>
+<p>(v) Meta-template programming trims branches over different distance functions and other computing methods during compile time.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of size <code>K</code>, the number of clusters. Each element is a list of 3 vectors:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>centroid </code></td>
+<td>
+<p>a numeric vector of size <code>d</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clusterMember </code></td>
+<td>
+<p>an integer vector of indexes of elements grouped to <code>centroid</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>member2centroidDistance </code></td>
+<td>
+<p>a numeric vector of the same size of <code>clusterMember</code>. The <code>i</code>th element is the Minkowski distance or cosine dissimilarity from <code>centroid</code> to the <code>clusterMember[i]</code>th observation in <code>X</code>.</p>
+</td>
+</tr>
+</table>
+<p>Empty <code>clusterMember</code> implies empty cluster.
+</p>
+
+
+<h3>Note</h3>
+
+<p>Although rarely happens, divergence of K-means with non-Euclidean distance <code>minkP != 2</code> measure is still a theoretical possibility.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># ===========================================================================
+# Play random numbers. See speed.
+# ===========================================================================
+N = 5000L # Number of points.
+d = 500L # Dimensionality.
+K = 50L # Number of clusters.
+dat = matrix(rnorm(N * d) + runif(N * d), nrow = d)
+
+
+# Use kmeans++ initialization.
+centroidInd = GMKMcharlie::KMppIni(
+  X = dat, K, firstSelection = 1L, minkP = 2, stochastic = FALSE,
+  seed = sample(1e9L, 1), maxCore = 2L, verbose = TRUE)
+
+
+centroid = dat[, centroidInd]
+
+
+# Euclidean.
+system.time({rst = GMKMcharlie::KM(
+  X = dat, centroid = centroid, maxIter = 100,
+  minkP = 2, maxCore = 2, verbose = TRUE)})
+
+
+# Cosine dissimilarity.
+dat = apply(dat, 2, function(x) x / sum(x ^ 2) ^ 0.5)
+centroid = dat[, centroidInd]
+system.time({rst2 = GMKMcharlie::KM(
+  X = dat, centroid = centroid, maxIter = 100,
+  minkP = "cosine", maxCore = 2, verbose = TRUE)})
+
+
+# ===========================================================================
+# Test against R's inbuilt km()
+# ===========================================================================
+dat = t(iris[1:4])
+dimnames(dat) = NULL
+
+
+# Use kmeans++ initialization.
+centroidInd = GMKMcharlie::KMppIni(
+  X = dat, K = 3, firstSelection = 1L, minkP = 2, stochastic = FALSE,
+  seed = sample(1e9L, 1), maxCore = 2L, verbose = TRUE)
+centroid = dat[, centroidInd]
+
+
+rst = GMKMcharlie::KM(X = dat, centroid = centroid, maxIter = 100,
+                      minkP = 2, maxCore = 2, verbose = TRUE)
+rst = lapply(rst, function(x) sort(x$clusterMember))
+
+
+rst2 = kmeans(x = t(dat), centers = t(centroid), algorithm = "Lloyd")
+rst2 = aggregate(list(1L : length(rst2$cluster)),
+                 list(rst2$cluster), function(x) sort(x))[[2]]
+
+
+setdiff(rst, rst2)
+</code></pre>
+
+
+</div>

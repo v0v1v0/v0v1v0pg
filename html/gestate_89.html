@@ -1,0 +1,202 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simulate_trials</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Perform simulations of time-to-event data using arbitrary event, censoring and recruitment distributions.</h2>
+
+<h3>Description</h3>
+
+<p>Function for simulating generalised two-arm time-to-event trial data for NPH trials with arbitrary event, censoring and recruitment distributions.<br>
+Event and censoring distributions are specified via Curve objects, with recruitment specified through an RCurve object.
+As it uses same architecture and similar syntax to nph_traj(), analysis results ought to be directly comparable.
+It is designed to complement nph_traj(), either as a stochastic alternative, or as a means to validate its outputs.
+It can also be used to build more complex simulations by combining the outputs of multiple runs; e.g. multi-arm trials.<br>
+Data sets created by this function are formatted so they may be automatically recognised and analysed by analyse_sim().<br></p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">simulate_trials(
+  active_ecurve,
+  control_ecurve,
+  active_dcurve = Blank(),
+  control_dcurve = Blank(),
+  rcurve,
+  assess = NULL,
+  fix_events = NULL,
+  iterations,
+  seed,
+  detailed_output = FALSE,
+  output_type = c("matrix", "list"),
+  Time = "Time",
+  Event = "Censored",
+  censoringOne = TRUE,
+  Trt = "Trt",
+  Iter = "Iter"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>active_ecurve</code></td>
+<td>
+<p>Event distribution for the active arm, specified as a Curve object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control_ecurve</code></td>
+<td>
+<p>Event distribution for the control arm, specified as a Curve object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>active_dcurve</code></td>
+<td>
+<p>Dropout/censoring distribution for the active arm, specified as a Curve object. By default, Blank(), i.e. no dropout.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control_dcurve</code></td>
+<td>
+<p>Dropout/censoring distribution for the control arm, specified as a Curve object. By default, Blank(), i.e. no dropout.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rcurve</code></td>
+<td>
+<p>Recruitment distribution, specified as an RCurve object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>assess</code></td>
+<td>
+<p>Positive number for the assessment time at which administrative censoring will be performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fix_events</code></td>
+<td>
+<p>Positive integer for the number of events to fix (if required), letting the assessment time vary. Alternatively, NULL for fixed time assessment with variable event numbers. Notes: Fixing event numbers overrides any specified assessment time and slows simulation considerably. Default = NULL (fixed analysis time)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterations</code></td>
+<td>
+<p>Number of simulations to perform. Depending on trial size, 10,000-20,000 is typically OK to analyse on 8GB RAM.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Seed number to use. Numerical, although if "Rand" is specified, a system-time-derived number will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>detailed_output</code></td>
+<td>
+<p>Boolean to require full details of timings of competing processes. Full details required for any future adjustments to assessment time. Simplified option approximately halves RAM requirements. Default=FALSE (simplified).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_type</code></td>
+<td>
+<p>"matrix" or "list" specifying the type of output required. "matrix" requests a single matrix with a column "iter" to denote the simulation, while "list" creates a list with one entry per simulation. Default="matrix".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Time</code></td>
+<td>
+<p>String specifying the name of the output time column. Default="Time"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Event</code></td>
+<td>
+<p>String specifying the name of the output censoring/event column. Default="Censored" (and by default it is a censoring column unless censoringOne=FALSE)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>censoringOne</code></td>
+<td>
+<p>Boolean specifying whether censoring is denoted in the censoring/event column by a one (TRUE) or zero (FALSE). Default=TRUE (censorings denoted by 1, events by 0)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Trt</code></td>
+<td>
+<p>String specifying the name of the output treatment column. Default="Trt"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Iter</code></td>
+<td>
+<p>String specifying the name of the output iterations column. Default="Iter"</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a table with one row per patient per simulation. Table contains the following columns:
+</p>
+
+<ul>
+<li>
+<p>"Time" Simulated actually observed (patient) time of event or censoring: This is the main column of interest for analysis. Named by Time argument.
+</p>
+</li>
+<li>
+<p>"Event" Simulated event indicator denoting censorings/events as 1/0 if censoringOne=TRUE and 0/1 if censoringOne=FALSE. Named by Event argument.
+</p>
+</li>
+<li>
+<p>"Trt" Treatment group number - 1 is active, 2 is control. Named by Trt argument.
+</p>
+</li>
+<li>
+<p>"Iter" Simulation number. Named by Iter argument.
+</p>
+</li>
+<li>
+<p>"ETime" Simulated actual event (patient) time (may or may not be observed). Only produced when detailed_output=TRUE.
+</p>
+</li>
+<li>
+<p>"CTime" Simulated actual censoring/dropout (patient) time (may or may not be observed).Only produced when detailed_output=TRUE.
+</p>
+</li>
+<li>
+<p>"Rec_Time" Simulated (trial) time of recruitment. Only produced when detailed_output=TRUE.
+</p>
+</li>
+<li>
+<p>"Assess" Prespecified (trial) time of assessment. Only produced when detailed_output=TRUE.
+</p>
+</li>
+<li>
+<p>"Max_F" Prespecified maximum patient follow-up time. Only produced when detailed_output=TRUE.
+</p>
+</li>
+<li>
+<p>"RCTime" Simulated actual administrative censoring (patient) time (may or may not be observed)
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>James Bell
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">example_sim &lt;- simulate_trials(active_ecurve=Weibull(250,0.8),control_ecurve=Weibull(100,1),
+rcurve=LinearR(12,100,100), assess=20, iterations=5,seed=12345)
+</code></pre>
+
+
+</div>

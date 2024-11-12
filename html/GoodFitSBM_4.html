@@ -1,0 +1,129 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>goftest_ERSBM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Monte Carlo goodness-of-fit test for an Erdős-Rényi stochastic blockmodel (ERSBM)</h2>
+
+<h3>Description</h3>
+
+<p><code>goftest_ERSBM</code> performs chi square goodness-of-fit test for network data considering the model as  ERSBM (Karwa et al. (2023))
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">goftest_ERSBM(A, K = NULL, C = NULL, numGraphs = 100)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>A</code></td>
+<td>
+<p>n by n binary symmetric adjacency matrix representing an undirected graph where n is the number of nodes in the graph</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>positive integer scalar representing the number of blocks; K&gt;1</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>C</code></td>
+<td>
+<p>positive integer vector of size n for block assignments of each node; from 1 to K (no of blocks)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numGraphs</code></td>
+<td>
+<p>number of graphs to be sampled; default value is 100</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list with the elements
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>statistic</code></td>
+<td>
+<p>the values of the chi-square test statistics on each sampled graph</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.value</code></td>
+<td>
+<p>the p-value for the test</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Karwa et al. (2023). "Monte Carlo goodness-of-fit tests for degree corrected and related stochastic blockmodels",
+<em>Journal of the Royal Statistical Society Series B: Statistical Methodology</em>,
+<a href="https://doi.org/10.1093/jrsssb/qkad084">doi:10.1093/jrsssb/qkad084</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+RNGkind(sample.kind = "Rounding")
+set.seed(1729)
+
+# We model a network with 3 even classes
+n1 = 10
+n2 = 10
+n3 = 10
+
+# Generating block assignments for each of the nodes
+n = n1 + n2 + n3
+class = rep(c(1, 2, 3), c(n1, n2, n3))
+
+# Generating the adjacency matrix of the network
+# Generate the matrix of connection probabilities
+cmat = matrix(
+  c(
+    0.80, 0.05, 0.05,
+    0.05, 0.80, 0.05,
+    0.05, 0.05, 0.80
+  ),
+  ncol = 3,
+  byrow = TRUE
+)
+pmat = cmat / n
+
+# Creating the n x n adjacency matrix
+adj &lt;- matrix(0, n, n)
+for (i in 2:n) {
+  for (j in 1:(i - 1)) {
+    p = pmat[class[i], class[j]] # We find the probability of connection with the weights
+    adj[i, j] = rbinom(1, 1, p) # We include the edge with probability p
+  }
+}
+
+adjsymm = adj + t(adj)
+
+# When class assignment is known
+out = goftest_ERSBM(adjsymm, C = class, numGraphs = 10)
+
+chi_sq_seq = out$statistic
+pvalue = out$p.value
+print(pvalue)
+
+# Plotting histogram of the sequence of the test statistics
+hist(chi_sq_seq, 20, xlab = "chi-square test statistics", main = NULL)
+abline(v = chi_sq_seq[1], col = "red", lwd = 5) # adding test statistic on the observed network
+legend("topleft", legend = paste("observed GoF = ", chi_sq_seq[1]))
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,98 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>save_as_geopackage</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Save as geopackage</h2>
+
+<h3>Description</h3>
+
+<p>Save the result of a geoquery in a geopackage. The result can be a layer in
+the form of a flat table or a list consisting of a layer and a description
+table of the variables.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">save_as_geopackage(sf, layer_name, file_name = NULL, filepath = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>sf</code></td>
+<td>
+<p>A <code>tibble</code> or a list of <code>tibble</code> objects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>layer_name</code></td>
+<td>
+<p>A string.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file_name</code></td>
+<td>
+<p>A string.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filepath</code></td>
+<td>
+<p>A string.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>tibble</code> or a list of <code>tibble</code> objects.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+gms &lt;- geomultistar(ms = ms_mrs, geodimension = "where") |&gt;
+  define_geoattribute(
+    attribute = "city",
+    from_layer = usa_cities,
+    by = c("city" = "city", "state" = "state")
+  )  |&gt;
+  define_geoattribute(
+    attribute = "state",
+    from_layer = usa_states,
+    by = c("state" = "state")
+  ) |&gt;
+  define_geoattribute(attribute = "region",
+                      from_attribute = "state") |&gt;
+  define_geoattribute(attribute = "all_where",
+                      from_layer = usa_nation)
+
+gdq &lt;- dimensional_query(gms) |&gt;
+  select_dimension(name = "where",
+                   attributes = c("state", "city")) |&gt;
+  select_dimension(name = "when",
+                   attributes = c("when_happened_year", "when_happened_week")) |&gt;
+  select_fact(
+    name = "mrs_age",
+    measures = c("n_deaths")
+  ) |&gt;
+  select_fact(name = "mrs_cause",
+              measures = c("pneumonia_and_influenza_deaths", "other_deaths")) |&gt;
+  filter_dimension(name = "when", when_happened_week &lt;= "03") |&gt;
+  filter_dimension(name = "where", state == "MA")
+
+sf &lt;- gdq |&gt;
+  run_geoquery(wider = TRUE)
+
+save_as_geopackage(sf, "city", filepath = tempdir())
+
+</code></pre>
+
+
+</div>

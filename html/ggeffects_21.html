@@ -1,0 +1,596 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>test_predictions</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>(Pairwise) comparisons between predictions (marginal effects)</h2>
+
+<h3>Description</h3>
+
+<p>Function to test differences of adjusted predictions for
+statistical significance. This is usually called contrasts or (pairwise)
+comparisons, or "marginal effects". <code>hypothesis_test()</code> is an alias.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">test_predictions(object, ...)
+
+hypothesis_test(object, ...)
+
+## Default S3 method:
+test_predictions(
+  object,
+  terms = NULL,
+  by = NULL,
+  test = "pairwise",
+  equivalence = NULL,
+  scale = "response",
+  p_adjust = NULL,
+  df = NULL,
+  ci_level = 0.95,
+  collapse_levels = FALSE,
+  margin = "mean_reference",
+  engine = "marginaleffects",
+  verbose = TRUE,
+  ...
+)
+
+## S3 method for class 'ggeffects'
+test_predictions(
+  object,
+  by = NULL,
+  test = "pairwise",
+  equivalence = NULL,
+  scale = "response",
+  p_adjust = NULL,
+  df = NULL,
+  collapse_levels = FALSE,
+  engine = "marginaleffects",
+  verbose = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A fitted model object, or an object of class <code>ggeffects</code>. If
+<code>object</code> is of class <code>ggeffects</code>, arguments <code>terms</code>, <code>margin</code> and <code>ci_level</code>
+are taken from the <code>ggeffects</code> object and don't need to be specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed down to <code>data_grid()</code> when creating the reference
+grid and to <code>marginaleffects::predictions()</code> resp. <code>marginaleffects::slopes()</code>.
+For instance, arguments <code>type</code> or <code>transform</code> can be used to back-transform
+comparisons and contrasts to different scales. <code>vcov</code> can be used to
+calculate heteroscedasticity-consistent standard errors for contrasts.
+See examples at the bottom of
+<a href="https://strengejacke.github.io/ggeffects/articles/introduction_comparisons_1.html">this vignette</a>
+for further details.
+</p>
+<p>To define a heteroscedasticity-consistent variance-covariance matrix, you can
+either use the same arguments as for <code>predict_response()</code> etc., namely
+<code>vcov_fun</code>, <code>vcov_type</code> and <code>vcov_args</code>. These are then transformed into a
+matrix and passed down to the <code>vcov</code> argument in <strong>marginaleffects</strong>. Or you
+directly use the <code>vcov</code> argument. See <code>?marginaleffects::slopes</code> for further
+details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms</code></td>
+<td>
+<p>If <code>object</code> is an object of class <code>ggeffects</code>, the same <code>terms</code>
+argument is used as for the predictions, i.e. <code>terms</code> can be ignored. Else,
+if <code>object</code> is a model object, <code>terms</code> must be a character vector with the
+names of the focal terms from <code>object</code>, for which contrasts or comparisons
+should be displayed. At least one term is required, maximum length is three
+terms. If the first focal term is numeric, contrasts or comparisons for the
+<em>slopes</em> of this numeric predictor are computed (possibly grouped by the
+levels of further categorical focal predictors).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by</code></td>
+<td>
+<p>Character vector specifying the names of predictors to condition on.
+Hypothesis test is then carried out for focal terms by each level of <code>by</code>
+variables. This is useful especially for interaction terms, where we want
+to test the interaction within "groups". <code>by</code> is only relevant for
+categorical predictors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test</code></td>
+<td>
+<p>Hypothesis to test, defined as character string. Can be one of:
+</p>
+
+<ul>
+<li> <p><code>"pairwise"</code> (default), to test pairwise comparisons.
+</p>
+</li>
+<li> <p><code>"trend"</code> (or <code>"slope"</code>) to test for the linear trend/slope of (usually)
+continuous predictors. These options are just aliases for setting
+<code>trend = NULL</code>.
+</p>
+</li>
+<li> <p><code>"contrast"</code> to test simple contrasts (i.e. each level is tested against
+the average over <em>all</em> levels).
+</p>
+</li>
+<li> <p><code>"exclude"</code> to test simple contrasts (i.e. each level is tested against
+the average over <em>all other</em> levels, excluding the contrast that is being
+tested).
+</p>
+</li>
+<li> <p><code>"interaction"</code> to test interaction contrasts (difference-in-difference
+contrasts).
+</p>
+</li>
+<li> <p><code>"consecutive"</code> to test contrasts between consecutive levels of a predictor.
+</p>
+</li>
+<li> <p><code>"polynomial"</code> to test orthogonal polynomial contrasts, assuming
+equally-spaced factor levels.
+</p>
+</li>
+<li>
+<p> A character string with a custom hypothesis, e.g. <code>"b2 = b1"</code>. This would
+test if the second level of a predictor is different from the first level.
+Custom hypotheses are very flexible. It is also possible to test interaction
+contrasts (difference-in-difference contrasts) with custom hypotheses, e.g.
+<code>"(b2 - b1) = (b4 - b3)"</code>. See also section <em>Introduction into contrasts
+and pairwise comparisons</em>.
+</p>
+</li>
+<li>
+<p> A data frame with custom contrasts. See 'Examples'.
+</p>
+</li>
+<li> <p><code>NULL</code>, in which case simple contrasts are computed.
+</p>
+</li>
+</ul>
+<p>Technical details about the packages used as back-end to calculate contrasts
+and pairwise comparisons are provided in the section <em>Packages used as back-end
+to calculate contrasts and pairwise comparisons</em> below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>equivalence</code></td>
+<td>
+<p>ROPE's lower and higher bounds. Should be <code>"default"</code> or
+a vector of length two (e.g., <code>c(-0.1, 0.1)</code>). If <code>"default"</code>,
+<code>bayestestR::rope_range()</code> is used. Instead of using the <code>equivalence</code>
+argument, it is also possible to call the <code>equivalence_test()</code> method
+directly. This requires the <strong>parameters</strong> package to be loaded. When
+using <code>equivalence_test()</code>, two more columns with information about the
+ROPE coverage and decision on H0 are added. Furthermore, it is possible
+to <code>plot()</code> the results from <code>equivalence_test()</code>. See
+<code>bayestestR::equivalence_test()</code> resp. <code>parameters::equivalence_test.lm()</code>
+for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>Character string, indicating the scale on which the contrasts
+or comparisons are represented. Can be one of:
+</p>
+
+<ul>
+<li> <p><code>"response"</code> (default), which would return contrasts on the response
+scale (e.g. for logistic regression, as probabilities);
+</p>
+</li>
+<li> <p><code>"link"</code> to return contrasts on scale of the linear predictors
+(e.g. for logistic regression, as log-odds);
+</p>
+</li>
+<li> <p><code>"probability"</code> (or <code>"probs"</code>) returns contrasts on the probability scale,
+which is required for some model classes, like <code>MASS::polr()</code>;
+</p>
+</li>
+<li> <p><code>"oddsratios"</code> to return contrasts on the odds ratio scale (only applies
+to logistic regression models);
+</p>
+</li>
+<li> <p><code>"irr"</code> to return contrasts on the odds ratio scale (only applies to
+count models);
+</p>
+</li>
+<li>
+<p> or a transformation function like <code>"exp"</code> or <code>"log"</code>, to return transformed
+(exponentiated respectively logarithmic) contrasts; note that these
+transformations are applied to the <em>response scale</em>.
+</p>
+</li>
+</ul>
+<p><strong>Note:</strong> If the <code>scale</code> argument is not supported by the provided <code>object</code>,
+it is automatically changed to a supported scale-type (a message is printed
+when <code>verbose = TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_adjust</code></td>
+<td>
+<p>Character vector, if not <code>NULL</code>, indicates the method to
+adjust p-values. See <code>stats::p.adjust()</code> or <code>stats::p.adjust.methods</code>
+for details. Further possible adjustment methods are <code>"tukey"</code> or <code>"sidak"</code>,
+and for <code>johnson_neyman()</code>, <code>"fdr"</code> (or <code>"bh"</code>) and <code>"esarey"</code> (or its
+short-cut <code>"es"</code>) are available options. Some caution is necessary when
+adjusting p-value for multiple comparisons. See also section <em>P-value adjustment</em>
+below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>Degrees of freedom that will be used to compute the p-values and
+confidence intervals. If <code>NULL</code>, degrees of freedom will be extracted from
+the model using <code>insight::get_df()</code> with <code>type = "wald"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci_level</code></td>
+<td>
+<p>Numeric, the level of the confidence intervals. If <code>object</code>
+is an object of class <code>ggeffects</code>, the same <code>ci_level</code> argument is used as
+for the predictions, i.e. <code>ci_level</code> can be ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>collapse_levels</code></td>
+<td>
+<p>Logical, if <code>TRUE</code>, term labels that refer to identical
+levels are no longer separated by "-", but instead collapsed into a unique
+term label (e.g., <code>"level a-level a"</code> becomes <code>"level a"</code>). See 'Examples'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>margin</code></td>
+<td>
+<p>Character string, indicates the method how to marginalize over
+non-focal terms. See <code>predict_response()</code> for details. If <code>object</code> is an
+object of class <code>ggeffects</code>, the same <code>margin</code> argument is used as for the
+predictions, i.e. <code>margin</code> can be ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>engine</code></td>
+<td>
+<p>Character string, indicates the package to use for computing
+contrasts and comparisons. Usually, this argument can be ignored, unless you
+want to explicitly use another package than <em>marginaleffects</em> to calculate
+contrasts and pairwise comparisons. <code>engine</code> can be either <code>"marginaleffects"</code>
+(default) or <code>"emmeans"</code>. The latter is useful when the <strong>marginaleffects</strong>
+package is not available, or when the <strong>emmeans</strong> package is preferred. Note
+that using <strong>emmeans</strong> as back-end is currently not as feature rich as the default
+(<strong>marginaleffects</strong>) and still in development. Setting <code>engine = "emmeans"</code>
+provides some additional test options: <code>"interaction"</code> to calculate interaction
+contrasts, <code>"consecutive"</code> to calculate contrasts between consecutive levels of a
+predictor, or a data frame with custom contrasts (see also <code>test</code>). There is
+an experimental option as well, <code>engine = "ggeffects"</code>. However, this is
+currently work-in-progress and offers much less options as the default engine,
+<code>"marginaleffects"</code>. It can be faster in some cases, though, and works for
+comparing predicted random effects in mixed models, or predicted probabilities
+of the zero-inflation component. If the <strong>marginaleffects</strong> package is not
+installed, the <strong>emmeans</strong> package is used automatically. If this package is
+not installed as well, <code>engine = "ggeffects"</code> is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Toggle messages and warnings.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A data frame containing predictions (e.g. for <code>test = NULL</code>),
+contrasts or pairwise comparisons of adjusted predictions or estimated
+marginal means.
+</p>
+
+
+<h3>Introduction into contrasts and pairwise comparisons</h3>
+
+<p>There are many ways to test contrasts or pairwise comparisons. A
+detailed introduction with many (visual) examples is shown in
+<a href="https://strengejacke.github.io/ggeffects/articles/introduction_comparisons_1.html">this vignette</a>.
+</p>
+
+
+<h3>Simple workflow for pairwise comparisons</h3>
+
+<p>A simple workflow includes calculating adjusted predictions and passing the
+results directly to <code>test_predictions()</code>, e.g.:
+</p>
+<div class="sourceCode"><pre># 1. fit your model
+model &lt;- lm(mpg ~ hp + wt + am, data = mtcars)
+# 2. calculate adjusted predictions
+pr &lt;- predict_response(model, "am")
+pr
+# 3. test pairwise comparisons
+test_predictions(pr)
+</pre></div>
+<p>See also <a href="https://strengejacke.github.io/ggeffects/articles/practical_glm_workflow.html">this vignette</a>.
+</p>
+
+
+<h3>Packages used as back-end to calculate contrasts and pairwise comparisons</h3>
+
+<p>The <code>test</code> argument is used to define which kind of contrast or comparison
+should be calculated. The default is to use the <strong>marginaleffects</strong> package.
+Here are some technical details about the packages used as back-end. When
+<code>test</code> is...
+</p>
+
+<ul>
+<li> <p><code>"pairwise"</code> (default), pairwise comparisons are based on the <strong>marginaleffects</strong>
+package.
+</p>
+</li>
+<li> <p><code>"trend"</code> or <code>"slope"</code> also uses the <strong>marginaleffects</strong> package.
+</p>
+</li>
+<li> <p><code>"contrast"</code> uses the <strong>emmeans</strong> package, i.e. <code>emmeans::contrast(method = "eff")</code>
+is called.
+</p>
+</li>
+<li> <p><code>"exclude"</code> relies on the <strong>emmeans</strong> package, i.e. <code>emmeans::contrast(method = "del.eff")</code>
+is called.
+</p>
+</li>
+<li> <p><code>"polynomial"</code> relies on the <strong>emmeans</strong> package, i.e. <code>emmeans::contrast(method = "poly")</code>
+is called.
+</p>
+</li>
+<li> <p><code>"interaction"</code> uses the <strong>emmeans</strong> package, i.e. <code>emmeans::contrast(interaction = ...)</code>
+is called.
+</p>
+</li>
+<li> <p><code>"consecutive"</code> also relies on the <strong>emmeans</strong> package, i.e.
+<code>emmeans::contrast(method = "consec")</code> is called.
+</p>
+</li>
+<li>
+<p> a character string with a custom hypothesis, the <strong>marginaleffects</strong>
+package is used.
+</p>
+</li>
+<li>
+<p> a data frame with custom contrasts, <strong>emmeans</strong> is used again.
+</p>
+</li>
+<li> <p><code>NULL</code> calls functions from the <strong>marginaleffects</strong> package with
+<code>hypothesis = NULL</code>.
+</p>
+</li>
+<li>
+<p> If all focal terms are only present as random effects in a mixed model,
+or if predicted probabilities for the zero-inflation component of a model
+should be tested, functions from the <strong>ggeffects</strong> package are used. There
+is an example for pairwise comparisons of random effects in
+<a href="https://strengejacke.github.io/ggeffects/articles/practical_intersectionality.html">this vignette</a>.
+</p>
+</li>
+</ul>
+<h3>P-value adjustment for multiple comparisons</h3>
+
+<p>Note that p-value adjustment for methods supported by <code>p.adjust()</code> (see also
+<code>p.adjust.methods</code>), each row is considered as one set of comparisons, no
+matter which <code>test</code> was specified. That is, for instance, when <code>test_predictions()</code>
+returns eight rows of predictions (when <code>test = NULL</code>), and <code>p_adjust = "bonferroni"</code>,
+the p-values are adjusted in the same way as if we had a test of pairwise
+comparisons (<code>test = "pairwise"</code>) where eight rows of comparisons are
+returned. For methods <code>"tukey"</code> or <code>"sidak"</code>, a rank adjustment is done
+based on the number of combinations of levels from the focal predictors
+in <code>terms</code>. Thus, the latter two methods may be useful for certain tests
+only, in particular pairwise comparisons.
+</p>
+<p>For <code>johnson_neyman()</code>, the only available adjustment methods are <code>"fdr"</code>
+(or <code>"bh"</code>) (<em>Benjamini &amp; Hochberg (1995)</em>) and <code>"esarey"</code> (or <code>"es"</code>)
+(<em>Esarey and Sumner 2017</em>). These usually return similar results. The major
+difference is that <code>"fdr"</code> can be slightly faster and more stable in edge
+cases, however, confidence intervals are not updated. Only the p-values are
+adjusted. <code>"esarey"</code> is slower, but confidence intervals are updated as well.
+</p>
+
+
+<h3>Global options to choose package for calculating comparisons</h3>
+
+<p><code>ggeffects_test_engine</code> can be used as option to either use the <strong>marginaleffects</strong>
+package for computing contrasts and comparisons (default), or the <strong>emmeans</strong>
+package (e.g. <code>options(ggeffects_test_engine = "emmeans")</code>). The latter is
+useful when the <strong>marginaleffects</strong> package is not available, or when the
+<strong>emmeans</strong> package is preferred. You can also provide the engine directly, e.g.
+<code>test_predictions(..., engine = "emmeans")</code>. Note that using <strong>emmeans</strong> as
+backend is currently not as feature rich as the default (<strong>marginaleffects</strong>)
+and still in development.
+</p>
+<p>If <code>engine = "emmeans"</code>, the <code>test</code> argument can also be <code>"interaction"</code>
+to calculate interaction contrasts (difference-in-difference contrasts),
+<code>"consecutive"</code> to calculate contrasts between consecutive levels of a predictor,
+or a data frame with custom contrasts. If <code>test</code> is one of the latter options,
+and <code>engine</code> is not specified, the <code>engine</code> is automatically set to <code>"emmeans"</code>.
+</p>
+<p>If the <strong>marginaleffects</strong> package is not installed, the <strong>emmeans</strong> package is
+used automatically. If this package is not installed as well,
+<code>engine = "ggeffects"</code> is used.
+</p>
+
+
+<h3>Global Options to Customize Tables when Printing</h3>
+
+<p>The <code>verbose</code> argument can be used to display or silence messages and
+warnings. Furthermore, <code>options()</code> can be used to set defaults for the
+<code>print()</code> and <code>print_html()</code> method. The following options are available,
+which can simply be run in the console:
+</p>
+
+<ul>
+<li> <p><code>ggeffects_ci_brackets</code>: Define a character vector of length two, indicating
+the opening and closing parentheses that encompass the confidence intervals
+values, e.g. <code>options(ggeffects_ci_brackets = c("[", "]"))</code>.
+</p>
+</li>
+<li> <p><code>ggeffects_collapse_ci</code>: Logical, if <code>TRUE</code>, the columns with predicted
+values (or contrasts) and confidence intervals are collapsed into one
+column, e.g. <code>options(ggeffects_collapse_ci = TRUE)</code>.
+</p>
+</li>
+<li> <p><code>ggeffects_collapse_p</code>: Logical, if <code>TRUE</code>, the columns with predicted
+values (or contrasts) and p-values are collapsed into one column, e.g.
+<code>options(ggeffects_collapse_p = TRUE)</code>. Note that p-values are replaced
+by asterisk-symbols (stars) or empty strings when <code>ggeffects_collapse_p = TRUE</code>,
+depending on the significance level.
+</p>
+</li>
+<li> <p><code>ggeffects_collapse_tables</code>: Logical, if <code>TRUE</code>, multiple tables for
+subgroups are combined into one table. Only works when there is more than
+one focal term, e.g. <code>options(ggeffects_collapse_tables = TRUE)</code>.
+</p>
+</li>
+<li> <p><code>ggeffects_output_format</code>: String, either <code>"text"</code>, <code>"markdown"</code> or <code>"html"</code>.
+Defines the default output format from <code>predict_response()</code>. If <code>"html"</code>, a
+formatted HTML table is created and printed to the view pane. <code>"markdown"</code>
+creates a markdown-formatted table inside Rmarkdown documents, and prints
+a text-format table to the console when used interactively. If <code>"text"</code> or
+<code>NULL</code>, a formatted table is printed to the console, e.g.
+<code>options(ggeffects_output_format = "html")</code>.
+</p>
+</li>
+<li> <p><code>ggeffects_html_engine</code>: String, either <code>"tt"</code> or <code>"gt"</code>. Defines the default
+engine to use for printing HTML tables. If <code>"tt"</code>, the <em>tinytable</em> package
+is used, if <code>"gt"</code>, the <em>gt</em> package is used, e.g.
+<code>options(ggeffects_html_engine = "gt")</code>.
+</p>
+</li>
+</ul>
+<p>Use <code style="white-space: pre;">⁠options(&lt;option_name&gt; = NULL)⁠</code> to remove the option.
+</p>
+
+
+<h3>References</h3>
+
+<p>Esarey, J., &amp; Sumner, J. L. (2017). Marginal effects in interaction models:
+Determining and controlling the false positive rate. Comparative Political
+Studies, 1–33. Advance online publication. doi: 10.1177/0010414017730080
+</p>
+
+
+<h3>See Also</h3>
+
+<p>There is also an <code>equivalence_test()</code> method in the <strong>parameters</strong>
+package (<code>parameters::equivalence_test.lm()</code>), which can be used to
+test contrasts or comparisons for practical equivalence. This method also
+has a <code>plot()</code> method, hence it is possible to do something like:
+</p>
+<div class="sourceCode"><pre>library(parameters)
+predict_response(model, focal_terms) |&gt;
+  equivalence_test() |&gt;
+  plot()
+</pre></div>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+data(efc)
+efc$c172code &lt;- as.factor(efc$c172code)
+efc$c161sex &lt;- as.factor(efc$c161sex)
+levels(efc$c161sex) &lt;- c("male", "female")
+m &lt;- lm(barthtot ~ c12hour + neg_c_7 + c161sex + c172code, data = efc)
+
+# direct computation of comparisons
+test_predictions(m, "c172code")
+
+# passing a `ggeffects` object
+pred &lt;- predict_response(m, "c172code")
+test_predictions(pred)
+
+# test for slope
+test_predictions(m, "c12hour")
+
+# interaction - contrasts by groups
+m &lt;- lm(barthtot ~ c12hour + c161sex * c172code + neg_c_7, data = efc)
+test_predictions(m, c("c161sex", "c172code"), test = NULL)
+
+# interaction - pairwise comparisons by groups
+test_predictions(m, c("c161sex", "c172code"))
+
+# equivalence testing
+test_predictions(m, c("c161sex", "c172code"), equivalence = c(-2.96, 2.96))
+
+# equivalence testing, using the parameters package
+pr &lt;- predict_response(m, c("c161sex", "c172code"))
+parameters::equivalence_test(pr)
+
+# interaction - collapse unique levels
+test_predictions(m, c("c161sex", "c172code"), collapse_levels = TRUE)
+
+# p-value adjustment
+test_predictions(m, c("c161sex", "c172code"), p_adjust = "tukey")
+
+# not all comparisons, only by specific group levels
+test_predictions(m, "c172code", by = "c161sex")
+
+# specific comparisons
+test_predictions(m, c("c161sex", "c172code"), test = "b2 = b1")
+
+# interaction - slope by groups
+m &lt;- lm(barthtot ~ c12hour + neg_c_7 * c172code + c161sex, data = efc)
+test_predictions(m, c("neg_c_7", "c172code"))
+
+# Interaction and consecutive contrasts -----------------
+# -------------------------------------------------------
+data(coffee_data, package = "ggeffects")
+m &lt;- lm(alertness ~ time * coffee + sex, data = coffee_data)
+
+# consecutive contrasts
+test_predictions(m, "time", by = "coffee", test = "consecutive")
+
+# interaction contrasts - difference-in-difference comparisons
+pr &lt;- predict_response(m, c("time", "coffee"), margin = "marginalmeans")
+test_predictions(pr, test = "interaction")
+
+# Custom contrasts --------------------------------------
+# -------------------------------------------------------
+wakeup_time &lt;- data.frame(
+  "wakeup vs later" = c(-2, 1, 1) / 2, # make sure each "side" sums to (+/-)1!
+  "start vs end of day" = c(-1, 0, 1)
+)
+test_predictions(m, "time", by = "coffee", test = wakeup_time)
+
+# Example: marginal effects -----------------------------
+# -------------------------------------------------------
+data(iris)
+m &lt;- lm(Petal.Width ~ Petal.Length + Species, data = iris)
+
+# we now want the marginal effects for "Species". We can calculate
+# the marginal effect using the "marginaleffects" package
+marginaleffects::avg_slopes(m, variables = "Species")
+
+# finally, test_predictions() returns the same. while the previous results
+# report the marginal effect compared to the reference level "setosa",
+# test_predictions() returns the marginal effects for all pairwise comparisons
+test_predictions(m, "Species")
+
+
+</code></pre>
+
+
+</div>

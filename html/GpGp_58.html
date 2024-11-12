@@ -1,0 +1,94 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>find_ordered_nn</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Find ordered nearest neighbors.</h2>
+
+<h3>Description</h3>
+
+<p>Given a matrix of locations, find the <code>m</code> nearest neighbors
+to each location, subject to the neighbors coming
+previously in the ordering. The algorithm uses the kdtree
+algorithm in the FNN package, adapted to the setting
+where the nearest neighbors must come from previous
+in the ordering.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">find_ordered_nn(locs, m, lonlat = FALSE, st_scale = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>locs</code></td>
+<td>
+<p>A matrix of locations. Each row of <code>locs</code> contains a location, which can
+be a point in Euclidean space R^d, a point in space-time R^d x T, 
+a longitude and latitude (in degrees) giving a point on the sphere, 
+or a longitude, latitude, and time giving a point in the sphere-time domain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m</code></td>
+<td>
+<p>Number of neighbors to return</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lonlat</code></td>
+<td>
+<p>TRUE/FALSE whether locations are longitudes and latitudes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>st_scale</code></td>
+<td>
+<p>factor by which to scale the spatial and temporal coordinates
+for distance calculations. The function assumes that the last column of
+the locations is the temporal dimension, and the rest of the columns
+are spatial dimensions. The spatial dimensions are divided by <code>st_scale[1]</code>,
+and the temporal dimension is divided by <code>st_scale[2]</code>, before distances are
+calculated. If <code>st_scale</code> is <code>NULL</code>, no scaling is used. We 
+recommend setting <code>st_scale</code> manually so that each observation gets
+neighbors that hail multiple directions in space and time.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An matrix containing the indices of the neighbors. Row <code>i</code> of the
+returned matrix contains the indices of the nearest <code>m</code>
+locations to the <code>i</code>'th location. Indices are ordered within a
+row to be increasing in distance. By convention, we consider a location
+to neighbor itself, so the first entry of row <code>i</code> is <code>i</code>, the
+second entry is the index of the nearest location, and so on. Because each
+location neighbors itself, the returned matrix has <code>m+1</code> columns.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">locs &lt;- as.matrix( expand.grid( (1:40)/40, (1:40)/40 ) )     
+ord &lt;- order_maxmin(locs)        # calculate an ordering
+locsord &lt;- locs[ord,]            # reorder locations
+m &lt;- 20
+NNarray &lt;- find_ordered_nn(locsord,20)  # find ordered nearest 20 neighbors
+ind &lt;- 100
+# plot all locations in gray, first ind locations in black,
+# ind location with magenta circle, m neighhbors with blue circle
+plot( locs[,1], locs[,2], pch = 16, col = "gray" )
+points( locsord[1:ind,1], locsord[1:ind,2], pch = 16 )
+points( locsord[ind,1], locsord[ind,2], col = "magenta", cex = 1.5 )
+points( locsord[NNarray[ind,2:(m+1)],1], 
+    locsord[NNarray[ind,2:(m+1)],2], col = "blue", cex = 1.5 )
+</code></pre>
+
+
+</div>

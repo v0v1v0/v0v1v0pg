@@ -1,0 +1,141 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>write_grm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Write GCTA GRM and related plink2 binary files</h2>
+
+<h3>Description</h3>
+
+<p>This function writes a GCTA Genetic Relatedness Matrix (GRM, i.e. kinship) set of files in their binary format, given a kinship matrix and, if available, the corresponding matrix of pair sample sizes (non-trivial under missingness) and individuals table.
+Setting some options allows writing plink2 binary kinship formats such as "king" (follow examples in <code>read_grm()</code>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">write_grm(
+  name,
+  kinship,
+  M = NULL,
+  fam = NULL,
+  verbose = TRUE,
+  ext = "grm",
+  shape = c("triangle", "strict_triangle", "square"),
+  size_bytes = 4
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>name</code></td>
+<td>
+<p>The base name of the output files.
+Files with that base, plus shared extension (default "grm", see <code>ext</code> below), plus extensions <code>.bin</code>, <code>.N.bin</code>, and <code>.id</code> may be created depending on the data provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kinship</code></td>
+<td>
+<p>The symmetric <code>n</code>-times-<code>n</code> kinship matrix to write into file with extension <code style="white-space: pre;">⁠.&lt;ext&gt;.bin⁠</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>The optional symmetric <code>n</code>-times-<code>n</code> matrix of pair sample sizes to write into file with extension <code style="white-space: pre;">⁠.&lt;ext&gt;.N.bin⁠</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fam</code></td>
+<td>
+<p>The optional data.frame or tibble with individual annotations (columns with names <code>fam</code> and <code>id</code>, subset of columns of Plink FAM) to write into file with extension <code style="white-space: pre;">⁠.&lt;ext&gt;.id⁠</code>.
+If <code>fam</code> is <code>NULL</code> but <code>kinship</code> has non-<code>NULL</code> column or row names, these are used as the second (<code>id</code>) value in the output table (the first (<code>fam</code>) column is set to the missing value in this case).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>If <code>TRUE</code> (default), function reports the path of the files being written.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ext</code></td>
+<td>
+<p>Shared extension for all three outputs (see <code>name</code> above; default "grm").
+Another useful value is "king", to match the KING-robust format produced by plink2.
+If <code>NA</code>, no extension is added.
+If given <code>ext</code> is also present at the end of <code>name</code>, then it is not added again.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shape</code></td>
+<td>
+<p>The shape of the information to write (may be abbreviated).
+Default "triangle" assumes there are <code>n*(n+1)/2</code> values to write corresponding to the upper triangle including the diagonal (required for GCTA GRM).
+"strict_triangle" assumes there are <code>n*(n-1)/2</code> values to write corresponding to the upper triangle <em>excluding</em> the diagonal (best for plink2 KING-robust).
+Lastly, "square" assumes there are <code>n*n</code> values to write corresponding to the entire square matrix, ignoring symmetry.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>size_bytes</code></td>
+<td>
+<p>The number of bytes per number encoded.
+Default 4 corresponds to GCTA GRM and plink2 "bin4", whereas plink2 "bin" requires a value of 8.</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>read_grm()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># to write existing data `kinship`, `M`, and `fam` into files "data.grm.bin" etc, run like this:
+# write_grm("data", kinship, M = M, fam = fam )
+
+# The following example is more detailed but also more awkward
+# because (only for these examples) the package must create the file in a *temporary* location
+
+# create dummy data to write
+# kinship for 3 individuals
+kinship &lt;- matrix(
+    c(
+        0.6, 0.2, 0.0,
+        0.2, 0.5, 0.1,
+        0.0, 0.1, 0.5
+    ),
+    nrow = 3
+)
+# pair sample sizes matrix
+M &lt;- matrix(
+    c(
+        10, 9, 8,
+         9, 9, 7,
+         8, 7, 8
+    ),
+    nrow = 3
+)
+# individual annotations table
+library(tibble)
+fam &lt;- tibble(
+    fam = 1:3,
+    id = 1:3
+)
+# dummy files to write and delete
+name &lt;- tempfile('delete-me-example') # no extension
+# write the data now!
+write_grm( name, kinship, M = M, fam = fam )
+# delete outputs when done
+delete_files_grm( name )
+
+</code></pre>
+
+
+</div>

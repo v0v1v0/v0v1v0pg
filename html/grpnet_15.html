@@ -1,0 +1,284 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.cv.grpnet</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Predict Method for cv.grpnet Fits
+</h2>
+
+<h3>Description</h3>
+
+<p>Obtain predictions from a cross-validated group elastic net regularized GLM (cv.grpnet) object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'cv.grpnet'
+predict(object, 
+        newx,
+        newdata,
+        s = c("lambda.1se", "lambda.min"),
+        type = c("link", "response", "class", "terms", 
+                 "importance", "coefficients", "nonzero", "groups", 
+                 "ncoefs", "ngroups", "norm", "znorm"),
+        ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+
+<p>Object of class "cv.grpnet"
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newx</code></td>
+<td>
+
+<p>Matrix of new <code>x</code> scores for prediction (default S3 method). Must have <code class="reqn">p</code> columns arranged in the same order as the <code>x</code> matrix used to fit the model.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+
+<p>Data frame of new <code>data</code> scores for prediction (S3 "formula" method). Must contain all variables in the <code>formula</code> used to fit the model.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s</code></td>
+<td>
+
+<p>Lambda value(s) at which predictions should be obtained. Can input a character ("lambda.min" or "lambda.1se") or a numeric vector. Default of "lambda.min" uses the <code>lambda</code> value that minimizes the mean cross-validated error. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+
+<p>Type of prediction to return. "link" gives predictions on the link scale (<code class="reqn">\eta</code>). "response" gives predictions on the mean scale (<code class="reqn">\mu</code>). "class" gives predicted class labels (for "binomial" and "multinomial" families). "terms" gives the predictions for each term (group) in the model (<code class="reqn">\eta_k</code>). "importance" gives the variable importance index for each term (group) in the model. "coefficients" returns the coefficients used for predictions. "nonzero" returns a list giving the indices of non-zero coefficients for each <code>s</code>. "groups" returns a list giving the labels of non-zero groups for each <code>s</code>. "ncoefs" returns the number of non-zero coefficients for each <code>s</code>. "ngroups" returns the number of non-zero groups for each <code>s</code>. "norm" returns the L2 norm of each group's (raw) coefficients for each <code>s</code>. "znorm" returns the L2 norm of each group's standardized coefficients for each <code>s</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Additional arguments (ignored)
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Predictions are calculated from the <code>grpnet</code> object fit to the full sample of data, which is stored as <code>object$grpnet.fit</code> 
+</p>
+<p>See <code>predict.grpnet</code> for further details on the calculation of the different types of predictions.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Depends on three factors... <br>
+1. the exponential family distribution <br>
+2. the length of the input <code>s</code> <br>
+3. the <code>type</code> of prediction requested
+</p>
+<p>See <code>predict.grpnet</code> for details
+</p>
+
+
+<h3>Note</h3>
+
+<p>Syntax is inspired by the <code>predict.cv.glmnet</code> function in the <b>glmnet</b> package (Friedman, Hastie, &amp; Tibshirani, 2010). 
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Nathaniel E. Helwig &lt;helwig@umn.edu&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Friedman, J.,  Hastie, T., &amp; Tibshirani, R. (2010). Regularization paths for generalized linear models via coordinate descent. <em>Journal of Statistical Software, 33</em>(1), 1-22. <a href="https://doi.org/10.18637/jss.v033.i01">doi:10.18637/jss.v033.i01</a>
+</p>
+<p>Helwig, N. E. (2024). Versatile descent algorithms for group regularization and variable selection in generalized linear models. <em>Journal of Computational and Graphical Statistics</em>. <a href="https://doi.org/10.1080/10618600.2024.2362232">doi:10.1080/10618600.2024.2362232</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cv.grpnet</code> for k-fold cross-validation of <code>lambda</code>
+</p>
+<p><code>predict.grpnet</code> for predicting from <code>grpnet</code> objects
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+######***######   family = "gaussian"   ######***######
+
+# load data
+data(auto)
+
+# 10-fold cv (formula method, response = mpg)
+set.seed(1)
+mod &lt;- cv.grpnet(mpg ~ ., data = auto)
+
+# get fitted values at "lambda.1se"
+fit.1se &lt;- predict(mod, newdata = auto)
+
+# get fitted values at "lambda.min"
+fit.min &lt;- predict(mod, newdata = auto, s = "lambda.min")
+
+# compare mean absolute error for two solutions
+mean(abs(auto$mpg - fit.1se))
+mean(abs(auto$mpg - fit.min))
+
+
+
+######***######   family = "binomial"   ######***######
+
+# load data
+data(auto)
+
+# redefine origin (Domestic vs Foreign)
+auto$origin &lt;- ifelse(auto$origin == "American", "Domestic", "Foreign")
+
+# 10-fold cv (default method, response = origin with 2 levels)
+set.seed(1)
+mod &lt;- cv.grpnet(origin ~ ., data = auto, family = "binomial")
+
+# get predicted classes at "lambda.1se"
+fit.1se &lt;- predict(mod, newdata = auto, type = "class")
+
+# get predicted classes at "lambda.min"
+fit.min &lt;- predict(mod, newdata = auto, type = "class", s = "lambda.min")
+
+# compare misclassification rate for two solutions
+1 - mean(auto$origin == fit.1se)
+1 - mean(auto$origin == fit.min)
+
+
+
+######***######   family = "multinomial"   ######***######
+
+# load data
+data(auto)
+
+# 10-fold cv (formula method, response = origin with 3 levels)
+set.seed(1)
+mod &lt;- cv.grpnet(origin ~ ., data = auto, family = "multinomial")
+
+# get predicted classes at "lambda.1se"
+fit.1se &lt;- predict(mod, newdata = auto, type = "class")
+
+# get predicted classes at "lambda.min"
+fit.min &lt;- predict(mod, newdata = auto, type = "class", s = "lambda.min")
+
+# compare misclassification rate for two solutions
+1 - mean(auto$origin == fit.1se)
+1 - mean(auto$origin == fit.min)
+
+
+
+######***######   family = "poisson"   ######***######
+
+# load data
+data(auto)
+
+# 10-fold cv (formula method, response = horsepower)
+set.seed(1)
+mod &lt;- cv.grpnet(horsepower ~ ., data = auto, family = "poisson")
+
+# get fitted values at "lambda.1se"
+fit.1se &lt;- predict(mod, newdata = auto, type = "response")
+
+# get fitted values at "lambda.min"
+fit.min &lt;- predict(mod, newdata = auto, type = "response", s = "lambda.min")
+
+# compare mean absolute error for two solutions
+mean(abs(auto$horsepower - fit.1se))
+mean(abs(auto$horsepower - fit.min))
+
+
+
+######***######   family = "negative.binomial"   ######***######
+
+# load data
+data(auto)
+
+# 10-fold cv (formula method, response = horsepower)
+set.seed(1)
+mod &lt;- cv.grpnet(horsepower ~ ., data = auto, family = "negative.binomial")
+
+# get fitted values at "lambda.1se"
+fit.1se &lt;- predict(mod, newdata = auto, type = "response")
+
+# get fitted values at "lambda.min"
+fit.min &lt;- predict(mod, newdata = auto, type = "response", s = "lambda.min")
+
+# compare mean absolute error for two solutions
+mean(abs(auto$horsepower - fit.1se))
+mean(abs(auto$horsepower - fit.min))
+
+
+
+######***######   family = "Gamma"   ######***######
+
+# load data
+data(auto)
+
+# 10-fold cv (formula method, response = origin)
+set.seed(1)
+mod &lt;- cv.grpnet(mpg ~ ., data = auto, family = "Gamma")
+
+# get fitted values at "lambda.1se"
+fit.1se &lt;- predict(mod, newdata = auto, type = "response")
+
+# get fitted values at "lambda.min"
+fit.min &lt;- predict(mod, newdata = auto, type = "response", s = "lambda.min")
+
+# compare mean absolute error for two solutions
+mean(abs(auto$mpg - fit.1se))
+mean(abs(auto$mpg - fit.min))
+
+
+
+######***######   family = "inverse.gaussian"   ######***######
+
+# load data
+data(auto)
+
+# 10-fold cv (formula method, response = origin)
+set.seed(1)
+mod &lt;- cv.grpnet(mpg ~ ., data = auto, family = "inverse.gaussian")
+
+# get fitted values at "lambda.1se"
+fit.1se &lt;- predict(mod, newdata = auto, type = "response")
+
+# get fitted values at "lambda.min"
+fit.min &lt;- predict(mod, newdata = auto, type = "response", s = "lambda.min")
+
+# compare mean absolute error for two solutions
+mean(abs(auto$mpg - fit.1se))
+mean(abs(auto$mpg - fit.min))
+
+</code></pre>
+
+
+</div>

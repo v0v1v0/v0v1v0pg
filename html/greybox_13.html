@@ -1,0 +1,539 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>alm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Augmented Linear Model</h2>
+
+<h3>Description</h3>
+
+<p>Function estimates model based on the selected distribution
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">alm(formula, data, subset, na.action, distribution = c("dnorm", "dlaplace",
+  "ds", "dgnorm", "dlogis", "dt", "dalaplace", "dlnorm", "dllaplace", "dls",
+  "dlgnorm", "dbcnorm", "dinvgauss", "dgamma", "dexp", "dfnorm", "drectnorm",
+  "dpois", "dnbinom", "dbinom", "dgeom", "dbeta", "dlogitnorm", "plogis",
+  "pnorm"), loss = c("likelihood", "MSE", "MAE", "HAM", "LASSO", "RIDGE",
+  "ROLE"), occurrence = c("none", "plogis", "pnorm"), scale = NULL,
+  orders = c(0, 0, 0), parameters = NULL, fast = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>an object of class "formula" (or one that can be coerced to
+that class): a symbolic description of the model to be fitted. Can also include
+<code>trend</code>, which would add the global trend.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a data frame or a matrix, containing the variables in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>an optional vector specifying a subset of observations to be
+used in the fitting process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>a function which indicates what should happen when the
+data contain NAs. The default is set by the na.action setting of
+options, and is na.fail if that is unset. The
+factory-fresh default is na.omit. Another possible value
+is NULL, no action. Value na.exclude can be useful.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distribution</code></td>
+<td>
+<p>what density function to use in the process. The full
+name of the distribution should be provided here. Values with "d" in the
+beginning of the name refer to the density function, while "p" stands for
+"probability" (cumulative distribution function). The names align with the
+names of distribution functions in R. For example, see dnorm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loss</code></td>
+<td>
+<p>The type of Loss Function used in optimization. <code>loss</code> can
+be:
+</p>
+
+<ul>
+<li> <p><code>"likelihood"</code> - the model is estimated via the maximisation of the
+likelihood of the function specified in <code>distribution</code>;
+</p>
+</li>
+<li> <p><code>"MSE"</code> (Mean Squared Error),
+</p>
+</li>
+<li> <p><code>"MAE"</code> (Mean Absolute Error),
+</p>
+</li>
+<li> <p><code>"HAM"</code> (Half Absolute Moment),
+</p>
+</li>
+<li> <p><code>"LASSO"</code> - use LASSO to shrink the parameters of the model;
+</p>
+</li>
+<li> <p><code>"RIDGE"</code> - use RIDGE to shrink the parameters of the model;
+</p>
+</li>
+<li> <p><code>"ROLE"</code> - "RObust Likelihood Estimator", which uses trimmed mean in the
+calculation of scale and likelihood. A separate parameter <code>trim</code> can be provided
+in ellipsis. If not provided, the default value is 0.05;
+</p>
+</li>
+</ul>
+<p>In case of LASSO / RIDGE, the variables are not normalised prior to the estimation,
+but the parameters are divided by the standard deviations of explanatory variables
+inside the optimisation. As the result the parameters of the final model have the
+same interpretation as in the case of classical linear regression. Note that the
+user is expected to provide the parameter <code>lambda</code>.
+</p>
+<p>A user can also provide their own function here as well, making sure
+that it accepts parameters <code>actual</code>, <code>fitted</code> and <code>B</code>. Here is an
+example:
+</p>
+<p><code>lossFunction &lt;- function(actual, fitted, B, xreg) return(mean(abs(actual-fitted)))</code>
+<code>loss=lossFunction</code>
+</p>
+<p>See <code>vignette("alm","greybox")</code> for some details on losses and distributions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>occurrence</code></td>
+<td>
+<p>what distribution to use for occurrence variable. Can be
+<code>"none"</code>, then nothing happens; <code>"plogis"</code> - then the logistic
+regression using <code>alm()</code> is estimated for the occurrence part;
+<code>"pnorm"</code> - then probit is constructed via <code>alm()</code> for the
+occurrence part. In both of the latter cases, the formula used is the same
+as the formula for the sizes. Alternatively, you can provide the formula here,
+and <code>alm</code> will estimate logistic occurrence model with that formula.
+Finally, an "alm" model can be provided and its estimates will be used in
+the model construction.
+</p>
+<p>If this is not <code>"none"</code>, then the model is estimated
+in two steps: 1. Occurrence part of the model; 2. Sizes part of the model
+(excluding zeroes from the data).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>formula for scale parameter of the model. If <code>NULL</code>, then it is
+assumed that the scale is constant. This might be useful if you need a model with
+changing variance (i.e. in case of heteroscedasticity). The log-link is used for
+the scale (i.e. take exponent of obtained fitted value for the scale, so that
+it is always positive).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>orders</code></td>
+<td>
+<p>the orders of ARIMA to include in the model. Only non-seasonal
+orders are accepted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameters</code></td>
+<td>
+<p>vector of parameters of the linear model. When <code>NULL</code>, it
+is estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fast</code></td>
+<td>
+<p>if <code>TRUE</code>, then the function won't check whether
+the data has variability and whether the regressors are correlated. Might
+cause trouble, especially in cases of multicollinearity.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional parameters to pass to distribution functions. This
+includes:
+</p>
+
+<ul>
+<li> <p><code>alpha</code> - value for Asymmetric Laplace distribution;
+</p>
+</li>
+<li> <p><code>size</code> - the size for the Negative Binomial distribution;
+</p>
+</li>
+<li> <p><code>nu</code> - the number of degrees of freedom for Chi-Squared and Student's t;
+</p>
+</li>
+<li> <p><code>shape</code> - the shape parameter for Generalised Normal distribution;
+</p>
+</li>
+<li> <p><code>lambda</code> - the meta parameter for LASSO / RIDGE. Should be between 0 and 1,
+regulating the strength of shrinkage, where 0 means don't shrink parameters (use MSE)
+and 1 means shrink everything (ignore MSE);
+</p>
+</li>
+<li> <p><code>lambdaBC</code> - lambda for Box-Cox transform parameter in case of Box-Cox
+Normal Distribution.
+</p>
+</li>
+<li> <p><code>FI=TRUE</code> will make the function also produce Fisher Information
+matrix, which then can be used to calculated variances of smoothing parameters
+and initial states of the model. This is used in the vcov method;
+</p>
+</li>
+</ul>
+<p>You can also pass parameters to the optimiser:
+</p>
+
+<ol>
+<li> <p><code>B</code> - the vector of starting values of parameters for the optimiser,
+should correspond to the explanatory variables. If formula for scale was provided,
+the parameters for that part should follow the parameters for location;
+</p>
+</li>
+<li> <p><code>algorithm</code> - the algorithm to use in optimisation
+(<code>"NLOPT_LN_NELDERMEAD"</code> by default);
+</p>
+</li>
+<li> <p><code>maxeval</code> - maximum number of evaluations to carry out. Default is 40 per
+estimated parameter. In case of LASSO / RIDGE the default is 80 per estimated parameter;
+</p>
+</li>
+<li> <p><code>maxtime</code> - stop, when the optimisation time (in seconds) exceeds this;
+</p>
+</li>
+<li> <p><code>xtol_rel</code> - the precision of the optimiser (the default is 1E-6);
+</p>
+</li>
+<li> <p><code>xtol_abs</code> - the absolute precision of the optimiser (the default is 1E-8);
+</p>
+</li>
+<li> <p><code>ftol_rel</code> - the stopping criterion in case of the relative change in the loss
+function (the default is 1E-4);
+</p>
+</li>
+<li> <p><code>ftol_abs</code> - the stopping criterion in case of the absolute change in the loss
+function (the default is 0 - not used);
+</p>
+</li>
+<li> <p><code>print_level</code> - the level of output for the optimiser (0 by default).
+If equal to 41, then the detailed results of the optimisation are returned.
+</p>
+</li>
+</ol>
+<p>You can read more about these parameters by running the function
+nloptr.print.options.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This is a function, similar to lm, but using likelihood for the cases
+of several non-normal distributions. These include:
+</p>
+
+<ol>
+<li> <p>dnorm - Normal distribution,
+</p>
+</li>
+<li> <p>dlaplace - Laplace distribution,
+</p>
+</li>
+<li> <p>ds - S-distribution,
+</p>
+</li>
+<li> <p>dgnorm - Generalised Normal distribution,
+</p>
+</li>
+<li> <p>dlogis - Logistic Distribution,
+</p>
+</li>
+<li> <p>dt - T-distribution,
+</p>
+</li>
+<li> <p>dalaplace - Asymmetric Laplace distribution,
+</p>
+</li>
+<li> <p>dlnorm - Log-Normal distribution,
+</p>
+</li>
+<li>
+<p> dllaplace - Log-Laplace distribution,
+</p>
+</li>
+<li>
+<p> dls - Log-S distribution,
+</p>
+</li>
+<li>
+<p> dlgnorm - Log-Generalised Normal distribution,
+</p>
+</li>
+<li> <p>dfnorm - Folded normal distribution,
+</p>
+</li>
+<li> <p>drectnorm - Rectified normal distribution,
+</p>
+</li>
+<li> <p>dbcnorm - Box-Cox normal distribution,
+</p>
+</li>
+<li> <p>dinvgauss - Inverse Gaussian distribution,
+</p>
+</li>
+<li> <p>dgamma - Gamma distribution,
+</p>
+</li>
+<li> <p>dexp - Exponential distribution,
+</p>
+</li>
+<li> <p>dlogitnorm - Logit-normal distribution,
+</p>
+</li>
+<li> <p>dbeta - Beta distribution,
+</p>
+</li>
+<li> <p>dpois - Poisson Distribution,
+</p>
+</li>
+<li> <p>dnbinom - Negative Binomial Distribution,
+</p>
+</li>
+<li> <p>dbinom - Binomial Distribution,
+</p>
+</li>
+<li> <p>dgeom - Geometric Distribution,
+</p>
+</li>
+<li> <p>plogis - Cumulative Logistic Distribution,
+</p>
+</li>
+<li> <p>pnorm - Cumulative Normal distribution.
+</p>
+</li>
+</ol>
+<p>This function can be considered as an analogue of glm, but with the
+focus on time series. This is why, for example, the function has <code>orders</code> parameter
+for ARIMA and produces time series analysis plots with <code>plot(alm(...))</code>.
+</p>
+<p>This function is slower than <code>lm</code>, because it relies on likelihood estimation
+of parameters, hessian calculation and matrix multiplication. So think twice when
+using <code>distribution="dnorm"</code> here.
+</p>
+<p>The estimation is done via the maximisation of likelihood of a selected distribution,
+so the number of estimated parameters always includes the scale. Thus the number of degrees
+of freedom of the model in case of <code>alm</code> will typically be lower than in the case of
+<code>lm</code>.
+</p>
+<p>See more details and examples in the vignette for "ALM": <code>vignette("alm","greybox")</code>
+</p>
+
+
+<h3>Value</h3>
+
+<p>Function returns <code>model</code> - the final model of the class
+"alm", which contains:
+</p>
+
+<ul>
+<li>
+<p> coefficients - estimated parameters of the model,
+</p>
+</li>
+<li>
+<p> FI - Fisher Information of parameters of the model. Returned only when <code>FI=TRUE</code>,
+</p>
+</li>
+<li>
+<p> fitted - fitted values,
+</p>
+</li>
+<li>
+<p> residuals - residuals of the model,
+</p>
+</li>
+<li>
+<p> mu - the estimated location parameter of the distribution,
+</p>
+</li>
+<li>
+<p> scale - the estimated scale parameter of the distribution. If a formula was provided for
+scale, then an object of class "scale" will be returned.
+</p>
+</li>
+<li>
+<p> distribution - distribution used in the estimation,
+</p>
+</li>
+<li>
+<p> logLik - log-likelihood of the model. Only returned, when <code>loss="likelihood"</code> or
+<code>loss="ROLE"</code> and in several special cases of distribution and loss
+combinations (e.g. <code>loss="MSE"</code>, distribution="dnorm"),
+</p>
+</li>
+<li>
+<p> loss - the type of the loss function used in the estimation,
+</p>
+</li>
+<li>
+<p> lossFunction - the loss function, if the custom is provided by the user,
+</p>
+</li>
+<li>
+<p> lossValue - the value of the loss function,
+</p>
+</li>
+<li>
+<p> res - the output of the optimisation (nloptr function),
+</p>
+</li>
+<li>
+<p> df.residual - number of degrees of freedom of the residuals of the model,
+</p>
+</li>
+<li>
+<p> df - number of degrees of freedom of the model,
+</p>
+</li>
+<li>
+<p> call - how the model was called,
+</p>
+</li>
+<li>
+<p> rank - rank of the model,
+</p>
+</li>
+<li>
+<p> data - data used for the model construction,
+</p>
+</li>
+<li>
+<p> terms - terms of the data. Needed for some additional methods to work,
+</p>
+</li>
+<li>
+<p> occurrence - the occurrence model used in the estimation,
+</p>
+</li>
+<li>
+<p> B - the value of the optimised parameters. Typically, this is a duplicate of coefficients,
+</p>
+</li>
+<li>
+<p> other - the list of all the other parameters either passed to the
+function or estimated in the process, but not included in the standard output
+(e.g. <code>alpha</code> for Asymmetric Laplace),
+</p>
+</li>
+<li>
+<p> timeElapsed - the time elapsed for the estimation of the model.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Ivan Svetunkov, <a href="mailto:ivan@svetunkov.ru">ivan@svetunkov.ru</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>stepwise, lmCombine,
+xregTransformer</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+### An example with mtcars data and factors
+mtcars2 &lt;- within(mtcars, {
+   vs &lt;- factor(vs, labels = c("V", "S"))
+   am &lt;- factor(am, labels = c("automatic", "manual"))
+   cyl  &lt;- factor(cyl)
+   gear &lt;- factor(gear)
+   carb &lt;- factor(carb)
+})
+# The standard model with Log-Normal distribution
+ourModel &lt;- alm(mpg~., mtcars2[1:30,], distribution="dlnorm")
+summary(ourModel)
+plot(ourModel)
+# Produce table based on the output for LaTeX
+xtable(summary(ourModel))
+
+# Produce predictions with the one sided interval (upper bound)
+predict(ourModel, mtcars2[-c(1:30),], interval="p", side="u")
+
+# Model with heteroscedasticity (scale changes with the change of qsec)
+ourModel &lt;- alm(mpg~., mtcars2[1:30,], scale=~qsec)
+
+### Artificial data for the other examples
+xreg &lt;- cbind(rlaplace(100,10,3),rnorm(100,50,5))
+xreg &lt;- cbind(100+0.5*xreg[,1]-0.75*xreg[,2]+rlaplace(100,0,3),xreg,rnorm(100,300,10))
+colnames(xreg) &lt;- c("y","x1","x2","Noise")
+
+# An example with Laplace distribution
+ourModel &lt;- alm(y~x1+x2+trend, xreg, subset=c(1:80), distribution="dlaplace")
+summary(ourModel)
+plot(predict(ourModel,xreg[-c(1:80),]))
+
+# And another one with Asymmetric Laplace distribution (quantile regression)
+# with optimised alpha
+ourModel &lt;- alm(y~x1+x2, xreg, subset=c(1:80), distribution="dalaplace")
+
+# An example with AR(1) order
+ourModel &lt;- alm(y~x1+x2, xreg, subset=c(1:80), distribution="dnorm", orders=c(1,0,0))
+summary(ourModel)
+plot(predict(ourModel,xreg[-c(1:80),]))
+
+### Examples with the count data
+xreg[,1] &lt;- round(exp(xreg[,1]-70),0)
+
+# Negative Binomial distribution
+ourModel &lt;- alm(y~x1+x2, xreg, subset=c(1:80), distribution="dnbinom")
+summary(ourModel)
+predict(ourModel,xreg[-c(1:80),],interval="p",side="u")
+
+# Poisson distribution
+ourModel &lt;- alm(y~x1+x2, xreg, subset=c(1:80), distribution="dpois")
+summary(ourModel)
+predict(ourModel,xreg[-c(1:80),],interval="p",side="u")
+
+
+### Examples with binary response variable
+xreg[,1] &lt;- round(xreg[,1] / (1 + xreg[,1]),0)
+
+# Logistic distribution (logit regression)
+ourModel &lt;- alm(y~x1+x2, xreg, subset=c(1:80), distribution="plogis")
+summary(ourModel)
+plot(predict(ourModel,xreg[-c(1:80),],interval="c"))
+
+# Normal distribution (probit regression)
+ourModel &lt;- alm(y~x1+x2, xreg, subset=c(1:80), distribution="pnorm")
+summary(ourModel)
+plot(predict(ourModel,xreg[-c(1:80),],interval="p"))
+
+</code></pre>
+
+
+</div>

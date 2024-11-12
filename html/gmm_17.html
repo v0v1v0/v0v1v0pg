@@ -1,0 +1,450 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generalized Empirical Likelihood estimation</h2>
+
+<h3>Description</h3>
+
+<p>Function to estimate a vector of parameters based on moment conditions using the GEL method as presented by Newey-Smith(2004) and Anatolyev(2005).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gel(g, x, tet0 = NULL, gradv = NULL, smooth = FALSE,
+    type = c("EL","ET","CUE","ETEL","HD","ETHD","RCUE"), 
+    kernel = c("Truncated", "Bartlett"), bw = bwAndrews, 
+    approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1, ar.method = "ols", 
+    tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, tol_mom = 1e-9, 
+    maxiterlam = 100, constraint = FALSE, optfct = c("optim", "optimize", 
+    "nlminb"), optlam = c("nlminb", "optim", "iter", "Wu"), data,
+    Lambdacontrol = list(), model = TRUE, X = FALSE, Y = FALSE,
+    TypeGel = "baseGel", alpha = NULL, eqConst = NULL,
+    eqConstFullVcov = FALSE, onlyCoefficients=FALSE, ...)
+evalGel(g, x, tet0, gradv = NULL, smooth = FALSE,
+        type = c("EL", "ET", "CUE", "ETEL", "HD", "ETHD","RCUE"),
+        kernel = c("Truncated", "Bartlett"), bw = bwAndrews,
+        approx = c("AR(1)", "ARMA(1,1)"), prewhite = 1,
+        ar.method = "ols", tol_weights = 1e-7, tol_lam = 1e-9, tol_obj = 1e-9, 
+        tol_mom = 1e-9, maxiterlam = 100, optlam = c("nlminb", "optim",
+        "iter", "Wu"), data, Lambdacontrol = list(),
+        model = TRUE, X = FALSE, Y = FALSE, alpha = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>g</code></td>
+<td>
+<p>A function of the form <code class="reqn">g(\theta,x)</code> and which returns a <code class="reqn">n \times q</code> matrix with typical element <code class="reqn">g_i(\theta,x_t)</code> for <code class="reqn">i=1,...q</code> and <code class="reqn">t=1,...,n</code>. This matrix is then used to build the q sample moment conditions. It can also be a formula if the model is linear (see details below).  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tet0</code></td>
+<td>
+<p>A <code class="reqn">k \times 1</code> vector of starting values. If the
+dimension of <code class="reqn">\theta</code> is one, see the argument "optfct". In the
+linear case, if tet0=NULL, the 2-step gmm estimator is used as starting
+value. However, it has to be provided when eqConst is not NULL</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>The matrix or vector of data from which the function <code class="reqn">g(\theta,x)</code> is computed. If "g" is a formula, it is an <code class="reqn">n \times Nh</code> matrix of instruments (see details below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gradv</code></td>
+<td>
+<p>A function of the form <code class="reqn">G(\theta,x)</code> which returns a <code class="reqn">q\times k</code> matrix of derivatives of <code class="reqn">\bar{g}(\theta)</code> with respect to <code class="reqn">\theta</code>. By default, the numerical algorithm <code>numericDeriv</code> is used. It is of course strongly suggested to provide this function when it is possible. This gradiant is used compute the asymptotic covariance matrix of <code class="reqn">\hat{\theta}</code>. If "g" is a formula, the gradiant is not required (see the details below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smooth</code></td>
+<td>
+<p>If set to TRUE, the moment function is smoothed as proposed by Kitamura(1997)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>"EL" for empirical likelihood, "ET" for exponential tilting,
+"CUE" for continuous updated estimator, "ETEL" for exponentially
+tilted empirical likelihood of Schennach(2007), "HD" for Hellinger
+Distance of Kitamura-Otsu-Evdokimov (2013), and "ETHD" for the
+exponentially tilted Hellinger distance of Antoine-Dovonon
+(2015). "RCUE" is a restricted version of "CUE" in which the
+probabilities are bounded below by zero. In that case, an analytical
+Kuhn-Tucker method is used to find the solution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kernel</code></td>
+<td>
+<p>type of kernel used to compute the covariance matrix of the vector of sample moment conditions (see <code>kernHAC</code> for more details) and to smooth the moment conditions if "smooth" is set to TRUE. Only two types of kernel are available. The truncated implies a Bartlett kernel for the HAC matrix and the Bartlett implies a Parzen kernel (see Smith 2004).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bw</code></td>
+<td>
+<p>The method to compute the bandwidth parameter. By default it is <code>bwAndrews</code> which is proposed by Andrews (1991). The alternative is <code>bwNeweyWest</code> of Newey-West(1994).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prewhite</code></td>
+<td>
+<p>logical or integer. Should the estimating functions be prewhitened? If <code>TRUE</code> or greater than 0 a VAR model of order <code>as.integer(prewhite)</code> is fitted via <code>ar</code> with method <code>"ols"</code> and <code>demean = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ar.method</code></td>
+<td>
+<p>character. The <code>method</code> argument passed to <code>ar</code> for prewhitening.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>approx</code></td>
+<td>
+<p>a character specifying the approximation method if the bandwidth has to be chosen by <code>bwAndrews</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_weights</code></td>
+<td>
+<p>numeric. Weights that exceed <code>tol</code> are used for computing the covariance matrix, all other weights are treated as 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_lam</code></td>
+<td>
+<p>Tolerance for <code class="reqn">\lambda</code> between two iterations. The algorithm stops when <code class="reqn">\|\lambda_i -\lambda_{i-1}\|</code> reaches <code>tol_lamb</code> (see <code>getLamb</code>) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiterlam</code></td>
+<td>
+<p>The algorithm to compute <code class="reqn">\lambda</code> stops if there is no convergence after "maxiterlam" iterations (see <code>getLamb</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_obj</code></td>
+<td>
+<p>Tolerance for the gradiant of the objective function to compute <code class="reqn">\lambda</code> (see <code>getLamb</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optfct</code></td>
+<td>
+<p>Only when the dimension of <code class="reqn">\theta</code> is 1, you can choose between the algorithm <code>optim</code> or <code>optimize</code>. In that case, the former is unreliable. If <code>optimize</code> is chosen, "t0" must be <code class="reqn">1\times 2</code> which represents the interval in which the algorithm seeks the solution.It is also possible to choose the <code>nlminb</code> algorithm. In that case, borns for the coefficients can be set by the options <code>upper=</code> and <code>lower=</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constraint</code></td>
+<td>
+<p>If set to TRUE, the constraint optimization algorithm is used. See <code>constrOptim</code> to learn how it works. In particular, if you choose to use it, you need to provide "ui" and "ci" in order to impose the constraint <code class="reqn">ui \theta - ci \geq 0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_mom</code></td>
+<td>
+<p>It is the tolerance for the moment condition <code class="reqn">\sum_{t=1}^n p_t g(\theta(x_t)=0</code>, where <code class="reqn">p_t=\frac{1}{n}D\rho(&lt;g_t,\lambda&gt;)</code> is the implied probability. It adds a penalty if the solution diverges from its goal.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optlam</code></td>
+<td>
+<p>Algorithm used to solve for the lagrange multiplier in
+<code>getLamb</code>. The algorithm Wu is only for
+<code>type="EL"</code>. The value of <code>optlam</code> is ignored for "CUE"
+because in that case, the analytical solution exists.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data.frame or a matrix with column names (Optional). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Lambdacontrol</code></td>
+<td>
+<p>Controls for the optimization of the vector of Lagrange multipliers used by either <code>optim</code>, <code>nlminb</code> or <code>constrOptim</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model, X, Y</code></td>
+<td>
+<p>logicals.  If <code>TRUE</code> the corresponding components of the fit (the model frame, the model matrix, the response) are returned if g is a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>TypeGel</code></td>
+<td>
+<p>The name of the class object created by the method <code>getModel</code>. It allows developers to extand the package and create other GEL methods.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Regularization coefficient for discrete CGEL estimation (experimental). By setting alpha to any value, the model is estimated by CGEL of type specified    by the option <code>type</code>. See Chausse (2011)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eqConst</code></td>
+<td>
+<p>Either a named vector (if "g" is a function), a simple vector for the nonlinear case indicating which of the <code class="reqn">\theta_0</code> is restricted, or a qx2 vector defining equality constraints of the form <code class="reqn">\theta_i=c_i</code>. See <code>gmm</code> for an example.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eqConstFullVcov</code></td>
+<td>
+<p>If FALSE, the constrained coefficients are assumed to be fixed and only the covariance of the unconstrained coefficients is computed. If TRUE, the covariance matrix of the full set of coefficients is computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>onlyCoefficients</code></td>
+<td>
+<p>If <code>TRUE</code>, only the vector of coefficients
+and Lagrange multipliers are returned</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>More options to give to <code>optim</code>, <code>optimize</code> or <code>constrOptim</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If we want to estimate a model like <code class="reqn">Y_t = \theta_1 + X_{2t}\theta_2 + ... + X_{k}\theta_k + \epsilon_t</code> using the moment conditions <code class="reqn">Cov(\epsilon_tH_t)=0</code>, where <code class="reqn">H_t</code> is a vector of <code class="reqn">Nh</code> instruments, than we can define "g" like we do for <code>lm</code>. We would have <code>g = y~x2+x3+...+xk</code> and the argument "x" above would become the matrix H of instruments. As for <code>lm</code>, <code class="reqn">Y_t</code> can be a <code class="reqn">Ny \times 1</code> vector which would imply that <code class="reqn">k=Nh \times Ny</code>. The intercept is included by default so you do not have to add a column of ones to the matrix <code class="reqn">H</code>. You do not need to provide the gradiant in that case since in that case it is embedded in <code>gel</code>. The intercept can be removed by adding -1 to the formula. In that case, the column of ones need to be added manually to H.
+</p>
+<p>If "smooth" is set to TRUE, the sample moment conditions <code class="reqn">\sum_{t=1}^n g(\theta,x_t)</code> is replaced by:
+<code class="reqn">\sum_{t=1}^n g^k(\theta,x_t)</code>,
+where
+<code class="reqn">g^k(\theta,x_t)=\sum_{i=-r}^r k(i) g(\theta,x_{t+i})</code>,
+where <code class="reqn">r</code> is a truncated parameter that depends on the bandwidth and <code class="reqn">k(i)</code> are normalized weights so that they sum to 1.
+</p>
+<p>The method solves 
+<code class="reqn">\hat{\theta} = \arg\min \left[\arg\max_\lambda \frac{1}{n}\sum_{t=1}^n \rho(&lt;g(\theta,x_t),\lambda&gt;) - \rho(0) \right]</code>
+</p>
+<p><code>evalGel</code> generates the object of class "gel" for a fixed vector of
+parameters. There is no estimation for <code class="reqn">\theta</code>, but the optimal
+vector of Lagrange multipliers <code class="reqn">\lambda</code> is computed. The objective
+function is then the profiled likelihood for a given <code class="reqn">\theta</code>. It
+can be used to construct a confidence interval by inverting  the
+likelihood ratio test. 
+</p>
+
+
+<h3>Value</h3>
+
+<p>'gel' returns an object of 'class' '"gel"' 
+</p>
+<p>The functions 'summary' is used to obtain and print a summary of the results. 
+</p>
+<p>The object of class "gel" is a list containing at least the following:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p><code class="reqn">k\times 1</code> vector of parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p>the residuals, that is response minus fitted values if "g" is a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>the fitted mean values if "g" is a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p><code class="reqn">q \times 1</code> vector of Lagrange multipliers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov_par</code></td>
+<td>
+<p>the covariance matrix of "coefficients"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov_lambda</code></td>
+<td>
+<p>the covariance matrix of "lambda"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pt</code></td>
+<td>
+<p>The implied probabilities</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>objective</code></td>
+<td>
+<p>the value of the objective function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conv_lambda</code></td>
+<td>
+<p>Convergence code for "lambda" (see <code>getLamb</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conv_mes</code></td>
+<td>
+<p>Convergence message for "lambda" (see <code>getLamb</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conv_par</code></td>
+<td>
+<p>Convergence code for "coefficients" (see <code>optim</code>, <code>optimize</code> or <code>constrOptim</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms</code></td>
+<td>
+<p>the <code>terms</code> object used when g is a formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the matched call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>if requested, the response used (if "g" is a formula).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>if requested, the model matrix used if "g" is a formula or the data if "g" is a function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>if requested (the default), the model frame used if "g" is a formula.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Anatolyev, S. (2005), GMM, GEL, Serial Correlation, and Asymptotic Bias. <em>Econometrica</em>, <b>73</b>, 983-1002.
+</p>
+<p>Andrews DWK (1991), Heteroskedasticity and Autocorrelation Consistent Covariance Matrix Estimation.
+<em>Econometrica</em>, <b>59</b>, 817–858.
+</p>
+<p>Kitamura, Yuichi (1997), Empirical Likelihood Methods With Weakly Dependent Processes.
+<em>The Annals of Statistics</em>, <b>25</b>, 2084-2102.
+</p>
+<p>Kitamura, Y. and Otsu, T. and Evdokimov, K. (2013), Robustness,
+Infinitesimal Neighborhoods and Moment Restrictions.
+<em>Econometrica</em>, <b>81</b>, 1185-1201.
+</p>
+<p>Newey, W.K. and Smith, R.J. (2004), Higher Order Properties of GMM and 
+Generalized Empirical Likelihood Estimators. <em>Econometrica</em>, <b>72</b>, 219-255.
+</p>
+<p>Smith, R.J. (2004), GEL Criteria for Moment Condition Models. <em>Working paper, CEMMAP</em>.
+</p>
+<p>Newey WK &amp; West KD (1987), A Simple, Positive Semi-Definite,
+Heteroskedasticity and Autocorrelation Consistent Covariance
+Matrix. <em>Econometrica</em>, <b>55</b>, 703–708.
+</p>
+<p>Newey WK &amp; West KD (1994), Automatic Lag Selection in Covariance
+Matrix Estimation. <em>Review of Economic Studies</em>, <b>61</b>, 631-653.
+</p>
+<p>Schennach, Susanne, M. (2007), Point Estimation with Exponentially Tilted Empirical Likelihood.
+<em>Econometrica</em>, <b>35</b>, 634-672.
+</p>
+<p>Wu, C. (2005), Algorithms and R codes for the pseudo empirical
+likelihood method in survey sampling.
+<em>Survey Methodology</em>, <b>31</b>(2), page 239.
+</p>
+<p>Zeileis A (2006), Object-oriented Computation of Sandwich Estimators.
+<em>Journal of Statistical Software</em>, <b>16</b>(9), 1–16.
+URL <a href="https://doi.org/10.18637/jss.v016.i09">doi:10.18637/jss.v016.i09</a>.
+</p>
+<p>Chausse (2010), Computing Generalized Method of Moments and Generalized Empirical Likelihood with R.
+<em>Journal of Statistical Software</em>, <b>34</b>(11), 1–35.
+URL <a href="https://doi.org/10.18637/jss.v034.i11">doi:10.18637/jss.v034.i11</a>.
+</p>
+<p>Chausse (2011), Generalized Empirical likelihood for a continumm of moment conditions.
+<em>Working Paper</em>, 
+<em>Department of Economics</em>,
+<em>University of Waterloo</em>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># First, an exemple with the fonction g()
+
+g &lt;- function(tet, x)
+	{
+	n &lt;- nrow(x)
+	u &lt;- (x[7:n] - tet[1] - tet[2]*x[6:(n-1)] - tet[3]*x[5:(n-2)])
+	f &lt;- cbind(u, u*x[4:(n-3)], u*x[3:(n-4)], u*x[2:(n-5)], u*x[1:(n-6)])
+	return(f)
+	}
+
+Dg &lt;- function(tet,x)
+	{
+	n &lt;- nrow(x)
+	xx &lt;- cbind(rep(1, (n-6)), x[6:(n-1)], x[5:(n-2)])
+        H  &lt;- cbind(rep(1, (n-6)), x[4:(n-3)], x[3:(n-4)], x[2:(n-5)], x[1:(n-6)])
+	f &lt;- -crossprod(H, xx)/(n-6)
+	return(f)
+	}
+n = 200
+phi&lt;-c(.2, .7)
+thet &lt;- 0.2
+sd &lt;- .2
+set.seed(123)
+x &lt;- matrix(arima.sim(n = n, list(order = c(2, 0, 1), ar = phi, ma = thet, sd = sd)), ncol = 1)
+
+res &lt;- gel(g, x, c(0, .3, .6), grad = Dg)
+summary(res)
+
+# The same model but with g as a formula....  much simpler in that case
+
+y &lt;- x[7:n]
+ym1 &lt;- x[6:(n-1)]
+ym2 &lt;- x[5:(n-2)]
+
+H &lt;- cbind(x[4:(n-3)], x[3:(n-4)], x[2:(n-5)], x[1:(n-6)])
+g &lt;- y ~ ym1 + ym2
+x &lt;- H
+
+res &lt;- gel(g, x, c(0, .3, .6))
+summary(res)
+
+# Using evalGel to create the object without estimation
+
+res &lt;- evalGel(g, x, res$coefficients)
+
+</code></pre>
+
+
+</div>

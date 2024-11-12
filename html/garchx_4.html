@@ -1,0 +1,207 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>garchx</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate a GARCH-X model</h2>
+
+<h3>Description</h3>
+
+<p>Quasi Maximum Likelihood (ML) estimation of a GARCH(q,p,r)-X model, where q is the GARCH order, p is the ARCH order, r is the asymmetry (or leverage) order and 'X' indicates that covariates can be included. Note that the underlying estimation theory assumes the covariates are stochastic. The estimation procedure will, in general, provide consistent estimates when the standardised innovations are not normal or independent (or both), see Francq and Thieu (2018). 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">garchx(y, order = c(1,1), arch = NULL, garch = NULL, asym = NULL,
+  xreg = NULL, vcov.type = c("ordinary", "robust"),
+  initial.values = NULL, backcast.values = NULL, lower = 0,
+  upper = +Inf, control = list(), hessian.control = list(),
+  solve.tol = .Machine$double.eps, estimate = TRUE, c.code = TRUE,
+  penalty.value = NULL, sigma2.min = .Machine$double.eps,
+  objective.fun = 1, turbo = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>numeric vector, time-series or <code>zoo</code> object. Missing values in the beginning and at the end of the series is allowed, as they are removed with the <code>na.trim</code> command</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order</code></td>
+<td>
+<p>integer vector of length 1, 2 or 3, for example <code>c(1,1,1)</code>. The first entry controls the GARCH order, the second the ARCH order and the third the ASYM (asymmetry/leverage) order</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>arch</code></td>
+<td>
+<p><code>NULL</code> or numeric vector containing the ARCH-terms to include. Note: If not <code>NULL</code>, then the value of the <code>ARCH</code> argument overrides the value of the first entry in the <code>order</code> argument</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>garch</code></td>
+<td>
+<p><code>NULL</code> or numeric vector containing the GARCH-terms to include. Note: If not <code>NULL</code>, then the value of the <code>GARCH</code> argument overrides the value of the second entry in the <code>order</code> argument</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>asym</code></td>
+<td>
+<p><code>NULL</code> or numeric vector containing the ASYM-terms (asymmetry/leverage terms) to include. Note: If not <code>NULL</code>, then the value of the <code>ASYM</code> argument overrides the value of the third entry in the <code>order</code> argument</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xreg</code></td>
+<td>
+<p>numeric vector, time-series or <code>zoo</code> object. Missing values in the beginning and at the end of the series is allowed, as they are removed with the <code>na.trim</code> command</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov.type</code></td>
+<td>
+<p><code>character</code>, either <code>"ordinary"</code> or <code>"robust"</code>, see <code>vcov.garchx</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial.values</code></td>
+<td>
+<p><code>NULL</code> or a numeric vector with the initial parameter values passed on to the optimisation routine, <code>nlminb</code>. If <code>NULL</code>, the default, then the values are chosen automatically</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>backcast.values</code></td>
+<td>
+<p><code>NULL</code> or a non-negative numeric. The backcast value is used to initiate the forward recursion of the conditional variance. If <code>NULL</code> (default), then the value is chosen automatically (currently the average of <code>y</code> squared is used). If <code>backcast.values</code> is a non-negative numeric, then the initial recursion values are all set to this value</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>numeric vector, either of length 1 or the number of parameters to be estimated, see <code>nlminb</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>numeric vector, either of length 1 or the number of parameters to be estimated, see <code>nlminb</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>a <code>list</code> passed on to the <code>control</code> argument of <code>nlminb</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian.control</code></td>
+<td>
+<p>a <code>list</code> passed on to the <code>control</code> argument of <code>optimHess</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>solve.tol</code></td>
+<td>
+<p>numeric value passed on to the <code>tol</code> argument of <code>solve</code>, which is called whenever the coefficient variance-coariance matrix is computed. The value controls the toleranse for detecting linear dependence between columns when inverting a matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimate</code></td>
+<td>
+<p>logical, if <code>TRUE</code> then estimation is carried out. If <code>FALSE</code>, then the <code>initial.values</code> are used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c.code</code></td>
+<td>
+<p>logical, if <code>TRUE</code> then compiled C code is used in the forward recursion</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalty.value</code></td>
+<td>
+<p><code>NULL</code> (default) or a numeric value. If <code>NULL</code>, then the log-likelihood value associated with the initial values is used. Sometimes estimation can result in <code>NA</code> and/or <code>+/-Inf</code> values. The <code>penalty.value</code> is the value returned by the objective function <code>garchxObjective</code> in the presence of <code>NA</code> or <code>+/-Inf</code> values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma2.min</code></td>
+<td>
+<p>numeric with default <code>.Machine$double.eps</code>. To avoid taking taking the log of a very small value when computing the log-likelihood, <code>sigma2.min</code> is used as the lower bound of the fitted conditional variances, see the code of <code>garchxObjective</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>objective.fun</code></td>
+<td>
+<p>numeric, either 1 or 0</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>turbo</code></td>
+<td>
+<p>logical. If <code>FALSE</code> (default), then the coefficient variance-covariance is computed during estimation, and the fitted values and residuals are attached to the returned object. If <code>TRUE</code>, then these operations are skipped, and hence estimation is faster. Note, however, that if <code>turbo</code> is set to <code>TRUE</code>, then the coefficient-covariance, fitted values and residuals can still be extracted subsequent to estimation with <code>vcov.garchx</code>, <code>fitted.garchx</code> and <code>residuals.garchx</code>, respectively </p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list of class 'garchx'</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Genaro Sucarrat, <a href="http://www.sucarrat.net/">http://www.sucarrat.net/</a></p>
+
+
+<h3>References</h3>
+
+<p>Christian Francq and Le Quien Thieu (2018): 'QML inference for volatility models with covariates', Econometric Theory, doi:10.1017/S0266466617000512<br>
+Christian Francq and Jean-Michel Zakoian (2019): 'GARCH Models', 2nd Edition, Wiley
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>garchxSim</code>, <code>nlminb</code>, <code>optimHess</code>, <code>coef.garchx</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">##simulate from a garch(1,1):
+set.seed(123)
+y &lt;- garchxSim(1000)
+
+##estimate garch(1,1) model:
+mymod &lt;- garchx(y)
+
+##print estimation results:
+print(mymod)
+
+##extract coefficients:
+coef(mymod)
+
+##extract and store conditional variances:
+sigma2hat &lt;- fitted(mymod)
+
+##extract log-likelihood:
+logLik(mymod)
+
+##extract and store standardised residuals:
+etahat &lt;- residuals(mymod)
+
+##extract variance-covariance matrix:
+vcov(mymod)
+
+##generate predictions:
+predict(mymod)
+
+</code></pre>
+
+
+</div>
